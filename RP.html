@@ -7,142 +7,352 @@
     <link rel="preload" as="image" href="background.webp">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ---------- RP 页面专用样式 ---------- */
-        .resource-stats {
-            text-align: center;
+        /* ============================================================
+           RP 页面专属样式
+           ============================================================ */
+
+        /* ----- 布局容器（左右结构） ----- */
+        .rp-layout {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+            min-height: 320px;
+        }
+
+        /* ----- 左侧：分类目录树 ----- */
+        .rp-sidebar {
+            flex: 0 0 200px;
+            border-right: 1px solid rgba(128, 128, 128, 0.12);
+            padding-right: 1rem;
+        }
+        .rp-sidebar-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            opacity: 0.4;
+            margin-bottom: 0.8rem;
+        }
+        .rp-category-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.45rem 0.6rem;
+            border-radius: 0.5rem;
+            border: none;
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
             font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            opacity: 0.65;
+        }
+        .rp-category-item:hover {
+            background: rgba(128, 128, 128, 0.08);
+            opacity: 0.9;
+        }
+        .rp-category-item.active {
+            background: rgba(128, 128, 128, 0.12);
+            opacity: 1;
+            font-weight: 600;
+        }
+        /* 分类统计小字 */
+        .rp-category-item .badge {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            margin-left: 0.3rem;
+            font-weight: 400;
+        }
+        .rp-category-item.active .badge {
             opacity: 0.7;
-            margin-bottom: 1.5rem;
         }
 
-        .category-card {
-            background: inherit;
-            border-radius: 1.2rem;
-            padding: 1.2rem 1.5rem;
-            margin-bottom: 1.2rem;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            transition: border-color 0.3s;
-        }
-        .category-card:hover {
-            border-color: rgba(255, 255, 255, 0.18);
+        /* ----- 右侧：资源列表 ----- */
+        .rp-content {
+            flex: 1;
+            min-width: 0;
         }
 
-        .category-title {
+        /* 当前分类标题 + 统计 */
+        .rp-content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px dashed rgba(128, 128, 128, 0.1);
+        }
+        .rp-content-header .cat-name {
             font-size: 1.3rem;
             font-weight: 600;
-            margin-bottom: 0.6rem;
-            padding-bottom: 0.4rem;
-            border-bottom: 2px dashed rgba(128, 128, 128, 0.15);
+        }
+        .rp-content-header .cat-count {
+            font-size: 0.85rem;
+            opacity: 0.5;
         }
 
-        .resource-item {
+        /* 资源卡片（方案一风格：左侧色条 + 箭头） */
+        .rp-resource-item {
             display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.06);
+            align-items: center;
+            padding: 0.5rem 0.6rem;
+            margin-bottom: 0.2rem;
+            border-radius: 0.6rem;
+            border-left: 3px solid transparent;
+            transition: background 0.2s, border-color 0.2s;
+            cursor: default;
+            gap: 0.6rem;
         }
-        .resource-item:last-child {
-            border-bottom: none;
+        .rp-resource-item:hover {
+            background: rgba(128, 128, 128, 0.04);
         }
+        /* 不同类型不同色条（由 JS 动态加类） */
+        .rp-resource-item.type-github { border-left-color: #6e5494; }
+        .rp-resource-item.type-pan    { border-left-color: #f5a623; }
+        .rp-resource-item.type-other  { border-left-color: #4a90d9; }
+        .rp-resource-item.type-local  { border-left-color: #7ed321; }
+        .rp-resource-item.type-unknown{ border-left-color: #888; }
 
-        .resource-name {
+        .rp-resource-item .arrow {
+            font-size: 0.75rem;
+            opacity: 0.3;
+            flex-shrink: 0;
+            width: 1.2rem;
+            text-align: center;
+        }
+        .rp-resource-item .name {
             font-weight: 600;
-            font-size: 1.05rem;
-            margin-right: 0.8rem;
+            font-size: 1rem;
             flex-shrink: 0;
         }
-        .resource-name a {
+        .rp-resource-item .name a {
             text-decoration: none;
             border-bottom: 2px solid transparent;
-            transition: border-color 0.2s, opacity 0.2s;
+            transition: border-color 0.2s;
         }
-        .resource-name a:hover {
+        .rp-resource-item .name a:hover {
             border-bottom-color: currentColor;
-            opacity: 0.8;
         }
-
-        .resource-desc {
-            font-size: 0.9rem;
-            opacity: 0.65;
+        .rp-resource-item .desc {
+            font-size: 0.85rem;
+            opacity: 0.55;
             flex: 1;
-            min-width: 120px;
+            min-width: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .rp-resource-item .type-tag {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.6rem;
+            border-radius: 1rem;
+            opacity: 0.6;
+            flex-shrink: 0;
+            border: 1px solid currentColor;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        /* 无链接占位 */
+        .rp-resource-item .name.placeholder {
+            opacity: 0.4;
+            font-style: italic;
         }
 
-        /* 加载 / 错误 / 空状态 */
-        .status-msg {
+        /* 空状态 */
+        .rp-empty {
             text-align: center;
             padding: 2.5rem 1rem;
-            font-size: 1.1rem;
-            opacity: 0.7;
-        }
-        .status-msg .retry-btn {
-            margin-top: 1rem;
-            padding: 0.5rem 2rem;
-            border-radius: 2rem;
-            border: 2px solid currentColor;
-            background: transparent;
+            opacity: 0.4;
             font-size: 0.95rem;
+        }
+
+        /* ---- 浅色模式微调 ---- */
+        @media (prefers-color-scheme: light) {
+            .rp-resource-item.type-github { border-left-color: #6e5494; }
+            .rp-resource-item.type-pan    { border-left-color: #d48c1a; }
+            .rp-resource-item.type-other  { border-left-color: #2b6bb0; }
+            .rp-resource-item.type-local  { border-left-color: #5a9e2e; }
+            .rp-category-item.active { background: rgba(0,0,0,0.06); }
+        }
+        @media (prefers-color-scheme: dark) {
+            .rp-category-item.active { background: rgba(255,255,255,0.06); }
+        }
+
+        /* ---- 响应式：小屏折叠 ---- */
+        @media (max-width: 600px) {
+            .rp-layout { flex-direction: column; gap: 0.5rem; }
+            .rp-sidebar {
+                flex: none;
+                border-right: none;
+                padding-right: 0;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.3rem;
+            }
+            .rp-sidebar-title { display: none; }
+            .rp-category-item {
+                width: auto;
+                padding: 0.3rem 0.8rem;
+                font-size: 0.85rem;
+                border-radius: 2rem;
+                background: rgba(128, 128, 128, 0.06);
+            }
+            .rp-category-item .badge { display: none; }
+            .rp-content-header .cat-name { font-size: 1.1rem; }
+            .rp-resource-item { flex-wrap: wrap; gap: 0.2rem 0.5rem; }
+            .rp-resource-item .desc {
+                white-space: normal;
+                flex-basis: 100%;
+                margin-left: 1.8rem;
+            }
+            .rp-resource-item .type-tag { font-size: 0.55rem; padding: 0 0.5rem; }
+        }
+
+
+        /* ============================================================
+           跳转确认弹窗（Modal）
+           ============================================================ */
+        .rp-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            display: none;              /* 默认隐藏 */
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            animation: overlayIn 0.25s ease-out;
+        }
+        .rp-overlay.active {
+            display: flex;
+        }
+        @keyframes overlayIn {
+            0% { opacity: 0; backdrop-filter: blur(0px); }
+            100% { opacity: 1; backdrop-filter: blur(6px); }
+        }
+
+        .rp-modal {
+            max-width: 440px;
+            width: 90%;
+            padding: 2rem 2rem 1.8rem;
+            border-radius: 1.8rem;
+            background: var(--modal-bg, rgba(20,30,20,0.88));
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            text-align: center;
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.92) translateY(16px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        /* 亮色模式弹窗 */
+        @media (prefers-color-scheme: light) {
+            .rp-modal { --modal-bg: rgba(245, 250, 245, 0.92); border-color: rgba(0,0,0,0.06); }
+        }
+        /* 深色模式弹窗 */
+        @media (prefers-color-scheme: dark) {
+            .rp-modal { --modal-bg: rgba(12, 22, 12, 0.92); border-color: rgba(255,255,255,0.06); }
+        }
+
+        .rp-modal .modal-icon {
+            font-size: 2.8rem;
+            margin-bottom: 0.2rem;
+        }
+        .rp-modal .modal-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            word-break: break-all;
+            margin-bottom: 0.2rem;
+        }
+        .rp-modal .modal-sub {
+            font-size: 0.9rem;
+            opacity: 0.5;
+            margin-bottom: 0.8rem;
+        }
+        .rp-modal .modal-warning {
+            font-size: 0.95rem;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            background: rgba(255, 200, 0, 0.10);
+            border: 1px solid rgba(255, 200, 0, 0.15);
+            margin-bottom: 1.8rem;
+            display: inline-block;
+        }
+        .rp-modal .modal-warning strong {
+            font-weight: 700;
+        }
+
+        .rp-modal .modal-actions {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .rp-modal .modal-actions button {
+            padding: 0.55rem 2rem;
+            border-radius: 3rem;
+            border: 2px solid transparent;
             font-weight: 600;
+            font-size: 1rem;
+            font-family: inherit;
             cursor: pointer;
             transition: all 0.25s ease;
-            color: inherit;
-            opacity: 0.7;
+            min-width: 100px;
         }
-        .status-msg .retry-btn:hover {
-            opacity: 1;
+        .rp-modal .modal-actions .btn-cancel {
+            background: transparent;
+            border-color: currentColor;
+            opacity: 0.5;
+        }
+        .rp-modal .modal-actions .btn-cancel:hover {
+            opacity: 0.9;
             transform: translateY(-2px);
         }
+        .rp-modal .modal-actions .btn-confirm {
+            background: #c0392b;
+            border-color: #c0392b;
+            color: #fff;
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .rp-modal .modal-actions .btn-confirm.ready {
+            opacity: 1;
+            cursor: pointer;
+            background: #e74c3c;
+            border-color: #e74c3c;
+        }
+        .rp-modal .modal-actions .btn-confirm.ready:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
+        }
 
-        .status-msg .loading-spinner {
+        /* 倒计时圈 */
+        .rp-modal .countdown-ring {
             display: inline-block;
-            animation: spin 1.2s linear infinite;
-            font-size: 2rem;
+            width: 1.8rem;
+            height: 1.8rem;
+            line-height: 1.8rem;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-left: 0.4rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* 亮色模式适配 */
-        @media (prefers-color-scheme: light) {
-            .category-card {
-                border-color: rgba(60, 140, 60, 0.10);
-                background: rgba(255, 255, 255, 0.25);
-            }
-            .category-card:hover {
-                border-color: rgba(60, 140, 60, 0.25);
-            }
-            .category-title { color: #1a4f1a; }
-            .resource-name a { color: #1a4f1a; }
+        .rp-modal .btn-confirm.ready .countdown-ring {
+            opacity: 0.3;
         }
 
-        /* 深色模式适配 */
-        @media (prefers-color-scheme: dark) {
-            .category-card {
-                border-color: rgba(100, 200, 100, 0.06);
-                background: rgba(255, 255, 255, 0.03);
-            }
-            .category-card:hover {
-                border-color: rgba(100, 200, 100, 0.18);
-            }
-            .category-title { color: #a5d6a7; }
-            .resource-name a { color: #a5d6a7; }
-        }
-
-        /* 响应式 */
-        @media (max-width: 600px) {
-            .category-card { padding: 1rem 1rem; }
-            .category-title { font-size: 1.1rem; }
-            .resource-name { font-size: 0.95rem; margin-right: 0.4rem; }
-            .resource-desc { font-size: 0.82rem; min-width: 80px; }
-            .resource-item { padding: 0.4rem 0; }
-        }
-        @media (max-width: 400px) {
-            .resource-item { flex-direction: column; align-items: flex-start; gap: 0.1rem; }
-            .resource-name { margin-right: 0; }
+        /* 防止页面滚动 */
+        body.modal-open {
+            overflow: hidden;
         }
     </style>
 </head>
@@ -158,15 +368,21 @@
             <a href="about.html" class="nav-link">📖 关于</a>
         </div>
 
-        <!-- 统计信息（JS 动态填充） -->
-        <div class="resource-stats" id="stats"></div>
+        <!-- 左右布局 -->
+        <div class="rp-layout">
+            <!-- 左侧：分类目录树 -->
+            <div class="rp-sidebar">
+                <div class="rp-sidebar-title">📂 分类</div>
+                <div id="categoryList">
+                    <!-- JS 动态生成 -->
+                </div>
+            </div>
 
-        <!-- 内容容器 -->
-        <div id="resourceContainer">
-            <div class="status-msg" id="statusMsg">
-                <span class="loading-spinner">⟳</span>
-                <br><br>
-                正在加载资源...
+            <!-- 右侧：资源列表 -->
+            <div class="rp-content">
+                <div id="resourceArea">
+                    <!-- JS 动态生成 -->
+                </div>
             </div>
         </div>
 
@@ -175,155 +391,377 @@
         </div>
     </div>
 
+    <!-- ============================================================
+         跳转确认弹窗（HTML 骨架）
+         ============================================================ -->
+    <div class="rp-overlay" id="modalOverlay">
+        <div class="rp-modal">
+            <div class="modal-icon" id="modalIcon">🔗</div>
+            <div class="modal-title" id="modalTitle">资源名</div>
+            <div class="modal-sub" id="modalDesc">资源描述</div>
+            <div class="modal-warning" id="modalWarning">
+                ⚠️ 即将跳转到 <strong id="modalTypeLabel">GitHub</strong> 页面，请确认安全。
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="modalCancel">取消</button>
+                <button class="btn-confirm" id="modalConfirm">
+                    确认跳转
+                    <span class="countdown-ring" id="countdownRing">3</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         (function() {
-            const container = document.getElementById('resourceContainer');
-            const statsEl = document.getElementById('stats');
+            'use strict';
 
-            // ---------- 解析 category.txt ----------
+            // ---------- DOM 引用 ----------
+            const categoryListEl = document.getElementById('categoryList');
+            const resourceAreaEl = document.getElementById('resourceArea');
+            const overlay = document.getElementById('modalOverlay');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalDesc = document.getElementById('modalDesc');
+            const modalIcon = document.getElementById('modalIcon');
+            const modalTypeLabel = document.getElementById('modalTypeLabel');
+            const modalWarning = document.getElementById('modalWarning');
+            const btnCancel = document.getElementById('modalCancel');
+            const btnConfirm = document.getElementById('modalConfirm');
+            const countdownRing = document.getElementById('countdownRing');
+
+            // ---------- 状态 ----------
+            let allCategories = [];            // 解析后的全量数据
+            let currentCategory = null;        // 当前选中的分类名
+            let pendingLink = null;            // 待跳转的 URL
+            let countdownTimer = null;         // 倒计时句柄
+            let countdownValue = 3;
+
+            // ---------- 解析 category.txt（扩展格式） ----------
             function parseCategoryTxt(text) {
                 const lines = text.split('\n');
                 const categories = [];
-                let currentCategory = null;
+                let current = null;
 
-                for (let rawLine of lines) {
-                    let line = rawLine.trim();
+                for (let raw of lines) {
+                    let line = raw.trim();
                     if (!line) continue;
 
                     // 分类标题：## 分类名
                     if (line.startsWith('##')) {
                         const name = line.replace(/^##\s*/, '').trim();
-                        currentCategory = { name, items: [] };
-                        categories.push(currentCategory);
+                        current = { name, items: [] };
+                        categories.push(current);
                         continue;
                     }
 
-                    // 资源项：- 名称 | 描述 | 链接
-                    if (line.startsWith('- ') && currentCategory) {
+                    // 资源条目：- 名称 | 描述 | 链接 | 类型
+                    if (line.startsWith('- ') && current) {
                         const content = line.replace(/^-\s*/, '').trim();
                         const parts = content.split('|').map(s => s.trim());
 
-                        let item = { name: '', desc: '', link: '' };
-                        if (parts.length >= 3) {
-                            item.name = parts[0];
-                            item.desc = parts[1];
-                            item.link = parts[2];
+                        // 默认值
+                        let item = { name: '', desc: '', link: '', type: 'other' };
+
+                        if (parts.length >= 4) {
+                            item.name = parts[0] || '';
+                            item.desc = parts[1] || '';
+                            item.link = parts[2] || '';
+                            item.type = parts[3] || 'other';
+                        } else if (parts.length === 3) {
+                            item.name = parts[0] || '';
+                            item.desc = parts[1] || '';
+                            item.link = parts[2] || '';
+                            item.type = detectType(item.link);
                         } else if (parts.length === 2) {
-                            item.name = parts[0];
+                            item.name = parts[0] || '';
                             item.desc = '';
-                            item.link = parts[1];
+                            item.link = parts[1] || '';
+                            item.type = detectType(item.link);
                         } else if (parts.length === 1) {
-                            item.name = parts[0];
+                            item.name = parts[0] || '';
                             item.desc = '';
                             item.link = '';
+                            item.type = 'placeholder';
                         }
 
+                        // 若链接为空，标记为 placeholder
+                        if (!item.link) item.type = 'placeholder';
+
                         if (item.name) {
-                            currentCategory.items.push(item);
+                            current.items.push(item);
                         }
                     }
                 }
-
                 return categories;
             }
 
-            // ---------- 渲染资源 ----------
-            function renderCategories(categories) {
+            // 根据链接自动推断类型
+            function detectType(link) {
+                if (!link) return 'placeholder';
+                const l = link.toLowerCase();
+                if (l.includes('github.com')) return 'github';
+                if (l.includes('pan.baidu.com') || l.includes('yunpan') || l.includes('netdisk') || l.includes('网盘')) return 'pan';
+                if (l.startsWith('/') || l.startsWith('./') || l.startsWith('../')) return 'local';
+                return 'other';
+            }
+
+            // 获取类型显示名
+            function getTypeLabel(type) {
+                const map = {
+                    'github': 'GitHub',
+                    'pan': '网盘',
+                    'local': '站内',
+                    'other': '外部',
+                    'placeholder': '占位'
+                };
+                return map[type] || '外部';
+            }
+
+            // 获取类型图标
+            function getTypeIcon(type) {
+                const map = {
+                    'github': '🐙',
+                    'pan': '☁️',
+                    'local': '📁',
+                    'other': '🔗',
+                    'placeholder': '⏳'
+                };
+                return map[type] || '🔗';
+            }
+
+            // ---------- 渲染左侧分类目录 ----------
+            function renderSidebar(categories, activeName) {
                 if (!categories || categories.length === 0) {
-                    container.innerHTML = `
-                        <div class="status-msg">
-                            📭 暂无资源<br>
-                            <span style="font-size:0.85rem;opacity:0.5;">请检查 category.txt 是否配置正确</span>
-                        </div>
-                    `;
-                    statsEl.textContent = '共 0 个分类';
+                    categoryListEl.innerHTML = `<div style="opacity:0.3;font-size:0.85rem;">暂无分类</div>`;
                     return;
                 }
 
-                let totalItems = 0;
                 let html = '';
-
                 for (const cat of categories) {
-                    totalItems += cat.items.length;
-                    html += `<div class="category-card">`;
-                    html += `<div class="category-title">${cat.name}</div>`;
-
-                    if (cat.items.length === 0) {
-                        html += `<div style="opacity:0.4;font-size:0.9rem;padding:0.3rem 0;">（空分类）</div>`;
-                    } else {
-                        for (const item of cat.items) {
-                            html += `<div class="resource-item">`;
-                            html += `<span class="resource-name">`;
-                            if (item.link) {
-                                html += `<a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.name}</a>`;
-                            } else {
-                                html += item.name;
-                            }
-                            html += `</span>`;
-                            if (item.desc) {
-                                html += `<span class="resource-desc">${item.desc}</span>`;
-                            }
-                            html += `</div>`;
-                        }
-                    }
-
-                    html += `</div>`;
+                    const count = cat.items.filter(it => it.type !== 'placeholder').length;
+                    const activeClass = (cat.name === activeName) ? 'active' : '';
+                    html += `
+                        <button class="rp-category-item ${activeClass}" data-category="${cat.name}">
+                            ${cat.name}
+                            <span class="badge">${count}</span>
+                        </button>
+                    `;
                 }
+                categoryListEl.innerHTML = html;
 
-                container.innerHTML = html;
-                statsEl.textContent = `共 ${categories.length} 个分类 · ${totalItems} 个资源`;
+                // 绑定点击事件
+                document.querySelectorAll('.rp-category-item').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const name = this.dataset.category;
+                        // 更新激活状态
+                        document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        // 切换分类
+                        switchCategory(name);
+                    });
+                });
             }
 
-            // ---------- 显示状态 ----------
-            function showStatus(icon, msg, isRetry = false) {
-                container.innerHTML = `
-                    <div class="status-msg">
-                        ${icon}<br><br>
-                        ${msg}
-                        ${isRetry ? `<br><button class="retry-btn" id="retryBtn">🔄 重试</button>` : ''}
+            // ---------- 渲染右侧资源列表 ----------
+            function renderResources(category) {
+                if (!category) {
+                    resourceAreaEl.innerHTML = `<div class="rp-empty">请从左侧选择一个分类</div>`;
+                    return;
+                }
+
+                const items = category.items || [];
+                if (items.length === 0) {
+                    resourceAreaEl.innerHTML = `
+                        <div class="rp-content-header">
+                            <span class="cat-name">${category.name}</span>
+                            <span class="cat-count">0 个资源</span>
+                        </div>
+                        <div class="rp-empty">这个分类暂时是空的</div>
+                    `;
+                    return;
+                }
+
+                const activeCount = items.filter(it => it.type !== 'placeholder').length;
+                let html = `
+                    <div class="rp-content-header">
+                        <span class="cat-name">${category.name}</span>
+                        <span class="cat-count">${activeCount} 个资源</span>
                     </div>
                 `;
-                if (isRetry) {
-                    document.getElementById('retryBtn').addEventListener('click', fetchResources);
+
+                for (const item of items) {
+                    const typeClass = 'type-' + item.type;
+                    const typeLabel = getTypeLabel(item.type);
+                    const icon = getTypeIcon(item.type);
+
+                    // 判断是否有链接
+                    const hasLink = item.link && item.type !== 'placeholder';
+                    const linkAttr = hasLink ? `data-link="${item.link}" data-type="${item.type}"` : '';
+
+                    // 名称部分：有链接则显示为 a 标签（但点击走弹窗），无链接则显示占位文字
+                    const nameHtml = hasLink
+                        ? `<a href="#" class="rp-resource-link" ${linkAttr}>${item.name}</a>`
+                        : `<span class="name placeholder">${item.name}（即将上线）</span>`;
+
+                    html += `
+                        <div class="rp-resource-item ${typeClass}">
+                            <span class="arrow">${icon}</span>
+                            <span class="name">${nameHtml}</span>
+                            ${item.desc ? `<span class="desc">${item.desc}</span>` : ''}
+                            <span class="type-tag">${typeLabel}</span>
+                        </div>
+                    `;
                 }
-                statsEl.textContent = '';
+
+                resourceAreaEl.innerHTML = html;
+
+                // 绑定资源链接点击事件（弹窗）
+                document.querySelectorAll('.rp-resource-link').forEach(a => {
+                    a.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const link = this.dataset.link;
+                        const type = this.dataset.type || 'other';
+                        const name = this.textContent.trim();
+                        // 查找同行的描述
+                        const parent = this.closest('.rp-resource-item');
+                        const descEl = parent ? parent.querySelector('.desc') : null;
+                        const desc = descEl ? descEl.textContent.trim() : '';
+                        openModal(name, desc, link, type);
+                    });
+                });
             }
 
-            // ---------- 主动拉取 ----------
-            function fetchResources() {
-                // 显示加载状态
-                container.innerHTML = `
-                    <div class="status-msg">
-                        <span class="loading-spinner">⟳</span>
-                        <br><br>
-                        正在加载资源...
-                    </div>
-                `;
-                statsEl.textContent = '';
+            // ---------- 切换分类 ----------
+            function switchCategory(name) {
+                const cat = allCategories.find(c => c.name === name);
+                if (!cat) return;
+                currentCategory = cat;
+                renderResources(cat);
+            }
 
+            // ---------- 加载数据 ----------
+            function loadData() {
                 fetch('category.txt')
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP ${response.status}`);
-                        }
-                        return response.text();
+                    .then(res => {
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        return res.text();
                     })
                     .then(text => {
-                        if (!text || text.trim() === '') {
-                            showStatus('📭', 'category.txt 为空，请添加内容');
+                        if (!text.trim()) {
+                            allCategories = [];
+                            renderSidebar([], null);
+                            resourceAreaEl.innerHTML = `<div class="rp-empty">📭 category.txt 为空</div>`;
                             return;
                         }
-                        const categories = parseCategoryTxt(text);
-                        renderCategories(categories);
+                        allCategories = parseCategoryTxt(text);
+                        // 默认选中第一个有资源的分类
+                        let first = allCategories.find(c => c.items.length > 0);
+                        if (!first && allCategories.length > 0) first = allCategories[0];
+                        renderSidebar(allCategories, first ? first.name : null);
+                        if (first) {
+                            currentCategory = first;
+                            renderResources(first);
+                        } else {
+                            resourceAreaEl.innerHTML = `<div class="rp-empty">暂无可用资源</div>`;
+                        }
                     })
                     .catch(err => {
                         console.warn('加载 category.txt 失败:', err);
-                        showStatus('❌', '加载失败，请检查网络或 category.txt 是否存在', true);
+                        resourceAreaEl.innerHTML = `
+                            <div class="rp-empty">
+                                ❌ 加载失败<br>
+                                <button class="btn btn-secondary" style="margin-top:1rem;" onclick="location.reload()">
+                                    🔄 重试
+                                </button>
+                            </div>
+                        `;
                     });
             }
 
-            // ---------- 页面加载时自动拉取 ----------
-            fetchResources();
+            // ============================================================
+            //  弹窗逻辑
+            // ============================================================
+            function openModal(name, desc, link, type) {
+                if (!link) return;
+
+                pendingLink = link;
+                const typeLabel = getTypeLabel(type);
+                const icon = getTypeIcon(type);
+
+                modalTitle.textContent = name;
+                modalDesc.textContent = desc || '没有更多描述';
+                modalIcon.textContent = icon;
+                modalTypeLabel.textContent = typeLabel;
+                modalWarning.innerHTML = `⚠️ 即将跳转到 <strong>${typeLabel}</strong> 页面，请确认安全。`;
+
+                // 重置确认按钮状态
+                btnConfirm.classList.remove('ready');
+                btnConfirm.disabled = true;
+                countdownValue = 3;
+                countdownRing.textContent = '3';
+
+                // 显示弹窗
+                overlay.classList.add('active');
+                document.body.classList.add('modal-open');
+
+                // 清除旧计时器
+                if (countdownTimer) clearInterval(countdownTimer);
+
+                // 启动倒计时
+                countdownTimer = setInterval(function() {
+                    countdownValue -= 1;
+                    countdownRing.textContent = countdownValue;
+                    if (countdownValue <= 0) {
+                        clearInterval(countdownTimer);
+                        countdownTimer = null;
+                        btnConfirm.classList.add('ready');
+                        btnConfirm.disabled = false;
+                        countdownRing.textContent = '✓';
+                    }
+                }, 1000);
+            }
+
+            function closeModal() {
+                overlay.classList.remove('active');
+                document.body.classList.remove('modal-open');
+                if (countdownTimer) {
+                    clearInterval(countdownTimer);
+                    countdownTimer = null;
+                }
+                pendingLink = null;
+                // 重置按钮状态
+                btnConfirm.classList.remove('ready');
+                btnConfirm.disabled = true;
+                countdownRing.textContent = '3';
+            }
+
+            function confirmJump() {
+                if (!pendingLink) return;
+                if (btnConfirm.disabled) return; // 倒计时未结束不可点击
+                // 执行跳转
+                window.open(pendingLink, '_blank', 'noopener,noreferrer');
+                closeModal();
+            }
+
+            // ---------- 绑定弹窗事件 ----------
+            btnCancel.addEventListener('click', closeModal);
+            btnConfirm.addEventListener('click', confirmJump);
+
+            // 点击蒙层关闭（但不误触内部）
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) closeModal();
+            });
+
+            // ESC 键关闭
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && overlay.classList.contains('active')) {
+                    closeModal();
+                }
+            });
+
+            // ---------- 启动 ----------
+            loadData();
+
         })();
     </script>
 </body>

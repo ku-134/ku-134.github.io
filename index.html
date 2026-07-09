@@ -18,16 +18,13 @@
             justify-content: center;
             align-items: center;
             font-family: 'Segoe UI', 'PingFang SC', Roboto, system-ui, -apple-system, sans-serif;
-            /* 背景图片：居中，cover 裁剪（横屏显示完整，竖屏显示中间） */
             background: url('background.webp') no-repeat center center / cover;
-            /* 固定背景，防止滚动时拉伸 */
             background-attachment: fixed;
-            /* 当图片加载失败时的后备色（深绿） */
             background-color: #1a2e1a;
             padding: 20px;
         }
 
-        /* ---------- UI 卡片（覆盖在背景之上） ---------- */
+        /* ---------- UI 卡片 ---------- */
         .card {
             max-width: 720px;
             width: 100%;
@@ -39,6 +36,12 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.15);
             transition: background 0.3s, color 0.3s, border-color 0.3s;
+            animation: fadeUp 0.8s ease-out both;
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(24px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         /* ---------- 亮色模式（白绿） ---------- */
@@ -49,18 +52,10 @@
                 border-color: rgba(80, 160, 80, 0.25);
                 box-shadow: 0 20px 60px rgba(0, 40, 0, 0.15);
             }
-            .card h1 {
-                color: #1a4f1a;
-            }
-            .card .sub {
-                color: #2d5e2d;
-            }
-            .card .divider {
-                background: rgba(60, 140, 60, 0.2);
-            }
-            .card .footer {
-                color: #3d6b3d;
-            }
+            .card h1 { color: #1a4f1a; }
+            .card .sub { color: #2d5e2d; }
+            .card .divider { background: rgba(60, 140, 60, 0.2); }
+            .card .footer { color: #3d6b3d; }
         }
 
         /* ---------- 深色模式（黑与深绿） ---------- */
@@ -71,18 +66,10 @@
                 border-color: rgba(60, 140, 60, 0.3);
                 box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
             }
-            .card h1 {
-                color: #a5d6a7;
-            }
-            .card .sub {
-                color: #81c784;
-            }
-            .card .divider {
-                background: rgba(100, 200, 100, 0.15);
-            }
-            .card .footer {
-                color: #6f9e76;
-            }
+            .card h1 { color: #a5d6a7; }
+            .card .sub { color: #81c784; }
+            .card .divider { background: rgba(100, 200, 100, 0.15); }
+            .card .footer { color: #6f9e76; }
         }
 
         /* ---------- 卡片内部元素 ---------- */
@@ -93,21 +80,18 @@
             margin-bottom: 0.4rem;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
-
         .card .sub {
             font-size: 1.1rem;
             font-weight: 400;
             opacity: 0.9;
             margin-bottom: 1.2rem;
         }
-
         .card .divider {
             width: 80px;
             height: 3px;
             border-radius: 4px;
             margin: 0.8rem auto 1.2rem;
         }
-
         .card .desc {
             font-size: 1rem;
             line-height: 1.7;
@@ -116,13 +100,115 @@
             opacity: 0.85;
         }
 
+        /* ---------- 导航菜单（保留） ---------- */
+        .nav-menu {
+            display: flex;
+            justify-content: center;
+            gap: 1.8rem;
+            margin: 0.8rem 0 0.2rem 0;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            padding: 0.3rem 0.2rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.25s ease;
+            color: inherit;
+            opacity: 0.75;
+        }
+        .nav-link:hover {
+            opacity: 1;
+            border-bottom-color: currentColor;
+            transform: translateY(-1px);
+        }
+        .nav-link.active {
+            opacity: 1;
+            border-bottom-color: currentColor;
+            font-weight: 600;
+        }
+
+        /* ---------- 🆕 按钮组 ---------- */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.2rem;
+            margin: 1.5rem 0 1.8rem 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 3rem;
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        /* 大按钮：我的资源 */
+        .btn-primary {
+            font-size: 1.25rem;
+            padding: 0.75rem 2.4rem;
+            background: #1b5e20;
+            border-color: #1b5e20;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(27, 94, 32, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(27, 94, 32, 0.4);
+            background: #2e7d32;
+            border-color: #2e7d32;
+        }
+        /* 小按钮：交朋友 */
+        .btn-secondary {
+            font-size: 0.95rem;
+            padding: 0.5rem 1.6rem;
+            background: transparent;
+            border-color: currentColor;
+            color: inherit;
+            opacity: 0.8;
+        }
+        .btn-secondary:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+            background: currentColor;
+            color: #fff; /* 深色模式下hover文字颜色需适配，我们单独处理 */
+        }
+
+        /* 深色模式下按钮的 hover 文字颜色修正 */
+        @media (prefers-color-scheme: dark) {
+            .btn-primary {
+                background: #66bb6a;
+                border-color: #66bb6a;
+                color: #1a2e1a;
+                box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+            }
+            .btn-primary:hover {
+                background: #81c784;
+                border-color: #81c784;
+                color: #1a2e1a;
+                box-shadow: 0 8px 24px rgba(102, 187, 106, 0.4);
+            }
+            .btn-secondary:hover {
+                background: #66bb6a;
+                border-color: #66bb6a;
+                color: #1a2e1a;
+            }
+        }
+
+        /* ---------- 页脚 ---------- */
         .card .footer {
             font-size: 0.85rem;
             letter-spacing: 0.5px;
             opacity: 0.7;
+            margin-top: 0.5rem;
         }
 
-        /* ---------- 响应式：手机屏幕优化 ---------- */
+        /* ---------- 响应式 ---------- */
         @media (max-width: 480px) {
             .card {
                 padding: 2rem 1.5rem;
@@ -130,34 +216,16 @@
                 backdrop-filter: blur(8px) saturate(160%);
                 -webkit-backdrop-filter: blur(8px) saturate(160%);
             }
-            .card h1 {
-                font-size: 2rem;
-            }
-            .card .sub {
-                font-size: 1rem;
-            }
-            .card .desc {
-                font-size: 0.95rem;
-            }
+            .card h1 { font-size: 2rem; }
+            .card .sub { font-size: 1rem; }
+            .card .desc { font-size: 0.95rem; }
+            .btn-primary { font-size: 1.05rem; padding: 0.6rem 1.8rem; }
+            .btn-secondary { font-size: 0.85rem; padding: 0.4rem 1.2rem; }
+            .button-group { gap: 0.8rem; }
         }
-
-        /* 极窄屏幕（<360px）进一步缩小 */
         @media (max-width: 359px) {
-            .card h1 {
-                font-size: 1.6rem;
-            }
-            .card {
-                padding: 1.5rem 1rem;
-            }
-        }
-
-        /* ---------- 可选：优雅的加载过渡 ---------- */
-        .card {
-            animation: fadeUp 0.8s ease-out both;
-        }
-        @keyframes fadeUp {
-            0% { opacity: 0; transform: translateY(24px) scale(0.96); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+            .card h1 { font-size: 1.6rem; }
+            .card { padding: 1.5rem 1rem; }
         }
     </style>
 </head>
@@ -166,10 +234,25 @@
         <h1>🌿 虚空终端</h1>
         <div class="sub">— Kukuz 分享页 —</div>
         <div class="divider"></div>
+
+        <!-- 导航菜单（保留） -->
+        <div class="nav-menu">
+            <a href="index.html" class="nav-link active">🏠 首页</a>
+            <a href="about.html" class="nav-link">📄 关于</a>
+            <a href="https://github.com/ku-134" target="_blank" class="nav-link">🐙 GitHub</a>
+        </div>
+
         <p class="desc">
             万物虚寂，终有回响。<br>
             在这里，分享灵感、技术与我眼中的世界。
         </p>
+
+        <!-- 🆕 按钮区域 -->
+        <div class="button-group">
+            <a href="#" class="btn btn-primary">📦 我的资源</a>
+            <a href="contact.html" class="btn btn-secondary">🤝 交朋友</a>
+        </div>
+
         <div class="footer">✦ 随时更新 · 欢迎来访 ✦</div>
     </div>
 </body>

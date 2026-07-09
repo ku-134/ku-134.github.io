@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资源分类 · Kukuz</title>
+    <link rel="preload" as="image" href="background.webp">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ---------- RP 页面专用样式 ---------- */
+        .resource-stats {
+            text-align: center;
+            font-size: 0.95rem;
+            opacity: 0.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .category-card {
+            background: inherit;
+            border-radius: 1.2rem;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 1.2rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            transition: border-color 0.3s;
+        }
+        .category-card:hover {
+            border-color: rgba(255, 255, 255, 0.18);
+        }
+
+        .category-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px dashed rgba(128, 128, 128, 0.15);
+        }
+
+        .resource-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.06);
+        }
+        .resource-item:last-child {
+            border-bottom: none;
+        }
+
+        .resource-name {
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-right: 0.8rem;
+            flex-shrink: 0;
+        }
+        .resource-name a {
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s, opacity 0.2s;
+        }
+        .resource-name a:hover {
+            border-bottom-color: currentColor;
+            opacity: 0.8;
+        }
+
+        .resource-desc {
+            font-size: 0.9rem;
+            opacity: 0.65;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* 加载 / 错误 / 空状态 */
+        .status-msg {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            font-size: 1.1rem;
+            opacity: 0.7;
+        }
+        .status-msg .retry-btn {
+            margin-top: 1rem;
+            padding: 0.5rem 2rem;
+            border-radius: 2rem;
+            border: 2px solid currentColor;
+            background: transparent;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            color: inherit;
+            opacity: 0.7;
+        }
+        .status-msg .retry-btn:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+
+        .status-msg .loading-spinner {
+            display: inline-block;
+            animation: spin 1.2s linear infinite;
+            font-size: 2rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 亮色模式适配 */
+        @media (prefers-color-scheme: light) {
+            .category-card {
+                border-color: rgba(60, 140, 60, 0.10);
+                background: rgba(255, 255, 255, 0.25);
+            }
+            .category-card:hover {
+                border-color: rgba(60, 140, 60, 0.25);
+            }
+            .category-title { color: #1a4f1a; }
+            .resource-name a { color: #1a4f1a; }
+        }
+
+        /* 深色模式适配 */
+        @media (prefers-color-scheme: dark) {
+            .category-card {
+                border-color: rgba(100, 200, 100, 0.06);
+                background: rgba(255, 255, 255, 0.03);
+            }
+            .category-card:hover {
+                border-color: rgba(100, 200, 100, 0.18);
+            }
+            .category-title { color: #a5d6a7; }
+            .resource-name a { color: #a5d6a7; }
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .category-card { padding: 1rem 1rem; }
+            .category-title { font-size: 1.1rem; }
+            .resource-name { font-size: 0.95rem; margin-right: 0.4rem; }
+            .resource-desc { font-size: 0.82rem; min-width: 80px; }
+            .resource-item { padding: 0.4rem 0; }
+        }
+        @media (max-width: 400px) {
+            .resource-item { flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+            .resource-name { margin-right: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>📦 资源分类</h1>
+        <div class="sub">— 我整理的一些好东西 —</div>
+        <div class="divider"></div>
+
+        <!-- 导航栏 -->
+        <div class="nav-menu">
+            <a href="index.html" class="nav-link">🏠 首页</a>
+            <a href="about.html" class="nav-link">📖 关于</a>
+        </div>
+
+        <!-- 统计信息（JS 动态填充） -->
+        <div class="resource-stats" id="stats"></div>
+
+        <!-- 内容容器 -->
+        <div id="resourceContainer">
+            <div class="status-msg" id="statusMsg">
+                <span class="loading-spinner">⟳</span>
+                <br><br>
+                正在加载资源...
+            </div>
+        </div>
+
+        <div class="footer">
+            📂 资源持续更新中 · 欢迎收藏
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const container = document.getElementById('resourceContainer');
+            const statsEl = document.getElementById('stats');
+
+            // ---------- 解析 category.txt ----------
+            function parseCategoryTxt(text) {
+                const lines = text.split('\n');
+                const categories = [];
+                let currentCategory = null;
+
+                for (let rawLine of lines) {
+                    let line = rawLine.trim();
+                    if (!line) continue;
+
+                    // 分类标题：## 分类名
+                    if (line.startsWith('##')) {
+                        const name = line.replace(/^##\s*/, '').trim();
+                        currentCategory = { name, items: [] };
+                        categories.push(currentCategory);
+                        continue;
+                    }
+
+                    // 资源项：- 名称 | 描述 | 链接
+                    if (line.startsWith('- ') && currentCategory) {
+                        const content = line.replace(/^-\s*/, '').trim();
+                        const parts = content.split('|').map(s => s.trim());
+
+                        let item = { name: '', desc: '', link: '' };
+                        if (parts.length >= 3) {
+                            item.name = parts[0];
+                            item.desc = parts[1];
+                            item.link = parts[2];
+                        } else if (parts.length === 2) {
+                            item.name = parts[0];
+                            item.desc = '';
+                            item.link = parts[1];
+                        } else if (parts.length === 1) {
+                            item.name = parts[0];
+                            item.desc = '';
+                            item.link = '';
+                        }
+
+                        if (item.name) {
+                            currentCategory.items.push(item);
+                        }
+                    }
+                }
+
+                return categories;
+            }
+
+            // ---------- 渲染资源 ----------
+            function renderCategories(categories) {
+                if (!categories || categories.length === 0) {
+                    container.innerHTML = `
+                        <div class="status-msg">
+                            📭 暂无资源<br>
+                            <span style="font-size:0.85rem;opacity:0.5;">请检查 category.txt 是否配置正确</span>
+                        </div>
+                    `;
+                    statsEl.textContent = '共 0 个分类';
+                    return;
+                }
+
+                let totalItems = 0;
+                let html = '';
+
+                for (const cat of categories) {
+                    totalItems += cat.items.length;
+                    html += `<div class="category-card">`;
+                    html += `<div class="category-title">${cat.name}</div>`;
+
+                    if (cat.items.length === 0) {
+                        html += `<div style="opacity:0.4;font-size:0.9rem;padding:0.3rem 0;">（空分类）</div>`;
+                    } else {
+                        for (const item of cat.items) {
+                            html += `<div class="resource-item">`;
+                            html += `<span class="resource-name">`;
+                            if (item.link) {
+                                html += `<a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.name}</a>`;
+                            } else {
+                                html += item.name;
+                            }
+                            html += `</span>`;
+                            if (item.desc) {
+                                html += `<span class="resource-desc">${item.desc}</span>`;
+                            }
+                            html += `</div>`;
+                        }
+                    }
+
+                    html += `</div>`;
+                }
+
+                container.innerHTML = html;
+                statsEl.textContent = `共 ${categories.length} 个分类 · ${totalItems} 个资源`;
+            }
+
+            // ---------- 显示状态 ----------
+            function showStatus(icon, msg, isRetry = false) {
+                container.innerHTML = `
+                    <div class="status-msg">
+                        ${icon}<br><br>
+                        ${msg}
+                        ${isRetry ? `<br><button class="retry-btn" id="retryBtn">🔄 重试</button>` : ''}
+                    </div>
+                `;
+                if (isRetry) {
+                    document.getElementById('retryBtn').addEventListener('click', fetchResources);
+                }
+                statsEl.textContent = '';
+            }
+
+            // ---------- 主动拉取 ----------
+            function fetchResources() {
+                // 显示加载状态
+                container.innerHTML = `
+                    <div class="status-msg">
+                        <span class="loading-spinner">⟳</span>
+                        <br><br>
+                        正在加载资源...
+                    </div>
+                `;
+                statsEl.textContent = '';
+
+                fetch('category.txt')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                        return response.text();
+                    })
+                    .then(text => {
+                        if (!text || text.trim() === '') {
+                            showStatus('📭', 'category.txt 为空，请添加内容');
+                            return;
+                        }
+                        const categories = parseCategoryTxt(text);
+                        renderCategories(categories);
+                    })
+                    .catch(err => {
+                        console.warn('加载 category.txt 失败:', err);
+                        showStatus('❌', '加载失败，请检查网络或 category.txt 是否存在', true);
+                    });
+            }
+
+            // ---------- 页面加载时自动拉取 ----------
+            fetchResources();
+        })();
+    </script>
+</body>
+</html>

@@ -1,4 +1,4 @@
 ## 安卓工具（个人使用，不保证安全）
-- 用户调试权工具 | Shizuku | https://github.com/RikkaApps/Shizuku
-- 设备所有权工具 | Dhizuku | https://github.com/iamr0s/Dhizuku
-- 更多
+- 用户调试权工具 | Shizuku | https://github.com/RikkaApps/Shizuku | github
+- 设备所有权工具 | Dhizuku | https://github.com/iamr0s/Dhizuku | github
+- 更多 | 网盘内容，敬请期待 | | placeholder

@@ -1,22 +1,4 @@
-## 📁 编程学习
-- 前端入门 | 学习 HTML/CSS/JS 的基础知识 | https://developer.mozilla.org/zh-CN/
-- Vue.js 官方文档 | Vue.js 框架的完整指南 | https://vuejs.org/
-- React 官方文档 | React 框架的完整指南 | https://react.dev/
-- Python 基础教程 | 廖雪峰的 Python 教程 | https://www.liaoxuefeng.com/wiki/1016959663602400
-
-## 📚 免费书籍
-- 深入理解计算机系统 | 计算机系统经典教材 | https://www.csapp.cs.cmu.edu/
-- 算法导论 | 算法领域的经典著作 | https://mitpress.mit.edu/books/introduction-algorithms
-
-## 🛠️ 开发工具
-- VS Code | 轻量级强大的代码编辑器 | https://code.visualstudio.com/
-- Git | 版本控制系统 | https://git-scm.com/
-- Figma | 界面设计工具 | https://www.figma.com/
-
-## 🎮 游戏相关
-- 米游社 | 原神/星穹铁道社区 | https://www.miyoushe.com/
-- 原神 Wiki | 原神资料大全 | https://wiki.biligame.com/ys/
-
-## 📖 阅读推荐
-- 三体 | 刘慈欣科幻小说 | https://www.3body.com/
-- 百年孤独 | 马尔克斯经典之作 | https://www.example.com/100years
+## 安卓工具（个人使用，不保证安全）
+- 用户调试权工具 | Shizuku | https://github.com/RikkaApps/Shizuku
+- 设备所有权工具 | Dhizuku | https://github.com/iamr0s/Dhizuku
+- 更多

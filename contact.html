@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>联系方式 · Kukuz</title>
+    <style>
+        /* ---------- 全局重置 ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, system-ui, -apple-system, sans-serif;
+            /* 背景图片：与首页完全一致 */
+            background: url('background.webp') no-repeat center center / cover;
+            background-attachment: fixed;
+            background-color: #1a2e1a;
+            padding: 20px;
+        }
+
+        /* ---------- UI 卡片 ---------- */
+        .card {
+            max-width: 820px;
+            width: 100%;
+            padding: 2.8rem 2.8rem;
+            border-radius: 2rem;
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: background 0.3s, color 0.3s, border-color 0.3s;
+            animation: fadeUp 0.8s ease-out both;
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(24px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ---------- 亮色模式（白绿） ---------- */
+        @media (prefers-color-scheme: light) {
+            .card {
+                background: rgba(255, 255, 255, 0.68);
+                color: #1a3b1a;
+                border-color: rgba(80, 160, 80, 0.25);
+                box-shadow: 0 20px 60px rgba(0, 40, 0, 0.15);
+            }
+            .card h1 { color: #1a4f1a; }
+            .card .sub { color: #2d5e2d; }
+            .card .divider { background: rgba(60, 140, 60, 0.2); }
+            .contact-label { color: #2d5e2d; }
+            .contact-value a { color: #1a4f1a; }
+            .contact-value a:hover { color: #0d3b0d; }
+            .section-title { color: #1a4f1a; }
+        }
+
+        /* ---------- 深色模式（黑与深绿） ---------- */
+        @media (prefers-color-scheme: dark) {
+            .card {
+                background: rgba(10, 20, 10, 0.72);
+                color: #c8e6c9;
+                border-color: rgba(60, 140, 60, 0.3);
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            }
+            .card h1 { color: #a5d6a7; }
+            .card .sub { color: #81c784; }
+            .card .divider { background: rgba(100, 200, 100, 0.15); }
+            .contact-label { color: #81c784; }
+            .contact-value a { color: #a5d6a7; }
+            .contact-value a:hover { color: #c8e6c9; }
+            .section-title { color: #a5d6a7; }
+        }
+
+        /* ---------- 卡片头部 ---------- */
+        .card h1 {
+            font-size: 2.6rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.2rem;
+            text-align: center;
+        }
+        .card .sub {
+            font-size: 1.1rem;
+            font-weight: 400;
+            opacity: 0.9;
+            text-align: center;
+            margin-bottom: 0.2rem;
+        }
+        .card .divider {
+            width: 80px;
+            height: 3px;
+            border-radius: 4px;
+            margin: 0.8rem auto 1.8rem;
+        }
+
+        /* ---------- 导航菜单 ---------- */
+        .nav-menu {
+            display: flex;
+            justify-content: center;
+            gap: 1.8rem;
+            margin: 0.2rem 0 0.8rem 0;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            padding: 0.3rem 0.2rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.25s ease;
+            color: inherit;
+            opacity: 0.75;
+        }
+        .nav-link:hover {
+            opacity: 1;
+            border-bottom-color: currentColor;
+            transform: translateY(-1px);
+        }
+        .nav-link.active {
+            opacity: 1;
+            border-bottom-color: currentColor;
+            font-weight: 600;
+        }
+
+        /* ---------- 联系方式列表 ---------- */
+        .contact-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+            margin-top: 1rem;
+        }
+
+        .section {
+            /* 每个板块 */
+        }
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 2px dashed rgba(128, 128, 128, 0.2);
+        }
+
+        .contact-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.08);
+        }
+        .contact-item:last-child {
+            border-bottom: none;
+        }
+
+        .contact-label {
+            width: 100px;
+            font-weight: 500;
+            opacity: 0.8;
+            flex-shrink: 0;
+        }
+        .contact-value {
+            flex: 1;
+            word-break: break-all;
+        }
+        .contact-value a {
+            text-decoration: none;
+            border-bottom: 1px dotted transparent;
+            transition: border-color 0.2s;
+        }
+        .contact-value a:hover {
+            border-bottom-color: currentColor;
+        }
+        /* 无链接的普通文本 */
+        .contact-value .text-muted {
+            opacity: 0.6;
+        }
+
+        /* ---------- 响应式 ---------- */
+        @media (max-width: 600px) {
+            .card {
+                padding: 2rem 1.5rem;
+                border-radius: 1.5rem;
+            }
+            .card h1 { font-size: 2rem; }
+            .contact-label {
+                width: 80px;
+                font-size: 0.95rem;
+            }
+            .contact-value {
+                font-size: 0.95rem;
+            }
+            .nav-menu { gap: 1rem; }
+            .nav-link { font-size: 0.9rem; }
+        }
+
+        @media (max-width: 400px) {
+            .contact-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.1rem;
+                padding: 0.6rem 0;
+            }
+            .contact-label {
+                width: auto;
+                font-size: 0.9rem;
+            }
+            .contact-value {
+                font-size: 0.9rem;
+                padding-left: 0.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <!-- 标题 -->
+        <h1>📬 联系方式</h1>
+        <div class="sub">— 欢迎交流 —</div>
+        <div class="divider"></div>
+
+        <!-- 导航（包含返回首页） -->
+        <div class="nav-menu">
+            <a href="index.html" class="nav-link">🏠 返回首页</a>
+            <a href="#" class="nav-link active">📇 联系方式</a>
+        </div>
+
+        <!-- 联系方式内容 -->
+        <div class="contact-grid">
+
+            <!-- 交流板块 -->
+            <div class="section">
+                <div class="section-title">💬 交流</div>
+                <div class="contact-item">
+                    <span class="contact-label">GitHub</span>
+                    <span class="contact-value">
+                        <a href="https://github.com/ku-134" target="_blank">ku-134</a>
+                    </span>
+                </div>
+                <div class="contact-item">
+                    <span class="contact-label">邮箱</span>
+                    <span class="contact-value">
+                        <a href="mailto:f2010211@163.com">f2010211@163.com</a>
+                    </span>
+                </div>
+                <div class="contact-item">
+                    <span class="contact-label">QQ</span>
+                    <span class="contact-value">
+                        <a href="https://wpa.qq.com/msgrd?v=3&uin=3074341324&site=qq&menu=yes" target="_blank">3074341324</a>
+                    </span>
+                </div>
+                <div class="contact-item">
+                    <span class="contact-label">QQ群</span>
+                    <span class="contact-value"><span class="text-muted">暂无</span></span>
+                </div>
+                <div class="contact-item">
+                    <span class="contact-label">B站</span>
+                    <span class="contact-value">
+                        <a href="https://search.bilibili.com/all?keyword=KU_134" target="_blank">KU_134</a>
+                        <span style="font-size:0.8rem; opacity:0.5;">（搜索页）</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 游戏板块 -->
+            <div class="section">
+                <div class="section-title">🎮 游戏</div>
+                <div class="contact-item">
+                    <span class="contact-label">米游社</span>
+                    <span class="contact-value">
+                        <a href="https://www.miyoushe.com/" target="_blank">是苦苦子哟</a>
+                        <span style="font-size:0.8rem; opacity:0.5;">（UID: 330620838）</span>
+                    </span>
+                </div>
+                <div class="contact-item">
+                    <span class="contact-label">原神</span>
+                    <span class="contact-value">
+                        <a href="https://www.miyoushe.com/ys/" target="_blank">UID: 234744878</a>
+                        <span style="font-size:0.8rem; opacity:0.5;">（米游社原神板块）</span>
+                    </span>
+                </div>
+            </div>
+
+        </div> <!-- contact-grid end -->
+    </div> <!-- card end -->
+
+</body>
+</html>

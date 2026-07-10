@@ -8,8 +8,6 @@
     <link rel="stylesheet" href="style.css">
     <style>
         /* ===== 入场动画专属样式 ===== */
-
-        /* 加载层（代码特效） */
         #loader {
             position: fixed;
             inset: 0;
@@ -25,8 +23,6 @@
             opacity: 0;
             pointer-events: none;
         }
-
-        /* 每个代码块 */
         .code-block {
             position: absolute;
             font-family: 'Courier New', monospace;
@@ -43,19 +39,15 @@
             50% { opacity: 0.9; transform: translateY(0) scale(1); }
             100% { opacity: 0; transform: translateY(10px) scale(0.95); }
         }
-
-        /* 亮色模式变量 */
         @media (prefers-color-scheme: light) {
             #loader { --loader-bg: #f0f5f0; }
             .code-block { --code-color: #1b5e20; --code-glow: rgba(27, 94, 32, 0.2); }
         }
-        /* 深色模式变量 */
         @media (prefers-color-scheme: dark) {
             #loader { --loader-bg: #0d1a0d; }
             .code-block { --code-color: #66bb6a; --code-glow: rgba(102, 187, 106, 0.3); }
         }
 
-        /* 卡片入场动画（覆盖 style.css 中的初始状态） */
         .card {
             opacity: 0;
             transform: translateY(40px) scale(0.96);
@@ -66,18 +58,63 @@
             transform: translateY(0) scale(1);
         }
 
-        /* 响应式微调 */
+        /* ===== Toast 提示（非阻塞，自动消失） ===== */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            z-index: 2000;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 12px 28px;
+            border-radius: 2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            white-space: nowrap;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        #toast .highlight {
+            color: #a5d6a7;
+            font-weight: 700;
+        }
         @media (max-width: 480px) {
-            .code-block { font-size: 10px; }
+            #toast {
+                font-size: 0.85rem;
+                padding: 10px 18px;
+                white-space: normal;
+                max-width: 90%;
+                bottom: 20px;
+            }
+        }
+        @media (prefers-color-scheme: light) {
+            #toast {
+                background: rgba(255,255,255,0.9);
+                color: #1a3b1a;
+                border-color: rgba(0,0,0,0.05);
+            }
+            #toast .highlight { color: #1b5e20; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ===== 加载层（代码特效） ===== -->
+    <!-- 加载层 -->
     <div id="loader"></div>
 
-    <!-- ===== 主卡片 ===== -->
+    <!-- Toast 提示 -->
+    <div id="toast">💡 推荐使用 <span class="highlight">电脑横屏</span> 访问</div>
+
+    <!-- 主卡片 -->
     <div class="card card-narrow" id="mainCard">
         <h1 class="typing-title">🌿 虚空终端</h1>
         <div class="sub fade-in-up delay-2">— Kukuz 分享页 —</div>
@@ -123,7 +160,6 @@
                 'super', 'static', 'get', 'set', 'yield', 'generator'
             ];
 
-            // 生成 45 个代码块
             for (let i = 0; i < 45; i++) {
                 const span = document.createElement('span');
                 span.className = 'code-block';
@@ -143,47 +179,61 @@
                 loader.appendChild(span);
             }
 
-            // ---------- 2. 预加载背景图（修复背景不显示） ----------
+            // ---------- 2. 预加载背景图 ----------
             const bgImage = new Image();
-            // 从 CSS 中提取背景图 URL
             const computedStyle = getComputedStyle(document.body);
             const bgUrl = computedStyle.backgroundImage;
-            // 解析 url("...") 或 url(...)
             const match = bgUrl.match(/url\(["']?([^"')]+)["']?\)/);
             const imageUrl = match ? match[1] : 'background.webp';
 
-            // ---------- 3. 加载完成后的处理 ----------
             function onBackgroundLoaded() {
-                // 隐藏加载层
                 loader.classList.add('hide');
-
-                // 显示卡片
                 const card = document.getElementById('mainCard');
                 card.classList.add('show');
-
-                // 打字机由 script.js 自动触发（.typing-title 已存在）
             }
 
-            // 检查图片是否已缓存
             bgImage.src = imageUrl;
             if (bgImage.complete && bgImage.naturalWidth > 0) {
-                // 图片已缓存，直接显示
                 onBackgroundLoaded();
             } else {
-                // 监听加载
                 bgImage.addEventListener('load', onBackgroundLoaded);
                 bgImage.addEventListener('error', function() {
-                    // 加载失败也继续（使用纯色背景）
                     console.warn('背景图加载失败，使用备用颜色');
                     onBackgroundLoaded();
                 });
-                // 超时保护：5 秒后强制继续
                 setTimeout(() => {
                     if (!loader.classList.contains('hide')) {
                         onBackgroundLoaded();
                     }
                 }, 5000);
             }
+
+            // ---------- 3. 设备/竖屏检测 + Toast ----------
+            function showToast() {
+                const toast = document.getElementById('toast');
+                toast.classList.add('show');
+                // 4.5 秒后自动消失
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 4500);
+            }
+
+            function shouldShowToast() {
+                // 检测移动设备
+                const isMobile = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent);
+                // 检测竖屏
+                const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+                return isMobile || isPortrait;
+            }
+
+            // 页面完全加载后检测并显示
+            if (shouldShowToast()) {
+                // 延迟一下，等入场动画进行到一半时显示，更自然
+                setTimeout(showToast, 1200);
+            }
+
+            // 屏幕方向变化时重新检测（但只在初始加载时显示，避免反复弹出）
+            // 我们仅加载时检测一次
 
         })();
     </script>

@@ -7,19 +7,13 @@
     <link rel="preload" as="image" href="background.webp">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ============================================================
-           RP 页面专属样式（含弹窗样式）
-           ============================================================ */
-
-        /* ----- 布局容器（左右结构） ----- */
+        /* ===== RP 页面专属样式 ===== */
         .rp-layout {
             display: flex;
             gap: 1.5rem;
             margin-top: 0.5rem;
             min-height: 320px;
         }
-
-        /* ----- 左侧：分类目录树 ----- */
         .rp-sidebar {
             flex: 0 0 200px;
             border-right: 1px solid rgba(128, 128, 128, 0.12);
@@ -66,12 +60,10 @@
             opacity: 0.7;
         }
 
-        /* ----- 右侧：资源列表 ----- */
         .rp-content {
             flex: 1;
             min-width: 0;
         }
-
         .rp-content-header {
             display: flex;
             justify-content: space-between;
@@ -161,7 +153,6 @@
             font-size: 0.95rem;
         }
 
-        /* ----- 拉取分类大按钮 ----- */
         .rp-fetch-area {
             display: flex;
             flex-direction: column;
@@ -219,7 +210,6 @@
             opacity: 0.3;
         }
 
-        /* ---- 浅色模式微调 ---- */
         @media (prefers-color-scheme: light) {
             .rp-resource-item.type-github { border-left-color: #6e5494; }
             .rp-resource-item.type-pan    { border-left-color: #d48c1a; }
@@ -233,7 +223,6 @@
             .rp-fetch-btn { border-color: rgba(255,255,255,0.15); }
         }
 
-        /* ---- 响应式 ---- */
         @media (max-width: 600px) {
             .rp-layout { flex-direction: column; gap: 0.5rem; }
             .rp-sidebar {
@@ -269,9 +258,7 @@
             }
         }
 
-        /* ============================================================
-           跳转确认弹窗
-           ============================================================ */
+        /* ===== 跳转确认弹窗（原有） ===== */
         .rp-overlay {
             position: fixed;
             inset: 0;
@@ -405,14 +392,74 @@
         .rp-modal .btn-confirm.ready .countdown-ring {
             opacity: 0.3;
         }
-
         body.modal-open {
             overflow: hidden;
+        }
+
+        /* ===== 反馈链接样式 ===== */
+        .feedback-link {
+            display: block;
+            text-align: center;
+            margin-top: 1.2rem;
+            font-size: 0.85rem;
+            opacity: 0.5;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+            text-decoration: underline dotted;
+            text-underline-offset: 4px;
+        }
+        .feedback-link:hover {
+            opacity: 1;
+            transform: translateY(-1px);
+        }
+
+        /* ===== 反馈弹窗（复用 modal 样式，但单独控制） ===== */
+        #feedbackModal .modal-icon { font-size: 2.4rem; }
+        #feedbackModal .modal-title { font-size: 1.5rem; }
+        #feedbackModal .modal-sub {
+            font-size: 0.95rem;
+            opacity: 0.7;
+            line-height: 1.6;
+            text-align: left;
+            padding: 0 0.5rem;
+        }
+        #feedbackModal .modal-sub a {
+            color: inherit;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        #feedbackModal .modal-sub .highlight {
+            color: #f5a623;
+            font-weight: 700;
+        }
+        #feedbackModal .modal-actions .btn-confirm {
+            background: #4a90d9;
+            border-color: #4a90d9;
+            opacity: 1;
+            cursor: pointer;
+            color: #fff;
+        }
+        #feedbackModal .modal-actions .btn-confirm:hover {
+            background: #5a9ee9;
+            border-color: #5a9ee9;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(74, 144, 217, 0.3);
+        }
+        @media (prefers-color-scheme: dark) {
+            #feedbackModal .modal-actions .btn-confirm {
+                background: #66bb6a;
+                border-color: #66bb6a;
+                color: #1a2e1a;
+            }
+            #feedbackModal .modal-actions .btn-confirm:hover {
+                background: #81c784;
+                border-color: #81c784;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="card card-3d">
         <h1 class="typing-title">📦 资源分类</h1>
         <div class="sub fade-in-up delay-2">— 我整理的一些好东西 —</div>
         <div class="divider fade-in-up delay-3"></div>
@@ -445,12 +492,17 @@
             </div>
         </div>
 
+        <!-- 底部反馈链接 -->
+        <div class="feedback-link fade-in-up delay-7" id="feedbackTrigger">
+            💬 无法“拉取分类”或资源等存在问题？点击告知站主。
+        </div>
+
         <div class="footer fade-in-up delay-7">
             📂 资源持续更新中 · 欢迎收藏
         </div>
     </div>
 
-    <!-- 弹窗 -->
+    <!-- ===== 跳转确认弹窗（原有） ===== -->
     <div class="rp-overlay" id="modalOverlay">
         <div class="rp-modal">
             <div class="modal-icon" id="modalIcon">🔗</div>
@@ -469,10 +521,28 @@
         </div>
     </div>
 
+    <!-- ===== 反馈弹窗（独立） ===== -->
+    <div class="rp-overlay" id="feedbackOverlay">
+        <div class="rp-modal" id="feedbackModal">
+            <div class="modal-icon">📢</div>
+            <div class="modal-title">反馈问题</div>
+            <div class="modal-sub" style="text-align:left; line-height:1.8;">
+                <p>通过以下方式反馈：</p>
+                <p>1. 写邮件：<a href="mailto:3074341324@qq.com">3074341324@qq.com</a></p>
+                <p>2. 在B站私信/评论我：<a href="https://space.bilibili.com/搜索KU_134" target="_blank">KU_134</a> <span style="color:#f5a623; font-weight:700;">（推荐）</span></p>
+                <p style="opacity:0.6; font-size:0.85rem; margin-top:0.3rem;">提示：加QQ好友的话，大概通会不通过。所以推荐在B站评论。</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-confirm" id="feedbackConfirm" style="opacity:1; cursor:pointer;">确认</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         (function() {
             'use strict';
 
+            // ---------- 原有 RP 逻辑（保持不变） ----------
             const categoryListEl = document.getElementById('categoryList');
             const resourceAreaEl = document.getElementById('resourceArea');
             const statsEl = document.getElementById('stats');
@@ -498,24 +568,19 @@
                 const lines = text.split('\n');
                 const categories = [];
                 let current = null;
-
                 for (let raw of lines) {
                     let line = raw.trim();
                     if (!line) continue;
-
                     if (line.startsWith('##')) {
                         const name = line.replace(/^##\s*/, '').trim();
                         current = { name, items: [] };
                         categories.push(current);
                         continue;
                     }
-
                     if (line.startsWith('- ') && current) {
                         const content = line.replace(/^-\s*/, '').trim();
                         const parts = content.split('|').map(s => s.trim());
-
                         let item = { name: '', desc: '', link: '', type: 'other' };
-
                         if (parts.length >= 4) {
                             item.name = parts[0] || '';
                             item.desc = parts[1] || '';
@@ -537,7 +602,6 @@
                             item.link = '';
                             item.type = 'placeholder';
                         }
-
                         if (!item.link) item.type = 'placeholder';
                         if (item.name) {
                             current.items.push(item);
@@ -557,24 +621,12 @@
             }
 
             function getTypeLabel(type) {
-                const map = {
-                    'github': 'GitHub',
-                    'pan': '网盘',
-                    'local': '站内',
-                    'other': '外部',
-                    'placeholder': '占位'
-                };
+                const map = { 'github': 'GitHub', 'pan': '网盘', 'local': '站内', 'other': '外部', 'placeholder': '占位' };
                 return map[type] || '外部';
             }
 
             function getTypeIcon(type) {
-                const map = {
-                    'github': '🐙',
-                    'pan': '☁️',
-                    'local': '📁',
-                    'other': '🔗',
-                    'placeholder': '⏳'
-                };
+                const map = { 'github': '🐙', 'pan': '☁️', 'local': '📁', 'other': '🔗', 'placeholder': '⏳' };
                 return map[type] || '🔗';
             }
 
@@ -583,20 +635,13 @@
                     categoryListEl.innerHTML = `<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">暂无分类</div>`;
                     return;
                 }
-
                 let html = '';
                 for (const cat of categories) {
                     const count = cat.items.filter(it => it.type !== 'placeholder').length;
                     const activeClass = (cat.name === activeName) ? 'active' : '';
-                    html += `
-                        <button class="rp-category-item ${activeClass}" data-category="${cat.name}">
-                            ${cat.name}
-                            <span class="badge">${count}</span>
-                        </button>
-                    `;
+                    html += `<button class="rp-category-item ${activeClass}" data-category="${cat.name}">${cat.name}<span class="badge">${count}</span></button>`;
                 }
                 categoryListEl.innerHTML = html;
-
                 document.querySelectorAll('.rp-category-item').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const name = this.dataset.category;
@@ -612,51 +657,23 @@
                     resourceAreaEl.innerHTML = `<div class="rp-empty">请从左侧选择一个分类</div>`;
                     return;
                 }
-
                 const items = category.items || [];
                 if (items.length === 0) {
-                    resourceAreaEl.innerHTML = `
-                        <div class="rp-content-header">
-                            <span class="cat-name">${category.name}</span>
-                            <span class="cat-count">0 个资源</span>
-                        </div>
-                        <div class="rp-empty">这个分类暂时是空的</div>
-                    `;
+                    resourceAreaEl.innerHTML = `<div class="rp-content-header"><span class="cat-name">${category.name}</span><span class="cat-count">0 个资源</span></div><div class="rp-empty">这个分类暂时是空的</div>`;
                     return;
                 }
-
                 const activeCount = items.filter(it => it.type !== 'placeholder').length;
-                let html = `
-                    <div class="rp-content-header">
-                        <span class="cat-name">${category.name}</span>
-                        <span class="cat-count">${activeCount} 个资源</span>
-                    </div>
-                `;
-
+                let html = `<div class="rp-content-header"><span class="cat-name">${category.name}</span><span class="cat-count">${activeCount} 个资源</span></div>`;
                 for (const item of items) {
                     const typeClass = 'type-' + item.type;
                     const typeLabel = getTypeLabel(item.type);
                     const icon = getTypeIcon(item.type);
-
                     const hasLink = item.link && item.type !== 'placeholder';
                     const linkAttr = hasLink ? `data-link="${item.link}" data-type="${item.type}"` : '';
-
-                    const nameHtml = hasLink
-                        ? `<a href="#" class="rp-resource-link" ${linkAttr}>${item.name}</a>`
-                        : `<span class="name placeholder">${item.name}（即将上线）</span>`;
-
-                    html += `
-                        <div class="rp-resource-item ${typeClass}">
-                            <span class="arrow">${icon}</span>
-                            <span class="name">${nameHtml}</span>
-                            ${item.desc ? `<span class="desc">${item.desc}</span>` : ''}
-                            <span class="type-tag">${typeLabel}</span>
-                        </div>
-                    `;
+                    const nameHtml = hasLink ? `<a href="#" class="rp-resource-link" ${linkAttr}>${item.name}</a>` : `<span class="name placeholder">${item.name}（即将上线）</span>`;
+                    html += `<div class="rp-resource-item ${typeClass}"><span class="arrow">${icon}</span><span class="name">${nameHtml}</span>${item.desc ? `<span class="desc">${item.desc}</span>` : ''}<span class="type-tag">${typeLabel}</span></div>`;
                 }
-
                 resourceAreaEl.innerHTML = html;
-
                 document.querySelectorAll('.rp-resource-link').forEach(a => {
                     a.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -693,10 +710,8 @@
             function fetchAndRender() {
                 if (isLoading) return;
                 isLoading = true;
-
                 fetchBtn.classList.add('loading');
                 fetchBtn.innerHTML = `<span class="spinner">⟳</span> 加载中...`;
-
                 fetch('category.txt?t=' + Date.now())
                     .then(res => {
                         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -712,7 +727,6 @@
                         }
                         allCategories = parseCategoryTxt(text);
                         updateStats(allCategories);
-
                         let first = allCategories.find(c => c.items.length > 0);
                         if (!first && allCategories.length > 0) first = allCategories[0];
                         renderSidebar(allCategories, first ? first.name : null);
@@ -725,14 +739,7 @@
                     })
                     .catch(err => {
                         console.warn('加载 category.txt 失败:', err);
-                        resourceAreaEl.innerHTML = `
-                            <div class="rp-empty">
-                                ❌ 加载失败<br>
-                                <button class="btn btn-secondary" style="margin-top:1rem;" onclick="location.reload()">
-                                    🔄 重试
-                                </button>
-                            </div>
-                        `;
+                        resourceAreaEl.innerHTML = `<div class="rp-empty">❌ 加载失败<br><button class="btn btn-secondary" style="margin-top:1rem;" onclick="location.reload()">🔄 重试</button></div>`;
                         statsEl.textContent = '';
                     })
                     .finally(() => {
@@ -747,27 +754,21 @@
 
             function openModal(name, desc, link, type) {
                 if (!link) return;
-
                 pendingLink = link;
                 const typeLabel = getTypeLabel(type);
                 const icon = getTypeIcon(type);
-
                 modalTitle.textContent = name;
                 modalDesc.textContent = desc || '没有更多描述';
                 modalIcon.textContent = icon;
                 modalTypeLabel.textContent = typeLabel;
                 modalWarning.innerHTML = `⚠️ 即将跳转到 <strong>${typeLabel}</strong> 页面，请确认安全。`;
-
                 btnConfirm.classList.remove('ready');
                 btnConfirm.disabled = true;
                 countdownValue = 3;
                 countdownRing.textContent = '3';
-
                 overlay.classList.add('active');
                 document.body.classList.add('modal-open');
-
                 if (countdownTimer) clearInterval(countdownTimer);
-
                 countdownTimer = setInterval(function() {
                     countdownValue -= 1;
                     countdownRing.textContent = countdownValue;
@@ -804,14 +805,38 @@
             fetchBtn.addEventListener('click', fetchAndRender);
             btnCancel.addEventListener('click', closeModal);
             btnConfirm.addEventListener('click', confirmJump);
-
             overlay.addEventListener('click', function(e) {
                 if (e.target === overlay) closeModal();
             });
-
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && overlay.classList.contains('active')) {
                     closeModal();
+                }
+            });
+
+            // ---------- 反馈弹窗逻辑 ----------
+            const feedbackTrigger = document.getElementById('feedbackTrigger');
+            const feedbackOverlay = document.getElementById('feedbackOverlay');
+            const feedbackConfirm = document.getElementById('feedbackConfirm');
+
+            function openFeedback() {
+                feedbackOverlay.classList.add('active');
+                document.body.classList.add('modal-open');
+            }
+
+            function closeFeedback() {
+                feedbackOverlay.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            }
+
+            feedbackTrigger.addEventListener('click', openFeedback);
+            feedbackConfirm.addEventListener('click', closeFeedback);
+            feedbackOverlay.addEventListener('click', function(e) {
+                if (e.target === feedbackOverlay) closeFeedback();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && feedbackOverlay.classList.contains('active')) {
+                    closeFeedback();
                 }
             });
 

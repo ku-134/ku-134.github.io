@@ -31,7 +31,6 @@ body {
     animation: fadeUp 0.8s ease-out both;
 }
 
-/* 首页窄卡片 */
 .card-narrow {
     max-width: 720px;
     backdrop-filter: blur(12px) saturate(180%);

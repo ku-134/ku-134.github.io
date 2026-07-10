@@ -411,3 +411,11 @@ body {
 @keyframes blink {
     50% { opacity: 0; }
 }
+/* ============================================================
+   0.8 3D 卡片倾斜特效
+   ============================================================ */
+.card-3d {
+    transition: transform 0.1s ease-out;
+    transform-style: preserve-3d;
+    will-change: transform;
+}

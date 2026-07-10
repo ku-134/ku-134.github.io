@@ -82,6 +82,65 @@
             opacity: 0.5;
         }
 
+        /* ---- 搜索栏 ---- */
+        .search-bar {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-bar input {
+            flex: 1;
+            min-width: 160px;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .search-bar input:focus {
+            border-color: currentColor;
+        }
+        .search-bar input::placeholder {
+            opacity: 0.4;
+        }
+        .search-bar .clear-btn {
+            cursor: pointer;
+            opacity: 0.4;
+            font-size: 1.2rem;
+            padding: 0 0.3rem;
+            transition: opacity 0.2s;
+        }
+        .search-bar .clear-btn:hover {
+            opacity: 0.8;
+        }
+        .search-bar .fav-toggle {
+            cursor: pointer;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            opacity: 0.6;
+            white-space: nowrap;
+        }
+        .search-bar .fav-toggle.active {
+            opacity: 1;
+            border-color: #f5a623;
+            background: rgba(245, 166, 35, 0.1);
+        }
+        .search-bar .fav-toggle:hover {
+            opacity: 1;
+        }
+
         .rp-resource-item {
             display: flex;
             align-items: center;
@@ -89,12 +148,16 @@
             margin-bottom: 0.2rem;
             border-radius: 0.6rem;
             border-left: 3px solid transparent;
-            transition: background 0.2s, border-color 0.2s;
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
             cursor: default;
             gap: 0.6rem;
         }
         .rp-resource-item:hover {
             background: rgba(128, 128, 128, 0.04);
+        }
+        .rp-resource-item.favorited {
+            box-shadow: inset 0 0 0 1px #f5a623;
+            border-left-color: #f5a623;
         }
         .rp-resource-item.type-github { border-left-color: #6e5494; }
         .rp-resource-item.type-pan    { border-left-color: #f5a623; }
@@ -144,6 +207,28 @@
         .rp-resource-item .name.placeholder {
             opacity: 0.4;
             font-style: italic;
+        }
+
+        /* 收藏星标按钮 */
+        .rp-resource-item .star-btn {
+            cursor: pointer;
+            font-size: 1.1rem;
+            opacity: 0.3;
+            transition: all 0.2s;
+            background: none;
+            border: none;
+            padding: 0 0.2rem;
+            color: inherit;
+            flex-shrink: 0;
+        }
+        .rp-resource-item .star-btn:hover {
+            opacity: 0.8;
+            transform: scale(1.2);
+        }
+        .rp-resource-item .star-btn.active {
+            opacity: 1;
+            color: #f5a623;
+            text-shadow: 0 0 8px rgba(245, 166, 35, 0.4);
         }
 
         .rp-empty {
@@ -217,10 +302,14 @@
             .rp-resource-item.type-local  { border-left-color: #5a9e2e; }
             .rp-category-item.active { background: rgba(0,0,0,0.06); }
             .rp-fetch-btn { border-color: rgba(0,0,0,0.2); }
+            .search-bar input { border-color: rgba(0,0,0,0.15); }
+            .search-bar .fav-toggle { border-color: rgba(0,0,0,0.15); }
         }
         @media (prefers-color-scheme: dark) {
             .rp-category-item.active { background: rgba(255,255,255,0.06); }
             .rp-fetch-btn { border-color: rgba(255,255,255,0.15); }
+            .search-bar input { border-color: rgba(255,255,255,0.15); }
+            .search-bar .fav-toggle { border-color: rgba(255,255,255,0.15); }
         }
 
         @media (max-width: 600px) {
@@ -256,9 +345,11 @@
                 flex-direction: column;
                 gap: 0.4rem;
             }
+            .search-bar input { min-width: 100px; font-size: 0.85rem; }
+            .search-bar .fav-toggle { font-size: 0.8rem; padding: 0.2rem 0.6rem; }
         }
 
-        /* ===== 跳转确认弹窗（原有） ===== */
+        /* ===== 跳转确认弹窗 ===== */
         .rp-overlay {
             position: fixed;
             inset: 0;
@@ -396,7 +487,7 @@
             overflow: hidden;
         }
 
-        /* ===== 反馈链接样式 ===== */
+        /* ===== 反馈链接 ===== */
         .feedback-link {
             display: block;
             text-align: center;
@@ -413,7 +504,6 @@
             transform: translateY(-1px);
         }
 
-        /* ===== 反馈弹窗（复用 modal 样式，但单独控制） ===== */
         #feedbackModal .modal-icon { font-size: 2.4rem; }
         #feedbackModal .modal-title { font-size: 1.5rem; }
         #feedbackModal .modal-sub {
@@ -472,6 +562,13 @@
 
         <div class="resource-stats fade-in-up delay-5" id="stats"></div>
 
+        <!-- ===== 搜索栏 + 收藏切换 ===== -->
+        <div class="search-bar fade-in-up delay-5">
+            <input type="text" id="searchInput" placeholder="🔍 搜索资源..." autocomplete="off">
+            <span class="clear-btn" id="clearSearch" style="display:none;">✕</span>
+            <button class="fav-toggle" id="favToggle">⭐ 收藏</button>
+        </div>
+
         <div class="rp-layout fade-in-up delay-6">
             <div class="rp-sidebar">
                 <div class="rp-sidebar-title">📂 分类</div>
@@ -492,7 +589,6 @@
             </div>
         </div>
 
-        <!-- 底部反馈链接 -->
         <div class="feedback-link fade-in-up delay-7" id="feedbackTrigger">
             💬 无法“拉取分类”或资源等存在问题？点击告知站主。
         </div>
@@ -502,7 +598,7 @@
         </div>
     </div>
 
-    <!-- ===== 跳转确认弹窗（原有） ===== -->
+    <!-- ===== 跳转确认弹窗 ===== -->
     <div class="rp-overlay" id="modalOverlay">
         <div class="rp-modal">
             <div class="modal-icon" id="modalIcon">🔗</div>
@@ -521,7 +617,7 @@
         </div>
     </div>
 
-    <!-- ===== 反馈弹窗（独立） ===== -->
+    <!-- ===== 反馈弹窗 ===== -->
     <div class="rp-overlay" id="feedbackOverlay">
         <div class="rp-modal" id="feedbackModal">
             <div class="modal-icon">📢</div>
@@ -529,8 +625,8 @@
             <div class="modal-sub" style="text-align:left; line-height:1.8;">
                 <p>通过以下方式反馈：</p>
                 <p>1. 写邮件：<a href="mailto:3074341324@qq.com">3074341324@qq.com</a></p>
-                <p>2. 在B站私信/评论我：<a href="https://search.bilibili.com/all?keyword=KU_134" target="_blank">KU_134</a> <span style="color:#f5a623; font-weight:700;">（推荐）</span></p>
-                <p style="opacity:0.6; font-size:0.85rem; margin-top:0.3rem;">提示：加QQ好友的话，我大概率会不通过。所以推荐在B站给我评论。</p>
+                <p>2. 在B站私信/评论我：<a href="https://space.bilibili.com/搜索KU_134" target="_blank">KU_134</a> <span style="color:#f5a623; font-weight:700;">（推荐）</span></p>
+                <p style="opacity:0.6; font-size:0.85rem; margin-top:0.3rem;">提示：加QQ好友的话，大概通会不通过。所以推荐在B站评论。</p>
             </div>
             <div class="modal-actions">
                 <button class="btn-confirm" id="feedbackConfirm" style="opacity:1; cursor:pointer;">确认</button>
@@ -542,11 +638,48 @@
         (function() {
             'use strict';
 
-            // ---------- 原有 RP 逻辑（保持不变） ----------
+            // ---------- 核心数据 ----------
+            let allCategories = [];
+            let currentCategory = null;
+            let currentView = 'all'; // 'all' 或 'favorites'
+            let searchQuery = '';
+            let favorites = [];
+
+            // ---------- DOM 引用 ----------
             const categoryListEl = document.getElementById('categoryList');
             const resourceAreaEl = document.getElementById('resourceArea');
             const statsEl = document.getElementById('stats');
             const fetchBtn = document.getElementById('fetchBtn');
+            const searchInput = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearch');
+            const favToggle = document.getElementById('favToggle');
+
+            // ---------- 收藏管理 ----------
+            function loadFavorites() {
+                try {
+                    const data = localStorage.getItem('favorites');
+                    favorites = data ? JSON.parse(data) : [];
+                } catch { favorites = []; }
+            }
+            function saveFavorites() {
+                localStorage.setItem('favorites', JSON.stringify(favorites));
+            }
+            function isFavorited(name) {
+                return favorites.includes(name);
+            }
+            function toggleFavorite(name) {
+                const idx = favorites.indexOf(name);
+                if (idx > -1) {
+                    favorites.splice(idx, 1);
+                } else {
+                    favorites.push(name);
+                }
+                saveFavorites();
+                // 重新渲染当前视图
+                renderCurrentView();
+            }
+
+            // ---------- 弹窗相关 ----------
             const overlay = document.getElementById('modalOverlay');
             const modalTitle = document.getElementById('modalTitle');
             const modalDesc = document.getElementById('modalDesc');
@@ -556,14 +689,86 @@
             const btnCancel = document.getElementById('modalCancel');
             const btnConfirm = document.getElementById('modalConfirm');
             const countdownRing = document.getElementById('countdownRing');
-
-            let allCategories = [];
-            let currentCategory = null;
             let pendingLink = null;
             let countdownTimer = null;
             let countdownValue = 3;
-            let isLoading = false;
 
+            function openModal(name, desc, link, type) {
+                if (!link) return;
+                pendingLink = link;
+                const typeLabel = getTypeLabel(type);
+                const icon = getTypeIcon(type);
+                modalTitle.textContent = name;
+                modalDesc.textContent = desc || '没有更多描述';
+                modalIcon.textContent = icon;
+                modalTypeLabel.textContent = typeLabel;
+                modalWarning.innerHTML = `⚠️ 即将跳转到 <strong>${typeLabel}</strong> 页面，请确认安全。`;
+                btnConfirm.classList.remove('ready');
+                btnConfirm.disabled = true;
+                countdownValue = 3;
+                countdownRing.textContent = '3';
+                overlay.classList.add('active');
+                document.body.classList.add('modal-open');
+                if (countdownTimer) clearInterval(countdownTimer);
+                countdownTimer = setInterval(function() {
+                    countdownValue -= 1;
+                    countdownRing.textContent = countdownValue;
+                    if (countdownValue <= 0) {
+                        clearInterval(countdownTimer);
+                        countdownTimer = null;
+                        btnConfirm.classList.add('ready');
+                        btnConfirm.disabled = false;
+                        countdownRing.textContent = '✓';
+                    }
+                }, 1000);
+            }
+            function closeModal() {
+                overlay.classList.remove('active');
+                document.body.classList.remove('modal-open');
+                if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+                pendingLink = null;
+                btnConfirm.classList.remove('ready');
+                btnConfirm.disabled = true;
+                countdownRing.textContent = '3';
+            }
+            function confirmJump() {
+                if (!pendingLink || btnConfirm.disabled) return;
+                window.open(pendingLink, '_blank', 'noopener,noreferrer');
+                closeModal();
+            }
+            btnCancel.addEventListener('click', closeModal);
+            btnConfirm.addEventListener('click', confirmJump);
+            overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal(); });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && overlay.classList.contains('active')) closeModal();
+            });
+
+            // ---------- 反馈弹窗 ----------
+            const feedbackTrigger = document.getElementById('feedbackTrigger');
+            const feedbackOverlay = document.getElementById('feedbackOverlay');
+            const feedbackConfirm = document.getElementById('feedbackConfirm');
+            feedbackTrigger.addEventListener('click', function() {
+                feedbackOverlay.classList.add('active');
+                document.body.classList.add('modal-open');
+            });
+            feedbackConfirm.addEventListener('click', function() {
+                feedbackOverlay.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            });
+            feedbackOverlay.addEventListener('click', function(e) {
+                if (e.target === feedbackOverlay) {
+                    feedbackOverlay.classList.remove('active');
+                    document.body.classList.remove('modal-open');
+                }
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && feedbackOverlay.classList.contains('active')) {
+                    feedbackOverlay.classList.remove('active');
+                    document.body.classList.remove('modal-open');
+                }
+            });
+
+            // ---------- 解析 category.txt ----------
             function parseCategoryTxt(text) {
                 const lines = text.split('\n');
                 const categories = [];
@@ -603,9 +808,7 @@
                             item.type = 'placeholder';
                         }
                         if (!item.link) item.type = 'placeholder';
-                        if (item.name) {
-                            current.items.push(item);
-                        }
+                        if (item.name) current.items.push(item);
                     }
                 }
                 return categories;
@@ -624,56 +827,100 @@
                 const map = { 'github': 'GitHub', 'pan': '网盘', 'local': '站内', 'other': '外部', 'placeholder': '占位' };
                 return map[type] || '外部';
             }
-
             function getTypeIcon(type) {
                 const map = { 'github': '🐙', 'pan': '☁️', 'local': '📁', 'other': '🔗', 'placeholder': '⏳' };
                 return map[type] || '🔗';
             }
 
-            function renderSidebar(categories, activeName) {
-                if (!categories || categories.length === 0) {
-                    categoryListEl.innerHTML = `<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">暂无分类</div>`;
-                    return;
+            // ---------- 渲染逻辑 ----------
+            function getFilteredItems() {
+                // 先根据当前视图（全部/收藏）过滤分类
+                let categories = allCategories;
+                if (currentView === 'favorites') {
+                    // 只保留包含收藏资源的分类（但我们要展示所有收藏资源，跨分类）
+                    // 这里我们直接返回收藏的资源列表（平铺）
+                    const allItems = [];
+                    for (const cat of allCategories) {
+                        for (const item of cat.items) {
+                            if (isFavorited(item.name)) {
+                                allItems.push({ ...item, category: cat.name });
+                            }
+                        }
+                    }
+                    return allItems;
+                } else {
+                    // 全部视图：返回所有资源（带分类名）
+                    const allItems = [];
+                    for (const cat of allCategories) {
+                        for (const item of cat.items) {
+                            allItems.push({ ...item, category: cat.name });
+                        }
+                    }
+                    return allItems;
                 }
-                let html = '';
-                for (const cat of categories) {
-                    const count = cat.items.filter(it => it.type !== 'placeholder').length;
-                    const activeClass = (cat.name === activeName) ? 'active' : '';
-                    html += `<button class="rp-category-item ${activeClass}" data-category="${cat.name}">${cat.name}<span class="badge">${count}</span></button>`;
-                }
-                categoryListEl.innerHTML = html;
-                document.querySelectorAll('.rp-category-item').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const name = this.dataset.category;
-                        document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
-                        this.classList.add('active');
-                        switchCategory(name);
-                    });
-                });
             }
 
-            function renderResources(category) {
-                if (!category) {
-                    resourceAreaEl.innerHTML = `<div class="rp-empty">请从左侧选择一个分类</div>`;
+            function renderCurrentView() {
+                const items = getFilteredItems();
+                // 应用搜索过滤
+                let filtered = items;
+                if (searchQuery.trim() !== '') {
+                    const q = searchQuery.trim().toLowerCase();
+                    filtered = items.filter(item =>
+                        item.name.toLowerCase().includes(q) ||
+                        (item.desc && item.desc.toLowerCase().includes(q))
+                    );
+                }
+
+                // 如果没有资源，显示空状态
+                if (filtered.length === 0) {
+                    let msg = '📭 没有找到资源';
+                    if (currentView === 'favorites') msg = '⭐ 还没有收藏任何资源，快去收藏吧！';
+                    if (searchQuery.trim() !== '') msg = '🔍 没有找到匹配的资源';
+                    resourceAreaEl.innerHTML = `
+                        <div class="rp-content-header">
+                            <span class="cat-name">${currentView === 'favorites' ? '⭐ 我的收藏' : '全部资源'}</span>
+                            <span class="cat-count">0 个</span>
+                        </div>
+                        <div class="rp-empty">${msg}</div>
+                    `;
+                    updateStats();
                     return;
                 }
-                const items = category.items || [];
-                if (items.length === 0) {
-                    resourceAreaEl.innerHTML = `<div class="rp-content-header"><span class="cat-name">${category.name}</span><span class="cat-count">0 个资源</span></div><div class="rp-empty">这个分类暂时是空的</div>`;
-                    return;
-                }
-                const activeCount = items.filter(it => it.type !== 'placeholder').length;
-                let html = `<div class="rp-content-header"><span class="cat-name">${category.name}</span><span class="cat-count">${activeCount} 个资源</span></div>`;
-                for (const item of items) {
+
+                // 渲染资源列表
+                let html = `
+                    <div class="rp-content-header">
+                        <span class="cat-name">${currentView === 'favorites' ? '⭐ 我的收藏' : '全部资源'}</span>
+                        <span class="cat-count">${filtered.length} 个资源</span>
+                    </div>
+                `;
+                for (const item of filtered) {
                     const typeClass = 'type-' + item.type;
                     const typeLabel = getTypeLabel(item.type);
                     const icon = getTypeIcon(item.type);
                     const hasLink = item.link && item.type !== 'placeholder';
                     const linkAttr = hasLink ? `data-link="${item.link}" data-type="${item.type}"` : '';
-                    const nameHtml = hasLink ? `<a href="#" class="rp-resource-link" ${linkAttr}>${item.name}</a>` : `<span class="name placeholder">${item.name}（即将上线）</span>`;
-                    html += `<div class="rp-resource-item ${typeClass}"><span class="arrow">${icon}</span><span class="name">${nameHtml}</span>${item.desc ? `<span class="desc">${item.desc}</span>` : ''}<span class="type-tag">${typeLabel}</span></div>`;
+                    const fav = isFavorited(item.name) ? 'active' : '';
+                    const favoritedClass = isFavorited(item.name) ? 'favorited' : '';
+
+                    const nameHtml = hasLink ?
+                        `<a href="#" class="rp-resource-link" ${linkAttr}>${item.name}</a>` :
+                        `<span class="name placeholder">${item.name}（即将上线）</span>`;
+
+                    html += `
+                        <div class="rp-resource-item ${typeClass} ${favoritedClass}">
+                            <span class="arrow">${icon}</span>
+                            <span class="name">${nameHtml}</span>
+                            ${item.desc ? `<span class="desc">${item.desc}</span>` : ''}
+                            <span class="type-tag">${typeLabel}</span>
+                            <button class="star-btn ${fav}" data-name="${item.name}" title="收藏/取消收藏">${fav ? '★' : '☆'}</button>
+                        </div>
+                    `;
                 }
                 resourceAreaEl.innerHTML = html;
+
+                // 绑定资源链接点击
                 document.querySelectorAll('.rp-resource-link').forEach(a => {
                     a.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -686,27 +933,191 @@
                         openModal(name, desc, link, type);
                     });
                 });
+
+                // 绑定星标按钮
+                document.querySelectorAll('.star-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const name = this.dataset.name;
+                        toggleFavorite(name);
+                    });
+                });
+
+                updateStats();
             }
 
+            function updateStats() {
+                const items = getFilteredItems();
+                const total = items.length;
+                const favCount = favorites.length;
+                let text = `共 ${allCategories.length} 个分类 · ${total} 个资源`;
+                if (favCount > 0) text += ` · ⭐ ${favCount} 个收藏`;
+                statsEl.textContent = text;
+            }
+
+            // ---------- 切换分类（左侧目录树点击） ----------
             function switchCategory(name) {
-                const cat = allCategories.find(c => c.name === name);
-                if (!cat) return;
-                currentCategory = cat;
-                renderResources(cat);
-            }
-
-            function updateStats(categories) {
-                if (!categories || categories.length === 0) {
-                    statsEl.textContent = '';
+                if (name === '__all__') {
+                    currentView = 'all';
+                    searchQuery = '';
+                    searchInput.value = '';
+                    clearBtn.style.display = 'none';
+                    favToggle.classList.remove('active');
+                    renderCurrentView();
                     return;
                 }
-                let total = 0;
-                for (const cat of categories) {
-                    total += cat.items.filter(it => it.type !== 'placeholder').length;
+                if (name === '__favorites__') {
+                    currentView = 'favorites';
+                    searchQuery = '';
+                    searchInput.value = '';
+                    clearBtn.style.display = 'none';
+                    favToggle.classList.add('active');
+                    renderCurrentView();
+                    return;
                 }
-                statsEl.textContent = `共 ${categories.length} 个分类 · ${total} 个资源`;
+                // 普通分类：切换视图为全部，但只显示该分类
+                currentView = 'all';
+                // 暂时不支持单分类过滤，目前只在全部中展示
+                // 但我们可以在侧边栏高亮
+                // 重新渲染全部
+                renderCurrentView();
+                // 高亮侧边栏
+                document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
+                const target = document.querySelector(`.rp-category-item[data-category="${name}"]`);
+                if (target) target.classList.add('active');
             }
 
+            // ---------- 侧边栏渲染 ----------
+            function renderSidebar(categories) {
+                if (!categories || categories.length === 0) {
+                    categoryListEl.innerHTML = `<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">暂无分类</div>`;
+                    return;
+                }
+                let html = '';
+                // 全部
+                html += `<button class="rp-category-item active" data-category="__all__">📂 全部</button>`;
+                // 收藏
+                const favCount = favorites.length;
+                html += `<button class="rp-category-item" data-category="__favorites__">⭐ 我的收藏 <span class="badge">${favCount}</span></button>`;
+                // 各分类
+                for (const cat of categories) {
+                    const count = cat.items.filter(it => it.type !== 'placeholder').length;
+                    html += `<button class="rp-category-item" data-category="${cat.name}">${cat.name}<span class="badge">${count}</span></button>`;
+                }
+                categoryListEl.innerHTML = html;
+
+                // 绑定点击事件
+                document.querySelectorAll('.rp-category-item').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        const name = this.dataset.category;
+                        if (name === '__all__') {
+                            currentView = 'all';
+                            searchQuery = '';
+                            searchInput.value = '';
+                            clearBtn.style.display = 'none';
+                            favToggle.classList.remove('active');
+                            renderCurrentView();
+                        } else if (name === '__favorites__') {
+                            currentView = 'favorites';
+                            searchQuery = '';
+                            searchInput.value = '';
+                            clearBtn.style.display = 'none';
+                            favToggle.classList.add('active');
+                            renderCurrentView();
+                        } else {
+                            // 普通分类：只显示该分类的资源
+                            // 我们实现一个临时过滤
+                            const items = [];
+                            const cat = allCategories.find(c => c.name === name);
+                            if (cat) {
+                                for (const item of cat.items) {
+                                    items.push({ ...item, category: cat.name });
+                                }
+                            }
+                            // 直接渲染这些items
+                            renderFilteredItems(items, name);
+                        }
+                    });
+                });
+            }
+
+            // 辅助：渲染指定的资源列表（用于单分类）
+            function renderFilteredItems(items, categoryName) {
+                if (items.length === 0) {
+                    resourceAreaEl.innerHTML = `
+                        <div class="rp-content-header">
+                            <span class="cat-name">${categoryName}</span>
+                            <span class="cat-count">0 个资源</span>
+                        </div>
+                        <div class="rp-empty">这个分类暂时是空的</div>
+                    `;
+                    updateStats();
+                    return;
+                }
+                // 应用搜索过滤
+                let filtered = items;
+                if (searchQuery.trim() !== '') {
+                    const q = searchQuery.trim().toLowerCase();
+                    filtered = items.filter(item =>
+                        item.name.toLowerCase().includes(q) ||
+                        (item.desc && item.desc.toLowerCase().includes(q))
+                    );
+                }
+                let html = `
+                    <div class="rp-content-header">
+                        <span class="cat-name">${categoryName}</span>
+                        <span class="cat-count">${filtered.length} 个资源</span>
+                    </div>
+                `;
+                for (const item of filtered) {
+                    const typeClass = 'type-' + item.type;
+                    const typeLabel = getTypeLabel(item.type);
+                    const icon = getTypeIcon(item.type);
+                    const hasLink = item.link && item.type !== 'placeholder';
+                    const linkAttr = hasLink ? `data-link="${item.link}" data-type="${item.type}"` : '';
+                    const fav = isFavorited(item.name) ? 'active' : '';
+                    const favoritedClass = isFavorited(item.name) ? 'favorited' : '';
+                    const nameHtml = hasLink ?
+                        `<a href="#" class="rp-resource-link" ${linkAttr}>${item.name}</a>` :
+                        `<span class="name placeholder">${item.name}（即将上线）</span>`;
+                    html += `
+                        <div class="rp-resource-item ${typeClass} ${favoritedClass}">
+                            <span class="arrow">${icon}</span>
+                            <span class="name">${nameHtml}</span>
+                            ${item.desc ? `<span class="desc">${item.desc}</span>` : ''}
+                            <span class="type-tag">${typeLabel}</span>
+                            <button class="star-btn ${fav}" data-name="${item.name}" title="收藏/取消收藏">${fav ? '★' : '☆'}</button>
+                        </div>
+                    `;
+                }
+                resourceAreaEl.innerHTML = html;
+                // 绑定事件
+                document.querySelectorAll('.rp-resource-link').forEach(a => {
+                    a.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const link = this.dataset.link;
+                        const type = this.dataset.type || 'other';
+                        const name = this.textContent.trim();
+                        const parent = this.closest('.rp-resource-item');
+                        const descEl = parent ? parent.querySelector('.desc') : null;
+                        const desc = descEl ? descEl.textContent.trim() : '';
+                        openModal(name, desc, link, type);
+                    });
+                });
+                document.querySelectorAll('.star-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const name = this.dataset.name;
+                        toggleFavorite(name);
+                    });
+                });
+                updateStats();
+            }
+
+            // ---------- 拉取数据 ----------
+            let isLoading = false;
             function fetchAndRender() {
                 if (isLoading) return;
                 isLoading = true;
@@ -720,25 +1131,24 @@
                     .then(text => {
                         if (!text.trim()) {
                             allCategories = [];
-                            renderSidebar([], null);
+                            renderSidebar([]);
                             resourceAreaEl.innerHTML = `<div class="rp-empty">📭 category.txt 为空</div>`;
                             statsEl.textContent = '';
                             return;
                         }
                         allCategories = parseCategoryTxt(text);
-                        updateStats(allCategories);
-                        let first = allCategories.find(c => c.items.length > 0);
-                        if (!first && allCategories.length > 0) first = allCategories[0];
-                        renderSidebar(allCategories, first ? first.name : null);
-                        if (first) {
-                            currentCategory = first;
-                            renderResources(first);
-                        } else {
-                            resourceAreaEl.innerHTML = `<div class="rp-empty">暂无可用资源</div>`;
-                        }
+                        loadFavorites();
+                        renderSidebar(allCategories);
+                        // 默认显示全部
+                        currentView = 'all';
+                        searchQuery = '';
+                        searchInput.value = '';
+                        clearBtn.style.display = 'none';
+                        favToggle.classList.remove('active');
+                        renderCurrentView();
                     })
                     .catch(err => {
-                        console.warn('加载 category.txt 失败:', err);
+                        console.warn('加载失败:', err);
                         resourceAreaEl.innerHTML = `<div class="rp-empty">❌ 加载失败<br><button class="btn btn-secondary" style="margin-top:1rem;" onclick="location.reload()">🔄 重试</button></div>`;
                         statsEl.textContent = '';
                     })
@@ -751,94 +1161,92 @@
                         fetchBtn.disabled = true;
                     });
             }
-
-            function openModal(name, desc, link, type) {
-                if (!link) return;
-                pendingLink = link;
-                const typeLabel = getTypeLabel(type);
-                const icon = getTypeIcon(type);
-                modalTitle.textContent = name;
-                modalDesc.textContent = desc || '没有更多描述';
-                modalIcon.textContent = icon;
-                modalTypeLabel.textContent = typeLabel;
-                modalWarning.innerHTML = `⚠️ 即将跳转到 <strong>${typeLabel}</strong> 页面，请确认安全。`;
-                btnConfirm.classList.remove('ready');
-                btnConfirm.disabled = true;
-                countdownValue = 3;
-                countdownRing.textContent = '3';
-                overlay.classList.add('active');
-                document.body.classList.add('modal-open');
-                if (countdownTimer) clearInterval(countdownTimer);
-                countdownTimer = setInterval(function() {
-                    countdownValue -= 1;
-                    countdownRing.textContent = countdownValue;
-                    if (countdownValue <= 0) {
-                        clearInterval(countdownTimer);
-                        countdownTimer = null;
-                        btnConfirm.classList.add('ready');
-                        btnConfirm.disabled = false;
-                        countdownRing.textContent = '✓';
-                    }
-                }, 1000);
-            }
-
-            function closeModal() {
-                overlay.classList.remove('active');
-                document.body.classList.remove('modal-open');
-                if (countdownTimer) {
-                    clearInterval(countdownTimer);
-                    countdownTimer = null;
-                }
-                pendingLink = null;
-                btnConfirm.classList.remove('ready');
-                btnConfirm.disabled = true;
-                countdownRing.textContent = '3';
-            }
-
-            function confirmJump() {
-                if (!pendingLink) return;
-                if (btnConfirm.disabled) return;
-                window.open(pendingLink, '_blank', 'noopener,noreferrer');
-                closeModal();
-            }
-
             fetchBtn.addEventListener('click', fetchAndRender);
-            btnCancel.addEventListener('click', closeModal);
-            btnConfirm.addEventListener('click', confirmJump);
-            overlay.addEventListener('click', function(e) {
-                if (e.target === overlay) closeModal();
+
+            // ---------- 搜索事件 ----------
+            let searchTimer = null;
+            searchInput.addEventListener('input', function() {
+                const val = this.value.trim();
+                searchQuery = val;
+                clearBtn.style.display = val.length > 0 ? 'inline' : 'none';
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(() => {
+                    // 如果当前是分类视图，重新渲染该分类；否则渲染全部
+                    const activeCat = document.querySelector('.rp-category-item.active');
+                    if (activeCat) {
+                        const name = activeCat.dataset.category;
+                        if (name === '__all__') {
+                            currentView = 'all';
+                            renderCurrentView();
+                        } else if (name === '__favorites__') {
+                            currentView = 'favorites';
+                            renderCurrentView();
+                        } else {
+                            // 重新过滤该分类
+                            const cat = allCategories.find(c => c.name === name);
+                            if (cat) {
+                                const items = cat.items.map(item => ({ ...item, category: cat.name }));
+                                renderFilteredItems(items, cat.name);
+                            }
+                        }
+                    } else {
+                        renderCurrentView();
+                    }
+                }, 200);
             });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && overlay.classList.contains('active')) {
-                    closeModal();
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                searchQuery = '';
+                this.style.display = 'none';
+                // 重新渲染当前视图
+                const activeCat = document.querySelector('.rp-category-item.active');
+                if (activeCat) {
+                    const name = activeCat.dataset.category;
+                    if (name === '__all__' || name === '__favorites__') {
+                        renderCurrentView();
+                    } else {
+                        const cat = allCategories.find(c => c.name === name);
+                        if (cat) {
+                            const items = cat.items.map(item => ({ ...item, category: cat.name }));
+                            renderFilteredItems(items, cat.name);
+                        }
+                    }
+                } else {
+                    renderCurrentView();
                 }
             });
 
-            // ---------- 反馈弹窗逻辑 ----------
-            const feedbackTrigger = document.getElementById('feedbackTrigger');
-            const feedbackOverlay = document.getElementById('feedbackOverlay');
-            const feedbackConfirm = document.getElementById('feedbackConfirm');
-
-            function openFeedback() {
-                feedbackOverlay.classList.add('active');
-                document.body.classList.add('modal-open');
-            }
-
-            function closeFeedback() {
-                feedbackOverlay.classList.remove('active');
-                document.body.classList.remove('modal-open');
-            }
-
-            feedbackTrigger.addEventListener('click', openFeedback);
-            feedbackConfirm.addEventListener('click', closeFeedback);
-            feedbackOverlay.addEventListener('click', function(e) {
-                if (e.target === feedbackOverlay) closeFeedback();
-            });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && feedbackOverlay.classList.contains('active')) {
-                    closeFeedback();
+            // ---------- 收藏切换按钮 ----------
+            favToggle.addEventListener('click', function() {
+                const isActive = this.classList.contains('active');
+                if (isActive) {
+                    // 切换到全部
+                    this.classList.remove('active');
+                    currentView = 'all';
+                    searchQuery = '';
+                    searchInput.value = '';
+                    clearBtn.style.display = 'none';
+                    // 高亮“全部”分类
+                    document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
+                    const allBtn = document.querySelector('.rp-category-item[data-category="__all__"]');
+                    if (allBtn) allBtn.classList.add('active');
+                    renderCurrentView();
+                } else {
+                    // 切换到收藏
+                    this.classList.add('active');
+                    currentView = 'favorites';
+                    searchQuery = '';
+                    searchInput.value = '';
+                    clearBtn.style.display = 'none';
+                    document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
+                    const favBtn = document.querySelector('.rp-category-item[data-category="__favorites__"]');
+                    if (favBtn) favBtn.classList.add('active');
+                    renderCurrentView();
                 }
             });
+
+            // ---------- 初始化时加载收藏状态 ----------
+            loadFavorites();
 
         })();
     </script>

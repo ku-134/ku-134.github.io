@@ -4,37 +4,414 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>虚空终端 · Kukuz分享页</title>
-    <link rel="preload" as="image" href="background.webp">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ---------- 全局重置 ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, system-ui, -apple-system, sans-serif;
+            background: #1a2e1a;
+            /* 背景图通过 JS 预加载后动态设置 */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* ---------- 加载层（代码特效） ---------- */
+        #loader {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #0d1a0d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1.2s ease;
+            pointer-events: none;
+            /* 防止干扰点击 */;
+        }
+        #loader.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+        /* 每个代码块 */
+        .code-block {
+            position: absolute;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #66bb6a;
+            opacity: 0;
+            animation: codeFade 3s ease-in-out infinite alternate;
+            user-select: none;
+            white-space: nowrap;
+            text-shadow: 0 0 8px rgba(102, 187, 106, 0.3);
+        }
+        @keyframes codeFade {
+            0% { opacity: 0; transform: translateY(-10px) scale(0.95); }
+            50% { opacity: 0.9; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(10px) scale(0.95); }
+        }
+
+        /* ---------- UI 卡片 ---------- */
+        .card {
+            max-width: 720px;
+            width: 100%;
+            padding: 3rem 2.5rem;
+            border-radius: 2rem;
+            text-align: center;
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: background 0.3s, color 0.3s, border-color 0.3s, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease;
+            opacity: 0;
+            transform: translateY(40px) scale(0.96);
+            /* 初始隐藏并下移 */;
+        }
+        .card.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* ---------- 亮色模式 ---------- */
+        @media (prefers-color-scheme: light) {
+            .card {
+                background: rgba(255, 255, 255, 0.65);
+                color: #1a3b1a;
+                border-color: rgba(80, 160, 80, 0.25);
+                box-shadow: 0 20px 60px rgba(0, 40, 0, 0.15);
+            }
+            .card h1 { color: #1a4f1a; }
+            .card .sub { color: #2d5e2d; }
+            .card .divider { background: rgba(60, 140, 60, 0.2); }
+            .card .footer { color: #3d6b3d; }
+            .code-block { color: #1b5e20; text-shadow: 0 0 8px rgba(27, 94, 32, 0.2); }
+            #loader { background: #f0f5f0; }
+        }
+
+        /* ---------- 深色模式 ---------- */
+        @media (prefers-color-scheme: dark) {
+            .card {
+                background: rgba(10, 20, 10, 0.7);
+                color: #c8e6c9;
+                border-color: rgba(60, 140, 60, 0.3);
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            }
+            .card h1 { color: #a5d6a7; }
+            .card .sub { color: #81c784; }
+            .card .divider { background: rgba(100, 200, 100, 0.15); }
+            .card .footer { color: #6f9e76; }
+            .code-block { color: #66bb6a; text-shadow: 0 0 8px rgba(102, 187, 106, 0.3); }
+            #loader { background: #0d1a0d; }
+        }
+
+        /* ---------- 卡片内部元素 ---------- */
+        .card h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-bottom: 0.4rem;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            min-height: 4rem;
+        }
+        .card .sub {
+            font-size: 1.1rem;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-bottom: 1.2rem;
+        }
+        .card .divider {
+            width: 80px;
+            height: 3px;
+            border-radius: 4px;
+            margin: 0.8rem auto 1.2rem;
+        }
+        .card .desc {
+            font-size: 1rem;
+            line-height: 1.7;
+            max-width: 500px;
+            margin: 0 auto 1.8rem;
+            opacity: 0.85;
+        }
+
+        /* ---------- 导航菜单 ---------- */
+        .nav-menu {
+            display: flex;
+            justify-content: center;
+            gap: 1.8rem;
+            margin: 0.8rem 0 0.2rem 0;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            padding: 0.3rem 0.2rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.25s ease;
+            color: inherit;
+            opacity: 0.75;
+        }
+        .nav-link:hover {
+            opacity: 1;
+            border-bottom-color: currentColor;
+            transform: translateY(-1px);
+        }
+        .nav-link.active {
+            opacity: 1;
+            border-bottom-color: currentColor;
+            font-weight: 600;
+        }
+
+        /* ---------- 按钮组 ---------- */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.2rem;
+            margin: 1.5rem 0 1.8rem 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-block;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 3rem;
+            transition: all 0.25s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn-primary {
+            font-size: 1.25rem;
+            padding: 0.75rem 2.4rem;
+            background: #1b5e20;
+            border-color: #1b5e20;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(27, 94, 32, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(27, 94, 32, 0.4);
+            background: #2e7d32;
+            border-color: #2e7d32;
+        }
+        .btn-secondary {
+            font-size: 0.95rem;
+            padding: 0.5rem 1.6rem;
+            background: transparent;
+            border-color: currentColor;
+            color: inherit;
+            opacity: 0.8;
+        }
+        .btn-secondary:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+            background: currentColor;
+            color: #fff;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .btn-primary {
+                background: #66bb6a;
+                border-color: #66bb6a;
+                color: #1a2e1a;
+                box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
+            }
+            .btn-primary:hover {
+                background: #81c784;
+                border-color: #81c784;
+                color: #1a2e1a;
+                box-shadow: 0 8px 24px rgba(102, 187, 106, 0.4);
+            }
+            .btn-secondary:hover {
+                background: #66bb6a;
+                border-color: #66bb6a;
+                color: #1a2e1a;
+            }
+        }
+
+        .card .footer {
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+
+        /* ---------- 响应式 ---------- */
+        @media (max-width: 480px) {
+            .card {
+                padding: 2rem 1.5rem;
+                border-radius: 1.5rem;
+                backdrop-filter: blur(8px) saturate(160%);
+                -webkit-backdrop-filter: blur(8px) saturate(160%);
+            }
+            .card h1 { font-size: 2rem; min-height: 3rem; }
+            .card .sub { font-size: 1rem; }
+            .card .desc { font-size: 0.95rem; }
+            .btn-primary { font-size: 1.05rem; padding: 0.6rem 1.8rem; }
+            .btn-secondary { font-size: 0.85rem; padding: 0.4rem 1.2rem; }
+            .button-group { gap: 0.8rem; }
+            .nav-menu { gap: 1rem; }
+            .nav-link { font-size: 0.9rem; }
+            .code-block { font-size: 10px; }
+        }
+        @media (max-width: 359px) {
+            .card h1 { font-size: 1.6rem; min-height: 2.6rem; }
+            .card { padding: 1.5rem 1rem; }
+        }
+    </style>
 </head>
 <body>
-    <div class="card card-narrow">
-        <h1 class="typing-title">🌿 虚空终端</h1>
-        <div class="sub fade-in-up delay-2">— Kukuz 分享页 —</div>
-        <div class="divider fade-in-up delay-3"></div>
 
-        <div class="nav-menu fade-in-up delay-4">
+    <!-- ========== 加载层（代码特效） ========== -->
+    <div id="loader"></div>
+
+    <!-- ========== 主卡片 ========== -->
+    <div class="card" id="mainCard">
+        <h1 id="typewriter">🌿 虚空终端</h1>
+        <div class="sub">— Kukuz 分享页 —</div>
+        <div class="divider"></div>
+
+        <div class="nav-menu">
             <a href="index.html" class="nav-link active">🏠 首页</a>
-            <a href="about.html" class="nav-link">📖 关于</a>
+            <a href="about.html" class="nav-link">📄 关于</a>
+            <a href="https://github.com/ku-134" target="_blank" class="nav-link">🐙 GitHub</a>
         </div>
 
-        <p class="desc fade-in-up delay-5">
+        <p class="desc">
             万物虚寂，终有回响。<br>
             在这里，分享灵感、技术与我眼中的世界。
         </p>
 
-        <div class="button-group fade-in-up delay-6">
-            <a href="RP.html" class="btn btn-primary">📦 我的资源</a>
-            <a href="#" class="btn btn-secondary">📝 我的文章</a>
-            <a href="#" class="btn btn-secondary">🎮 我的游戏</a>
+        <div class="button-group">
+            <a href="#" class="btn btn-primary">📦 我的资源</a>
             <a href="contact.html" class="btn btn-secondary">🤝 交朋友</a>
         </div>
 
-        <div class="footer fade-in-up delay-7">
-            ✦ 随时更新 · 欢迎来访 ✦ &nbsp;·&nbsp; 🐙 <a href="https://github.com/ku-134" target="_blank">ku-134</a>
-        </div>
+        <div class="footer">✦ 随时更新 · 欢迎来访 ✦</div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- ============================================================ -->
+    <!-- JavaScript：入场流程控制 + 打字机 -->
+    <!-- ============================================================ -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ---------- 1. 生成随机代码块 ----------
+            const loader = document.getElementById('loader');
+            const codeSnippets = [
+                '<html>', '</html>', '<div>', '</div>', 'function()', 'var', 'let', 'const',
+                'class', 'extends', 'return', 'if', 'else', 'for', 'while', 'try', 'catch',
+                'console.log', 'import', 'export', 'default', 'async', 'await', '=>',
+                '{ }', '[ ]', '( )', '===', '!==', '&&', '||', '++', '--',
+                'npm install', 'git commit', 'Hello World', '42', 'true', 'false',
+                'null', 'undefined', 'NaN', 'Infinity', 'Promise', 'resolve',
+                'fetch', 'then', 'catch', 'finally', 'throw', 'new', 'this',
+                'super', 'static', 'get', 'set', 'yield', 'generator'
+            ];
+
+            // 生成 50 个代码块
+            for (let i = 0; i < 50; i++) {
+                const span = document.createElement('span');
+                span.className = 'code-block';
+                // 随机选取 1~3 个片段组合
+                let text = '';
+                const count = Math.floor(Math.random() * 3) + 1;
+                for (let j = 0; j < count; j++) {
+                    text += codeSnippets[Math.floor(Math.random() * codeSnippets.length)];
+                    if (j < count - 1) text += ' ';
+                }
+                span.textContent = text;
+
+                // 随机位置（百分比）
+                span.style.left = Math.random() * 90 + 5 + '%';
+                span.style.top = Math.random() * 90 + 5 + '%';
+                // 随机字体大小
+                span.style.fontSize = (Math.random() * 18 + 10) + 'px';
+                // 随机动画延迟和持续时间
+                span.style.animationDelay = (Math.random() * 5) + 's';
+                span.style.animationDuration = (Math.random() * 4 + 2) + 's';
+                // 随机透明度偏移
+                span.style.opacity = Math.random() * 0.5 + 0.2;
+                loader.appendChild(span);
+            }
+
+            // ---------- 2. 预加载背景图 ----------
+            const bgImage = new Image();
+            // 从 CSS 中提取背景图 URL（兼容相对路径）
+            const computedStyle = getComputedStyle(document.body);
+            const bgUrl = computedStyle.backgroundImage.slice(5, -2); // 去掉 url(" 和 ")
+            bgImage.src = bgUrl || 'background.webp'; // fallback
+
+            // ---------- 3. 加载完成后的处理 ----------
+            function onBackgroundLoaded() {
+                // 隐藏加载层
+                loader.classList.add('hide');
+
+                // 显示卡片（带弹出动画）
+                const card = document.getElementById('mainCard');
+                card.classList.add('show');
+
+                // 触发打字机效果（延迟一点，等卡片动画）
+                setTimeout(() => {
+                    startTypewriter();
+                }, 400);
+            }
+
+            // 如果图片已缓存，可能立即触发 load，但为了保险，用 complete 判断
+            if (bgImage.complete) {
+                onBackgroundLoaded();
+            } else {
+                bgImage.addEventListener('load', onBackgroundLoaded);
+                bgImage.addEventListener('error', function() {
+                    // 如果图片加载失败，仍然继续（使用纯色背景）
+                    console.warn('背景图加载失败，使用备用颜色');
+                    onBackgroundLoaded();
+                });
+            }
+
+            // 额外保险：如果 5 秒后仍未触发，强制继续
+            setTimeout(() => {
+                if (!loader.classList.contains('hide')) {
+                    onBackgroundLoaded();
+                }
+            }, 5000);
+
+            // ---------- 4. 打字机效果 ----------
+            function startTypewriter() {
+                const element = document.getElementById('typewriter');
+                if (!element) return;
+                const text = "🌿 虚空终端";
+                // 清空并重新打字
+                element.textContent = '';
+                let index = 0;
+                function type() {
+                    if (index < text.length) {
+                        element.textContent += text.charAt(index);
+                        index++;
+                        setTimeout(type, 150);
+                    }
+                }
+                type();
+            }
+
+            // 如果卡片已经 show 但打字机未启动（极少情况），也尝试启动
+            // 但上面已经通过 onBackgroundLoaded 启动了
+
+        })();
+    </script>
+
 </body>
 </html>

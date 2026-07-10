@@ -209,7 +209,6 @@
             font-style: italic;
         }
 
-        /* 收藏星标按钮 */
         .rp-resource-item .star-btn {
             cursor: pointer;
             font-size: 1.1rem;
@@ -349,7 +348,7 @@
             .search-bar .fav-toggle { font-size: 0.8rem; padding: 0.2rem 0.6rem; }
         }
 
-        /* ===== 跳转确认弹窗 ===== */
+        /* ===== 弹窗 ===== */
         .rp-overlay {
             position: fixed;
             inset: 0;
@@ -546,26 +545,6 @@
                 border-color: #81c784;
             }
         }
-
-        /* ===== 统计信息（底部） ===== */
-        .stats-footer {
-            margin-top: 1.2rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(128, 128, 128, 0.08);
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            font-size: 0.85rem;
-            opacity: 0.5;
-            flex-wrap: wrap;
-        }
-        .stats-footer .num {
-            font-weight: 600;
-            opacity: 0.8;
-        }
-        @media (max-width: 480px) {
-            .stats-footer { gap: 0.8rem; font-size: 0.75rem; flex-direction: column; align-items: center; }
-        }
     </style>
 </head>
 <body>
@@ -582,7 +561,6 @@
 
         <div class="resource-stats fade-in-up delay-5" id="stats"></div>
 
-        <!-- ===== 搜索栏 + 收藏切换 ===== -->
         <div class="search-bar fade-in-up delay-5">
             <input type="text" id="searchInput" placeholder="🔍 搜索资源..." autocomplete="off">
             <span class="clear-btn" id="clearSearch" style="display:none;">✕</span>
@@ -616,15 +594,9 @@
         <div class="footer fade-in-up delay-7">
             📂 资源持续更新中 · 欢迎收藏
         </div>
-
-        <!-- ===== 统计信息 ===== -->
-        <div class="stats-footer fade-in-up delay-7">
-            <span>👥 本站访客：<span class="num" id="busuanzi_value_site_uv">0</span> 人</span>
-            <span>👁️ 本站访问：<span class="num" id="busuanzi_value_site_pv">0</span> 次</span>
-        </div>
     </div>
 
-    <!-- ===== 跳转确认弹窗 ===== -->
+    <!-- ===== 弹窗 ===== -->
     <div class="rp-overlay" id="modalOverlay">
         <div class="rp-modal">
             <div class="modal-icon" id="modalIcon">🔗</div>
@@ -643,7 +615,6 @@
         </div>
     </div>
 
-    <!-- ===== 反馈弹窗 ===== -->
     <div class="rp-overlay" id="feedbackOverlay">
         <div class="rp-modal" id="feedbackModal">
             <div class="modal-icon">📢</div>
@@ -660,9 +631,6 @@
         </div>
     </div>
 
-    <!-- ===== 不蒜子统计脚本 ===== -->
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
     <script>
         (function() {
             'use strict';
@@ -670,11 +638,11 @@
             // ---------- 核心数据 ----------
             let allCategories = [];
             let currentCategory = null;
-            let currentView = 'all'; // 'all' 或 'favorites'
+            let currentView = 'all';
             let searchQuery = '';
             let favorites = [];
 
-            // ---------- DOM 引用 ----------
+            // ---------- DOM ----------
             const categoryListEl = document.getElementById('categoryList');
             const resourceAreaEl = document.getElementById('resourceArea');
             const statsEl = document.getElementById('stats');
@@ -705,9 +673,23 @@
                 }
                 saveFavorites();
                 renderCurrentView();
+                // 🔄 触发 storage 事件，让首页同步
+                window.dispatchEvent(new Event('storage'));
             }
 
-            // ---------- 弹窗相关 ----------
+            // ---------- 跳转计数 ----------
+            function recordClick(resourceName) {
+                try {
+                    const data = JSON.parse(localStorage.getItem('resourceClicks') || '{}');
+                    data[resourceName] = (data[resourceName] || 0) + 1;
+                    data._total = (data._total || 0) + 1;
+                    localStorage.setItem('resourceClicks', JSON.stringify(data));
+                    // 🔄 触发 storage 事件，让首页同步
+                    window.dispatchEvent(new Event('storage'));
+                } catch (e) { /* 静默降级 */ }
+            }
+
+            // ---------- 弹窗 ----------
             const overlay = document.getElementById('modalOverlay');
             const modalTitle = document.getElementById('modalTitle');
             const modalDesc = document.getElementById('modalDesc');
@@ -761,6 +743,10 @@
             }
             function confirmJump() {
                 if (!pendingLink || btnConfirm.disabled) return;
+                // 记录跳转
+                const parent = document.querySelector('.rp-resource-item.favorited, .rp-resource-item');
+                const nameEl = parent ? parent.querySelector('.name a') : null;
+                if (nameEl) recordClick(nameEl.textContent.trim());
                 window.open(pendingLink, '_blank', 'noopener,noreferrer');
                 closeModal();
             }
@@ -771,7 +757,7 @@
                 if (e.key === 'Escape' && overlay.classList.contains('active')) closeModal();
             });
 
-            // ---------- 反馈弹窗 ----------
+            // ---------- 反馈 ----------
             const feedbackTrigger = document.getElementById('feedbackTrigger');
             const feedbackOverlay = document.getElementById('feedbackOverlay');
             const feedbackConfirm = document.getElementById('feedbackConfirm');
@@ -796,7 +782,7 @@
                 }
             });
 
-            // ---------- 解析 category.txt ----------
+            // ---------- 解析 ----------
             function parseCategoryTxt(text) {
                 const lines = text.split('\n');
                 const categories = [];
@@ -860,7 +846,7 @@
                 return map[type] || '🔗';
             }
 
-            // ---------- 渲染逻辑 ----------
+            // ---------- 渲染 ----------
             function getFilteredItems() {
                 let items = [];
                 if (currentView === 'favorites') {
@@ -932,7 +918,6 @@
                     `;
                 }
                 resourceAreaEl.innerHTML = html;
-                // 绑定资源链接点击
                 document.querySelectorAll('.rp-resource-link').forEach(a => {
                     a.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -945,7 +930,6 @@
                         openModal(name, desc, link, type);
                     });
                 });
-                // 绑定星标按钮
                 document.querySelectorAll('.star-btn').forEach(btn => {
                     btn.addEventListener('click', function(e) {
                         e.stopPropagation();
@@ -965,7 +949,7 @@
                 statsEl.textContent = text;
             }
 
-            // ---------- 侧边栏渲染 ----------
+            // ---------- 侧边栏 ----------
             function renderSidebar(categories) {
                 if (!categories || categories.length === 0) {
                     categoryListEl.innerHTML = `<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">暂无分类</div>`;
@@ -1083,7 +1067,7 @@
                 updateStats();
             }
 
-            // ---------- 拉取数据 ----------
+            // ---------- 拉取 ----------
             let isLoading = false;
             function fetchAndRender() {
                 if (isLoading) return;
@@ -1129,7 +1113,7 @@
             }
             fetchBtn.addEventListener('click', fetchAndRender);
 
-            // ---------- 搜索事件 ----------
+            // ---------- 搜索 ----------
             let searchTimer = null;
             searchInput.addEventListener('input', function() {
                 const val = this.value.trim();
@@ -1179,7 +1163,7 @@
                 }
             });
 
-            // ---------- 收藏切换按钮 ----------
+            // ---------- 收藏切换 ----------
             favToggle.addEventListener('click', function() {
                 const isActive = this.classList.contains('active');
                 if (isActive) {

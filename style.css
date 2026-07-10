@@ -38,15 +38,6 @@ body {
     -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
-/* ============================================================
-   0.8 3D 卡片倾斜特效
-   ============================================================ */
-.card-3d {
-    transition: transform 0.1s ease-out;
-    transform-style: preserve-3d;
-    will-change: transform;
-}
-
 @keyframes fadeUp {
     0% { opacity: 0; transform: translateY(24px) scale(0.96); }
     100% { opacity: 1; transform: translateY(0) scale(1); }

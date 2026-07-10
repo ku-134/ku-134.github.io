@@ -31,7 +31,7 @@ body {
     animation: fadeUp 0.8s ease-out both;
 }
 
-/* 首页窄卡片（保持原有视觉） */
+/* 首页窄卡片 */
 .card-narrow {
     max-width: 720px;
     backdrop-filter: blur(12px) saturate(180%);
@@ -43,7 +43,7 @@ body {
     100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ---------- 亮色模式（白绿） ---------- */
+/* ---------- 亮色模式 ---------- */
 @media (prefers-color-scheme: light) {
     .card {
         background: rgba(255, 255, 255, 0.68);
@@ -82,7 +82,7 @@ body {
     .footer a { color: #1a4f1a; }
 }
 
-/* ---------- 深色模式（黑与深绿） ---------- */
+/* ---------- 深色模式 ---------- */
 @media (prefers-color-scheme: dark) {
     .card {
         background: rgba(10, 20, 10, 0.72);

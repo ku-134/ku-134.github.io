@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <style>
         /* ============================================================
-           RP 页面专属样式（不含弹窗，已移至 style.css）
+           RP 页面专属样式（含弹窗样式，确保独立可用）
            ============================================================ */
 
         /* ----- 布局容器（左右结构） ----- */
@@ -72,7 +72,6 @@
             min-width: 0;
         }
 
-        /* 当前分类标题 + 统计 */
         .rp-content-header {
             display: flex;
             justify-content: space-between;
@@ -91,7 +90,6 @@
             opacity: 0.5;
         }
 
-        /* 资源卡片 */
         .rp-resource-item {
             display: flex;
             align-items: center;
@@ -156,7 +154,6 @@
             font-style: italic;
         }
 
-        /* 空状态 / 未加载状态 */
         .rp-empty {
             text-align: center;
             padding: 2.5rem 1rem;
@@ -236,7 +233,7 @@
             .rp-fetch-btn { border-color: rgba(255,255,255,0.15); }
         }
 
-        /* ---- 响应式：小屏折叠 ---- */
+        /* ---- 响应式 ---- */
         @media (max-width: 600px) {
             .rp-layout { flex-direction: column; gap: 0.5rem; }
             .rp-sidebar {
@@ -271,6 +268,149 @@
                 gap: 0.4rem;
             }
         }
+
+        /* ============================================================
+           跳转确认弹窗（内联，确保默认隐藏）
+           ============================================================ */
+        .rp-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            display: none;              /* 默认隐藏 */
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            animation: overlayIn 0.25s ease-out;
+        }
+        .rp-overlay.active {
+            display: flex;
+        }
+        @keyframes overlayIn {
+            0% { opacity: 0; backdrop-filter: blur(0px); }
+            100% { opacity: 1; backdrop-filter: blur(6px); }
+        }
+
+        .rp-modal {
+            max-width: 440px;
+            width: 90%;
+            padding: 2rem 2rem 1.8rem;
+            border-radius: 1.8rem;
+            background: var(--modal-bg, rgba(20,30,20,0.88));
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            text-align: center;
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.92) translateY(16px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        /* 亮色模式弹窗 */
+        @media (prefers-color-scheme: light) {
+            .rp-modal { --modal-bg: rgba(245, 250, 245, 0.92); border-color: rgba(0,0,0,0.06); }
+        }
+        /* 深色模式弹窗 */
+        @media (prefers-color-scheme: dark) {
+            .rp-modal { --modal-bg: rgba(12, 22, 12, 0.92); border-color: rgba(255,255,255,0.06); }
+        }
+
+        .rp-modal .modal-icon {
+            font-size: 2.8rem;
+            margin-bottom: 0.2rem;
+        }
+        .rp-modal .modal-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            word-break: break-all;
+            margin-bottom: 0.2rem;
+        }
+        .rp-modal .modal-sub {
+            font-size: 0.9rem;
+            opacity: 0.5;
+            margin-bottom: 0.8rem;
+        }
+        .rp-modal .modal-warning {
+            font-size: 0.95rem;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            background: rgba(255, 200, 0, 0.10);
+            border: 1px solid rgba(255, 200, 0, 0.15);
+            margin-bottom: 1.8rem;
+            display: inline-block;
+        }
+        .rp-modal .modal-warning strong {
+            font-weight: 700;
+        }
+
+        .rp-modal .modal-actions {
+            display: flex;
+            gap: 0.8rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .rp-modal .modal-actions button {
+            padding: 0.55rem 2rem;
+            border-radius: 3rem;
+            border: 2px solid transparent;
+            font-weight: 600;
+            font-size: 1rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            min-width: 100px;
+        }
+        .rp-modal .modal-actions .btn-cancel {
+            background: transparent;
+            border-color: currentColor;
+            opacity: 0.5;
+        }
+        .rp-modal .modal-actions .btn-cancel:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .rp-modal .modal-actions .btn-confirm {
+            background: #c0392b;
+            border-color: #c0392b;
+            color: #fff;
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .rp-modal .modal-actions .btn-confirm.ready {
+            opacity: 1;
+            cursor: pointer;
+            background: #e74c3c;
+            border-color: #e74c3c;
+        }
+        .rp-modal .modal-actions .btn-confirm.ready:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .rp-modal .countdown-ring {
+            display: inline-block;
+            width: 1.8rem;
+            height: 1.8rem;
+            line-height: 1.8rem;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-left: 0.4rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .rp-modal .btn-confirm.ready .countdown-ring {
+            opacity: 0.3;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
     </style>
 </head>
 <body>
@@ -279,31 +419,29 @@
         <div class="sub">— 我整理的一些好东西 —</div>
         <div class="divider"></div>
 
-        <!-- 导航栏（更新：首页 · 资源 · 玩点游戏？） -->
+        <!-- 导航栏 -->
         <div class="nav-menu">
             <a href="index.html" class="nav-link">🏠 首页</a>
             <a href="#" class="nav-link active">📦 资源</a>
             <a href="#" class="nav-link">🎮 玩点游戏？</a>
         </div>
 
-        <!-- 统计信息（加载后显示） -->
+        <!-- 统计信息 -->
         <div class="resource-stats" id="stats"></div>
 
         <!-- 左右布局 -->
         <div class="rp-layout">
-            <!-- 左侧：分类目录树 -->
+            <!-- 左侧分类 -->
             <div class="rp-sidebar">
                 <div class="rp-sidebar-title">📂 分类</div>
                 <div id="categoryList">
-                    <!-- 加载前提示 -->
                     <div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">⬅️ 点击右侧拉取</div>
                 </div>
             </div>
 
-            <!-- 右侧：资源列表 -->
+            <!-- 右侧内容 -->
             <div class="rp-content">
                 <div id="resourceArea">
-                    <!-- 默认显示“拉取分类”大按钮 -->
                     <div class="rp-fetch-area" id="fetchArea">
                         <button class="rp-fetch-btn" id="fetchBtn">
                             📂 拉取分类
@@ -320,7 +458,7 @@
     </div>
 
     <!-- ============================================================
-         跳转确认弹窗（HTML 骨架，样式已移至 style.css）
+         跳转确认弹窗（默认隐藏，由 JS 控制显示）
          ============================================================ -->
     <div class="rp-overlay" id="modalOverlay">
         <div class="rp-modal">
@@ -367,7 +505,7 @@
             let countdownValue = 3;
             let isLoading = false;
 
-            // ---------- 解析 category.txt（扩展格式） ----------
+            // ---------- 解析 category.txt ----------
             function parseCategoryTxt(text) {
                 const lines = text.split('\n');
                 const categories = [];
@@ -452,7 +590,7 @@
                 return map[type] || '🔗';
             }
 
-            // ---------- 渲染左侧分类目录 ----------
+            // ---------- 渲染 ----------
             function renderSidebar(categories, activeName) {
                 if (!categories || categories.length === 0) {
                     categoryListEl.innerHTML = `<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">暂无分类</div>`;
@@ -482,7 +620,6 @@
                 });
             }
 
-            // ---------- 渲染右侧资源列表 ----------
             function renderResources(category) {
                 if (!category) {
                     resourceAreaEl.innerHTML = `<div class="rp-empty">请从左侧选择一个分类</div>`;
@@ -547,7 +684,6 @@
                 });
             }
 
-            // ---------- 切换分类 ----------
             function switchCategory(name) {
                 const cat = allCategories.find(c => c.name === name);
                 if (!cat) return;
@@ -555,7 +691,6 @@
                 renderResources(cat);
             }
 
-            // ---------- 更新统计 ----------
             function updateStats(categories) {
                 if (!categories || categories.length === 0) {
                     statsEl.textContent = '';
@@ -568,12 +703,11 @@
                 statsEl.textContent = `共 ${categories.length} 个分类 · ${total} 个资源`;
             }
 
-            // ---------- 拉取并渲染（点击按钮触发） ----------
+            // ---------- 拉取并渲染 ----------
             function fetchAndRender() {
                 if (isLoading) return;
                 isLoading = true;
 
-                // 按钮变为加载状态
                 fetchBtn.classList.add('loading');
                 fetchBtn.innerHTML = `<span class="spinner">⟳</span> 加载中...`;
 
@@ -625,7 +759,7 @@
                     });
             }
 
-            // ---------- 弹窗逻辑 ----------
+            // ---------- 弹窗 ----------
             function openModal(name, desc, link, type) {
                 if (!link) return;
 
@@ -682,7 +816,7 @@
                 closeModal();
             }
 
-            // ---------- 绑定事件 ----------
+            // ---------- 事件绑定 ----------
             fetchBtn.addEventListener('click', fetchAndRender);
 
             btnCancel.addEventListener('click', closeModal);
@@ -697,9 +831,6 @@
                     closeModal();
                 }
             });
-
-            // ---------- 页面加载：不自动拉取，显示按钮 ----------
-            // 已默认显示“拉取分类”按钮，无需额外操作
 
         })();
     </script>

@@ -6,6 +6,26 @@
     <title>联系方式 · Kukuz</title>
     <link rel="preload" as="image" href="background.webp">
     <link rel="stylesheet" href="style.css">
+    <style>
+        .stats-footer {
+            margin-top: 1.8rem;
+            padding-top: 1.2rem;
+            border-top: 1px solid rgba(128, 128, 128, 0.08);
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            font-size: 0.85rem;
+            opacity: 0.5;
+            flex-wrap: wrap;
+        }
+        .stats-footer .num {
+            font-weight: 600;
+            opacity: 0.8;
+        }
+        @media (max-width: 480px) {
+            .stats-footer { gap: 0.8rem; font-size: 0.75rem; flex-direction: column; align-items: center; }
+        }
+    </style>
 </head>
 <body>
     <div class="card">
@@ -74,8 +94,15 @@
         <div class="footer fade-in-up delay-6">
             📬 期待你的来信
         </div>
+
+        <div class="stats-footer fade-in-up delay-7">
+            <span>👥 本站访客：<span class="num" id="busuanzi_value_site_uv">0</span> 人</span>
+            <span>👁️ 本站访问：<span class="num" id="busuanzi_value_site_pv">0</span> 次</span>
+        </div>
     </div>
 
+    <!-- ===== 不蒜子统计脚本 ===== -->
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

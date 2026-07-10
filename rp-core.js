@@ -31,7 +31,7 @@
 
     // ---------- 核心数据 ----------
     let allCategories = [];
-    let currentView = 'all';          // 'all' 或 'favorites'
+    let currentView = 'all';
     let searchQuery = '';
     let favorites = [];
     let pendingLink = null;
@@ -66,10 +66,40 @@
         }
         saveFavorites();
         renderCurrentView();
-        // 触发 storage 事件，同步首页
         try {
             window.dispatchEvent(new Event('storage'));
         } catch (e) { /* 静默降级 */ }
+    }
+
+    // ============================================================
+    // 🆕 自动清理幽灵收藏（资源下架/重命名后自动清除失效收藏）
+    // ============================================================
+    function cleanOrphanedFavorites() {
+        // 收集当前所有有效资源名称
+        var validNames = {};
+        for (var ci = 0; ci < allCategories.length; ci++) {
+            var cat = allCategories[ci];
+            for (var ii = 0; ii < cat.items.length; ii++) {
+                validNames[cat.items[ii].name] = true;
+            }
+        }
+
+        var dirty = false;
+        var newFavs = [];
+        for (var fi = 0; fi < favorites.length; fi++) {
+            if (validNames[favorites[fi]]) {
+                newFavs.push(favorites[fi]);
+            } else {
+                dirty = true; // 发现幽灵收藏
+            }
+        }
+
+        if (dirty) {
+            favorites = newFavs;
+            saveFavorites();
+            // 控制台提示，方便调试（可选）
+            // console.log('🧹 已清理幽灵收藏，当前收藏:', favorites);
+        }
     }
 
     // ---------- 跳转计数 ----------
@@ -88,7 +118,7 @@
     // ---------- 类型辅助 ----------
     function detectType(link) {
         if (!link) return 'placeholder';
-        const l = link.toLowerCase();
+        var l = link.toLowerCase();
         if (l.includes('github.com')) return 'github';
         if (l.includes('pan.baidu.com') || l.includes('yunpan') || l.includes('netdisk') || l.includes('网盘')) return 'pan';
         if (l.startsWith('/') || l.startsWith('./') || l.startsWith('../')) return 'local';
@@ -96,35 +126,35 @@
     }
 
     function getTypeLabel(type) {
-        const map = { 'github': 'GitHub', 'pan': '网盘', 'local': '站内', 'other': '外部', 'placeholder': '占位' };
+        var map = { 'github': 'GitHub', 'pan': '网盘', 'local': '站内', 'other': '外部', 'placeholder': '占位' };
         return map[type] || '外部';
     }
 
     function getTypeIcon(type) {
-        const map = { 'github': '🐙', 'pan': '☁️', 'local': '📁', 'other': '🔗', 'placeholder': '⏳' };
+        var map = { 'github': '🐙', 'pan': '☁️', 'local': '📁', 'other': '🔗', 'placeholder': '⏳' };
         return map[type] || '🔗';
     }
 
     // ---------- 解析 category.txt ----------
     function parseCategoryTxt(text) {
-        const lines = text.split('\n');
-        const categories = [];
-        let current = null;
+        var lines = text.split('\n');
+        var categories = [];
+        var current = null;
 
-        for (let raw of lines) {
-            let line = raw.trim();
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i].trim();
             if (!line) continue;
 
             if (line.startsWith('##')) {
-                const name = line.replace(/^##\s*/, '').trim();
+                var name = line.replace(/^##\s*/, '').trim();
                 current = { name: name, items: [] };
                 categories.push(current);
                 continue;
             }
 
             if (line.startsWith('- ') && current) {
-                const content = line.replace(/^-\s*/, '').trim();
-                const parts = content.split('|').map(function(s) { return s.trim(); });
+                var content = line.replace(/^-\s*/, '').trim();
+                var parts = content.split('|').map(function(s) { return s.trim(); });
                 var item = { name: '', desc: '', link: '', type: 'other' };
 
                 if (parts.length >= 4) {
@@ -186,9 +216,7 @@
             var filtered = [];
             for (var fi = 0; fi < items.length; fi++) {
                 var it = items[fi];
-                var nameMatch = it.name.toLowerCase().includes(q);
-                var descMatch = it.desc && it.desc.toLowerCase().includes(q);
-                if (nameMatch || descMatch) {
+                if (it.name.toLowerCase().includes(q) || (it.desc && it.desc.toLowerCase().includes(q))) {
                     filtered.push(it);
                 }
             }
@@ -226,9 +254,7 @@
             var tmp = [];
             for (var fi = 0; fi < items.length; fi++) {
                 var it = items[fi];
-                var nameMatch = it.name.toLowerCase().includes(q);
-                var descMatch = it.desc && it.desc.toLowerCase().includes(q);
-                if (nameMatch || descMatch) {
+                if (it.name.toLowerCase().includes(q) || (it.desc && it.desc.toLowerCase().includes(q))) {
                     tmp.push(it);
                 }
             }
@@ -347,7 +373,6 @@
 
         resourceAreaEl.innerHTML = html;
 
-        // 绑定资源链接点击
         var links = resourceAreaEl.querySelectorAll('.rp-resource-link');
         for (var li = 0; li < links.length; li++) {
             (function(linkEl) {
@@ -364,7 +389,6 @@
             })(links[li]);
         }
 
-        // 绑定星标按钮
         var stars = resourceAreaEl.querySelectorAll('.star-btn');
         for (var si = 0; si < stars.length; si++) {
             (function(starEl) {
@@ -402,7 +426,6 @@
 
         categoryListEl.innerHTML = html;
 
-        // 绑定点击事件
         var items = categoryListEl.querySelectorAll('.rp-category-item');
         for (var ki = 0; ki < items.length; ki++) {
             (function(btn) {
@@ -500,7 +523,6 @@
 
     function confirmJump() {
         if (!pendingLink || btnConfirm.disabled) return;
-        // 记录跳转
         var parent = document.querySelector('.rp-resource-item.favorited, .rp-resource-item');
         var nameEl = parent ? parent.querySelector('.name a') : null;
         if (nameEl) recordClick(nameEl.textContent.trim());
@@ -541,6 +563,12 @@
                 }
                 allCategories = parseCategoryTxt(text);
                 loadFavorites();
+
+                // ============================================================
+                // 🆕 自动清理幽灵收藏（资源下架/重命名后自动清除失效收藏）
+                // ============================================================
+                cleanOrphanedFavorites();
+
                 renderSidebar(allCategories);
                 currentView = 'all';
                 searchQuery = '';
@@ -706,10 +734,8 @@
     function init() {
         loadFavorites();
         bindEvents();
-        // 默认显示拉取按钮，不自动加载
     }
 
-    // 等待 DOM 加载完成后初始化
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {

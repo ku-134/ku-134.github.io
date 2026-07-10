@@ -1,4 +1,4 @@
 ## 安卓工具（个人使用，不保证安全）
-- 用户调试权工具 | Shizuku | https://github.com/RikkaApps/Shizuku | github
-- 设备所有权工具 | Dhizuku | https://github.com/iamr0s/Dhizuku | github
-- 更多 | 网盘内容，敬请期待 | | placeholder
+- Shizuku | 用户调试权工具，可以让其他应用使用手机调试（Android Debug Bridge）权限。系统优化必备！ | https://github.com/RikkaApps/Shizuku | github
+- Dhizuku | 设备所有权工具，虽然比用户调试权限低一级，但不用担心重启后会掉权限。作用类似Shizuku！ | https://github.com/iamr0s/Dhizuku | github
+- 更多 | 敬请期待！ | | placeholder

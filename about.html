@@ -4,24 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>关于我 · Kukuz</title>
-    <!-- 预加载背景图，优化速度 -->
     <link rel="preload" as="image" href="background.webp">
-    <!-- 全局样式（缓存复用） -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="card">
-        <h1>📖 关于我</h1>
-        <div class="sub">— 最畜的贤者 —</div>
-        <div class="divider"></div>
+        <h1 class="typing-title">📖 关于我</h1>
+        <div class="sub fade-in-up delay-2">— 最畜的贤者 —</div>
+        <div class="divider fade-in-up delay-3"></div>
 
-        <!-- 统一导航栏：首页 · 关于（激活） -->
-        <div class="nav-menu">
+        <div class="nav-menu fade-in-up delay-4">
             <a href="index.html" class="nav-link">🏠 首页</a>
             <a href="#" class="nav-link active">📖 关于</a>
         </div>
 
-        <div class="tags-wrap">
+        <div class="tags-wrap fade-in-up delay-5">
             <span class="tag">📱 安卓搞机党</span>
             <span class="tag">👀 小书虫3k+h</span>
             <span class="tag">🗡️ 原神老登</span>
@@ -29,7 +26,7 @@
             <span class="tag">✍️ 同人小说作者</span>
         </div>
 
-        <div class="content">
+        <div class="content fade-in-up delay-6">
             <p class="greeting">👋 致来访者：</p>
             <p>
                 欢迎来到我的个人站点。作为刚完成九年义务教育的毕业生，目前正在假期内
@@ -46,9 +43,11 @@
             </p>
         </div>
 
-        <div class="footer-meta">
+        <div class="footer-meta fade-in-up delay-7">
             🌟 保持好奇 · 保持热爱
         </div>
     </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

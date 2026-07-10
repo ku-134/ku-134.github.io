@@ -6,17 +6,9 @@
     <title>关于我 · Kukuz</title>
     <link rel="preload" as="image" href="background.webp">
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* ===== 3D 卡片倾斜特效（内置） ===== */
-        .card-3d {
-            transition: transform 0.1s ease-out;
-            transform-style: preserve-3d;
-            will-change: transform;
-        }
-    </style>
 </head>
 <body>
-    <div class="card card-3d">
+    <div class="card">
         <h1 class="typing-title">📖 关于我</h1>
         <div class="sub fade-in-up delay-2">— 最畜的贤者 —</div>
         <div class="divider fade-in-up delay-3"></div>
@@ -57,55 +49,5 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
-        // ===== 3D 卡片倾斜特效（内置） =====
-        (function() {
-            'use strict';
-            document.addEventListener('DOMContentLoaded', function() {
-                const cards = document.querySelectorAll('.card-3d');
-                if (!cards.length) return;
-
-                function handleMove(e, card) {
-                    const rect = card.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
-
-                    let clientX, clientY;
-                    if (e.type.startsWith('touch')) {
-                        const touch = e.touches[0];
-                        if (!touch) return;
-                        clientX = touch.clientX;
-                        clientY = touch.clientY;
-                        e.preventDefault();
-                    } else {
-                        clientX = e.clientX;
-                        clientY = e.clientY;
-                    }
-
-                    const deltaX = (clientX - centerX) / rect.width;
-                    const deltaY = (clientY - centerY) / rect.height;
-
-                    const maxRotate = 8;
-                    const rotateX = -deltaY * maxRotate;
-                    const rotateY = deltaX * maxRotate;
-
-                    card.style.transform = 'rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)';
-                }
-
-                function handleLeave(card) {
-                    card.style.transform = 'rotateX(0deg) rotateY(0deg)';
-                }
-
-                cards.forEach(function(card) {
-                    card.addEventListener('mousemove', function(e) { handleMove(e, card); });
-                    card.addEventListener('mouseleave', function() { handleLeave(card); });
-
-                    card.addEventListener('touchmove', function(e) { handleMove(e, card); }, { passive: false });
-                    card.addEventListener('touchend', function() { handleLeave(card); });
-                    card.addEventListener('touchcancel', function() { handleLeave(card); });
-                });
-            });
-        })();
-    </script>
 </body>
 </html>

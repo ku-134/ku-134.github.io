@@ -1,4 +1,18 @@
-## 安卓工具（个人使用，不保证安全）
+## 安卓调试工具
 - Shizuku | 用户调试权工具，可以让其他应用使用手机调试（Android Debug Bridge）权限。系统优化必备！ | https://github.com/RikkaApps/Shizuku | github
 - Dhizuku | 设备所有权工具，虽然比用户调试权限低一级，但不用担心重启后会掉权限。作用类似Shizuku！ | https://github.com/iamr0s/Dhizuku | github
+- OwnDroid | 使用安卓 Device Owner 特权管理你的设备，支持禁用相机/截图/USB、隐藏应用、管理权限等，推荐配合 Shizuku/Dhizuku 使用！ | https://github.com/BinTianqi/OwnDroid | github
 - 更多 | 敬请期待！ | | placeholder
+
+## 影音娱乐
+- BiliClient | 轻量的 Android 手表/低版本设备第三方 B 站客户端，支持安卓 4.1 以上，极其轻量流畅！ | https://github.com/huanli233/BiliClient | github
+- MusicFree | 插件化、定制化、无广告的免费音乐播放器，支持 Android 和 HarmonyOS，所有音源基于插件，纯净无打扰！ | https://github.com/maotoumao/MusicFree | github
+- Animeko | 集找番、追番、看番的一站式弹幕追番平台，支持 Bangumi 云同步、离线缓存、BT 下载，100% Kotlin/Compose 跨平台！ | https://github.com/open-ani/animeko | github
+- Mihon | 免费开源的 Android 漫画阅读器，支持多源、追踪（MyAnimeList/AniList/Bangumi 等）、分类管理，Tachiyomi 的优秀替代品！ | https://github.com/mihonapp/mihon | github
+
+## 实用工具
+- RustDesk | 开源远程桌面软件，支持自建服务器，流畅免费，是 TeamViewer 的绝佳替代品！ | https://github.com/rustdesk/rustdesk | github
+- ImageToolbox | 功能强大的安卓图片处理工具箱，支持裁剪、滤镜、EXIF 编辑、AI 背景移除、OCR 等数百种功能！ | https://github.com/T8RIN/ImageToolbox | github
+
+## 开发与创作
+- Author | AI 驱动的创意写作平台，专为小说家和编剧设计，集成富文本编辑器、AI 写作助手、世界观管理系统！ | https://github.com/YuanShiJiLoong/author | github

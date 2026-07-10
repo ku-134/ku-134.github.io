@@ -7,15 +7,8 @@
     <link rel="preload" as="image" href="background.webp">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ===== 3D 卡片倾斜特效（内置） ===== */
-        .card-3d {
-            transition: transform 0.1s ease-out;
-            transform-style: preserve-3d;
-            will-change: transform;
-        }
-
         /* ============================================================
-           RP 页面专属样式（含弹窗样式，确保独立可用）
+           RP 页面专属样式（含弹窗样式）
            ============================================================ */
 
         /* ----- 布局容器（左右结构） ----- */
@@ -277,7 +270,7 @@
         }
 
         /* ============================================================
-           跳转确认弹窗（内联，确保默认隐藏）
+           跳转确认弹窗
            ============================================================ */
         .rp-overlay {
             position: fixed;
@@ -316,11 +309,9 @@
             0% { transform: scale(0.92) translateY(16px); opacity: 0; }
             100% { transform: scale(1) translateY(0); opacity: 1; }
         }
-        /* 亮色模式弹窗 */
         @media (prefers-color-scheme: light) {
             .rp-modal { --modal-bg: rgba(245, 250, 245, 0.92); border-color: rgba(0,0,0,0.06); }
         }
-        /* 深色模式弹窗 */
         @media (prefers-color-scheme: dark) {
             .rp-modal { --modal-bg: rgba(12, 22, 12, 0.92); border-color: rgba(255,255,255,0.06); }
         }
@@ -421,24 +412,20 @@
     </style>
 </head>
 <body>
-    <div class="card card-3d">
+    <div class="card">
         <h1 class="typing-title">📦 资源分类</h1>
         <div class="sub fade-in-up delay-2">— 我整理的一些好东西 —</div>
         <div class="divider fade-in-up delay-3"></div>
 
-        <!-- 导航栏 -->
         <div class="nav-menu fade-in-up delay-4">
             <a href="index.html" class="nav-link">🏠 首页</a>
             <a href="#" class="nav-link active">📦 资源</a>
             <a href="#" class="nav-link">🎮 玩点游戏？</a>
         </div>
 
-        <!-- 统计信息 -->
         <div class="resource-stats fade-in-up delay-5" id="stats"></div>
 
-        <!-- 左右布局 -->
         <div class="rp-layout fade-in-up delay-6">
-            <!-- 左侧分类 -->
             <div class="rp-sidebar">
                 <div class="rp-sidebar-title">📂 分类</div>
                 <div id="categoryList">
@@ -446,7 +433,6 @@
                 </div>
             </div>
 
-            <!-- 右侧内容 -->
             <div class="rp-content">
                 <div id="resourceArea">
                     <div class="rp-fetch-area" id="fetchArea">
@@ -464,9 +450,7 @@
         </div>
     </div>
 
-    <!-- ============================================================
-         跳转确认弹窗（默认隐藏，由 JS 控制显示）
-         ============================================================ -->
+    <!-- 弹窗 -->
     <div class="rp-overlay" id="modalOverlay">
         <div class="rp-modal">
             <div class="modal-icon" id="modalIcon">🔗</div>
@@ -489,7 +473,6 @@
         (function() {
             'use strict';
 
-            // ---------- DOM 引用 ----------
             const categoryListEl = document.getElementById('categoryList');
             const resourceAreaEl = document.getElementById('resourceArea');
             const statsEl = document.getElementById('stats');
@@ -504,7 +487,6 @@
             const btnConfirm = document.getElementById('modalConfirm');
             const countdownRing = document.getElementById('countdownRing');
 
-            // ---------- 状态 ----------
             let allCategories = [];
             let currentCategory = null;
             let pendingLink = null;
@@ -512,7 +494,6 @@
             let countdownValue = 3;
             let isLoading = false;
 
-            // ---------- 解析 category.txt ----------
             function parseCategoryTxt(text) {
                 const lines = text.split('\n');
                 const categories = [];
@@ -597,7 +578,6 @@
                 return map[type] || '🔗';
             }
 
-            // ---------- 渲染 ----------
             function renderSidebar(categories, activeName) {
                 if (!categories || categories.length === 0) {
                     categoryListEl.innerHTML = `<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">暂无分类</div>`;
@@ -710,7 +690,6 @@
                 statsEl.textContent = `共 ${categories.length} 个分类 · ${total} 个资源`;
             }
 
-            // ---------- 拉取并渲染（修复缓存） ----------
             function fetchAndRender() {
                 if (isLoading) return;
                 isLoading = true;
@@ -718,7 +697,6 @@
                 fetchBtn.classList.add('loading');
                 fetchBtn.innerHTML = `<span class="spinner">⟳</span> 加载中...`;
 
-                // ✅ 添加时间戳参数，强制绕过浏览器缓存
                 fetch('category.txt?t=' + Date.now())
                     .then(res => {
                         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -767,7 +745,6 @@
                     });
             }
 
-            // ---------- 弹窗 ----------
             function openModal(name, desc, link, type) {
                 if (!link) return;
 
@@ -824,9 +801,7 @@
                 closeModal();
             }
 
-            // ---------- 事件绑定 ----------
             fetchBtn.addEventListener('click', fetchAndRender);
-
             btnCancel.addEventListener('click', closeModal);
             btnConfirm.addEventListener('click', confirmJump);
 
@@ -844,55 +819,5 @@
     </script>
 
     <script src="script.js"></script>
-    <script>
-        // ===== 3D 卡片倾斜特效（内置） =====
-        (function() {
-            'use strict';
-            document.addEventListener('DOMContentLoaded', function() {
-                const cards = document.querySelectorAll('.card-3d');
-                if (!cards.length) return;
-
-                function handleMove(e, card) {
-                    const rect = card.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
-
-                    let clientX, clientY;
-                    if (e.type.startsWith('touch')) {
-                        const touch = e.touches[0];
-                        if (!touch) return;
-                        clientX = touch.clientX;
-                        clientY = touch.clientY;
-                        e.preventDefault();
-                    } else {
-                        clientX = e.clientX;
-                        clientY = e.clientY;
-                    }
-
-                    const deltaX = (clientX - centerX) / rect.width;
-                    const deltaY = (clientY - centerY) / rect.height;
-
-                    const maxRotate = 8;
-                    const rotateX = -deltaY * maxRotate;
-                    const rotateY = deltaX * maxRotate;
-
-                    card.style.transform = 'rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg)';
-                }
-
-                function handleLeave(card) {
-                    card.style.transform = 'rotateX(0deg) rotateY(0deg)';
-                }
-
-                cards.forEach(function(card) {
-                    card.addEventListener('mousemove', function(e) { handleMove(e, card); });
-                    card.addEventListener('mouseleave', function() { handleLeave(card); });
-
-                    card.addEventListener('touchmove', function(e) { handleMove(e, card); }, { passive: false });
-                    card.addEventListener('touchend', function() { handleLeave(card); });
-                    card.addEventListener('touchcancel', function() { handleLeave(card); });
-                });
-            });
-        })();
-    </script>
 </body>
 </html>

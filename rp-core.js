@@ -1,5 +1,5 @@
 // ============================================================
-// RP 核心逻辑：解析 category.txt、渲染、搜索、收藏、弹窗、计数
+// RP 核心逻辑：解析 category.txt、渲染、搜索、收藏、弹窗、计数、反馈、投稿
 // ============================================================
 (function() {
     'use strict';
@@ -28,6 +28,18 @@
     const feedbackTrigger = document.getElementById('feedbackTrigger');
     const feedbackOverlay = document.getElementById('feedbackOverlay');
     const feedbackConfirm = document.getElementById('feedbackConfirm');
+
+    // ---------- 🆕 投稿弹窗 DOM ----------
+    const recommendBtn = document.getElementById('recommendBtn');
+    const recommendOverlay = document.getElementById('recommendOverlay');
+    const recommendCancel = document.getElementById('recommendCancel');
+    const recommendSubmit = document.getElementById('recommendSubmit');
+    const recommendForm = document.getElementById('recommendForm');
+    const recName = document.getElementById('recName');
+    const recDesc = document.getElementById('recDesc');
+    const recLink = document.getElementById('recLink');
+    const recCategory = document.getElementById('recCategory');
+    const recNick = document.getElementById('recNick');
 
     // ---------- 核心数据 ----------
     let allCategories = [];
@@ -71,11 +83,8 @@
         } catch (e) { /* 静默降级 */ }
     }
 
-    // ============================================================
-    // 🆕 自动清理幽灵收藏（资源下架/重命名后自动清除失效收藏）
-    // ============================================================
+    // ---------- 自动清理幽灵收藏 ----------
     function cleanOrphanedFavorites() {
-        // 收集当前所有有效资源名称
         var validNames = {};
         for (var ci = 0; ci < allCategories.length; ci++) {
             var cat = allCategories[ci];
@@ -83,22 +92,18 @@
                 validNames[cat.items[ii].name] = true;
             }
         }
-
         var dirty = false;
         var newFavs = [];
         for (var fi = 0; fi < favorites.length; fi++) {
             if (validNames[favorites[fi]]) {
                 newFavs.push(favorites[fi]);
             } else {
-                dirty = true; // 发现幽灵收藏
+                dirty = true;
             }
         }
-
         if (dirty) {
             favorites = newFavs;
             saveFavorites();
-            // 控制台提示，方便调试（可选）
-            // console.log('🧹 已清理幽灵收藏，当前收藏:', favorites);
         }
     }
 
@@ -292,7 +297,6 @@
 
         resourceAreaEl.innerHTML = html;
 
-        // 绑定资源链接点击
         var links = resourceAreaEl.querySelectorAll('.rp-resource-link');
         for (var li = 0; li < links.length; li++) {
             (function(linkEl) {
@@ -309,7 +313,6 @@
             })(links[li]);
         }
 
-        // 绑定星标按钮
         var stars = resourceAreaEl.querySelectorAll('.star-btn');
         for (var si = 0; si < stars.length; si++) {
             (function(starEl) {
@@ -541,6 +544,60 @@
         document.body.classList.remove('modal-open');
     }
 
+    // ---------- 🆕 投稿弹窗 ----------
+    function openRecommend() {
+        recommendOverlay.classList.add('active');
+        document.body.classList.add('modal-open');
+        // 清空表单
+        recommendForm.reset();
+        // 重置提交按钮
+        recommendSubmit.disabled = false;
+        recommendSubmit.textContent = '提交推荐';
+    }
+
+    function closeRecommend() {
+        recommendOverlay.classList.remove('active');
+        document.body.classList.remove('modal-open');
+    }
+
+    // ---------- 🆕 投稿提交（生成 mailto） ----------
+    function handleRecommendSubmit(e) {
+        e.preventDefault();
+
+        // 验证必填
+        var name = recName.value.trim();
+        var link = recLink.value.trim();
+        if (!name || !link) {
+            alert('请至少填写资源名称和资源链接。');
+            return;
+        }
+
+        // 组装邮件内容
+        var desc = recDesc.value.trim() || '（未提供）';
+        var category = recCategory.value || '未指定';
+        var nick = recNick.value.trim() || '匿名';
+
+        var subject = encodeURIComponent('📤 资源推荐：' + name);
+        var body = encodeURIComponent(
+            '资源名称：' + name + '\n' +
+            '资源描述：' + desc + '\n' +
+            '资源链接：' + link + '\n' +
+            '推荐分类：' + category + '\n' +
+            '推荐人：' + nick + '\n\n' +
+            '--- 感谢你的推荐！站主审核后会加入资源列表 ---'
+        );
+
+        var mailtoLink = 'mailto:3074341324@qq.com?subject=' + subject + '&body=' + body;
+
+        // 打开邮件客户端
+        window.open(mailtoLink, '_blank');
+
+        // 关闭弹窗并提示
+        closeRecommend();
+        // 简单提示（可以用 toast，但这里先用 alert 简单实现）
+        alert('✅ 已打开邮件客户端，请检查并发送邮件！');
+    }
+
     // ---------- 拉取数据 ----------
     function fetchAndRender() {
         if (isLoading) return;
@@ -563,12 +620,7 @@
                 }
                 allCategories = parseCategoryTxt(text);
                 loadFavorites();
-
-                // ============================================================
-                // 🆕 自动清理幽灵收藏（资源下架/重命名后自动清除失效收藏）
-                // ============================================================
                 cleanOrphanedFavorites();
-
                 renderSidebar(allCategories);
                 currentView = 'all';
                 searchQuery = '';
@@ -718,6 +770,9 @@
             if (e.key === 'Escape' && feedbackOverlay.classList.contains('active')) {
                 closeFeedback();
             }
+            if (e.key === 'Escape' && recommendOverlay.classList.contains('active')) {
+                closeRecommend();
+            }
         });
 
         feedbackTrigger.addEventListener('click', openFeedback);
@@ -726,8 +781,13 @@
             if (e.target === feedbackOverlay) closeFeedback();
         });
 
-        bindSearchEvents();
-        bindFavToggle();
+        // 🆕 投稿按钮事件
+        recommendBtn.addEventListener('click', openRecommend);
+        recommendCancel.addEventListener('click', closeRecommend);
+        recommendOverlay.addEventListener('click', function(e) {
+            if (e.target === recommendOverlay) closeRecommend();
+        });
+        recommendSubmit.addEventListener('click', handleRecommendSubmit);
     }
 
     // ---------- 初始化 ----------

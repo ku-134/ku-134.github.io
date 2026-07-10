@@ -7,7 +7,7 @@
     <link rel="preload" as="image" href="background.webp">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ===== 入场动画专属样式 ===== */
+        /* ===== 入场动画 ===== */
         #loader {
             position: fixed;
             inset: 0;
@@ -58,7 +58,7 @@
             transform: translateY(0) scale(1);
         }
 
-        /* ===== Toast 提示 ===== */
+        /* ===== Toast ===== */
         .toast {
             position: fixed;
             left: 50%;
@@ -86,77 +86,110 @@
             color: #a5d6a7;
             font-weight: 700;
         }
-
         #toast { bottom: 30px; }
         #visitToast { bottom: 90px; }
-
         @media (max-width: 480px) {
-            .toast {
-                font-size: 0.85rem;
-                padding: 10px 18px;
-                white-space: normal;
-                max-width: 90%;
-            }
+            .toast { font-size: 0.85rem; padding: 10px 18px; white-space: normal; max-width: 90%; }
             #toast { bottom: 20px; }
             #visitToast { bottom: 80px; }
         }
         @media (prefers-color-scheme: light) {
-            .toast {
-                background: rgba(255,255,255,0.9);
-                color: #1a3b1a;
-                border-color: rgba(0,0,0,0.05);
-            }
+            .toast { background: rgba(255,255,255,0.9); color: #1a3b1a; border-color: rgba(0,0,0,0.05); }
             .toast .highlight { color: #1b5e20; }
         }
 
-        /* ===== 统计卡片（新增） ===== */
-        .stats-card {
+        /* ===== 🆕 独立统计卡片 ===== */
+        .stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin: 0.8rem 0 1.2rem 0;
+            width: 100%;
+        }
+        .stats-row {
             display: flex;
             justify-content: center;
-            gap: 2.5rem;
-            margin: 1rem 0 0.5rem 0;
-            padding: 0.8rem 1.5rem;
-            border-radius: 2rem;
-            background: rgba(128, 128, 128, 0.04);
-            border: 1px solid rgba(128, 128, 128, 0.06);
+            gap: 1.2rem;
             flex-wrap: wrap;
         }
-        .stats-card .stat-item {
-            display: flex;
-            align-items: baseline;
-            gap: 0.3rem;
-            font-size: 0.95rem;
-            opacity: 0.7;
+        .stats-card-item {
+            background: rgba(128, 128, 128, 0.06);
+            border: 1px solid rgba(128, 128, 128, 0.08);
+            border-radius: 1.2rem;
+            padding: 0.6rem 1.4rem;
+            min-width: 120px;
+            flex: 1 0 auto;
+            max-width: 220px;
+            text-align: center;
+            backdrop-filter: blur(4px);
+            transition: transform 0.2s, border-color 0.2s;
         }
-        .stats-card .stat-item .num {
+        .stats-card-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(128, 128, 128, 0.2);
+        }
+        .stats-card-item .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.4;
+            margin-bottom: 0.15rem;
+        }
+        .stats-card-item .number {
+            font-size: 1.8rem;
             font-weight: 700;
-            font-size: 1.1rem;
-            opacity: 1;
+            line-height: 1.3;
             color: inherit;
         }
-        .stats-card .stat-item .num.loading {
+        .stats-card-item .number.loading {
             opacity: 0.3;
             font-weight: 400;
+            font-size: 1.4rem;
+        }
+        .stats-card-item .sub {
+            font-size: 0.65rem;
+            opacity: 0.3;
+            margin-top: 0.05rem;
+        }
+        /* 分割线 */
+        .stats-divider {
+            width: 60px;
+            height: 2px;
+            border-radius: 2px;
+            background: rgba(128, 128, 128, 0.1);
+            margin: 0 auto;
+        }
+        /* 本地数据特殊标识 */
+        .stats-card-item.local .label {
+            opacity: 0.3;
+        }
+        .stats-card-item.local .number {
+            color: #f5a623;
+        }
+        .stats-card-item.local .sub {
+            opacity: 0.2;
+        }
+        @media (prefers-color-scheme: light) {
+            .stats-card-item.local .number { color: #d48c1a; }
         }
         @media (max-width: 480px) {
-            .stats-card { gap: 1rem; padding: 0.5rem 1rem; }
-            .stats-card .stat-item { font-size: 0.8rem; }
-            .stats-card .stat-item .num { font-size: 0.95rem; }
+            .stats-card-item { padding: 0.4rem 0.8rem; min-width: 80px; max-width: 160px; }
+            .stats-card-item .number { font-size: 1.4rem; }
+            .stats-card-item .label { font-size: 0.6rem; }
+            .stats-row { gap: 0.6rem; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 加载层 -->
+    <!-- ===== 加载层 ===== -->
     <div id="loader"></div>
 
-    <!-- 横屏提示 Toast -->
+    <!-- ===== Toast ===== -->
     <div id="toast" class="toast">💡 推荐使用 <span class="highlight">电脑横屏</span> 访问</div>
-
-    <!-- 访客足迹 Toast -->
     <div id="visitToast" class="toast"></div>
 
-    <!-- 主卡片 -->
+    <!-- ===== 主卡片 ===== -->
     <div class="card card-narrow" id="mainCard">
         <h1 class="typing-title">🌿 虚空终端</h1>
         <div class="sub fade-in-up delay-2">— Kukuz 分享页 —</div>
@@ -172,10 +205,38 @@
             在这里，分享灵感、技术与我眼中的世界。
         </p>
 
-        <!-- ===== 统计卡片 ===== -->
-        <div class="stats-card fade-in-up delay-5">
-            <span class="stat-item">👥 独立访客：<span class="num" id="busuanzi_value_site_uv">加载中...</span></span>
-            <span class="stat-item">👁️ 总访问量：<span class="num" id="busuanzi_value_site_pv">加载中...</span></span>
+        <!-- ===== 🆕 独立统计卡片 ===== -->
+        <div class="stats-container fade-in-up delay-5">
+            <!-- 第一行：本站数据 -->
+            <div class="stats-row">
+                <div class="stats-card-item">
+                    <div class="label">🌐 独立访客</div>
+                    <div class="number" id="busuanzi_value_site_uv">加载中...</div>
+                    <div class="sub">已访问本站</div>
+                </div>
+                <div class="stats-card-item">
+                    <div class="label">👁️ 总访问量</div>
+                    <div class="number" id="busuanzi_value_site_pv">加载中...</div>
+                    <div class="sub">本站被访问</div>
+                </div>
+            </div>
+
+            <!-- 分割装饰 -->
+            <div class="stats-divider"></div>
+
+            <!-- 第二行：个人数据（本地） -->
+            <div class="stats-row">
+                <div class="stats-card-item local">
+                    <div class="label">🔗 资源跳转</div>
+                    <div class="number" id="localClicks">0</div>
+                    <div class="sub">你成功跳转了</div>
+                </div>
+                <div class="stats-card-item local">
+                    <div class="label">⭐ 资源收藏</div>
+                    <div class="number" id="localFavs">0</div>
+                    <div class="sub">你收藏了</div>
+                </div>
+            </div>
         </div>
 
         <div class="button-group fade-in-up delay-6">
@@ -190,7 +251,7 @@
         </div>
     </div>
 
-    <!-- ===== 不蒜子统计脚本 ===== -->
+    <!-- ===== 不蒜子统计脚本（仅用于数据采集，不展示） ===== -->
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
     <script src="script.js"></script>
@@ -198,7 +259,7 @@
         (function() {
             'use strict';
 
-            // ---------- 生成随机代码块 ----------
+            // ---------- 生成加载代码块 ----------
             const loader = document.getElementById('loader');
             const codeSnippets = [
                 '<html>', '</html>', '<div>', '</div>', 'function()', 'var', 'let', 'const',
@@ -238,8 +299,7 @@
 
             function onBackgroundLoaded() {
                 loader.classList.add('hide');
-                const card = document.getElementById('mainCard');
-                card.classList.add('show');
+                document.getElementById('mainCard').classList.add('show');
             }
 
             bgImage.src = imageUrl;
@@ -247,53 +307,67 @@
                 onBackgroundLoaded();
             } else {
                 bgImage.addEventListener('load', onBackgroundLoaded);
-                bgImage.addEventListener('error', function() {
-                    console.warn('背景图加载失败，使用备用颜色');
-                    onBackgroundLoaded();
-                });
-                setTimeout(() => {
-                    if (!loader.classList.contains('hide')) {
-                        onBackgroundLoaded();
-                    }
+                bgImage.addEventListener('error', function() { onBackgroundLoaded(); });
+                setTimeout(function() {
+                    if (!loader.classList.contains('hide')) onBackgroundLoaded();
                 }, 5000);
             }
 
             // ---------- 横屏提示 ----------
-            function showToast() {
-                const toast = document.getElementById('toast');
-                toast.classList.add('show');
-                setTimeout(() => { toast.classList.remove('show'); }, 4500);
-            }
             if (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent) ||
                 window.matchMedia('(orientation: portrait)').matches) {
-                setTimeout(showToast, 1200);
+                setTimeout(function() {
+                    document.getElementById('toast').classList.add('show');
+                    setTimeout(function() { document.getElementById('toast').classList.remove('show'); }, 4500);
+                }, 1200);
             }
 
             // ---------- 访客足迹 ----------
             function showVisitToast() {
-                const visitToast = document.getElementById('visitToast');
-                const lastVisit = localStorage.getItem('lastVisit');
+                const el = document.getElementById('visitToast');
+                const last = localStorage.getItem('lastVisit');
                 const now = Date.now();
-
-                let message = '';
-                if (!lastVisit) {
-                    message = '👋 欢迎首次访问！';
-                } else {
-                    const days = Math.floor((now - parseInt(lastVisit)) / (1000 * 60 * 60 * 24));
-                    if (days === 0) {
-                        message = '👋 欢迎回来，今天已经来过啦！';
-                    } else if (days === 1) {
-                        message = '👋 欢迎回来，昨天刚来过～';
-                    } else {
-                        message = `👋 欢迎回来，上次访问是 ${days} 天前`;
-                    }
+                let msg = '';
+                if (!last) msg = '👋 欢迎首次访问！';
+                else {
+                    const days = Math.floor((now - parseInt(last)) / (1000 * 60 * 60 * 24));
+                    if (days === 0) msg = '👋 欢迎回来，今天已经来过啦！';
+                    else if (days === 1) msg = '👋 欢迎回来，昨天刚来过～';
+                    else msg = '👋 欢迎回来，上次访问是 ' + days + ' 天前';
                 }
-                visitToast.textContent = message;
-                visitToast.classList.add('show');
-                setTimeout(() => { visitToast.classList.remove('show'); }, 4500);
+                el.textContent = msg;
+                el.classList.add('show');
+                setTimeout(function() { el.classList.remove('show'); }, 4500);
                 localStorage.setItem('lastVisit', String(now));
             }
             setTimeout(showVisitToast, 1600);
+
+            // ---------- 读取本地个人数据 ----------
+            function updateLocalStats() {
+                try {
+                    // 读取跳转次数
+                    const clicks = JSON.parse(localStorage.getItem('resourceClicks') || '{}');
+                    const totalClicks = clicks._total || 0;
+                    document.getElementById('localClicks').textContent = totalClicks;
+
+                    // 读取收藏数
+                    const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+                    document.getElementById('localFavs').textContent = favs.length;
+                } catch (e) {
+                    // 静默降级
+                }
+            }
+
+            // 页面加载完成后读取，并每 3 秒刷新一次（供其他页面修改后同步）
+            updateLocalStats();
+            setInterval(updateLocalStats, 3000);
+
+            // 监听 storage 变化（其他标签页修改时同步）
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'resourceClicks' || e.key === 'favorites') {
+                    updateLocalStats();
+                }
+            });
 
         })();
     </script>

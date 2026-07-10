@@ -58,7 +58,7 @@
             transform: translateY(0) scale(1);
         }
 
-        /* ===== Toast 提示（两个独立 Toast） ===== */
+        /* ===== Toast 提示 ===== */
         .toast {
             position: fixed;
             left: 50%;
@@ -87,8 +87,8 @@
             font-weight: 700;
         }
 
-        #toast { bottom: 30px; }          /* 横屏提示 */
-        #visitToast { bottom: 90px; }     /* 访客足迹（在横屏上方，避免重叠） */
+        #toast { bottom: 30px; }
+        #visitToast { bottom: 90px; }
 
         @media (max-width: 480px) {
             .toast {
@@ -107,6 +107,41 @@
                 border-color: rgba(0,0,0,0.05);
             }
             .toast .highlight { color: #1b5e20; }
+        }
+
+        /* ===== 统计卡片（新增） ===== */
+        .stats-card {
+            display: flex;
+            justify-content: center;
+            gap: 2.5rem;
+            margin: 1rem 0 0.5rem 0;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            background: rgba(128, 128, 128, 0.04);
+            border: 1px solid rgba(128, 128, 128, 0.06);
+            flex-wrap: wrap;
+        }
+        .stats-card .stat-item {
+            display: flex;
+            align-items: baseline;
+            gap: 0.3rem;
+            font-size: 0.95rem;
+            opacity: 0.7;
+        }
+        .stats-card .stat-item .num {
+            font-weight: 700;
+            font-size: 1.1rem;
+            opacity: 1;
+            color: inherit;
+        }
+        .stats-card .stat-item .num.loading {
+            opacity: 0.3;
+            font-weight: 400;
+        }
+        @media (max-width: 480px) {
+            .stats-card { gap: 1rem; padding: 0.5rem 1rem; }
+            .stats-card .stat-item { font-size: 0.8rem; }
+            .stats-card .stat-item .num { font-size: 0.95rem; }
         }
     </style>
 </head>
@@ -137,6 +172,12 @@
             在这里，分享灵感、技术与我眼中的世界。
         </p>
 
+        <!-- ===== 统计卡片 ===== -->
+        <div class="stats-card fade-in-up delay-5">
+            <span class="stat-item">👥 独立访客：<span class="num" id="busuanzi_value_site_uv">加载中...</span></span>
+            <span class="stat-item">👁️ 总访问量：<span class="num" id="busuanzi_value_site_pv">加载中...</span></span>
+        </div>
+
         <div class="button-group fade-in-up delay-6">
             <a href="RP.html" class="btn btn-primary">📦 我的资源</a>
             <a href="#" class="btn btn-secondary">📝 我的文章</a>
@@ -148,6 +189,9 @@
             ✦ 随时更新 · 欢迎来访 ✦ &nbsp;·&nbsp; 🐙 <a href="https://github.com/ku-134" target="_blank">ku-134</a>
         </div>
     </div>
+
+    <!-- ===== 不蒜子统计脚本 ===== -->
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
     <script src="script.js"></script>
     <script>
@@ -214,7 +258,7 @@
                 }, 5000);
             }
 
-            // ---------- 横屏提示（原有） ----------
+            // ---------- 横屏提示 ----------
             function showToast() {
                 const toast = document.getElementById('toast');
                 toast.classList.add('show');
@@ -225,7 +269,7 @@
                 setTimeout(showToast, 1200);
             }
 
-            // ---------- 访客足迹（新增） ----------
+            // ---------- 访客足迹 ----------
             function showVisitToast() {
                 const visitToast = document.getElementById('visitToast');
                 const lastVisit = localStorage.getItem('lastVisit');
@@ -247,13 +291,10 @@
                 visitToast.textContent = message;
                 visitToast.classList.add('show');
                 setTimeout(() => { visitToast.classList.remove('show'); }, 4500);
-
-                // 更新访问时间
                 localStorage.setItem('lastVisit', String(now));
             }
-
-            // 延迟显示，避免与横屏提示同时出现（但也可以同时，位置不同）
             setTimeout(showVisitToast, 1600);
+
         })();
     </script>
 

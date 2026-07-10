@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <style>
         /* ============================================================
-           RP 页面专属样式
+           RP 页面专属样式（不含弹窗，已移至 style.css）
            ============================================================ */
 
         /* ----- 布局容器（左右结构） ----- */
@@ -56,7 +56,6 @@
             opacity: 1;
             font-weight: 600;
         }
-        /* 分类统计小字 */
         .rp-category-item .badge {
             font-size: 0.7rem;
             opacity: 0.5;
@@ -92,7 +91,7 @@
             opacity: 0.5;
         }
 
-        /* 资源卡片（方案一风格：左侧色条 + 箭头） */
+        /* 资源卡片 */
         .rp-resource-item {
             display: flex;
             align-items: center;
@@ -107,7 +106,6 @@
         .rp-resource-item:hover {
             background: rgba(128, 128, 128, 0.04);
         }
-        /* 不同类型不同色条（由 JS 动态加类） */
         .rp-resource-item.type-github { border-left-color: #6e5494; }
         .rp-resource-item.type-pan    { border-left-color: #f5a623; }
         .rp-resource-item.type-other  { border-left-color: #4a90d9; }
@@ -153,18 +151,75 @@
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
-        /* 无链接占位 */
         .rp-resource-item .name.placeholder {
             opacity: 0.4;
             font-style: italic;
         }
 
-        /* 空状态 */
+        /* 空状态 / 未加载状态 */
         .rp-empty {
             text-align: center;
             padding: 2.5rem 1rem;
             opacity: 0.4;
             font-size: 0.95rem;
+        }
+
+        /* ----- 拉取分类大按钮 ----- */
+        .rp-fetch-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 280px;
+            text-align: center;
+        }
+        .rp-fetch-btn {
+            font-size: 1.6rem;
+            padding: 1.2rem 3.5rem;
+            border-radius: 3rem;
+            border: 3px dashed currentColor;
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .rp-fetch-btn:hover {
+            opacity: 1;
+            transform: scale(1.03);
+            border-style: solid;
+        }
+        .rp-fetch-btn:active {
+            transform: scale(0.96);
+        }
+        .rp-fetch-btn.loading {
+            opacity: 0.8;
+            cursor: wait;
+            border-style: solid;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .rp-fetch-btn .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+            font-size: 1.4rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .rp-fetch-hint {
+            margin-top: 0.8rem;
+            font-size: 0.85rem;
+            opacity: 0.3;
         }
 
         /* ---- 浅色模式微调 ---- */
@@ -174,9 +229,11 @@
             .rp-resource-item.type-other  { border-left-color: #2b6bb0; }
             .rp-resource-item.type-local  { border-left-color: #5a9e2e; }
             .rp-category-item.active { background: rgba(0,0,0,0.06); }
+            .rp-fetch-btn { border-color: rgba(0,0,0,0.2); }
         }
         @media (prefers-color-scheme: dark) {
             .rp-category-item.active { background: rgba(255,255,255,0.06); }
+            .rp-fetch-btn { border-color: rgba(255,255,255,0.15); }
         }
 
         /* ---- 响应式：小屏折叠 ---- */
@@ -207,152 +264,12 @@
                 margin-left: 1.8rem;
             }
             .rp-resource-item .type-tag { font-size: 0.55rem; padding: 0 0.5rem; }
-        }
-
-
-        /* ============================================================
-           跳转确认弹窗（Modal）
-           ============================================================ */
-        .rp-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 999;
-            display: none;              /* 默认隐藏 */
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.35);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            animation: overlayIn 0.25s ease-out;
-        }
-        .rp-overlay.active {
-            display: flex;
-        }
-        @keyframes overlayIn {
-            0% { opacity: 0; backdrop-filter: blur(0px); }
-            100% { opacity: 1; backdrop-filter: blur(6px); }
-        }
-
-        .rp-modal {
-            max-width: 440px;
-            width: 90%;
-            padding: 2rem 2rem 1.8rem;
-            border-radius: 1.8rem;
-            background: var(--modal-bg, rgba(20,30,20,0.88));
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
-            text-align: center;
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @keyframes modalPop {
-            0% { transform: scale(0.92) translateY(16px); opacity: 0; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-        /* 亮色模式弹窗 */
-        @media (prefers-color-scheme: light) {
-            .rp-modal { --modal-bg: rgba(245, 250, 245, 0.92); border-color: rgba(0,0,0,0.06); }
-        }
-        /* 深色模式弹窗 */
-        @media (prefers-color-scheme: dark) {
-            .rp-modal { --modal-bg: rgba(12, 22, 12, 0.92); border-color: rgba(255,255,255,0.06); }
-        }
-
-        .rp-modal .modal-icon {
-            font-size: 2.8rem;
-            margin-bottom: 0.2rem;
-        }
-        .rp-modal .modal-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            word-break: break-all;
-            margin-bottom: 0.2rem;
-        }
-        .rp-modal .modal-sub {
-            font-size: 0.9rem;
-            opacity: 0.5;
-            margin-bottom: 0.8rem;
-        }
-        .rp-modal .modal-warning {
-            font-size: 0.95rem;
-            padding: 0.5rem 1rem;
-            border-radius: 1rem;
-            background: rgba(255, 200, 0, 0.10);
-            border: 1px solid rgba(255, 200, 0, 0.15);
-            margin-bottom: 1.8rem;
-            display: inline-block;
-        }
-        .rp-modal .modal-warning strong {
-            font-weight: 700;
-        }
-
-        .rp-modal .modal-actions {
-            display: flex;
-            gap: 0.8rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .rp-modal .modal-actions button {
-            padding: 0.55rem 2rem;
-            border-radius: 3rem;
-            border: 2px solid transparent;
-            font-weight: 600;
-            font-size: 1rem;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            min-width: 100px;
-        }
-        .rp-modal .modal-actions .btn-cancel {
-            background: transparent;
-            border-color: currentColor;
-            opacity: 0.5;
-        }
-        .rp-modal .modal-actions .btn-cancel:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-        .rp-modal .modal-actions .btn-confirm {
-            background: #c0392b;
-            border-color: #c0392b;
-            color: #fff;
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        .rp-modal .modal-actions .btn-confirm.ready {
-            opacity: 1;
-            cursor: pointer;
-            background: #e74c3c;
-            border-color: #e74c3c;
-        }
-        .rp-modal .modal-actions .btn-confirm.ready:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
-        }
-
-        /* 倒计时圈 */
-        .rp-modal .countdown-ring {
-            display: inline-block;
-            width: 1.8rem;
-            height: 1.8rem;
-            line-height: 1.8rem;
-            border-radius: 50%;
-            border: 2px solid currentColor;
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-left: 0.4rem;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-        .rp-modal .btn-confirm.ready .countdown-ring {
-            opacity: 0.3;
-        }
-
-        /* 防止页面滚动 */
-        body.modal-open {
-            overflow: hidden;
+            .rp-fetch-btn {
+                font-size: 1.2rem;
+                padding: 0.9rem 2rem;
+                flex-direction: column;
+                gap: 0.4rem;
+            }
         }
     </style>
 </head>
@@ -362,11 +279,15 @@
         <div class="sub">— 我整理的一些好东西 —</div>
         <div class="divider"></div>
 
-        <!-- 导航栏 -->
+        <!-- 导航栏（更新：首页 · 资源 · 玩点游戏？） -->
         <div class="nav-menu">
             <a href="index.html" class="nav-link">🏠 首页</a>
-            <a href="about.html" class="nav-link">📖 关于</a>
+            <a href="#" class="nav-link active">📦 资源</a>
+            <a href="#" class="nav-link">🎮 玩点游戏？</a>
         </div>
+
+        <!-- 统计信息（加载后显示） -->
+        <div class="resource-stats" id="stats"></div>
 
         <!-- 左右布局 -->
         <div class="rp-layout">
@@ -374,14 +295,21 @@
             <div class="rp-sidebar">
                 <div class="rp-sidebar-title">📂 分类</div>
                 <div id="categoryList">
-                    <!-- JS 动态生成 -->
+                    <!-- 加载前提示 -->
+                    <div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">⬅️ 点击右侧拉取</div>
                 </div>
             </div>
 
             <!-- 右侧：资源列表 -->
             <div class="rp-content">
                 <div id="resourceArea">
-                    <!-- JS 动态生成 -->
+                    <!-- 默认显示“拉取分类”大按钮 -->
+                    <div class="rp-fetch-area" id="fetchArea">
+                        <button class="rp-fetch-btn" id="fetchBtn">
+                            📂 拉取分类
+                        </button>
+                        <div class="rp-fetch-hint">点击后加载 category.txt</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -392,7 +320,7 @@
     </div>
 
     <!-- ============================================================
-         跳转确认弹窗（HTML 骨架）
+         跳转确认弹窗（HTML 骨架，样式已移至 style.css）
          ============================================================ -->
     <div class="rp-overlay" id="modalOverlay">
         <div class="rp-modal">
@@ -419,6 +347,8 @@
             // ---------- DOM 引用 ----------
             const categoryListEl = document.getElementById('categoryList');
             const resourceAreaEl = document.getElementById('resourceArea');
+            const statsEl = document.getElementById('stats');
+            const fetchBtn = document.getElementById('fetchBtn');
             const overlay = document.getElementById('modalOverlay');
             const modalTitle = document.getElementById('modalTitle');
             const modalDesc = document.getElementById('modalDesc');
@@ -430,11 +360,12 @@
             const countdownRing = document.getElementById('countdownRing');
 
             // ---------- 状态 ----------
-            let allCategories = [];            // 解析后的全量数据
-            let currentCategory = null;        // 当前选中的分类名
-            let pendingLink = null;            // 待跳转的 URL
-            let countdownTimer = null;         // 倒计时句柄
+            let allCategories = [];
+            let currentCategory = null;
+            let pendingLink = null;
+            let countdownTimer = null;
             let countdownValue = 3;
+            let isLoading = false;
 
             // ---------- 解析 category.txt（扩展格式） ----------
             function parseCategoryTxt(text) {
@@ -446,7 +377,6 @@
                     let line = raw.trim();
                     if (!line) continue;
 
-                    // 分类标题：## 分类名
                     if (line.startsWith('##')) {
                         const name = line.replace(/^##\s*/, '').trim();
                         current = { name, items: [] };
@@ -454,12 +384,10 @@
                         continue;
                     }
 
-                    // 资源条目：- 名称 | 描述 | 链接 | 类型
                     if (line.startsWith('- ') && current) {
                         const content = line.replace(/^-\s*/, '').trim();
                         const parts = content.split('|').map(s => s.trim());
 
-                        // 默认值
                         let item = { name: '', desc: '', link: '', type: 'other' };
 
                         if (parts.length >= 4) {
@@ -484,9 +412,7 @@
                             item.type = 'placeholder';
                         }
 
-                        // 若链接为空，标记为 placeholder
                         if (!item.link) item.type = 'placeholder';
-
                         if (item.name) {
                             current.items.push(item);
                         }
@@ -495,7 +421,6 @@
                 return categories;
             }
 
-            // 根据链接自动推断类型
             function detectType(link) {
                 if (!link) return 'placeholder';
                 const l = link.toLowerCase();
@@ -505,7 +430,6 @@
                 return 'other';
             }
 
-            // 获取类型显示名
             function getTypeLabel(type) {
                 const map = {
                     'github': 'GitHub',
@@ -517,7 +441,6 @@
                 return map[type] || '外部';
             }
 
-            // 获取类型图标
             function getTypeIcon(type) {
                 const map = {
                     'github': '🐙',
@@ -532,7 +455,7 @@
             // ---------- 渲染左侧分类目录 ----------
             function renderSidebar(categories, activeName) {
                 if (!categories || categories.length === 0) {
-                    categoryListEl.innerHTML = `<div style="opacity:0.3;font-size:0.85rem;">暂无分类</div>`;
+                    categoryListEl.innerHTML = `<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">暂无分类</div>`;
                     return;
                 }
 
@@ -549,14 +472,11 @@
                 }
                 categoryListEl.innerHTML = html;
 
-                // 绑定点击事件
                 document.querySelectorAll('.rp-category-item').forEach(btn => {
                     btn.addEventListener('click', function() {
                         const name = this.dataset.category;
-                        // 更新激活状态
                         document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
                         this.classList.add('active');
-                        // 切换分类
                         switchCategory(name);
                     });
                 });
@@ -594,11 +514,9 @@
                     const typeLabel = getTypeLabel(item.type);
                     const icon = getTypeIcon(item.type);
 
-                    // 判断是否有链接
                     const hasLink = item.link && item.type !== 'placeholder';
                     const linkAttr = hasLink ? `data-link="${item.link}" data-type="${item.type}"` : '';
 
-                    // 名称部分：有链接则显示为 a 标签（但点击走弹窗），无链接则显示占位文字
                     const nameHtml = hasLink
                         ? `<a href="#" class="rp-resource-link" ${linkAttr}>${item.name}</a>`
                         : `<span class="name placeholder">${item.name}（即将上线）</span>`;
@@ -615,14 +533,12 @@
 
                 resourceAreaEl.innerHTML = html;
 
-                // 绑定资源链接点击事件（弹窗）
                 document.querySelectorAll('.rp-resource-link').forEach(a => {
                     a.addEventListener('click', function(e) {
                         e.preventDefault();
                         const link = this.dataset.link;
                         const type = this.dataset.type || 'other';
                         const name = this.textContent.trim();
-                        // 查找同行的描述
                         const parent = this.closest('.rp-resource-item');
                         const descEl = parent ? parent.querySelector('.desc') : null;
                         const desc = descEl ? descEl.textContent.trim() : '';
@@ -639,8 +555,28 @@
                 renderResources(cat);
             }
 
-            // ---------- 加载数据 ----------
-            function loadData() {
+            // ---------- 更新统计 ----------
+            function updateStats(categories) {
+                if (!categories || categories.length === 0) {
+                    statsEl.textContent = '';
+                    return;
+                }
+                let total = 0;
+                for (const cat of categories) {
+                    total += cat.items.filter(it => it.type !== 'placeholder').length;
+                }
+                statsEl.textContent = `共 ${categories.length} 个分类 · ${total} 个资源`;
+            }
+
+            // ---------- 拉取并渲染（点击按钮触发） ----------
+            function fetchAndRender() {
+                if (isLoading) return;
+                isLoading = true;
+
+                // 按钮变为加载状态
+                fetchBtn.classList.add('loading');
+                fetchBtn.innerHTML = `<span class="spinner">⟳</span> 加载中...`;
+
                 fetch('category.txt')
                     .then(res => {
                         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -651,10 +587,12 @@
                             allCategories = [];
                             renderSidebar([], null);
                             resourceAreaEl.innerHTML = `<div class="rp-empty">📭 category.txt 为空</div>`;
+                            statsEl.textContent = '';
                             return;
                         }
                         allCategories = parseCategoryTxt(text);
-                        // 默认选中第一个有资源的分类
+                        updateStats(allCategories);
+
                         let first = allCategories.find(c => c.items.length > 0);
                         if (!first && allCategories.length > 0) first = allCategories[0];
                         renderSidebar(allCategories, first ? first.name : null);
@@ -675,12 +613,19 @@
                                 </button>
                             </div>
                         `;
+                        statsEl.textContent = '';
+                    })
+                    .finally(() => {
+                        isLoading = false;
+                        fetchBtn.classList.remove('loading');
+                        fetchBtn.innerHTML = '📂 已加载';
+                        fetchBtn.style.opacity = '0.4';
+                        fetchBtn.style.cursor = 'default';
+                        fetchBtn.disabled = true;
                     });
             }
 
-            // ============================================================
-            //  弹窗逻辑
-            // ============================================================
+            // ---------- 弹窗逻辑 ----------
             function openModal(name, desc, link, type) {
                 if (!link) return;
 
@@ -694,20 +639,16 @@
                 modalTypeLabel.textContent = typeLabel;
                 modalWarning.innerHTML = `⚠️ 即将跳转到 <strong>${typeLabel}</strong> 页面，请确认安全。`;
 
-                // 重置确认按钮状态
                 btnConfirm.classList.remove('ready');
                 btnConfirm.disabled = true;
                 countdownValue = 3;
                 countdownRing.textContent = '3';
 
-                // 显示弹窗
                 overlay.classList.add('active');
                 document.body.classList.add('modal-open');
 
-                // 清除旧计时器
                 if (countdownTimer) clearInterval(countdownTimer);
 
-                // 启动倒计时
                 countdownTimer = setInterval(function() {
                     countdownValue -= 1;
                     countdownRing.textContent = countdownValue;
@@ -729,7 +670,6 @@
                     countdownTimer = null;
                 }
                 pendingLink = null;
-                // 重置按钮状态
                 btnConfirm.classList.remove('ready');
                 btnConfirm.disabled = true;
                 countdownRing.textContent = '3';
@@ -737,30 +677,29 @@
 
             function confirmJump() {
                 if (!pendingLink) return;
-                if (btnConfirm.disabled) return; // 倒计时未结束不可点击
-                // 执行跳转
+                if (btnConfirm.disabled) return;
                 window.open(pendingLink, '_blank', 'noopener,noreferrer');
                 closeModal();
             }
 
-            // ---------- 绑定弹窗事件 ----------
+            // ---------- 绑定事件 ----------
+            fetchBtn.addEventListener('click', fetchAndRender);
+
             btnCancel.addEventListener('click', closeModal);
             btnConfirm.addEventListener('click', confirmJump);
 
-            // 点击蒙层关闭（但不误触内部）
             overlay.addEventListener('click', function(e) {
                 if (e.target === overlay) closeModal();
             });
 
-            // ESC 键关闭
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && overlay.classList.contains('active')) {
                     closeModal();
                 }
             });
 
-            // ---------- 启动 ----------
-            loadData();
+            // ---------- 页面加载：不自动拉取，显示按钮 ----------
+            // 已默认显示“拉取分类”按钮，无需额外操作
 
         })();
     </script>

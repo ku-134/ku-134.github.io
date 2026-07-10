@@ -22,16 +22,16 @@
 ```
 
 ku-134.github.io/
-├── index.html          # 首页（含特效）
-├── about.html          # 关于我（含特效）
-├── contact.html        # 联系方式（含特效）
-├── RP.html             # 资源分类页（含特效，缓存修复）
-├── style.css           # 全局样式（含入场动画）
-├── script.js           # 打字机特效脚本（新增）
+├── index.html          # 首页
+├── about.html          # 关于我
+├── contact.html        # 联系方式
+├── RP.html             # 资源分类页（要读取category）
+├── rp-core.js          # RP核心逻辑
+├── style.css           # 全局样式
+├── script.js           # 打字机特效
 ├── background.webp     # 背景图片
 ├── category.txt        # 资源数据
 └── README.md           # 项目说明
-
 ```
 
 ---

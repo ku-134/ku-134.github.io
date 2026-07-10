@@ -82,7 +82,7 @@
             opacity: 0.5;
         }
 
-        /* ---- 搜索栏 ---- */
+        /* ===== 搜索栏 ===== */
         .search-bar {
             display: flex;
             gap: 0.6rem;
@@ -546,6 +546,26 @@
                 border-color: #81c784;
             }
         }
+
+        /* ===== 统计信息（底部） ===== */
+        .stats-footer {
+            margin-top: 1.2rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(128, 128, 128, 0.08);
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            font-size: 0.85rem;
+            opacity: 0.5;
+            flex-wrap: wrap;
+        }
+        .stats-footer .num {
+            font-weight: 600;
+            opacity: 0.8;
+        }
+        @media (max-width: 480px) {
+            .stats-footer { gap: 0.8rem; font-size: 0.75rem; flex-direction: column; align-items: center; }
+        }
     </style>
 </head>
 <body>
@@ -596,6 +616,12 @@
         <div class="footer fade-in-up delay-7">
             📂 资源持续更新中 · 欢迎收藏
         </div>
+
+        <!-- ===== 统计信息 ===== -->
+        <div class="stats-footer fade-in-up delay-7">
+            <span>👥 本站访客：<span class="num" id="busuanzi_value_site_uv">0</span> 人</span>
+            <span>👁️ 本站访问：<span class="num" id="busuanzi_value_site_pv">0</span> 次</span>
+        </div>
     </div>
 
     <!-- ===== 跳转确认弹窗 ===== -->
@@ -625,7 +651,7 @@
             <div class="modal-sub" style="text-align:left; line-height:1.8;">
                 <p>通过以下方式反馈：</p>
                 <p>1. 写邮件：<a href="mailto:3074341324@qq.com">3074341324@qq.com</a></p>
-                <p>2. 在B站私信/评论我：<a href="https://space.bilibili.com/搜索KU_134" target="_blank">KU_134</a> <span style="color:#f5a623; font-weight:700;">（推荐）</span></p>
+                <p>2. 在B站私信/评论我：<a href="https://search.bilibili.com/all?keyword=KU_134" target="_blank">KU_134</a> <span style="color:#f5a623; font-weight:700;">（推荐）</span></p>
                 <p style="opacity:0.6; font-size:0.85rem; margin-top:0.3rem;">提示：加QQ好友的话，大概通会不通过。所以推荐在B站评论。</p>
             </div>
             <div class="modal-actions">
@@ -633,6 +659,9 @@
             </div>
         </div>
     </div>
+
+    <!-- ===== 不蒜子统计脚本 ===== -->
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
     <script>
         (function() {
@@ -675,7 +704,6 @@
                     favorites.push(name);
                 }
                 saveFavorites();
-                // 重新渲染当前视图
                 renderCurrentView();
             }
 
@@ -834,46 +862,35 @@
 
             // ---------- 渲染逻辑 ----------
             function getFilteredItems() {
-                // 先根据当前视图（全部/收藏）过滤分类
-                let categories = allCategories;
+                let items = [];
                 if (currentView === 'favorites') {
-                    // 只保留包含收藏资源的分类（但我们要展示所有收藏资源，跨分类）
-                    // 这里我们直接返回收藏的资源列表（平铺）
-                    const allItems = [];
                     for (const cat of allCategories) {
                         for (const item of cat.items) {
                             if (isFavorited(item.name)) {
-                                allItems.push({ ...item, category: cat.name });
+                                items.push({ ...item, category: cat.name });
                             }
                         }
                     }
-                    return allItems;
                 } else {
-                    // 全部视图：返回所有资源（带分类名）
-                    const allItems = [];
                     for (const cat of allCategories) {
                         for (const item of cat.items) {
-                            allItems.push({ ...item, category: cat.name });
+                            items.push({ ...item, category: cat.name });
                         }
                     }
-                    return allItems;
                 }
-            }
-
-            function renderCurrentView() {
-                const items = getFilteredItems();
-                // 应用搜索过滤
-                let filtered = items;
                 if (searchQuery.trim() !== '') {
                     const q = searchQuery.trim().toLowerCase();
-                    filtered = items.filter(item =>
+                    items = items.filter(item =>
                         item.name.toLowerCase().includes(q) ||
                         (item.desc && item.desc.toLowerCase().includes(q))
                     );
                 }
+                return items;
+            }
 
-                // 如果没有资源，显示空状态
-                if (filtered.length === 0) {
+            function renderCurrentView() {
+                const items = getFilteredItems();
+                if (items.length === 0) {
                     let msg = '📭 没有找到资源';
                     if (currentView === 'favorites') msg = '⭐ 还没有收藏任何资源，快去收藏吧！';
                     if (searchQuery.trim() !== '') msg = '🔍 没有找到匹配的资源';
@@ -887,15 +904,13 @@
                     updateStats();
                     return;
                 }
-
-                // 渲染资源列表
                 let html = `
                     <div class="rp-content-header">
                         <span class="cat-name">${currentView === 'favorites' ? '⭐ 我的收藏' : '全部资源'}</span>
-                        <span class="cat-count">${filtered.length} 个资源</span>
+                        <span class="cat-count">${items.length} 个资源</span>
                     </div>
                 `;
-                for (const item of filtered) {
+                for (const item of items) {
                     const typeClass = 'type-' + item.type;
                     const typeLabel = getTypeLabel(item.type);
                     const icon = getTypeIcon(item.type);
@@ -903,11 +918,9 @@
                     const linkAttr = hasLink ? `data-link="${item.link}" data-type="${item.type}"` : '';
                     const fav = isFavorited(item.name) ? 'active' : '';
                     const favoritedClass = isFavorited(item.name) ? 'favorited' : '';
-
                     const nameHtml = hasLink ?
                         `<a href="#" class="rp-resource-link" ${linkAttr}>${item.name}</a>` :
                         `<span class="name placeholder">${item.name}（即将上线）</span>`;
-
                     html += `
                         <div class="rp-resource-item ${typeClass} ${favoritedClass}">
                             <span class="arrow">${icon}</span>
@@ -919,7 +932,6 @@
                     `;
                 }
                 resourceAreaEl.innerHTML = html;
-
                 // 绑定资源链接点击
                 document.querySelectorAll('.rp-resource-link').forEach(a => {
                     a.addEventListener('click', function(e) {
@@ -933,7 +945,6 @@
                         openModal(name, desc, link, type);
                     });
                 });
-
                 // 绑定星标按钮
                 document.querySelectorAll('.star-btn').forEach(btn => {
                     btn.addEventListener('click', function(e) {
@@ -942,7 +953,6 @@
                         toggleFavorite(name);
                     });
                 });
-
                 updateStats();
             }
 
@@ -955,38 +965,6 @@
                 statsEl.textContent = text;
             }
 
-            // ---------- 切换分类（左侧目录树点击） ----------
-            function switchCategory(name) {
-                if (name === '__all__') {
-                    currentView = 'all';
-                    searchQuery = '';
-                    searchInput.value = '';
-                    clearBtn.style.display = 'none';
-                    favToggle.classList.remove('active');
-                    renderCurrentView();
-                    return;
-                }
-                if (name === '__favorites__') {
-                    currentView = 'favorites';
-                    searchQuery = '';
-                    searchInput.value = '';
-                    clearBtn.style.display = 'none';
-                    favToggle.classList.add('active');
-                    renderCurrentView();
-                    return;
-                }
-                // 普通分类：切换视图为全部，但只显示该分类
-                currentView = 'all';
-                // 暂时不支持单分类过滤，目前只在全部中展示
-                // 但我们可以在侧边栏高亮
-                // 重新渲染全部
-                renderCurrentView();
-                // 高亮侧边栏
-                document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
-                const target = document.querySelector(`.rp-category-item[data-category="${name}"]`);
-                if (target) target.classList.add('active');
-            }
-
             // ---------- 侧边栏渲染 ----------
             function renderSidebar(categories) {
                 if (!categories || categories.length === 0) {
@@ -994,19 +972,14 @@
                     return;
                 }
                 let html = '';
-                // 全部
                 html += `<button class="rp-category-item active" data-category="__all__">📂 全部</button>`;
-                // 收藏
                 const favCount = favorites.length;
                 html += `<button class="rp-category-item" data-category="__favorites__">⭐ 我的收藏 <span class="badge">${favCount}</span></button>`;
-                // 各分类
                 for (const cat of categories) {
                     const count = cat.items.filter(it => it.type !== 'placeholder').length;
                     html += `<button class="rp-category-item" data-category="${cat.name}">${cat.name}<span class="badge">${count}</span></button>`;
                 }
                 categoryListEl.innerHTML = html;
-
-                // 绑定点击事件
                 document.querySelectorAll('.rp-category-item').forEach(btn => {
                     btn.addEventListener('click', function() {
                         document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
@@ -1027,8 +1000,6 @@
                             favToggle.classList.add('active');
                             renderCurrentView();
                         } else {
-                            // 普通分类：只显示该分类的资源
-                            // 我们实现一个临时过滤
                             const items = [];
                             const cat = allCategories.find(c => c.name === name);
                             if (cat) {
@@ -1036,14 +1007,12 @@
                                     items.push({ ...item, category: cat.name });
                                 }
                             }
-                            // 直接渲染这些items
                             renderFilteredItems(items, name);
                         }
                     });
                 });
             }
 
-            // 辅助：渲染指定的资源列表（用于单分类）
             function renderFilteredItems(items, categoryName) {
                 if (items.length === 0) {
                     resourceAreaEl.innerHTML = `
@@ -1056,7 +1025,6 @@
                     updateStats();
                     return;
                 }
-                // 应用搜索过滤
                 let filtered = items;
                 if (searchQuery.trim() !== '') {
                     const q = searchQuery.trim().toLowerCase();
@@ -1093,7 +1061,6 @@
                     `;
                 }
                 resourceAreaEl.innerHTML = html;
-                // 绑定事件
                 document.querySelectorAll('.rp-resource-link').forEach(a => {
                     a.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -1139,7 +1106,6 @@
                         allCategories = parseCategoryTxt(text);
                         loadFavorites();
                         renderSidebar(allCategories);
-                        // 默认显示全部
                         currentView = 'all';
                         searchQuery = '';
                         searchInput.value = '';
@@ -1171,7 +1137,6 @@
                 clearBtn.style.display = val.length > 0 ? 'inline' : 'none';
                 clearTimeout(searchTimer);
                 searchTimer = setTimeout(() => {
-                    // 如果当前是分类视图，重新渲染该分类；否则渲染全部
                     const activeCat = document.querySelector('.rp-category-item.active');
                     if (activeCat) {
                         const name = activeCat.dataset.category;
@@ -1182,7 +1147,6 @@
                             currentView = 'favorites';
                             renderCurrentView();
                         } else {
-                            // 重新过滤该分类
                             const cat = allCategories.find(c => c.name === name);
                             if (cat) {
                                 const items = cat.items.map(item => ({ ...item, category: cat.name }));
@@ -1198,7 +1162,6 @@
                 searchInput.value = '';
                 searchQuery = '';
                 this.style.display = 'none';
-                // 重新渲染当前视图
                 const activeCat = document.querySelector('.rp-category-item.active');
                 if (activeCat) {
                     const name = activeCat.dataset.category;
@@ -1220,19 +1183,16 @@
             favToggle.addEventListener('click', function() {
                 const isActive = this.classList.contains('active');
                 if (isActive) {
-                    // 切换到全部
                     this.classList.remove('active');
                     currentView = 'all';
                     searchQuery = '';
                     searchInput.value = '';
                     clearBtn.style.display = 'none';
-                    // 高亮“全部”分类
                     document.querySelectorAll('.rp-category-item').forEach(b => b.classList.remove('active'));
                     const allBtn = document.querySelector('.rp-category-item[data-category="__all__"]');
                     if (allBtn) allBtn.classList.add('active');
                     renderCurrentView();
                 } else {
-                    // 切换到收藏
                     this.classList.add('active');
                     currentView = 'favorites';
                     searchQuery = '';
@@ -1245,7 +1205,7 @@
                 }
             });
 
-            // ---------- 初始化时加载收藏状态 ----------
+            // ---------- 初始化 ----------
             loadFavorites();
 
         })();

@@ -4,24 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>联系方式 · Kukuz</title>
-    <!-- 预加载背景图，优化速度 -->
     <link rel="preload" as="image" href="background.webp">
-    <!-- 全局样式（缓存复用） -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="card">
-        <h1>📬 联系方式</h1>
-        <div class="sub">— 欢迎交流 —</div>
-        <div class="divider"></div>
+        <h1 class="typing-title">📬 联系方式</h1>
+        <div class="sub fade-in-up delay-2">— 欢迎交流 —</div>
+        <div class="divider fade-in-up delay-3"></div>
 
-        <!-- 统一导航栏：首页 · 关于 -->
-        <div class="nav-menu">
+        <div class="nav-menu fade-in-up delay-4">
             <a href="index.html" class="nav-link">🏠 首页</a>
             <a href="about.html" class="nav-link">📖 关于</a>
         </div>
 
-        <div class="contact-grid">
+        <div class="contact-grid fade-in-up delay-5">
             <div class="section">
                 <div class="section-title">💬 交流</div>
                 <div class="contact-item">
@@ -33,7 +30,6 @@
                 <div class="contact-item">
                     <span class="contact-label">邮箱</span>
                     <span class="contact-value">
-                        <!-- ✅ 已修改为 QQ 邮箱，保护个人信息 -->
                         <a href="mailto:3074341324@qq.com">3074341324@qq.com</a>
                     </span>
                 </div>
@@ -75,9 +71,11 @@
             </div>
         </div>
 
-        <div class="footer">
+        <div class="footer fade-in-up delay-6">
             📬 期待你的来信
         </div>
     </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

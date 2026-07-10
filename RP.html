@@ -276,7 +276,7 @@
             position: fixed;
             inset: 0;
             z-index: 999;
-            display: none;              /* 默认隐藏 */
+            display: none;
             align-items: center;
             justify-content: center;
             background: rgba(0,0,0,0.35);
@@ -703,7 +703,7 @@
                 statsEl.textContent = `共 ${categories.length} 个分类 · ${total} 个资源`;
             }
 
-            // ---------- 拉取并渲染 ----------
+            // ---------- 拉取并渲染（修复缓存） ----------
             function fetchAndRender() {
                 if (isLoading) return;
                 isLoading = true;
@@ -711,7 +711,8 @@
                 fetchBtn.classList.add('loading');
                 fetchBtn.innerHTML = `<span class="spinner">⟳</span> 加载中...`;
 
-                fetch('category.txt')
+                // ✅ 添加时间戳参数，强制绕过浏览器缓存
+                fetch('category.txt?t=' + Date.now())
                     .then(res => {
                         if (!res.ok) throw new Error('HTTP ' + res.status);
                         return res.text();

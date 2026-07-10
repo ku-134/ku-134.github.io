@@ -18,6 +18,8 @@
             flex: 0 0 200px;
             border-right: 1px solid rgba(128, 128, 128, 0.12);
             padding-right: 1rem;
+            display: flex;
+            flex-direction: column;
         }
         .rp-sidebar-title {
             font-size: 0.75rem;
@@ -25,6 +27,10 @@
             letter-spacing: 1.5px;
             opacity: 0.4;
             margin-bottom: 0.8rem;
+        }
+        #categoryList {
+            flex: 1;
+            overflow-y: auto;
         }
         .rp-category-item {
             display: block;
@@ -58,6 +64,41 @@
         }
         .rp-category-item.active .badge {
             opacity: 0.7;
+        }
+
+        /* ===== 🆕 “我有推荐”按钮 ===== */
+        .recommend-divider {
+            margin: 0.8rem 0 0.6rem 0;
+            border: none;
+            border-top: 1px solid rgba(128, 128, 128, 0.08);
+        }
+        .recommend-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 0.5rem 0.6rem;
+            border-radius: 0.5rem;
+            border: 1px dashed rgba(128, 128, 128, 0.2);
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+        .recommend-btn:hover {
+            opacity: 1;
+            border-color: #f5a623;
+            background: rgba(245, 166, 35, 0.05);
+            transform: translateY(-1px);
+        }
+        .recommend-btn:active {
+            transform: scale(0.98);
+        }
+        @media (prefers-color-scheme: light) {
+            .recommend-btn { border-color: rgba(0,0,0,0.1); }
+            .recommend-btn:hover { border-color: #d48c1a; background: rgba(212, 140, 26, 0.05); }
         }
 
         .rp-content {
@@ -320,8 +361,17 @@
                 display: flex;
                 flex-wrap: wrap;
                 gap: 0.3rem;
+                flex-direction: row;
             }
             .rp-sidebar-title { display: none; }
+            #categoryList {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.3rem;
+                overflow-y: visible;
+                flex: none;
+                width: 100%;
+            }
             .rp-category-item {
                 width: auto;
                 padding: 0.3rem 0.8rem;
@@ -346,6 +396,17 @@
             }
             .search-bar input { min-width: 100px; font-size: 0.85rem; }
             .search-bar .fav-toggle { font-size: 0.8rem; padding: 0.2rem 0.6rem; }
+            /* 移动端推荐按钮调整 */
+            .recommend-divider { display: none; }
+            .recommend-btn {
+                width: auto;
+                padding: 0.3rem 0.8rem;
+                font-size: 0.85rem;
+                border-radius: 2rem;
+                border-style: solid;
+                opacity: 0.7;
+                margin-left: 0.3rem;
+            }
         }
 
         /* ===== 弹窗 ===== */
@@ -545,6 +606,103 @@
                 border-color: #81c784;
             }
         }
+
+        /* ===== 🆕 投稿弹窗表单样式 ===== */
+        #recommendModal .modal-icon { font-size: 2.4rem; }
+        #recommendModal .modal-title { font-size: 1.5rem; }
+        #recommendModal .modal-sub {
+            font-size: 0.9rem;
+            opacity: 0.6;
+            text-align: left;
+            padding: 0 0.2rem;
+            line-height: 1.6;
+        }
+        .recommend-form {
+            text-align: left;
+            margin-top: 0.5rem;
+        }
+        .recommend-form .field {
+            margin-bottom: 0.8rem;
+        }
+        .recommend-form .field label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            opacity: 0.6;
+            margin-bottom: 0.2rem;
+        }
+        .recommend-form .field label .required {
+            color: #e74c3c;
+            margin-left: 0.2rem;
+        }
+        .recommend-form .field input,
+        .recommend-form .field textarea,
+        .recommend-form .field select {
+            width: 100%;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.8rem;
+            border: 1px solid rgba(128, 128, 128, 0.15);
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        .recommend-form .field input:focus,
+        .recommend-form .field textarea:focus,
+        .recommend-form .field select:focus {
+            border-color: currentColor;
+        }
+        .recommend-form .field textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .recommend-form .field select option {
+            background: #1a2e1a;
+            color: #c8e6c9;
+        }
+        @media (prefers-color-scheme: light) {
+            .recommend-form .field select option {
+                background: #f5faf5;
+                color: #1a3b1a;
+            }
+            .recommend-form .field input,
+            .recommend-form .field textarea,
+            .recommend-form .field select {
+                border-color: rgba(0,0,0,0.1);
+            }
+        }
+        .recommend-form .field .hint {
+            font-size: 0.7rem;
+            opacity: 0.3;
+            margin-top: 0.1rem;
+        }
+        #recommendModal .modal-actions .btn-confirm {
+            background: #f5a623;
+            border-color: #f5a623;
+            opacity: 1;
+            cursor: pointer;
+            color: #1a2e1a;
+        }
+        #recommendModal .modal-actions .btn-confirm:hover {
+            background: #e09b1f;
+            border-color: #e09b1f;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(245, 166, 35, 0.3);
+        }
+        #recommendModal .modal-actions .btn-confirm:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        @media (prefers-color-scheme: dark) {
+            #recommendModal .modal-actions .btn-confirm {
+                color: #1a2e1a;
+            }
+        }
     </style>
 </head>
 <body>
@@ -573,6 +731,9 @@
                 <div id="categoryList">
                     <div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">⬅️ 点击右侧拉取</div>
                 </div>
+                <!-- ===== 🆕 “我有推荐”按钮（侧边栏底部） ===== -->
+                <hr class="recommend-divider">
+                <button class="recommend-btn" id="recommendBtn">📤 我有推荐</button>
             </div>
 
             <div class="rp-content">
@@ -628,6 +789,51 @@
             </div>
             <div class="modal-actions">
                 <button class="btn-confirm" id="feedbackConfirm" style="opacity:1; cursor:pointer;">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 🆕 投稿弹窗 ===== -->
+    <div class="rp-overlay" id="recommendOverlay">
+        <div class="rp-modal" id="recommendModal">
+            <div class="modal-icon">📤</div>
+            <div class="modal-title">推荐资源</div>
+            <div class="modal-sub">分享你发现的好资源，帮助更多人！</div>
+            <form class="recommend-form" id="recommendForm">
+                <div class="field">
+                    <label>资源名称 <span class="required">*</span></label>
+                    <input type="text" id="recName" placeholder="例如：Shizuku" required>
+                </div>
+                <div class="field">
+                    <label>资源描述</label>
+                    <textarea id="recDesc" placeholder="简单描述这个资源的作用"></textarea>
+                </div>
+                <div class="field">
+                    <label>资源链接 <span class="required">*</span></label>
+                    <input type="url" id="recLink" placeholder="https://github.com/..." required>
+                </div>
+                <div class="field">
+                    <label>推荐分类</label>
+                    <select id="recCategory">
+                        <option value="安卓调试工具">安卓调试工具</option>
+                        <option value="影音娱乐">影音娱乐</option>
+                        <option value="实用工具">实用工具</option>
+                        <option value="开发与创作">开发与创作</option>
+                        <option value="其他">其他</option>
+                    </select>
+                    <div class="hint">如果分类不准确，站主会帮你调整</div>
+                </div>
+                <div class="field">
+                    <label>你的昵称</label>
+                    <input type="text" id="recNick" placeholder="选填，用于感谢你的推荐">
+                </div>
+                <div style="font-size:0.8rem; opacity:0.4; margin-top:0.2rem; text-align:center;">
+                    💡 提交后会自动打开邮件客户端，发送前请检查内容
+                </div>
+            </form>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="recommendCancel">取消</button>
+                <button class="btn-confirm" id="recommendSubmit">提交推荐</button>
             </div>
         </div>
     </div>

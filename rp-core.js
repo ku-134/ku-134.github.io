@@ -51,6 +51,21 @@
     let countdownValue = 3;
     let isLoading = false;
 
+    // ---------- 🔐 Base64 解码（内置） ----------
+    function base64Decode(encoded) {
+        try {
+            // 方法一：标准浏览器解码（支持 UTF-8）
+            return decodeURIComponent(escape(atob(encoded)));
+        } catch (e1) {
+            try {
+                // 方法二：备选解码
+                return atob(encoded);
+            } catch (e2) {
+                throw new Error('Base64 解码失败，数据可能已损坏');
+            }
+        }
+    }
+
     // ---------- 收藏管理 ----------
     function loadFavorites() {
         try {
@@ -548,9 +563,7 @@
     function openRecommend() {
         recommendOverlay.classList.add('active');
         document.body.classList.add('modal-open');
-        // 清空表单
         recommendForm.reset();
-        // 重置提交按钮
         recommendSubmit.disabled = false;
         recommendSubmit.textContent = '提交推荐';
     }
@@ -560,19 +573,14 @@
         document.body.classList.remove('modal-open');
     }
 
-    // ---------- 🆕 投稿提交（生成 mailto） ----------
     function handleRecommendSubmit(e) {
         e.preventDefault();
-
-        // 验证必填
         var name = recName.value.trim();
         var link = recLink.value.trim();
         if (!name || !link) {
             alert('请至少填写资源名称和资源链接。');
             return;
         }
-
-        // 组装邮件内容
         var desc = recDesc.value.trim() || '（未提供）';
         var category = recCategory.value || '未指定';
         var nick = recNick.value.trim() || '匿名';
@@ -586,41 +594,77 @@
             '推荐人：' + nick + '\n\n' +
             '--- 感谢你的推荐！站主审核后会加入资源列表 ---'
         );
-
         var mailtoLink = 'mailto:3074341324@qq.com?subject=' + subject + '&body=' + body;
-
-        // 打开邮件客户端
         window.open(mailtoLink, '_blank');
-
-        // 关闭弹窗并提示
         closeRecommend();
-        // 简单提示（可以用 toast，但这里先用 alert 简单实现）
         alert('✅ 已打开邮件客户端，请检查并发送邮件！');
     }
 
-    // ---------- 拉取数据 ----------
+    // ============================================================
+    // 🔐 拉取数据（Base64 解码 + 来源校验）
+    // ============================================================
     function fetchAndRender() {
         if (isLoading) return;
         isLoading = true;
         fetchBtn.classList.add('loading');
         fetchBtn.innerHTML = '<span class="spinner">⟳</span> 加载中...';
 
-        fetch('category.txt?t=' + Date.now())
+        // 🔐 拉取 Nasida.dat（原 category.txt 的 Base64 编码版本）
+        fetch('Nasida.dat?t=' + Date.now())
             .then(function(res) {
-                if (!res.ok) throw new Error('HTTP ' + res.status);
+                if (!res.ok) {
+                    // 如果 Nasida.dat 不存在，尝试拉取 category.txt 作为降级
+                    return fetch('category.txt?t=' + Date.now());
+                }
+                return res;
+            })
+            .then(function(res) {
+                if (!res.ok) throw new Error('数据文件不存在 (HTTP ' + res.status + ')');
                 return res.text();
             })
-            .then(function(text) {
-                if (!text.trim()) {
-                    allCategories = [];
-                    renderSidebar([]);
-                    resourceAreaEl.innerHTML = '<div class="rp-empty">📭 category.txt 为空</div>';
-                    statsEl.textContent = '';
-                    return;
+            .then(function(data) {
+                // 检查是否为空
+                if (!data || data.trim() === '') {
+                    throw new Error('数据文件为空');
                 }
-                allCategories = parseCategoryTxt(text);
+
+                var decodedText;
+                var isEncoded = false;
+
+                // 尝试 Base64 解码
+                try {
+                    var testDecode = base64Decode(data.trim());
+                    // 检查解码后是否包含 category.txt 的特征（## 或 - ）
+                    if (testDecode.includes('##') || testDecode.includes('- ')) {
+                        decodedText = testDecode;
+                        isEncoded = true;
+                    } else {
+                        // 解码成功但内容不像 category.txt，可能是明文
+                        decodedText = data;
+                    }
+                } catch (e) {
+                    // 解码失败，当作明文处理
+                    decodedText = data;
+                }
+
+                // 检查是否包含有效数据
+                if (!decodedText.includes('##') && !decodedText.includes('- ')) {
+                    throw new Error('数据格式无效，请检查 Nasida.dat 是否包含正确的 category.txt 内容');
+                }
+
+                // 解析数据
+                allCategories = parseCategoryTxt(decodedText);
+
+                // 如果没有分类数据，报错
+                if (allCategories.length === 0) {
+                    throw new Error('解析后无有效分类数据');
+                }
+
+                // 加载收藏并清理幽灵收藏
                 loadFavorites();
                 cleanOrphanedFavorites();
+
+                // 渲染
                 renderSidebar(allCategories);
                 currentView = 'all';
                 searchQuery = '';
@@ -628,11 +672,17 @@
                 clearBtn.style.display = 'none';
                 favToggle.classList.remove('active');
                 renderCurrentView();
+
+                // 控制台输出加载信息（调试用）
+                console.log('✅ 数据加载成功' + (isEncoded ? ' (Base64 解码)' : ' (明文)'));
             })
             .catch(function(err) {
                 console.warn('加载失败:', err);
                 resourceAreaEl.innerHTML =
-                    '<div class="rp-empty">❌ 加载失败<br><button class="btn btn-secondary" style="margin-top:1rem;" onclick="location.reload()">🔄 重试</button></div>';
+                    '<div class="rp-empty">❌ 加载失败：' + err.message +
+                    '<br><button class="btn btn-secondary" style="margin-top:1rem;" onclick="location.reload()">🔄 重试</button>' +
+                    '<br><span style="font-size:0.7rem;opacity:0.3;margin-top:0.5rem;display:block;">请确保 Nasida.dat 文件存在且格式正确</span>' +
+                    '</div>';
                 statsEl.textContent = '';
             })
             .finally(function() {
@@ -781,7 +831,6 @@
             if (e.target === feedbackOverlay) closeFeedback();
         });
 
-        // 🆕 投稿按钮事件
         recommendBtn.addEventListener('click', openRecommend);
         recommendCancel.addEventListener('click', closeRecommend);
         recommendOverlay.addEventListener('click', function(e) {

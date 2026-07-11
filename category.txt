@@ -1,5 +1,5 @@
-## 我发布的
-- KU分享站 | 用app访问本站（多此一举） | https://github.com/ku-134/Kukuz-Sharing-Station | github
+## 这是下级拉取（非新源）
+- 出错！ | 看到这段文字，说明网站的编码出问题了 | https://b23.tv/k0697cP
 
 ## 安卓调试工具
 - Shizuku | 用户调试权工具，可以让其他应用使用手机调试（Android Debug Bridge）权限。系统优化必备！ | https://github.com/RikkaApps/Shizuku | github

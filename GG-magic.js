@@ -1,6 +1,6 @@
 // ============================================================
 // GG-magic.js —— 游戏发布页核心逻辑
-// 解析 Hexenzirkel.txt，以卡片网格展示游戏
+// 解析 Hexenzirkel.txt，以卡片网格展示游戏，支持图片浏览弹窗
 // ============================================================
 (function() {
     'use strict';
@@ -11,9 +11,16 @@
     var fetchBtn = document.getElementById('fetchBtn');
     var fetchArea = document.getElementById('fetchArea');
 
+    // 弹窗
+    var overlay = document.getElementById('imageOverlay');
+    var thumbnailsEl = document.getElementById('imageThumbnails');
+    var viewer = document.getElementById('imageViewer');
+
     // ---------- 状态 ----------
     var allGames = [];
     var isLoading = false;
+    var currentImages = [];        // 当前弹窗图片 src 数组
+    var currentIndex = 0;
 
     // ---------- 解析 Hexenzirkel.txt ----------
     function parseHexenzirkel(text) {
@@ -24,31 +31,21 @@
             var line = lines[i].trim();
             if (!line) continue;
 
-            // 匹配格式：## 游戏名 -类型1 -类型2 ... | 介绍 | 文件名
             if (line.indexOf('##') === 0) {
                 var content = line.replace(/^##\s*/, '').trim();
-
-                // 分离 游戏名+类型 部分 与 介绍+文件名 部分
                 var parts = content.split('|').map(function(s) { return s.trim(); });
-                // parts[0] = "游戏名 -类型1 -类型2 ..."
-                // parts[1] = "介绍"
-                // parts[2] = "文件名"
-
                 var nameAndTags = parts[0] || '';
                 var desc = parts[1] || '';
                 var fileName = parts[2] || '';
 
-                // 解析游戏名和类型：第一个 - 之前是游戏名，之后是类型列表
                 var name = nameAndTags;
                 var tags = [];
                 var dashIndex = nameAndTags.indexOf(' -');
                 if (dashIndex !== -1) {
                     name = nameAndTags.substring(0, dashIndex).trim();
                     var tagStr = nameAndTags.substring(dashIndex + 2).trim();
-                    // 按 - 分割类型（保留类型中的空格）
                     tags = tagStr.split(/\s*-\s*/).filter(function(t) { return t.length > 0; });
                 } else {
-                    // 没有 - 符号，整个作为游戏名
                     name = nameAndTags.trim();
                 }
 
@@ -62,7 +59,6 @@
                 }
             }
         }
-
         return games;
     }
 
@@ -98,7 +94,6 @@
 
     // ---------- 构建单张卡片 HTML ----------
     function buildGameCard(game, index) {
-        // 类型标签
         var tagsHtml = '';
         if (game.tags && game.tags.length > 0) {
             var tagItems = [];
@@ -108,10 +103,7 @@
             tagsHtml = '<div class="game-tags">' + tagItems.join('') + '</div>';
         }
 
-        // 图片占位容器
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
-
-        // 按钮
         var btnHtml = '<button class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 玩这个！</button>';
 
         return (
@@ -125,72 +117,120 @@
         );
     }
 
-    // ---------- 加载游戏图片 ----------
+    // ---------- 加载游戏图片并绑定点击事件 ----------
     function loadGameImages(card, fileName) {
         var imgContainer = card.querySelector('.game-images');
         if (!imgContainer) return;
 
-        // 尝试加载 0~4 号图片
-        var loadedCount = 0;
+        var basePath = 'Gamecurrently/' + fileName;
+        var extensions = ['.png', '.jpg', '.webp'];
+        var loadedSrcs = [];
         var maxAttempts = 5;
 
-        for (var i = 0; i < maxAttempts; i++) {
-            (function(imgIndex) {
+        // 收集成功加载的图片 src
+        function tryLoad(index) {
+            if (index >= maxAttempts) {
+                // 所有图片尝试完毕，如果有加载成功则显示
+                if (loadedSrcs.length > 0) {
+                    imgContainer.classList.add('has-images');
+                    // 绑定点击事件到每个图片
+                    var imgs = imgContainer.querySelectorAll('.game-screenshot');
+                    for (var i = 0; i < imgs.length; i++) {
+                        (function(imgEl) {
+                            imgEl.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                openImageViewer(loadedSrcs, i);
+                            });
+                        })(imgs[i]);
+                    }
+                }
+                return;
+            }
+
+            var extIndex = 0;
+            function tryNextExt() {
+                if (extIndex >= extensions.length) {
+                    // 该序号所有扩展名都失败，尝试下一个序号
+                    tryLoad(index + 1);
+                    return;
+                }
+                var ext = extensions[extIndex];
+                var src = basePath + index + ext;
                 var img = new Image();
-                var src = 'Gamecurrently/' + fileName + imgIndex + '.png';
                 img.onload = function() {
-                    // 图片加载成功，添加到容器
+                    // 加载成功，添加到容器
                     var imgEl = document.createElement('img');
                     imgEl.src = src;
-                    imgEl.alt = fileName + ' 截图' + imgIndex;
+                    imgEl.alt = fileName + ' 截图' + index;
                     imgEl.className = 'game-screenshot';
                     imgContainer.appendChild(imgEl);
-                    loadedCount++;
-                    // 如果所有图片都加载完了，移除空状态
-                    if (loadedCount > 0) {
-                        imgContainer.classList.add('has-images');
-                    }
+                    loadedSrcs.push(src);
+                    // 继续尝试下一个序号
+                    tryLoad(index + 1);
                 };
                 img.onerror = function() {
-                    // 单个图片加载失败，尝试其他扩展名（jpg）
-                    var imgJpg = new Image();
-                    var srcJpg = 'Gamecurrently/' + fileName + imgIndex + '.jpg';
-                    imgJpg.onload = function() {
-                        var imgEl = document.createElement('img');
-                        imgEl.src = srcJpg;
-                        imgEl.alt = fileName + ' 截图' + imgIndex;
-                        imgEl.className = 'game-screenshot';
-                        imgContainer.appendChild(imgEl);
-                        loadedCount++;
-                        if (loadedCount > 0) {
-                            imgContainer.classList.add('has-images');
-                        }
-                    };
-                    imgJpg.onerror = function() {
-                        // 也尝试 webp
-                        var imgWebp = new Image();
-                        var srcWebp = 'Gamecurrently/' + fileName + imgIndex + '.webp';
-                        imgWebp.onload = function() {
-                            var imgEl = document.createElement('img');
-                            imgEl.src = srcWebp;
-                            imgEl.alt = fileName + ' 截图' + imgIndex;
-                            imgEl.className = 'game-screenshot';
-                            imgContainer.appendChild(imgEl);
-                            loadedCount++;
-                            if (loadedCount > 0) {
-                                imgContainer.classList.add('has-images');
-                            }
-                        };
-                        imgWebp.onerror = function() {
-                            // 全部失败，静默忽略
-                        };
-                        imgWebp.src = srcWebp;
-                    };
-                    imgJpg.src = srcJpg;
+                    extIndex++;
+                    tryNextExt();
                 };
                 img.src = src;
-            })(i);
+            }
+            tryNextExt();
         }
+
+        tryLoad(0);
+    }
+
+    // ---------- 打开图片浏览弹窗 ----------
+    function openImageViewer(srcList, startIndex) {
+        if (!srcList || srcList.length === 0) return;
+        currentImages = srcList.slice();
+        currentIndex = Math.min(startIndex, currentImages.length - 1);
+        renderThumbnails();
+        showImage(currentIndex);
+        overlay.classList.add('active');
+        document.body.classList.add('modal-open');
+    }
+
+    // ---------- 渲染缩略图索引 ----------
+    function renderThumbnails() {
+        thumbnailsEl.innerHTML = '';
+        var romanNumerals = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'];
+        for (var i = 0; i < currentImages.length; i++) {
+            var thumb = document.createElement('div');
+            thumb.className = 'image-thumb' + (i === currentIndex ? ' active' : '');
+            thumb.textContent = romanNumerals[i] || (i + 1);
+            (function(idx) {
+                thumb.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    currentIndex = idx;
+                    var thumbs = thumbnailsEl.querySelectorAll('.image-thumb');
+                    for (var t = 0; t < thumbs.length; t++) {
+                        thumbs[t].classList.remove('active');
+                    }
+                    this.classList.add('active');
+                    showImage(idx);
+                });
+            })(i);
+            thumbnailsEl.appendChild(thumb);
+        }
+    }
+
+    // ---------- 显示大图 ----------
+    function showImage(index) {
+        if (index >= 0 && index < currentImages.length) {
+            viewer.src = currentImages[index];
+        }
+    }
+
+    // ---------- 关闭弹窗 ----------
+    function closeImageViewer() {
+        overlay.classList.remove('active');
+        document.body.classList.remove('modal-open');
+        // 清空大图，避免残留
+        viewer.src = '';
+        currentImages = [];
+        currentIndex = 0;
+        thumbnailsEl.innerHTML = '';
     }
 
     // ---------- 统计 ----------
@@ -211,7 +251,7 @@
         return count;
     }
 
-    // ---------- 工具：防 XSS ----------
+    // ---------- 工具 ----------
     function escapeHtml(str) {
         if (!str) return '';
         var div = document.createElement('div');
@@ -260,8 +300,8 @@
             });
     }
 
-    // ---------- 绑定按钮事件 ----------
-    // “玩这个！”按钮使用事件委托
+    // ---------- 事件绑定 ----------
+    // “玩这个！”按钮
     document.addEventListener('click', function(e) {
         var target = e.target.closest('.game-play-btn');
         if (target) {
@@ -270,13 +310,26 @@
         }
     });
 
-    // ---------- 拉取按钮 ----------
+    // 图片浏览弹窗——点击蒙层关闭
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            closeImageViewer();
+        }
+    });
+
+    // ESC 关闭
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) {
+            closeImageViewer();
+        }
+    });
+
+    // 拉取按钮
     fetchBtn.addEventListener('click', fetchAndRender);
 
     // ---------- 初始化 ----------
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
-            // 自动拉取
             setTimeout(fetchAndRender, 300);
         });
     } else {

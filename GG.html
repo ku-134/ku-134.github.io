@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏页 · Kukuz</title>
+    <link rel="preload" as="image" href="background.webp">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ===== 游戏页专属样式 ===== */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.2rem;
+            margin: 1.5rem 0 1.2rem;
+        }
+        .game-card {
+            background: rgba(128, 128, 128, 0.04);
+            border: 1px solid rgba(128, 128, 128, 0.08);
+            border-radius: 1.2rem;
+            padding: 1rem 0.8rem;
+            text-align: center;
+            transition: transform 0.25s ease, border-color 0.25s, box-shadow 0.25s;
+            cursor: default;
+            backdrop-filter: blur(4px);
+        }
+        .game-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(128, 128, 128, 0.2);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        }
+        .game-card .icon {
+            font-size: 2.6rem;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+        .game-card .name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .game-card .desc {
+            font-size: 0.85rem;
+            opacity: 0.6;
+            margin-top: 0.2rem;
+        }
+        .game-card .link {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.2rem 1.2rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid currentColor;
+            opacity: 0.6;
+            transition: all 0.2s;
+            color: inherit;
+        }
+        .game-card .link:hover {
+            opacity: 1;
+            background: currentColor;
+            color: #fff;
+        }
+        @media (prefers-color-scheme: dark) {
+            .game-card .link:hover { color: #1a2e1a; }
+        }
+        .game-empty {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            opacity: 0.4;
+            font-size: 0.95rem;
+        }
+        .game-empty .big-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        @media (max-width: 480px) {
+            .game-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.8rem; }
+            .game-card .icon { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="card card-narrow">
+        <h1 class="typing-title">🎮 游戏收藏</h1>
+        <div class="sub fade-in-up delay-2">— 我玩过的 & 想推荐的 —</div>
+        <div class="divider fade-in-up delay-3"></div>
+
+        <div class="nav-menu fade-in-up delay-4">
+            <a href="index.html" class="nav-link">🏠 首页</a>
+            <a href="about.html" class="nav-link">📖 关于</a>
+            <a href="RP.html" class="nav-link">📦 资源</a>
+            <a href="#" class="nav-link active">🎮 游戏</a>
+        </div>
+
+        <div class="game-grid fade-in-up delay-5">
+            <!-- 示例游戏卡片（可替换为真实数据） -->
+            <div class="game-card">
+                <span class="icon">⚔️</span>
+                <div class="name">原神</div>
+                <div class="desc">开放世界冒险</div>
+                <a href="https://ys.mihoyo.com/" target="_blank" class="link">官网</a>
+            </div>
+            <div class="game-card">
+                <span class="icon">🚀</span>
+                <div class="name">星穹铁道</div>
+                <div class="desc">银河冒险RPG</div>
+                <a href="https://sr.mihoyo.com/" target="_blank" class="link">官网</a>
+            </div>
+            <div class="game-card">
+                <span class="icon">🧩</span>
+                <div class="name">Minecraft</div>
+                <div class="desc">沙盒建造</div>
+                <a href="https://www.minecraft.net/" target="_blank" class="link">官网</a>
+            </div>
+            <div class="game-card">
+                <span class="icon">🎯</span>
+                <div class="name">王者荣耀</div>
+                <div class="desc">MOBA 对战</div>
+                <a href="https://pvp.qq.com/" target="_blank" class="link">官网</a>
+            </div>
+            <div class="game-card">
+                <span class="icon">🌿</span>
+                <div class="name">塞尔达传说</div>
+                <div class="desc">开放世界冒险</div>
+                <a href="https://www.nintendo.com/" target="_blank" class="link">官网</a>
+            </div>
+            <div class="game-card">
+                <span class="icon">🕹️</span>
+                <div class="name">更多游戏</div>
+                <div class="desc">正在整理中...</div>
+                <span class="link" style="opacity:0.3; cursor:default;">即将上线</span>
+            </div>
+        </div>
+
+        <div class="footer fade-in-up delay-6">
+            🎮 游戏列表持续扩充 · 欢迎推荐
+        </div>
+    </div>
+
+    <!-- ===== 不蒜子统计（仅采集） ===== -->
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

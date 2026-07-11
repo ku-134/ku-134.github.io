@@ -8,158 +8,149 @@
     <link rel="stylesheet" href="style.css">
     <style>
         /* ===== 游戏页专属样式 ===== */
-        .rp-layout {
-            display: flex;
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
             gap: 1.5rem;
-            margin-top: 0.5rem;
-            min-height: 320px;
+            margin: 1.5rem 0 1.2rem;
+            min-height: 200px;
         }
-        .rp-sidebar {
-            flex: 0 0 200px;
-            border-right: 1px solid rgba(128, 128, 128, 0.12);
-            padding-right: 1rem;
+
+        .game-card {
+            background: rgba(128, 128, 128, 0.04);
+            border: 1px solid rgba(128, 128, 128, 0.08);
+            border-radius: 1.2rem;
+            padding: 1.2rem 1rem 1rem;
+            transition: transform 0.3s ease, border-color 0.3s, box-shadow 0.3s;
+            backdrop-filter: blur(4px);
             display: flex;
             flex-direction: column;
         }
-        .rp-sidebar-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            opacity: 0.4;
+        .game-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(128, 128, 128, 0.2);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .game-card .game-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.4rem;
+            color: inherit;
+        }
+
+        .game-card .game-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.3rem 0.5rem;
+            margin-bottom: 0.6rem;
+        }
+        .game-card .game-tag {
+            font-size: 0.7rem;
+            padding: 0.1rem 0.7rem;
+            border-radius: 2rem;
+            background: rgba(128, 128, 128, 0.08);
+            border: 1px solid rgba(128, 128, 128, 0.08);
+            opacity: 0.7;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .game-card .game-desc {
+            font-size: 0.9rem;
+            opacity: 0.65;
+            line-height: 1.6;
             margin-bottom: 0.8rem;
-        }
-        #categoryList {
             flex: 1;
-            overflow-y: auto;
         }
-        .rp-category-item {
-            display: block;
+
+        .game-card .game-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.8rem;
+            min-height: 0;
+        }
+        .game-card .game-images:not(.has-images) {
+            min-height: 0;
+        }
+        .game-card .game-screenshot {
+            width: calc(50% - 0.2rem);
+            max-width: 100%;
+            border-radius: 0.6rem;
+            border: 1px solid rgba(128, 128, 128, 0.06);
+            object-fit: cover;
+            aspect-ratio: 16 / 9;
+            background: rgba(128, 128, 128, 0.03);
+            transition: transform 0.2s;
+        }
+        .game-card .game-screenshot:hover {
+            transform: scale(1.02);
+        }
+        /* 单张图片占满 */
+        .game-card .game-images.has-images .game-screenshot:only-child {
             width: 100%;
-            text-align: left;
-            padding: 0.45rem 0.6rem;
-            border-radius: 0.5rem;
-            border: none;
+        }
+        /* 三张图片时第一张占满，其余两列 */
+        .game-card .game-images.has-images .game-screenshot:first-child:nth-last-child(3) {
+            width: 100%;
+        }
+        .game-card .game-images.has-images .game-screenshot:first-child:nth-last-child(3) ~ .game-screenshot {
+            width: calc(50% - 0.2rem);
+        }
+
+        .game-card .game-play-btn {
+            display: inline-block;
+            padding: 0.4rem 1.8rem;
+            border-radius: 2rem;
+            border: 2px solid currentColor;
             background: transparent;
             color: inherit;
             font-family: inherit;
             font-size: 0.95rem;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s, color 0.2s;
-            opacity: 0.65;
+            transition: all 0.25s ease;
+            opacity: 0.5;
+            align-self: flex-start;
+            margin-top: 0.2rem;
         }
-        .rp-category-item:hover {
-            background: rgba(128, 128, 128, 0.08);
-            opacity: 0.9;
-        }
-        .rp-category-item.active {
-            background: rgba(128, 128, 128, 0.12);
+        .game-card .game-play-btn:hover {
             opacity: 1;
-            font-weight: 600;
+            background: currentColor;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
         }
-        .rp-category-item .badge {
-            font-size: 0.7rem;
-            opacity: 0.5;
-            margin-left: 0.3rem;
-            font-weight: 400;
+        @media (prefers-color-scheme: dark) {
+            .game-card .game-play-btn:hover { color: #1a2e1a; }
         }
-        .rp-category-item.active .badge {
-            opacity: 0.7;
-        }
-        .rp-content {
-            flex: 1;
-            min-width: 0;
-        }
-        .rp-content-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            flex-wrap: wrap;
-            margin-bottom: 0.8rem;
-            padding-bottom: 0.4rem;
-            border-bottom: 2px dashed rgba(128, 128, 128, 0.1);
-        }
-        .rp-content-header .cat-name {
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-        .rp-content-header .cat-count {
-            font-size: 0.85rem;
-            opacity: 0.5;
-        }
-        .rp-resource-item {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem 0.6rem;
-            margin-bottom: 0.2rem;
-            border-radius: 0.6rem;
-            border-left: 3px solid transparent;
-            transition: background 0.2s, border-color 0.2s;
-            cursor: default;
-            gap: 0.6rem;
-        }
-        .rp-resource-item:hover {
-            background: rgba(128, 128, 128, 0.04);
-        }
-        .rp-resource-item.type-github { border-left-color: #6e5494; }
-        .rp-resource-item.type-other  { border-left-color: #4a90d9; }
-        .rp-resource-item.type-local  { border-left-color: #7ed321; }
-        .rp-resource-item.type-unknown{ border-left-color: #888; }
 
-        .rp-resource-item .arrow {
-            font-size: 0.75rem;
-            opacity: 0.3;
-            flex-shrink: 0;
-            width: 1.2rem;
+        .game-empty {
             text-align: center;
+            padding: 3rem 1rem;
+            opacity: 0.5;
+            font-size: 1.1rem;
+            grid-column: 1 / -1;
         }
-        .rp-resource-item .name {
-            font-weight: 600;
-            font-size: 1rem;
-            flex-shrink: 0;
+        .game-empty .big-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 0.5rem;
         }
-        .rp-resource-item .name a {
-            text-decoration: none;
-            border-bottom: 2px solid transparent;
-            transition: border-color 0.2s;
-            cursor: pointer;
-        }
-        .rp-resource-item .name a:hover {
-            border-bottom-color: currentColor;
-        }
-        .rp-resource-item .desc {
-            font-size: 0.85rem;
-            opacity: 0.55;
-            flex: 1;
-            min-width: 60px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .rp-resource-item .type-tag {
-            font-size: 0.65rem;
-            padding: 0.1rem 0.6rem;
-            border-radius: 1rem;
-            opacity: 0.6;
-            flex-shrink: 0;
-            border: 1px solid currentColor;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        .rp-empty {
-            text-align: center;
-            padding: 2.5rem 1rem;
-            opacity: 0.4;
-            font-size: 0.95rem;
-        }
-        .rp-fetch-area {
+
+        /* 拉取区域 */
+        .fetch-area {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 280px;
+            min-height: 240px;
             text-align: center;
+            grid-column: 1 / -1;
         }
-        .rp-fetch-btn {
+        .fetch-btn {
             font-size: 1.6rem;
             padding: 1.2rem 3.5rem;
             border-radius: 3rem;
@@ -175,25 +166,21 @@
             align-items: center;
             gap: 0.8rem;
         }
-        .rp-fetch-btn:hover {
+        .fetch-btn:hover {
             opacity: 1;
             transform: scale(1.03);
             border-style: solid;
         }
-        .rp-fetch-btn:active {
+        .fetch-btn:active {
             transform: scale(0.96);
         }
-        .rp-fetch-btn.loading {
+        .fetch-btn.loading {
             opacity: 0.8;
             cursor: wait;
             border-style: solid;
             animation: pulse 1.2s ease-in-out infinite;
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
-        }
-        .rp-fetch-btn .spinner {
+        .fetch-btn .spinner {
             display: inline-block;
             animation: spin 1s linear infinite;
             font-size: 1.4rem;
@@ -202,197 +189,49 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .rp-fetch-hint {
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .fetch-hint {
             margin-top: 0.8rem;
             font-size: 0.85rem;
             opacity: 0.3;
         }
 
-        /* 弹窗（复用RP样式） */
-        .rp-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 999;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.35);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            animation: overlayIn 0.25s ease-out;
-        }
-        .rp-overlay.active {
-            display: flex;
-        }
-        @keyframes overlayIn {
-            0% { opacity: 0; backdrop-filter: blur(0px); }
-            100% { opacity: 1; backdrop-filter: blur(6px); }
-        }
-        .rp-modal {
-            max-width: 440px;
-            width: 90%;
-            padding: 2rem 2rem 1.8rem;
-            border-radius: 1.8rem;
-            background: var(--modal-bg, rgba(20,30,20,0.88));
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+        /* 统计 */
+        .game-stats {
             text-align: center;
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        @keyframes modalPop {
-            0% { transform: scale(0.92) translateY(16px); opacity: 0; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-        @media (prefers-color-scheme: light) {
-            .rp-modal { --modal-bg: rgba(245, 250, 245, 0.92); border-color: rgba(0,0,0,0.06); }
-        }
-        @media (prefers-color-scheme: dark) {
-            .rp-modal { --modal-bg: rgba(12, 22, 12, 0.92); border-color: rgba(255,255,255,0.06); }
-        }
-        .rp-modal .modal-icon {
-            font-size: 2.8rem;
-            margin-bottom: 0.2rem;
-        }
-        .rp-modal .modal-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            word-break: break-all;
-            margin-bottom: 0.2rem;
-        }
-        .rp-modal .modal-sub {
-            font-size: 0.9rem;
-            opacity: 0.5;
-            margin-bottom: 0.8rem;
-        }
-        .rp-modal .modal-warning {
             font-size: 0.95rem;
-            padding: 0.5rem 1rem;
-            border-radius: 1rem;
-            background: rgba(255, 200, 0, 0.10);
-            border: 1px solid rgba(255, 200, 0, 0.15);
-            margin-bottom: 1.8rem;
-            display: inline-block;
-        }
-        .rp-modal .modal-warning strong {
-            font-weight: 700;
-        }
-        .rp-modal .modal-actions {
-            display: flex;
-            gap: 0.8rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        .rp-modal .modal-actions button {
-            padding: 0.55rem 2rem;
-            border-radius: 3rem;
-            border: 2px solid transparent;
-            font-weight: 600;
-            font-size: 1rem;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            min-width: 100px;
-        }
-        .rp-modal .modal-actions .btn-cancel {
-            background: transparent;
-            border-color: currentColor;
             opacity: 0.5;
-        }
-        .rp-modal .modal-actions .btn-cancel:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-        .rp-modal .modal-actions .btn-confirm {
-            background: #c0392b;
-            border-color: #c0392b;
-            color: #fff;
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        .rp-modal .modal-actions .btn-confirm.ready {
-            opacity: 1;
-            cursor: pointer;
-            background: #e74c3c;
-            border-color: #e74c3c;
-        }
-        .rp-modal .modal-actions .btn-confirm.ready:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
-        }
-        .rp-modal .countdown-ring {
-            display: inline-block;
-            width: 1.8rem;
-            height: 1.8rem;
-            line-height: 1.8rem;
-            border-radius: 50%;
-            border: 2px solid currentColor;
-            font-size: 0.85rem;
-            font-weight: 700;
-            margin-left: 0.4rem;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-        .rp-modal .btn-confirm.ready .countdown-ring {
-            opacity: 0.3;
-        }
-        body.modal-open {
-            overflow: hidden;
+            margin-bottom: 0.2rem;
         }
 
         /* 响应式 */
         @media (max-width: 600px) {
-            .rp-layout { flex-direction: column; gap: 0.5rem; }
-            .rp-sidebar {
-                flex: none;
-                border-right: none;
-                padding-right: 0;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.3rem;
-                flex-direction: row;
+            .game-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.8rem;
             }
-            .rp-sidebar-title { display: none; }
-            #categoryList {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.3rem;
-                overflow-y: visible;
-                flex: none;
-                width: 100%;
-            }
-            .rp-category-item {
-                width: auto;
-                padding: 0.3rem 0.8rem;
-                font-size: 0.85rem;
-                border-radius: 2rem;
-                background: rgba(128, 128, 128, 0.06);
-            }
-            .rp-category-item .badge { display: none; }
-            .rp-content-header .cat-name { font-size: 1.1rem; }
-            .rp-resource-item { flex-wrap: wrap; gap: 0.2rem 0.5rem; }
-            .rp-resource-item .desc {
-                white-space: normal;
-                flex-basis: 100%;
-                margin-left: 1.8rem;
-            }
-            .rp-resource-item .type-tag { font-size: 0.55rem; padding: 0 0.5rem; }
-            .rp-fetch-btn {
-                font-size: 1.2rem;
-                padding: 0.9rem 2rem;
-                flex-direction: column;
-                gap: 0.4rem;
-            }
+            .game-card .game-name { font-size: 1.2rem; }
+            .game-card .game-desc { font-size: 0.8rem; }
+            .game-card .game-tag { font-size: 0.6rem; padding: 0 0.5rem; }
+            .game-card .game-screenshot { aspect-ratio: 16 / 10; }
+            .fetch-btn { font-size: 1.2rem; padding: 0.9rem 2rem; flex-direction: column; gap: 0.4rem; }
         }
+        @media (max-width: 400px) {
+            .game-grid { grid-template-columns: 1fr; }
+        }
+
         @media (prefers-color-scheme: light) {
-            .rp-category-item.active { background: rgba(0,0,0,0.06); }
-            .rp-fetch-btn { border-color: rgba(0,0,0,0.2); }
+            .game-card { background: rgba(255, 255, 255, 0.4); }
+            .game-card .game-tag { background: rgba(0, 0, 0, 0.04); }
+            .fetch-btn { border-color: rgba(0, 0, 0, 0.2); }
         }
         @media (prefers-color-scheme: dark) {
-            .rp-category-item.active { background: rgba(255,255,255,0.06); }
-            .rp-fetch-btn { border-color: rgba(255,255,255,0.15); }
+            .game-card { background: rgba(255, 255, 255, 0.03); }
+            .game-card .game-tag { background: rgba(255, 255, 255, 0.04); }
+            .fetch-btn { border-color: rgba(255, 255, 255, 0.15); }
         }
     </style>
 </head>
@@ -408,26 +247,15 @@
             <a href="RP.html" class="nav-link">📦 看点资源？</a>
         </div>
 
-        <!-- 统计信息（可选） -->
-        <div class="resource-stats fade-in-up delay-5" id="stats"></div>
+        <div class="game-stats fade-in-up delay-5" id="stats"></div>
 
-        <div class="rp-layout fade-in-up delay-6">
-            <div class="rp-sidebar">
-                <div class="rp-sidebar-title">📂 分类</div>
-                <div id="categoryList">
-                    <div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">⏳ 加载中...</div>
-                </div>
-            </div>
-
-            <div class="rp-content">
-                <div id="resourceArea">
-                    <div class="rp-fetch-area" id="fetchArea">
-                        <button class="rp-fetch-btn" id="fetchBtn">
-                            📂 加载游戏
-                        </button>
-                        <div class="rp-fetch-hint">正在读取 Gamecurrently/Hexenzirkel.txt</div>
-                    </div>
-                </div>
+        <div class="game-grid fade-in-up delay-6" id="gameGrid">
+            <!-- 拉取区域 -->
+            <div class="fetch-area" id="fetchArea">
+                <button class="fetch-btn" id="fetchBtn">
+                    📂 加载游戏
+                </button>
+                <div class="fetch-hint">读取 Gamecurrently/Hexenzirkel.txt</div>
             </div>
         </div>
 
@@ -436,390 +264,11 @@
         </div>
     </div>
 
-    <!-- ===== 跳转确认弹窗 ===== -->
-    <div class="rp-overlay" id="modalOverlay">
-        <div class="rp-modal">
-            <div class="modal-icon" id="modalIcon">🔗</div>
-            <div class="modal-title" id="modalTitle">游戏名</div>
-            <div class="modal-sub" id="modalDesc">描述</div>
-            <div class="modal-warning" id="modalWarning">
-                ⚠️ 即将跳转到 <strong id="modalTypeLabel">外部</strong> 页面，请确认安全。
-            </div>
-            <div class="modal-actions">
-                <button class="btn-cancel" id="modalCancel">取消</button>
-                <button class="btn-confirm" id="modalConfirm">
-                    确认跳转
-                    <span class="countdown-ring" id="countdownRing">3</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- ===== 不蒜子统计（仅采集） ===== -->
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <script src="script.js"></script>
 
     <!-- ===== 游戏页核心逻辑 ===== -->
-    <script>
-        (function() {
-            'use strict';
-
-            // ---------- DOM ----------
-            var categoryListEl = document.getElementById('categoryList');
-            var resourceAreaEl = document.getElementById('resourceArea');
-            var statsEl = document.getElementById('stats');
-            var fetchBtn = document.getElementById('fetchBtn');
-
-            // 弹窗
-            var overlay = document.getElementById('modalOverlay');
-            var modalTitle = document.getElementById('modalTitle');
-            var modalDesc = document.getElementById('modalDesc');
-            var modalIcon = document.getElementById('modalIcon');
-            var modalTypeLabel = document.getElementById('modalTypeLabel');
-            var modalWarning = document.getElementById('modalWarning');
-            var btnCancel = document.getElementById('modalCancel');
-            var btnConfirm = document.getElementById('modalConfirm');
-            var countdownRing = document.getElementById('countdownRing');
-
-            var allCategories = [];
-            var currentCategory = null;
-            var pendingLink = null;
-            var countdownTimer = null;
-            var countdownValue = 3;
-
-            // ---------- 工具 ----------
-            function getTypeLabel(type) {
-                var map = { 'github': 'GitHub', 'pan': '网盘', 'local': '站内', 'other': '外部', 'placeholder': '占位' };
-                return map[type] || '外部';
-            }
-            function getTypeIcon(type) {
-                var map = { 'github': '🐙', 'pan': '☁️', 'local': '📁', 'other': '🔗', 'placeholder': '⏳' };
-                return map[type] || '🔗';
-            }
-            function detectType(link) {
-                if (!link) return 'placeholder';
-                var l = link.toLowerCase();
-                if (l.indexOf('github.com') !== -1) return 'github';
-                if (l.indexOf('pan.baidu.com') !== -1 || l.indexOf('yunpan') !== -1) return 'pan';
-                if (l.indexOf('/') === 0 || l.indexOf('./') === 0 || l.indexOf('../') === 0) return 'local';
-                return 'other';
-            }
-
-            // ---------- 解析数据 ----------
-            function parseGameTxt(text) {
-                var lines = text.split('\n');
-                var categories = [];
-                var current = null;
-
-                for (var i = 0; i < lines.length; i++) {
-                    var line = lines[i].trim();
-                    if (!line) continue;
-
-                    if (line.indexOf('##') === 0) {
-                        var name = line.replace(/^##\s*/, '').trim();
-                        current = { name: name, items: [] };
-                        categories.push(current);
-                        continue;
-                    }
-
-                    if (line.indexOf('- ') === 0 && current) {
-                        var content = line.replace(/^-\s*/, '').trim();
-                        var parts = content.split('|').map(function(s) { return s.trim(); });
-                        var item = { name: '', desc: '', link: '', type: 'other' };
-
-                        if (parts.length >= 4) {
-                            item.name = parts[0] || '';
-                            item.desc = parts[1] || '';
-                            item.link = parts[2] || '';
-                            item.type = parts[3] || 'other';
-                        } else if (parts.length === 3) {
-                            item.name = parts[0] || '';
-                            item.desc = parts[1] || '';
-                            item.link = parts[2] || '';
-                            item.type = detectType(item.link);
-                        } else if (parts.length === 2) {
-                            item.name = parts[0] || '';
-                            item.desc = '';
-                            item.link = parts[1] || '';
-                            item.type = detectType(item.link);
-                        } else if (parts.length === 1) {
-                            item.name = parts[0] || '';
-                            item.desc = '';
-                            item.link = '';
-                            item.type = 'placeholder';
-                        }
-
-                        if (!item.link) item.type = 'placeholder';
-                        if (item.name) {
-                            current.items.push(item);
-                        }
-                    }
-                }
-                return categories;
-            }
-
-            // ---------- 渲染侧边栏 ----------
-            function renderSidebar(categories) {
-                if (!categories || categories.length === 0) {
-                    categoryListEl.innerHTML = '<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">暂无分类</div>';
-                    return;
-                }
-
-                var html = '';
-                html += '<button class="rp-category-item active" data-category="__all__">📂 全部</button>';
-
-                for (var i = 0; i < categories.length; i++) {
-                    var cat = categories[i];
-                    var count = 0;
-                    for (var j = 0; j < cat.items.length; j++) {
-                        if (cat.items[j].type !== 'placeholder') count++;
-                    }
-                    html += '<button class="rp-category-item" data-category="' + cat.name + '">' + cat.name + '<span class="badge">' + count + '</span></button>';
-                }
-
-                categoryListEl.innerHTML = html;
-
-                var btns = categoryListEl.querySelectorAll('.rp-category-item');
-                for (var ki = 0; ki < btns.length; ki++) {
-                    (function(btn) {
-                        btn.addEventListener('click', function() {
-                            var allBtns = categoryListEl.querySelectorAll('.rp-category-item');
-                            for (var bi = 0; bi < allBtns.length; bi++) {
-                                allBtns[bi].classList.remove('active');
-                            }
-                            this.classList.add('active');
-
-                            var name = this.dataset.category;
-                            if (name === '__all__') {
-                                renderAllItems();
-                            } else {
-                                var target = null;
-                                for (var ci = 0; ci < allCategories.length; ci++) {
-                                    if (allCategories[ci].name === name) {
-                                        target = allCategories[ci];
-                                        break;
-                                    }
-                                }
-                                if (target) {
-                                    renderCategoryItems(target);
-                                }
-                            }
-                        });
-                    })(btns[ki]);
-                }
-            }
-
-            // ---------- 渲染全部 ----------
-            function renderAllItems() {
-                var items = [];
-                for (var ci = 0; ci < allCategories.length; ci++) {
-                    var cat = allCategories[ci];
-                    for (var ii = 0; ii < cat.items.length; ii++) {
-                        var it = cat.items[ii];
-                        if (it.type !== 'placeholder') {
-                            items.push({ name: it.name, desc: it.desc, link: it.link, type: it.type, category: cat.name });
-                        }
-                    }
-                }
-                renderItems(items, '全部游戏');
-            }
-
-            // ---------- 渲染单个分类 ----------
-            function renderCategoryItems(category) {
-                var items = [];
-                for (var ii = 0; ii < category.items.length; ii++) {
-                    var it = category.items[ii];
-                    if (it.type !== 'placeholder') {
-                        items.push({ name: it.name, desc: it.desc, link: it.link, type: it.type, category: category.name });
-                    }
-                }
-                renderItems(items, category.name);
-            }
-
-            // ---------- 渲染列表 ----------
-            function renderItems(items, categoryName) {
-                if (items.length === 0) {
-                    resourceAreaEl.innerHTML =
-                        '<div class="rp-content-header">' +
-                        '<span class="cat-name">' + categoryName + '</span>' +
-                        '<span class="cat-count">0 个游戏</span>' +
-                        '</div>' +
-                        '<div class="rp-empty">这个分类暂时是空的</div>';
-                    updateStats();
-                    return;
-                }
-
-                var html =
-                    '<div class="rp-content-header">' +
-                    '<span class="cat-name">' + categoryName + '</span>' +
-                    '<span class="cat-count">' + items.length + ' 个游戏</span>' +
-                    '</div>';
-
-                for (var i = 0; i < items.length; i++) {
-                    var item = items[i];
-                    var typeClass = 'type-' + item.type;
-                    var typeLabel = getTypeLabel(item.type);
-                    var icon = getTypeIcon(item.type);
-                    var hasLink = item.link && item.type !== 'placeholder';
-                    var linkAttr = hasLink ? 'data-link="' + item.link + '" data-type="' + item.type + '"' : '';
-
-                    html +=
-                        '<div class="rp-resource-item ' + typeClass + '">' +
-                        '<span class="arrow">' + icon + '</span>' +
-                        '<span class="name">' +
-                        (hasLink ? '<a href="#" class="rp-resource-link" ' + linkAttr + '>' + item.name + '</a>' : '<span class="placeholder">' + item.name + '（即将上线）</span>') +
-                        '</span>' +
-                        (item.desc ? '<span class="desc">' + item.desc + '</span>' : '') +
-                        '<span class="type-tag">' + typeLabel + '</span>' +
-                        '</div>';
-                }
-
-                resourceAreaEl.innerHTML = html;
-
-                var links = resourceAreaEl.querySelectorAll('.rp-resource-link');
-                for (var li = 0; li < links.length; li++) {
-                    (function(linkEl) {
-                        linkEl.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            var link = this.dataset.link;
-                            var type = this.dataset.type || 'other';
-                            var name = this.textContent.trim();
-                            var parent = this.closest('.rp-resource-item');
-                            var descEl = parent ? parent.querySelector('.desc') : null;
-                            var desc = descEl ? descEl.textContent.trim() : '';
-                            openModal(name, desc, link, type);
-                        });
-                    })(links[li]);
-                }
-
-                updateStats();
-            }
-
-            // ---------- 更新统计 ----------
-            function updateStats() {
-                if (!statsEl) return;
-                var total = 0;
-                for (var ci = 0; ci < allCategories.length; ci++) {
-                    for (var ii = 0; ii < allCategories[ci].items.length; ii++) {
-                        if (allCategories[ci].items[ii].type !== 'placeholder') total++;
-                    }
-                }
-                statsEl.textContent = '共 ' + allCategories.length + ' 个分类 · ' + total + ' 个游戏';
-            }
-
-            // ---------- 弹窗 ----------
-            function openModal(name, desc, link, type) {
-                if (!link) return;
-                pendingLink = link;
-                var typeLabel = getTypeLabel(type);
-                var icon = getTypeIcon(type);
-
-                modalTitle.textContent = name;
-                modalDesc.textContent = desc || '没有更多描述';
-                modalIcon.textContent = icon;
-                modalTypeLabel.textContent = typeLabel;
-                modalWarning.innerHTML = '⚠️ 即将跳转到 <strong>' + typeLabel + '</strong> 页面，请确认安全。';
-
-                btnConfirm.classList.remove('ready');
-                btnConfirm.disabled = true;
-                countdownValue = 3;
-                countdownRing.textContent = '3';
-
-                overlay.classList.add('active');
-                document.body.classList.add('modal-open');
-
-                if (countdownTimer) clearInterval(countdownTimer);
-                countdownTimer = setInterval(function() {
-                    countdownValue -= 1;
-                    countdownRing.textContent = countdownValue;
-                    if (countdownValue <= 0) {
-                        clearInterval(countdownTimer);
-                        countdownTimer = null;
-                        btnConfirm.classList.add('ready');
-                        btnConfirm.disabled = false;
-                        countdownRing.textContent = '✓';
-                    }
-                }, 1000);
-            }
-
-            function closeModal() {
-                overlay.classList.remove('active');
-                document.body.classList.remove('modal-open');
-                if (countdownTimer) {
-                    clearInterval(countdownTimer);
-                    countdownTimer = null;
-                }
-                pendingLink = null;
-                btnConfirm.classList.remove('ready');
-                btnConfirm.disabled = true;
-                countdownRing.textContent = '3';
-            }
-
-            function confirmJump() {
-                if (!pendingLink || btnConfirm.disabled) return;
-                window.open(pendingLink, '_blank', 'noopener,noreferrer');
-                closeModal();
-            }
-
-            // ---------- 拉取数据 ----------
-            function fetchAndRender() {
-                fetchBtn.classList.add('loading');
-                fetchBtn.innerHTML = '<span class="spinner">⟳</span> 加载中...';
-
-                fetch('Gamecurrently/Hexenzirkel.txt?t=' + Date.now())
-                    .then(function(res) {
-                        if (!res.ok) throw new Error('文件不存在');
-                        return res.text();
-                    })
-                    .then(function(text) {
-                        if (!text || text.trim() === '') throw new Error('文件为空');
-                        allCategories = parseGameTxt(text);
-                        if (allCategories.length === 0) throw new Error('解析失败，请检查格式');
-                        renderSidebar(allCategories);
-                        renderAllItems();
-                        fetchBtn.innerHTML = '📂 已加载';
-                        fetchBtn.style.opacity = '0.4';
-                        fetchBtn.style.cursor = 'default';
-                        fetchBtn.disabled = true;
-                    })
-                    .catch(function(err) {
-                        resourceAreaEl.innerHTML =
-                            '<div class="rp-empty">❌ 加载失败：' + err.message +
-                            '<br><button class="btn btn-secondary" style="margin-top:1rem;" onclick="location.reload()">🔄 重试</button>' +
-                            '<br><span style="font-size:0.7rem;opacity:0.3;margin-top:0.5rem;display:block;">请确保 Gamecurrently/Hexenzirkel.txt 存在且格式正确</span>' +
-                            '</div>';
-                        statsEl.textContent = '';
-                        fetchBtn.classList.remove('loading');
-                        fetchBtn.innerHTML = '📂 加载失败';
-                    })
-                    .finally(function() {
-                        fetchBtn.classList.remove('loading');
-                    });
-            }
-
-            // ---------- 绑定事件 ----------
-            btnCancel.addEventListener('click', closeModal);
-            btnConfirm.addEventListener('click', confirmJump);
-            overlay.addEventListener('click', function(e) {
-                if (e.target === overlay) closeModal();
-            });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && overlay.classList.contains('active')) {
-                    closeModal();
-                }
-            });
-
-            // ---------- 初始化：自动拉取 ----------
-            fetchBtn.addEventListener('click', fetchAndRender);
-
-            // 页面加载后自动拉取
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', fetchAndRender);
-            } else {
-                fetchAndRender();
-            }
-
-        })();
-    </script>
+    <script src="GG-magic.js"></script>
 </body>
 </html>

@@ -1,45 +1,45 @@
 // ============================================================
-// RP 核心逻辑：解析、渲染、搜索、收藏、弹窗、计数、反馈、投稿
+// RP 核心逻辑：解析、渲染、搜索、收藏、弹窗、计数、反馈、投稿、推荐计数
 // ============================================================
 (function() {
     'use strict';
 
     // ---------- DOM 引用 ----------
-    const categoryListEl = document.getElementById('categoryList');
-    const resourceAreaEl = document.getElementById('resourceArea');
-    const statsEl = document.getElementById('stats');
-    const fetchBtn = document.getElementById('fetchBtn');
-    const searchInput = document.getElementById('searchInput');
-    const clearBtn = document.getElementById('clearSearch');
-    const favToggle = document.getElementById('favToggle');
+    var categoryListEl = document.getElementById('categoryList');
+    var resourceAreaEl = document.getElementById('resourceArea');
+    var statsEl = document.getElementById('stats');
+    var fetchBtn = document.getElementById('fetchBtn');
+    var searchInput = document.getElementById('searchInput');
+    var clearBtn = document.getElementById('clearSearch');
+    var favToggle = document.getElementById('favToggle');
 
     // ---------- 弹窗 DOM ----------
-    const overlay = document.getElementById('modalOverlay');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalDesc = document.getElementById('modalDesc');
-    const modalIcon = document.getElementById('modalIcon');
-    const modalTypeLabel = document.getElementById('modalTypeLabel');
-    const modalWarning = document.getElementById('modalWarning');
-    const btnCancel = document.getElementById('modalCancel');
-    const btnConfirm = document.getElementById('modalConfirm');
-    const countdownRing = document.getElementById('countdownRing');
+    var overlay = document.getElementById('modalOverlay');
+    var modalTitle = document.getElementById('modalTitle');
+    var modalDesc = document.getElementById('modalDesc');
+    var modalIcon = document.getElementById('modalIcon');
+    var modalTypeLabel = document.getElementById('modalTypeLabel');
+    var modalWarning = document.getElementById('modalWarning');
+    var btnCancel = document.getElementById('modalCancel');
+    var btnConfirm = document.getElementById('modalConfirm');
+    var countdownRing = document.getElementById('countdownRing');
 
     // ---------- 反馈弹窗 DOM ----------
-    const feedbackTrigger = document.getElementById('feedbackTrigger');
-    const feedbackOverlay = document.getElementById('feedbackOverlay');
-    const feedbackConfirm = document.getElementById('feedbackConfirm');
+    var feedbackTrigger = document.getElementById('feedbackTrigger');
+    var feedbackOverlay = document.getElementById('feedbackOverlay');
+    var feedbackConfirm = document.getElementById('feedbackConfirm');
 
     // ---------- 投稿弹窗 DOM ----------
-    const recommendBtn = document.getElementById('recommendBtn');
-    const recommendOverlay = document.getElementById('recommendOverlay');
-    const recommendCancel = document.getElementById('recommendCancel');
-    const recommendSubmit = document.getElementById('recommendSubmit');
-    const recommendForm = document.getElementById('recommendForm');
-    const recName = document.getElementById('recName');
-    const recDesc = document.getElementById('recDesc');
-    const recLink = document.getElementById('recLink');
-    const recCategory = document.getElementById('recCategory');
-    const recNick = document.getElementById('recNick');
+    var recommendBtn = document.getElementById('recommendBtn');
+    var recommendOverlay = document.getElementById('recommendOverlay');
+    var recommendCancel = document.getElementById('recommendCancel');
+    var recommendSubmit = document.getElementById('recommendSubmit');
+    var recommendForm = document.getElementById('recommendForm');
+    var recName = document.getElementById('recName');
+    var recDesc = document.getElementById('recDesc');
+    var recLink = document.getElementById('recLink');
+    var recCategory = document.getElementById('recCategory');
+    var recNick = document.getElementById('recNick');
 
     // ---------- 核心数据 ----------
     var allCategories = [];
@@ -52,7 +52,7 @@
     var isLoading = false;
 
     // ============================================================
-    // 🔐 Base64 解码（内置）
+    // 🔐 Base64 解码
     // ============================================================
     function base64Decode(encoded) {
         try {
@@ -70,7 +70,7 @@
     // 判断是否像 category.txt 格式
     // ============================================================
     function looksLikeCategoryData(text) {
-        return text && (text.includes('##') || text.includes('- '));
+        return text && (text.indexOf('##') !== -1 || text.indexOf('- ') !== -1);
     }
 
     // ============================================================
@@ -152,6 +152,18 @@
             data[resourceName] = (data[resourceName] || 0) + 1;
             data._total = (data._total || 0) + 1;
             localStorage.setItem('resourceClicks', JSON.stringify(data));
+            try {
+                window.dispatchEvent(new Event('storage'));
+            } catch (e) { /* 静默降级 */ }
+        } catch (e) { /* 静默降级 */ }
+    }
+
+    // ---------- 推荐计数 ----------
+    function incrementRecommendCount() {
+        try {
+            var count = parseInt(localStorage.getItem('recommendSubmitCount') || '0');
+            count++;
+            localStorage.setItem('recommendSubmitCount', String(count));
             try {
                 window.dispatchEvent(new Event('storage'));
             } catch (e) { /* 静默降级 */ }
@@ -607,6 +619,9 @@
         var desc = recDesc.value.trim() || '（未提供）';
         var category = recCategory.value || '未指定';
         var nick = recNick.value.trim() || '匿名';
+
+        // 🆕 增加推荐计数
+        incrementRecommendCount();
 
         var subject = encodeURIComponent('📤 资源推荐：' + name);
         var body = encodeURIComponent(

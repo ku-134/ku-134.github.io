@@ -1,5 +1,5 @@
 // ============================================================
-// RP 核心逻辑：解析 category.txt、渲染、搜索、收藏、弹窗、计数、反馈、投稿
+// RP 核心逻辑：解析、渲染、搜索、收藏、弹窗、计数、反馈、投稿
 // ============================================================
 (function() {
     'use strict';
@@ -29,7 +29,7 @@
     const feedbackOverlay = document.getElementById('feedbackOverlay');
     const feedbackConfirm = document.getElementById('feedbackConfirm');
 
-    // ---------- 🆕 投稿弹窗 DOM ----------
+    // ---------- 投稿弹窗 DOM ----------
     const recommendBtn = document.getElementById('recommendBtn');
     const recommendOverlay = document.getElementById('recommendOverlay');
     const recommendCancel = document.getElementById('recommendCancel');
@@ -42,34 +42,57 @@
     const recNick = document.getElementById('recNick');
 
     // ---------- 核心数据 ----------
-    let allCategories = [];
-    let currentView = 'all';
-    let searchQuery = '';
-    let favorites = [];
-    let pendingLink = null;
-    let countdownTimer = null;
-    let countdownValue = 3;
-    let isLoading = false;
+    var allCategories = [];
+    var currentView = 'all';
+    var searchQuery = '';
+    var favorites = [];
+    var pendingLink = null;
+    var countdownTimer = null;
+    var countdownValue = 3;
+    var isLoading = false;
 
-    // ---------- 🔐 Base64 解码（内置） ----------
+    // ============================================================
+    // 🔐 Base64 解码（内置）
+    // ============================================================
     function base64Decode(encoded) {
         try {
-            // 方法一：标准浏览器解码（支持 UTF-8）
             return decodeURIComponent(escape(atob(encoded)));
         } catch (e1) {
             try {
-                // 方法二：备选解码
                 return atob(encoded);
             } catch (e2) {
-                throw new Error('Base64 解码失败，数据可能已损坏');
+                throw new Error('Base64 解码失败');
             }
         }
+    }
+
+    // ============================================================
+    // 判断是否像 category.txt 格式
+    // ============================================================
+    function looksLikeCategoryData(text) {
+        return text && (text.includes('##') || text.includes('- '));
+    }
+
+    // ============================================================
+    // 📦 渲染数据（统一入口）
+    // ============================================================
+    function renderData(decodedText) {
+        allCategories = parseCategoryTxt(decodedText);
+        loadFavorites();
+        cleanOrphanedFavorites();
+        renderSidebar(allCategories);
+        currentView = 'all';
+        searchQuery = '';
+        searchInput.value = '';
+        clearBtn.style.display = 'none';
+        favToggle.classList.remove('active');
+        renderCurrentView();
     }
 
     // ---------- 收藏管理 ----------
     function loadFavorites() {
         try {
-            const data = localStorage.getItem('favorites');
+            var data = localStorage.getItem('favorites');
             favorites = data ? JSON.parse(data) : [];
         } catch (e) {
             favorites = [];
@@ -81,11 +104,11 @@
     }
 
     function isFavorited(name) {
-        return favorites.includes(name);
+        return favorites.indexOf(name) !== -1;
     }
 
     function toggleFavorite(name) {
-        const idx = favorites.indexOf(name);
+        var idx = favorites.indexOf(name);
         if (idx > -1) {
             favorites.splice(idx, 1);
         } else {
@@ -125,7 +148,7 @@
     // ---------- 跳转计数 ----------
     function recordClick(resourceName) {
         try {
-            const data = JSON.parse(localStorage.getItem('resourceClicks') || '{}');
+            var data = JSON.parse(localStorage.getItem('resourceClicks') || '{}');
             data[resourceName] = (data[resourceName] || 0) + 1;
             data._total = (data._total || 0) + 1;
             localStorage.setItem('resourceClicks', JSON.stringify(data));
@@ -139,9 +162,9 @@
     function detectType(link) {
         if (!link) return 'placeholder';
         var l = link.toLowerCase();
-        if (l.includes('github.com')) return 'github';
-        if (l.includes('pan.baidu.com') || l.includes('yunpan') || l.includes('netdisk') || l.includes('网盘')) return 'pan';
-        if (l.startsWith('/') || l.startsWith('./') || l.startsWith('../')) return 'local';
+        if (l.indexOf('github.com') !== -1) return 'github';
+        if (l.indexOf('pan.baidu.com') !== -1 || l.indexOf('yunpan') !== -1 || l.indexOf('netdisk') !== -1 || l.indexOf('网盘') !== -1) return 'pan';
+        if (l.indexOf('/') === 0 || l.indexOf('./') === 0 || l.indexOf('../') === 0) return 'local';
         return 'other';
     }
 
@@ -165,14 +188,14 @@
             var line = lines[i].trim();
             if (!line) continue;
 
-            if (line.startsWith('##')) {
+            if (line.indexOf('##') === 0) {
                 var name = line.replace(/^##\s*/, '').trim();
                 current = { name: name, items: [] };
                 categories.push(current);
                 continue;
             }
 
-            if (line.startsWith('- ') && current) {
+            if (line.indexOf('- ') === 0 && current) {
                 var content = line.replace(/^-\s*/, '').trim();
                 var parts = content.split('|').map(function(s) { return s.trim(); });
                 var item = { name: '', desc: '', link: '', type: 'other' };
@@ -236,7 +259,7 @@
             var filtered = [];
             for (var fi = 0; fi < items.length; fi++) {
                 var it = items[fi];
-                if (it.name.toLowerCase().includes(q) || (it.desc && it.desc.toLowerCase().includes(q))) {
+                if (it.name.toLowerCase().indexOf(q) !== -1 || (it.desc && it.desc.toLowerCase().indexOf(q) !== -1)) {
                     filtered.push(it);
                 }
             }
@@ -274,7 +297,7 @@
             var tmp = [];
             for (var fi = 0; fi < items.length; fi++) {
                 var it = items[fi];
-                if (it.name.toLowerCase().includes(q) || (it.desc && it.desc.toLowerCase().includes(q))) {
+                if (it.name.toLowerCase().indexOf(q) !== -1 || (it.desc && it.desc.toLowerCase().indexOf(q) !== -1)) {
                     tmp.push(it);
                 }
             }
@@ -559,7 +582,7 @@
         document.body.classList.remove('modal-open');
     }
 
-    // ---------- 🆕 投稿弹窗 ----------
+    // ---------- 投稿弹窗 ----------
     function openRecommend() {
         recommendOverlay.classList.add('active');
         document.body.classList.add('modal-open');
@@ -601,7 +624,7 @@
     }
 
     // ============================================================
-    // 🔐 拉取数据（Base64 解码 + 来源校验）
+    // 📂 拉取数据（表面拉取 category.txt，实际先解码 Nahida.dat）
     // ============================================================
     function fetchAndRender() {
         if (isLoading) return;
@@ -609,79 +632,74 @@
         fetchBtn.classList.add('loading');
         fetchBtn.innerHTML = '<span class="spinner">⟳</span> 加载中...';
 
-        // 🔐 拉取 Nasida.dat（原 category.txt 的 Base64 编码版本）
-        fetch('Nasida.dat?t=' + Date.now())
+        var dataLoaded = false;
+
+        // ============================================================
+        // 第一步：尝试拉取 Nahida.dat（加密版本）
+        // ============================================================
+        fetch('Nahida.dat?t=' + Date.now())
             .then(function(res) {
-                if (!res.ok) {
-                    // 如果 Nasida.dat 不存在，尝试拉取 category.txt 作为降级
-                    return fetch('category.txt?t=' + Date.now());
-                }
-                return res;
-            })
-            .then(function(res) {
-                if (!res.ok) throw new Error('数据文件不存在 (HTTP ' + res.status + ')');
+                if (!res.ok) throw new Error('Nahida.dat 不存在');
                 return res.text();
             })
-            .then(function(data) {
-                // 检查是否为空
-                if (!data || data.trim() === '') {
-                    throw new Error('数据文件为空');
-                }
-
-                var decodedText;
-                var isEncoded = false;
-
+            .then(function(encoded) {
                 // 尝试 Base64 解码
+                var decoded;
                 try {
-                    var testDecode = base64Decode(data.trim());
-                    // 检查解码后是否包含 category.txt 的特征（## 或 - ）
-                    if (testDecode.includes('##') || testDecode.includes('- ')) {
-                        decodedText = testDecode;
-                        isEncoded = true;
-                    } else {
-                        // 解码成功但内容不像 category.txt，可能是明文
-                        decodedText = data;
-                    }
+                    decoded = base64Decode(encoded.trim());
                 } catch (e) {
-                    // 解码失败，当作明文处理
-                    decodedText = data;
+                    // 解码失败 → 降级到 category.txt
+                    throw new Error('解码失败');
                 }
 
-                // 检查是否包含有效数据
-                if (!decodedText.includes('##') && !decodedText.includes('- ')) {
-                    throw new Error('数据格式无效，请检查 Nasida.dat 是否包含正确的 category.txt 内容');
+                // 检查解码后是否像有效的 category 数据
+                if (!looksLikeCategoryData(decoded)) {
+                    throw new Error('解码后格式无效');
                 }
 
-                // 解析数据
-                allCategories = parseCategoryTxt(decodedText);
-
-                // 如果没有分类数据，报错
-                if (allCategories.length === 0) {
-                    throw new Error('解析后无有效分类数据');
-                }
-
-                // 加载收藏并清理幽灵收藏
-                loadFavorites();
-                cleanOrphanedFavorites();
-
-                // 渲染
-                renderSidebar(allCategories);
-                currentView = 'all';
-                searchQuery = '';
-                searchInput.value = '';
-                clearBtn.style.display = 'none';
-                favToggle.classList.remove('active');
-                renderCurrentView();
-
-                // 控制台输出加载信息（调试用）
-                console.log('✅ 数据加载成功' + (isEncoded ? ' (Base64 解码)' : ' (明文)'));
+                // 解码成功且格式有效 → 渲染
+                dataLoaded = true;
+                renderData(decoded);
             })
             .catch(function(err) {
-                console.warn('加载失败:', err);
+                // ============================================================
+                // 第二步：降级到 category.txt（明文版本）
+                // ============================================================
+                // 不汇报任何错误，静默降级
+                return fetch('category.txt?t=' + Date.now());
+            })
+            .then(function(res) {
+                // 如果数据已加载，跳过
+                if (dataLoaded) return;
+
+                if (!res) return;
+                if (!res.ok) throw new Error('category.txt 不存在');
+
+                return res.text();
+            })
+            .then(function(text) {
+                if (dataLoaded) return;
+                if (!text) return;
+
+                // 检查是否有效
+                if (!looksLikeCategoryData(text)) {
+                    throw new Error('category.txt 格式无效');
+                }
+
+                // 渲染明文数据
+                dataLoaded = true;
+                renderData(text);
+            })
+            .catch(function(err) {
+                // ============================================================
+                // 第三步：都失败了 → 显示友好错误
+                // ============================================================
+                if (dataLoaded) return;
+
                 resourceAreaEl.innerHTML =
                     '<div class="rp-empty">❌ 加载失败：' + err.message +
                     '<br><button class="btn btn-secondary" style="margin-top:1rem;" onclick="location.reload()">🔄 重试</button>' +
-                    '<br><span style="font-size:0.7rem;opacity:0.3;margin-top:0.5rem;display:block;">请确保 Nasida.dat 文件存在且格式正确</span>' +
+                    '<br><span style="font-size:0.7rem;opacity:0.3;margin-top:0.5rem;display:block;">请确保 category.txt 文件存在</span>' +
                     '</div>';
                 statsEl.textContent = '';
             })

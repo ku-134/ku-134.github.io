@@ -48,7 +48,7 @@
             .code-block { --code-color: #66bb6a; --code-glow: rgba(102, 187, 106, 0.3); }
         }
 
-        /* ===== 主容器（横屏左右，竖屏上下） ===== */
+        /* ===== 主容器 ===== */
         .main-container {
             display: flex;
             gap: 1.5rem;
@@ -78,7 +78,6 @@
             opacity: 1;
             transform: translateY(0) scale(1);
         }
-        /* 主卡片窄版保持原样 */
         .card-narrow {
             max-width: 580px;
             backdrop-filter: blur(12px) saturate(180%);
@@ -100,7 +99,6 @@
             transform: translateY(40px) scale(0.96);
             display: flex;
             flex-direction: column;
-            justify-content: center;
         }
         .stats-card.show {
             opacity: 1;
@@ -108,15 +106,19 @@
         }
 
         /* ===== 统计卡片内部 ===== */
-        .stats-card .stats-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.3;
-            text-align: center;
-            margin-bottom: 1.2rem;
-            font-weight: 600;
+        /* 大标题 */
+        .stats-section-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin: 0 0 0.4rem 0;
+            color: inherit;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
+        .stats-section-title:not(:first-of-type) {
+            margin-top: 0.8rem;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -129,6 +131,7 @@
             padding: 0.7rem 0.5rem;
             text-align: center;
             transition: transform 0.2s, border-color 0.2s;
+            position: relative;
         }
         .stats-item:hover {
             transform: translateY(-2px);
@@ -141,6 +144,12 @@
             opacity: 0.35;
             margin-bottom: 0.1rem;
         }
+        .stats-item .number-wrap {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 0.3rem;
+        }
         .stats-item .number {
             font-size: 1.8rem;
             font-weight: 700;
@@ -150,6 +159,20 @@
             opacity: 0.3;
             font-weight: 400;
             font-size: 1.4rem;
+        }
+        .stats-item .delta {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #66bb6a;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+        }
+        .stats-item .delta.negative {
+            color: #e74c3c;
+        }
+        .stats-item .delta.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
         .stats-item .sub {
             font-size: 0.55rem;
@@ -165,15 +188,23 @@
         }
         @media (prefers-color-scheme: light) {
             .stats-item.local .number { color: #d48c1a; }
+            .stats-item .delta { color: #2e7d32; }
+            .stats-item .delta.negative { color: #c0392b; }
         }
 
-        /* 分割装饰 */
-        .stats-divider {
-            width: 40px;
-            height: 2px;
-            border-radius: 2px;
-            background: rgba(128, 128, 128, 0.08);
-            margin: 0.6rem auto;
+        /* 跨两列卡片 */
+        .stats-item.full-width {
+            grid-column: 1 / -1;
+        }
+        .stats-item.full-width .number {
+            font-size: 2.2rem;
+        }
+        .stats-item.highlight .number {
+            color: #e74c3c;
+            text-shadow: 0 0 16px rgba(231, 76, 60, 0.15);
+        }
+        @media (prefers-color-scheme: dark) {
+            .stats-item.highlight .number { color: #ff6b6b; }
         }
 
         /* ===== 亮色模式 ===== */
@@ -206,7 +237,7 @@
             .stats-item { background: rgba(255, 255, 255, 0.03); }
         }
 
-        /* ===== 主卡片内部元素（保持不变） ===== */
+        /* ===== 主卡片内部 ===== */
         .card h1 {
             font-size: 2.8rem;
             font-weight: 700;
@@ -428,26 +459,12 @@
             50% { opacity: 0; }
         }
 
-        /* ===== 响应式（竖屏：上下堆叠） ===== */
+        /* ===== 响应式 ===== */
         @media (max-width: 860px) {
-            .main-container {
-                flex-direction: column;
-                align-items: center;
-                gap: 1.2rem;
-            }
-            .card, .stats-card {
-                flex: 1 1 auto;
-                width: 100%;
-                max-width: 580px;
-                padding: 2rem 1.8rem;
-            }
-            .stats-card {
-                max-width: 580px;
-                padding: 1.6rem 1.5rem;
-            }
-            .stats-grid {
-                grid-template-columns: 1fr 1fr;
-            }
+            .main-container { flex-direction: column; align-items: center; gap: 1.2rem; }
+            .card, .stats-card { flex: 1 1 auto; width: 100%; max-width: 580px; padding: 2rem 1.8rem; }
+            .stats-card { max-width: 580px; padding: 1.6rem 1.5rem; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
         }
         @media (max-width: 480px) {
             .card { padding: 1.8rem 1.2rem; }
@@ -463,12 +480,14 @@
             .stats-item .number { font-size: 1.4rem; }
             .stats-grid { gap: 0.5rem; }
             .stats-item { padding: 0.5rem 0.3rem; }
+            .stats-section-title { font-size: 1.2rem; }
         }
         @media (max-width: 359px) {
             .card h1 { font-size: 1.6rem; min-height: 2.6rem; }
             .card { padding: 1.2rem 0.8rem; }
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.4rem; }
             .stats-item .number { font-size: 1.2rem; }
+            .stats-item.full-width .number { font-size: 1.6rem; }
         }
     </style>
 </head>
@@ -514,37 +533,61 @@
 
         <!-- ===== 统计卡片 ===== -->
         <div class="stats-card" id="statsCard">
-            <div class="stats-title fade-in-up delay-2">📊 本站数据</div>
 
+            <!-- 本站数据 -->
+            <div class="stats-section-title fade-in-up delay-2">📊 本站数据</div>
             <div class="stats-grid fade-in-up delay-3">
-                <div class="stats-item">
+                <div class="stats-item" id="uvItem">
                     <div class="label">🌐 独立访客</div>
-                    <div class="number" id="busuanzi_value_site_uv">加载中...</div>
+                    <div class="number-wrap">
+                        <span class="number" id="busuanzi_value_site_uv">加载中...</span>
+                        <span class="delta hidden" id="uvDelta"></span>
+                    </div>
                     <div class="sub">已访问本站</div>
                 </div>
-                <div class="stats-item">
+                <div class="stats-item" id="pvItem">
                     <div class="label">👁️ 总访问量</div>
-                    <div class="number" id="busuanzi_value_site_pv">加载中...</div>
+                    <div class="number-wrap">
+                        <span class="number" id="busuanzi_value_site_pv">加载中...</span>
+                        <span class="delta hidden" id="pvDelta"></span>
+                    </div>
                     <div class="sub">本站被访问</div>
                 </div>
             </div>
 
-            <div class="stats-divider fade-in-up delay-4"></div>
-
-            <div class="stats-title fade-in-up delay-4" style="margin-top:0.4rem;">📊 我的数据</div>
-
+            <!-- 我的数据 -->
+            <div class="stats-section-title fade-in-up delay-4">📊 我的数据</div>
             <div class="stats-grid fade-in-up delay-5">
                 <div class="stats-item local">
                     <div class="label">🔗 资源跳转</div>
-                    <div class="number" id="localClicks">0</div>
+                    <div class="number-wrap">
+                        <span class="number" id="localClicks">0</span>
+                        <span class="delta hidden" id="clicksDelta"></span>
+                    </div>
                     <div class="sub">你成功跳转了</div>
                 </div>
                 <div class="stats-item local">
                     <div class="label">⭐ 资源收藏</div>
-                    <div class="number" id="localFavs">0</div>
+                    <div class="number-wrap">
+                        <span class="number" id="localFavs">0</span>
+                        <span class="delta hidden" id="favsDelta"></span>
+                    </div>
                     <div class="sub">你收藏了</div>
                 </div>
             </div>
+
+            <!-- 新增：你推荐的资源次数 -->
+            <div class="stats-grid fade-in-up delay-6">
+                <div class="stats-item local full-width highlight" id="recommendItem">
+                    <div class="label">📤 资源推荐</div>
+                    <div class="number-wrap">
+                        <span class="number" id="localRecommend">0</span>
+                        <span class="delta hidden" id="recommendDelta"></span>
+                    </div>
+                    <div class="sub">你推荐的资源</div>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -616,7 +659,7 @@
                 }, 5000);
             }
 
-            // ---------- 横屏提示 ----------
+            // ---------- Toast 提示 ----------
             if (/Mobi|Android|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent) ||
                 window.matchMedia('(orientation: portrait)').matches) {
                 setTimeout(function() {
@@ -645,35 +688,160 @@
             }
             setTimeout(showVisitToast, 1600);
 
-            // ---------- 读取本地个人数据 ----------
+            // ============================================================
+            // 📊 统计卡片变化量对比逻辑
+            // ============================================================
+
+            // ---------- 工具：获取元素数字 ----------
+            function getNumberFromEl(id) {
+                const el = document.getElementById(id);
+                if (!el) return 0;
+                const text = el.textContent.trim();
+                const num = parseInt(text.replace(/[^0-9]/g, ''));
+                return isNaN(num) ? 0 : num;
+            }
+
+            // ---------- 缓存读写 ----------
+            function getCache() {
+                try {
+                    const data = localStorage.getItem('statsCache');
+                    return data ? JSON.parse(data) : {};
+                } catch (e) {
+                    return {};
+                }
+            }
+
+            function saveCache(cache) {
+                localStorage.setItem('statsCache', JSON.stringify(cache));
+            }
+
+            // ---------- 更新单个 delta ----------
+            function updateDelta(deltaId, current, previous, label) {
+                const el = document.getElementById(deltaId);
+                if (!el) return;
+                if (previous === undefined || previous === null) {
+                    el.textContent = '';
+                    el.className = 'delta hidden';
+                    return;
+                }
+                const diff = current - previous;
+                if (diff === 0) {
+                    el.textContent = '';
+                    el.className = 'delta hidden';
+                    return;
+                }
+                const prefix = diff > 0 ? '↑' : '↓';
+                const sign = diff > 0 ? '' : '';
+                el.textContent = prefix + Math.abs(diff);
+                el.className = 'delta' + (diff < 0 ? ' negative' : '');
+            }
+
+            // ---------- 主更新函数 ----------
+            function updateStatsWithDelta() {
+                // 读取当前值
+                const currentUV = getNumberFromEl('busuanzi_value_site_uv');
+                const currentPV = getNumberFromEl('busuanzi_value_site_pv');
+                const currentClicks = getNumberFromEl('localClicks');
+                const currentFavs = getNumberFromEl('localFavs');
+                const currentRecommend = getNumberFromEl('localRecommend');
+
+                // 读取缓存
+                const cache = getCache();
+
+                // 更新 delta
+                updateDelta('uvDelta', currentUV, cache.uv, '独立访客');
+                updateDelta('pvDelta', currentPV, cache.pv, '总访问量');
+                updateDelta('clicksDelta', currentClicks, cache.clicks, '资源跳转');
+                updateDelta('favsDelta', currentFavs, cache.favs, '资源收藏');
+                updateDelta('recommendDelta', currentRecommend, cache.recommend, '资源推荐');
+
+                // 保存新缓存
+                cache.uv = currentUV;
+                cache.pv = currentPV;
+                cache.clicks = currentClicks;
+                cache.favs = currentFavs;
+                cache.recommend = currentRecommend;
+                saveCache(cache);
+            }
+
+            // ---------- 等待不蒜子加载 ----------
+            function waitForBusuanzi() {
+                const uvEl = document.getElementById('busuanzi_value_site_uv');
+                if (uvEl && uvEl.textContent.trim() !== '' && uvEl.textContent.trim() !== '加载中...') {
+                    // 数据已填充
+                    updateStatsWithDelta();
+                } else {
+                    // 未加载，继续等待，最多 8 秒
+                    let attempts = 0;
+                    const interval = setInterval(function() {
+                        attempts++;
+                        const uv = document.getElementById('busuanzi_value_site_uv');
+                        if (uv && uv.textContent.trim() !== '' && uv.textContent.trim() !== '加载中...') {
+                            clearInterval(interval);
+                            updateStatsWithDelta();
+                        } else if (attempts > 16) { // 8秒
+                            clearInterval(interval);
+                            // 即使没有数据也尝试更新（显示当前值，无delta）
+                            updateStatsWithDelta();
+                        }
+                    }, 500);
+                }
+            }
+
+            // ---------- 读取本地数据并显示 ----------
             function updateLocalStats() {
                 try {
                     const clicks = JSON.parse(localStorage.getItem('resourceClicks') || '{}');
                     document.getElementById('localClicks').textContent = clicks._total || 0;
                     const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
                     document.getElementById('localFavs').textContent = favs.length;
+                    const recommends = parseInt(localStorage.getItem('recommendSubmitCount') || '0');
+                    document.getElementById('localRecommend').textContent = recommends;
                 } catch (e) { /* 静默降级 */ }
             }
 
+            // ---------- 初始化 ----------
             updateLocalStats();
-            setInterval(updateLocalStats, 3000);
+            // 等待不蒜子加载完成后再更新delta
+            setTimeout(waitForBusuanzi, 1000);
+
+            // 监听 storage 变化（其他标签页修改时同步）
             window.addEventListener('storage', function(e) {
-                if (e.key === 'resourceClicks' || e.key === 'favorites') {
+                if (e.key === 'resourceClicks' || e.key === 'favorites' || e.key === 'recommendSubmitCount') {
                     updateLocalStats();
+                    // 延迟重新计算delta
+                    setTimeout(function() {
+                        const currentUV = getNumberFromEl('busuanzi_value_site_uv');
+                        const currentPV = getNumberFromEl('busuanzi_value_site_pv');
+                        const currentClicks = getNumberFromEl('localClicks');
+                        const currentFavs = getNumberFromEl('localFavs');
+                        const currentRecommend = getNumberFromEl('localRecommend');
+                        const cache = getCache();
+                        updateDelta('uvDelta', currentUV, cache.uv, '独立访客');
+                        updateDelta('pvDelta', currentPV, cache.pv, '总访问量');
+                        updateDelta('clicksDelta', currentClicks, cache.clicks, '资源跳转');
+                        updateDelta('favsDelta', currentFavs, cache.favs, '资源收藏');
+                        updateDelta('recommendDelta', currentRecommend, cache.recommend, '资源推荐');
+                        // 更新缓存
+                        cache.uv = currentUV;
+                        cache.pv = currentPV;
+                        cache.clicks = currentClicks;
+                        cache.favs = currentFavs;
+                        cache.recommend = currentRecommend;
+                        saveCache(cache);
+                    }, 500);
                 }
             });
 
-            // ---------- 不蒜子数据加载完成后更新显示 ----------
-            function waitForBusuanzi() {
-                const pv = document.getElementById('busuanzi_value_site_pv');
-                const uv = document.getElementById('busuanzi_value_site_uv');
-                if (pv && pv.textContent && pv.textContent !== '') {
-                    // 数据已加载
-                } else {
-                    setTimeout(waitForBusuanzi, 1000);
+            // 不蒜子数据加载完成后会自动更新，但我们也轮询检查
+            // 每5秒检查一次是否数据有更新（但不要频繁更新缓存，只在有变化时更新）
+            // 这里简单处理：每次页面可见时刷新delta
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    updateLocalStats();
+                    setTimeout(updateStatsWithDelta, 300);
                 }
-            }
-            setTimeout(waitForBusuanzi, 2000);
+            });
 
         })();
     </script>

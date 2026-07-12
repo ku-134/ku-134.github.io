@@ -1,8 +1,8 @@
 // ============================================================
 // GG-magic.js —— 游戏发布页核心逻辑
-// 解析 Hexenzirkel.txt
-// 格式1：## 游戏名 -标签1 -标签2 | 介绍 | 文件名 | +链接（可选）
-// 格式2：## 游戏名 -标签1 -标签2 | 介绍 | 文件名 +链接（可选）
+// 解析 Hexenzirkel.txt，以卡片网格展示游戏，支持图片浏览弹窗
+// 格式：## 游戏名 -标签1 -标签2 | 介绍 | 文件名 | +链接（可选）
+// 也支持：## 游戏名 -标签1 -标签2 | 介绍 | 文件名 +链接
 // ============================================================
 (function() {
     'use strict';
@@ -46,27 +46,35 @@
                 var fileName = '';
                 var link = '';
 
-                // 从 parts[2] 开始遍历
                 for (var pi = 2; pi < parts.length; pi++) {
                     var part = parts[pi];
                     if (!part) continue;
 
-                    // 检测是否为纯 +链接（以 + 开头）
-                    var linkMatch = part.match(/^\+\s*(.+)/);
-                    if (linkMatch) {
-                        link = linkMatch[1].trim();
+                    // 情况1：以 + 开头 → 纯链接
+                    if (part.indexOf('+') === 0) {
+                        link = part.substring(1).trim();
                         continue;
                     }
 
-                    // 检测是否为 "文件名 +链接" 格式（在同一段内）
-                    var combinedMatch = part.match(/^(.+?)\s+\+\s*(.+)$/);
-                    if (combinedMatch) {
-                        fileName = combinedMatch[1].trim();
-                        link = combinedMatch[2].trim();
+                    // 情况2：包含 + → 文件名 +链接（如 "genshin +https://xxx"）
+                    var plusIndex = part.indexOf(' +');
+                    if (plusIndex !== -1) {
+                        var beforePlus = part.substring(0, plusIndex).trim();
+                        var afterPlus = part.substring(plusIndex + 2).trim(); // 跳过 " +"
+                        // 如果 afterPlus 以 + 开头（容错），去掉
+                        if (afterPlus.indexOf('+') === 0) {
+                            afterPlus = afterPlus.substring(1).trim();
+                        }
+                        if (beforePlus) {
+                            fileName = beforePlus;
+                        }
+                        if (afterPlus) {
+                            link = afterPlus;
+                        }
                         continue;
                     }
 
-                    // 否则作为文件名
+                    // 情况3：普通文件名（且未被赋值）
                     if (!fileName) {
                         fileName = part;
                     }
@@ -145,12 +153,12 @@
 
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
 
-        // 按钮文案：有外部链接时显示“跳转！”，否则显示“玩这个！”
-        var isExternal = game.link && game.link.indexOf('Gamecurrently/') !== 0;
+        // 判断是否为外部链接（以 http:// 或 https:// 开头）
+        var isExternal = game.link && (game.link.indexOf('http://') === 0 || game.link.indexOf('https://') === 0);
         var btnLabel = isExternal ? '跳转！' : '玩这个！';
         var btnLink = game.link || '#';
 
-        // 链接不转义，只转义显示文本
+        // 关键：链接不转义！
         var btnHtml = '<a href="' + btnLink + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 ' + btnLabel + '</a>';
 
         return (

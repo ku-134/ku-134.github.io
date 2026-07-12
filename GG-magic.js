@@ -54,14 +54,14 @@
                     name = nameAndTags.trim();
                 }
 
-                // 处理 +链接：去掉前缀 +
+                // ===== 修复：解析 +链接 =====
                 var link = '';
                 if (extraLink) {
-                    var linkMatch = extraLink.match(/^\+\s*(.+)/);
-                    if (linkMatch) {
-                        link = linkMatch[1].trim();
+                    // 如果以 + 开头，提取后面的内容作为独立网址
+                    if (extraLink.indexOf('+') === 0) {
+                        link = extraLink.substring(1).trim();  // 去掉 + 号，保留完整链接
                     } else {
-                        // 如果没有 + 前缀，但用户写了链接，也尝试提取
+                        // 兼容：没有 + 号但也写了链接的情况
                         link = extraLink;
                     }
                 }
@@ -128,9 +128,9 @@
 
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
 
-        // 按钮：传入跳转链接
+        // 按钮使用 <a> 标签，直接跳转
         var btnLink = game.link || '#';
-        var btnHtml = '<a href="' + escapeHtml(btnLink) + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 玩这个！</a>';
+        var btnHtml = '<a href="' + escapeHtml(btnLink) + '" target="_blank" class="game-play-btn">🎮 玩这个！</a>';
 
         return (
             '<div class="game-card" data-index="' + index + '">' +

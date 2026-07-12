@@ -33,19 +33,24 @@
             var line = lines[i].trim();
             if (!line) continue;
 
+            // 匹配 ## 开头的行
             if (line.indexOf('##') === 0) {
                 var content = line.replace(/^##\s*/, '').trim();
 
                 // 按 | 分割
                 var parts = content.split('|').map(function(s) { return s.trim(); });
+
+                // parts[0] = "游戏名 -标签1 -标签2 ..."
+                // parts[1] = "介绍"
+                // parts[2...] = 文件名 或 +链接（顺序任意）
+
                 var nameAndTags = parts[0] || '';
                 var desc = parts[1] || '';
 
-                // ---------- 智能解析文件名和 +链接 ----------
+                // ---------- 智能解析：遍历 parts[2] 开始 ----------
                 var fileName = '';
                 var link = '';
 
-                // 从 parts[2] 开始遍历，区分文件名和 +链接
                 for (var pi = 2; pi < parts.length; pi++) {
                     var part = parts[pi];
                     if (!part) continue;
@@ -53,14 +58,30 @@
                     // 检测是否为 +链接（以 + 开头）
                     var linkMatch = part.match(/^\+\s*(.+)/);
                     if (linkMatch) {
-                        // 这是 +链接
+                        // 这是 +链接，直接存储完整 URL
                         link = linkMatch[1].trim();
                     } else {
-                        // 这是文件名（只取第一个非 + 开头的部分作为文件名）
+                        // 这是文件名（只取第一个非 + 开头的部分）
                         if (!fileName) {
                             fileName = part;
                         }
-                        // 如果有多个非 + 开头的部分，忽略后面的（但记录到 link 备用？不，保持简单）
+                        // 如果有多个非 + 开头的部分，忽略后面的
+                    }
+                }
+
+                // ---------- 如果没有 +链接，使用默认跳转 ----------
+                // 注意：只有在 fileName 存在且 link 为空时才生成默认路径
+                if (!link && fileName) {
+                    // 检查 fileName 是否已经是完整 URL（防止误判）
+                    if (fileName.indexOf('http://') === 0 || fileName.indexOf('https://') === 0) {
+                        // 如果 fileName 本身就是 URL，直接作为链接
+                        link = fileName;
+                        // 但此时 fileName 被占用，需要清空（因为不能同时作为图片文件名）
+                        // 但这种情况不应该发生，因为 URL 应该放在 + 后面
+                        // 为了安全，如果 fileName 是 URL，我们把它当作链接，但图片将无法加载
+                        // 所以建议用户遵守格式规范
+                    } else {
+                        link = 'Gamecurrently/' + fileName + '.html';
                     }
                 }
 
@@ -76,18 +97,13 @@
                     name = nameAndTags.trim();
                 }
 
-                // ---------- 如果没有 +链接，使用默认跳转 ----------
-                if (!link && fileName) {
-                    link = 'Gamecurrently/' + fileName + '.html';
-                }
-
                 if (name) {
                     games.push({
                         name: name,
                         tags: tags,
                         desc: desc,
-                        fileName: fileName,
-                        link: link
+                        fileName: fileName,   // 仅用于加载图片
+                        link: link            // 按钮跳转地址
                     });
                 }
             }

@@ -21,7 +21,7 @@
             opacity: 0.3;
         }
 
-        /* ===== 编码工具弹窗 ===== */
+        /* ===== 编码工具弹窗（原有） ===== */
         .tool-overlay {
             position: fixed;
             inset: 0;
@@ -211,13 +211,181 @@
             margin-top: 0.6rem;
         }
 
-        /* 滚动条美化 */
+        /* ===== 缓存修改工具弹窗（独立） ===== */
+        .cache-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            animation: overlayIn 0.3s ease-out;
+        }
+        .cache-overlay.active {
+            display: flex;
+        }
+        .cache-modal {
+            max-width: 480px;
+            width: 92%;
+            padding: 2rem 2rem 1.8rem;
+            border-radius: 1.8rem;
+            background: var(--modal-bg, rgba(12, 22, 12, 0.92));
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        @media (prefers-color-scheme: light) {
+            .cache-modal { --modal-bg: rgba(245, 250, 245, 0.94); border-color: rgba(0, 0, 0, 0.06); }
+        }
+        .cache-modal .modal-icon {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 0.2rem;
+        }
+        .cache-modal .modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.2rem;
+        }
+        .cache-modal .modal-sub {
+            font-size: 0.85rem;
+            opacity: 0.4;
+            text-align: center;
+            margin-bottom: 1.2rem;
+        }
+        .cache-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.4rem 0;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.06);
+        }
+        .cache-item:last-child {
+            border-bottom: none;
+        }
+        .cache-item .key {
+            font-weight: 600;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        .cache-item .value-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .cache-item input {
+            width: 120px;
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.6rem;
+            border: 1px solid rgba(128, 128, 128, 0.15);
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.9rem;
+            text-align: right;
+            transition: border-color 0.2s;
+        }
+        .cache-item input:focus {
+            border-color: currentColor;
+            outline: none;
+        }
+        .cache-item .reset-btn {
+            background: transparent;
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            border-radius: 0.4rem;
+            padding: 0.1rem 0.5rem;
+            font-size: 0.7rem;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+            color: inherit;
+        }
+        .cache-item .reset-btn:hover {
+            opacity: 0.7;
+        }
+        .cache-modal .btn-row {
+            display: flex;
+            gap: 0.6rem;
+            margin-top: 1rem;
+            justify-content: flex-end;
+        }
+        .cache-modal .btn-row .btn {
+            padding: 0.4rem 1.2rem;
+            border-radius: 2rem;
+            border: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+        .cache-modal .btn-row .btn-primary {
+            background: #66bb6a;
+            color: #1a2e1a;
+        }
+        .cache-modal .btn-row .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 187, 106, 0.25);
+        }
+        .cache-modal .btn-row .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(128, 128, 128, 0.15);
+            color: inherit;
+        }
+        .cache-modal .btn-row .btn-secondary:hover {
+            background: rgba(128, 128, 128, 0.06);
+        }
+        .cache-modal .btn-row .btn-danger {
+            background: #e74c3c;
+            color: #fff;
+        }
+        .cache-modal .btn-row .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.25);
+        }
+        .cache-toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 2rem;
+            font-size: 0.95rem;
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            z-index: 1200;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .cache-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        @media (prefers-color-scheme: light) {
+            .cache-toast { background: rgba(255,255,255,0.9); color: #1a3b1a; }
+        }
+
+        /* 滚动条 */
+        .cache-modal::-webkit-scrollbar,
         .tool-modal::-webkit-scrollbar {
             width: 4px;
         }
+        .cache-modal::-webkit-scrollbar-track,
         .tool-modal::-webkit-scrollbar-track {
             background: transparent;
         }
+        .cache-modal::-webkit-scrollbar-thumb,
         .tool-modal::-webkit-scrollbar-thumb {
             background: rgba(128, 128, 128, 0.2);
             border-radius: 4px;
@@ -246,10 +414,11 @@
             ✦ 测试 · 无实际内容 ✦
         </div>
 
-        <div class="click-hint" id="clickHint">测试文本</div>
+        <!-- 可点击触发缓存工具的区域 -->
+        <div class="click-hint" id="clickHint">测试，无实际内容</div>
     </div>
 
-    <!-- ===== 弹窗 ===== -->
+    <!-- ===== 编码工具弹窗（原有） ===== -->
     <div class="tool-overlay" id="toolOverlay">
         <div class="tool-modal">
             <div class="modal-icon">🔐</div>
@@ -269,7 +438,7 @@
             </div>
 
             <div class="field" style="margin-top:0.8rem;">
-                <label>📦 编码结果（复制到 category.dat）</label>
+                <label>📦 编码结果（复制到 Nahida.dat）</label>
                 <div class="result-box empty" id="resultBox">等待编码...</div>
             </div>
 
@@ -278,9 +447,29 @@
             </div>
 
             <div id="statusMsg"></div>
-            <div class="hint-text">按 Ctrl+Enter 快速编码 · 编码后替换仓库中的 category.dat</div>
+            <div class="hint-text">按 Ctrl+Enter 快速编码 · 编码后替换仓库中的 Nahida.dat</div>
         </div>
     </div>
+
+    <!-- ===== 缓存修改工具弹窗（新增） ===== -->
+    <div class="cache-overlay" id="cacheOverlay">
+        <div class="cache-modal">
+            <div class="modal-icon">🧪</div>
+            <div class="modal-title">缓存数据修改器</div>
+            <div class="modal-sub">仅供娱乐，修改一些无伤大雅的数值</div>
+
+            <div id="cacheList"></div>
+
+            <div class="btn-row">
+                <button class="btn btn-secondary" id="cacheCloseBtn">关闭</button>
+                <button class="btn btn-primary" id="cacheSaveBtn">💾 保存修改</button>
+                <button class="btn btn-danger" id="cacheResetBtn">🔄 全部重置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Toast 消息（用于缓存修改反馈） ===== -->
+    <div class="cache-toast" id="cacheToast"></div>
 
     <!-- ===== 全局脚本 ===== -->
     <script src="script.js"></script>
@@ -288,7 +477,7 @@
         (function() {
             'use strict';
 
-            // ---------- DOM 引用 ----------
+            // ---------- 编码工具（原有逻辑） ----------
             const title = document.getElementById('clickableTitle');
             const overlay = document.getElementById('toolOverlay');
             const input = document.getElementById('inputText');
@@ -300,31 +489,26 @@
             const closeBtn = document.getElementById('closeToolBtn');
             const statusMsg = document.getElementById('statusMsg');
 
-            // ---------- 点击计数 ----------
             let clickCount = 0;
             let clickTimer = null;
 
             title.addEventListener('click', function() {
                 clickCount++;
-                // 点击 5 次后触发
                 if (clickCount >= 5) {
                     clickCount = 0;
                     clearTimeout(clickTimer);
                     openTool();
                     return;
                 }
-                // 3 秒内没有继续点击则重置计数
                 clearTimeout(clickTimer);
                 clickTimer = setTimeout(function() {
                     clickCount = 0;
                 }, 3000);
             });
 
-            // ---------- 弹窗控制 ----------
             function openTool() {
                 overlay.classList.add('active');
                 document.body.classList.add('modal-open');
-                // 清空之前的状态
                 input.value = '';
                 resultBox.textContent = '等待编码...';
                 resultBox.className = 'result-box empty';
@@ -337,7 +521,6 @@
                 document.body.classList.remove('modal-open');
             }
 
-            // ---------- 状态提示 ----------
             function showStatus(msg, type) {
                 statusMsg.textContent = msg;
                 statusMsg.className = 'status-msg ' + type;
@@ -348,7 +531,6 @@
                 }, 4000);
             }
 
-            // ---------- 编码 ----------
             function encode() {
                 const raw = input.value;
                 if (!raw.trim()) {
@@ -365,7 +547,6 @@
                 }
             }
 
-            // ---------- 解码 ----------
             function decode() {
                 const raw = input.value.trim();
                 if (!raw) {
@@ -381,7 +562,6 @@
                 }
             }
 
-            // ---------- 清空 ----------
             function clearAll() {
                 input.value = '';
                 resultBox.textContent = '等待编码...';
@@ -390,7 +570,6 @@
                 statusMsg.className = '';
             }
 
-            // ---------- 复制 ----------
             function copyResult() {
                 const text = resultBox.textContent;
                 if (!text || text === '等待编码...') {
@@ -424,7 +603,6 @@
                 document.body.removeChild(area);
             }
 
-            // ---------- 键盘快捷键 ----------
             input.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
@@ -435,24 +613,188 @@
                 }
             });
 
-            // ---------- 点击外部关闭 ----------
             overlay.addEventListener('click', function(e) {
                 if (e.target === overlay) closeTool();
             });
 
-            // ---------- ESC 关闭 ----------
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && overlay.classList.contains('active')) {
                     closeTool();
                 }
             });
 
-            // ---------- 绑定按钮事件 ----------
             encodeBtn.addEventListener('click', encode);
             decodeBtn.addEventListener('click', decode);
             clearBtn.addEventListener('click', clearAll);
             copyBtn.addEventListener('click', copyResult);
             closeBtn.addEventListener('click', closeTool);
+
+            // ============================================================
+            // 新增：缓存修改工具（连续点击底部提示 5 次触发）
+            // ============================================================
+            const hint = document.getElementById('clickHint');
+            let cacheClickCount = 0;
+            let cacheClickTimer = null;
+
+            hint.addEventListener('click', function() {
+                cacheClickCount++;
+                if (cacheClickCount >= 5) {
+                    cacheClickCount = 0;
+                    clearTimeout(cacheClickTimer);
+                    openCacheTool();
+                    return;
+                }
+                clearTimeout(cacheClickTimer);
+                cacheClickTimer = setTimeout(function() {
+                    cacheClickCount = 0;
+                }, 3000);
+            });
+
+            // DOM 元素
+            const cacheOverlay = document.getElementById('cacheOverlay');
+            const cacheList = document.getElementById('cacheList');
+            const cacheCloseBtn = document.getElementById('cacheCloseBtn');
+            const cacheSaveBtn = document.getElementById('cacheSaveBtn');
+            const cacheResetBtn = document.getElementById('cacheResetBtn');
+            const cacheToast = document.getElementById('cacheToast');
+
+            // 可修改的缓存键（无伤大雅）
+            const CACHE_KEYS = [
+                'lastVisit',          // 上次访问时间戳
+                'recommendSubmitCount' // 推荐提交次数
+                // 不包含 favorites 和 resourceClicks
+            ];
+
+            let cacheData = {};
+
+            function openCacheTool() {
+                // 读取当前缓存
+                cacheData = {};
+                CACHE_KEYS.forEach(function(key) {
+                    try {
+                        var val = localStorage.getItem(key);
+                        cacheData[key] = val !== null ? val : '';
+                    } catch (e) {
+                        cacheData[key] = '';
+                    }
+                });
+                renderCacheList();
+                cacheOverlay.classList.add('active');
+                document.body.classList.add('modal-open');
+            }
+
+            function closeCacheTool() {
+                cacheOverlay.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            }
+
+            function renderCacheList() {
+                cacheList.innerHTML = '';
+                CACHE_KEYS.forEach(function(key) {
+                    var div = document.createElement('div');
+                    div.className = 'cache-item';
+
+                    var keySpan = document.createElement('span');
+                    keySpan.className = 'key';
+                    keySpan.textContent = key;
+
+                    var wrap = document.createElement('div');
+                    wrap.className = 'value-wrap';
+
+                    var input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = cacheData[key] || '';
+                    input.dataset.key = key;
+                    input.addEventListener('change', function() {
+                        cacheData[this.dataset.key] = this.value;
+                    });
+
+                    var resetBtn = document.createElement('button');
+                    resetBtn.className = 'reset-btn';
+                    resetBtn.textContent = '↺';
+                    resetBtn.title = '重置为空';
+                    resetBtn.addEventListener('click', function() {
+                        var k = this.parentElement.querySelector('input').dataset.key;
+                        var inputEl = this.parentElement.querySelector('input');
+                        inputEl.value = '';
+                        cacheData[k] = '';
+                    });
+
+                    wrap.appendChild(input);
+                    wrap.appendChild(resetBtn);
+
+                    div.appendChild(keySpan);
+                    div.appendChild(wrap);
+                    cacheList.appendChild(div);
+                });
+            }
+
+            function showCacheToast(msg, isSuccess) {
+                cacheToast.textContent = msg;
+                cacheToast.className = 'cache-toast show';
+                if (isSuccess) {
+                    cacheToast.style.borderColor = '#66bb6a';
+                } else {
+                    cacheToast.style.borderColor = '#e74c3c';
+                }
+                clearTimeout(cacheToast._timer);
+                cacheToast._timer = setTimeout(function() {
+                    cacheToast.classList.remove('show');
+                }, 3000);
+            }
+
+            function saveCache() {
+                // 从输入框收集最新值（以防用户直接修改输入框后未触发 change）
+                var inputs = cacheList.querySelectorAll('input');
+                inputs.forEach(function(inp) {
+                    cacheData[inp.dataset.key] = inp.value;
+                });
+
+                // 写入 localStorage
+                var successCount = 0;
+                CACHE_KEYS.forEach(function(key) {
+                    try {
+                        localStorage.setItem(key, cacheData[key] || '');
+                        successCount++;
+                    } catch (e) {
+                        // 忽略
+                    }
+                });
+                if (successCount === CACHE_KEYS.length) {
+                    showCacheToast('✅ 所有缓存已更新！', true);
+                } else {
+                    showCacheToast('⚠️ 部分缓存更新失败', false);
+                }
+            }
+
+            function resetAllCache() {
+                CACHE_KEYS.forEach(function(key) {
+                    try {
+                        localStorage.removeItem(key);
+                        cacheData[key] = '';
+                    } catch (e) { /* 忽略 */ }
+                });
+                renderCacheList();
+                showCacheToast('🔄 已重置所有可修改缓存', true);
+            }
+
+            // 事件绑定
+            cacheCloseBtn.addEventListener('click', closeCacheTool);
+            cacheOverlay.addEventListener('click', function(e) {
+                if (e.target === cacheOverlay) closeCacheTool();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && cacheOverlay.classList.contains('active')) {
+                    closeCacheTool();
+                }
+            });
+            cacheSaveBtn.addEventListener('click', saveCache);
+            cacheResetBtn.addEventListener('click', resetAllCache);
+
+            // 为了整洁，在关闭弹窗时清空可能残留的 toast
+            window.addEventListener('beforeunload', function() {
+                // 不需要处理
+            });
 
         })();
     </script>

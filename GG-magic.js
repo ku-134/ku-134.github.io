@@ -33,7 +33,6 @@
             var line = lines[i].trim();
             if (!line) continue;
 
-            // 匹配 ## 开头的行
             if (line.indexOf('##') === 0) {
                 var content = line.replace(/^##\s*/, '').trim();
 
@@ -70,19 +69,8 @@
                 }
 
                 // ---------- 如果没有 +链接，使用默认跳转 ----------
-                // 注意：只有在 fileName 存在且 link 为空时才生成默认路径
                 if (!link && fileName) {
-                    // 检查 fileName 是否已经是完整 URL（防止误判）
-                    if (fileName.indexOf('http://') === 0 || fileName.indexOf('https://') === 0) {
-                        // 如果 fileName 本身就是 URL，直接作为链接
-                        link = fileName;
-                        // 但此时 fileName 被占用，需要清空（因为不能同时作为图片文件名）
-                        // 但这种情况不应该发生，因为 URL 应该放在 + 后面
-                        // 为了安全，如果 fileName 是 URL，我们把它当作链接，但图片将无法加载
-                        // 所以建议用户遵守格式规范
-                    } else {
-                        link = 'Gamecurrently/' + fileName + '.html';
-                    }
+                    link = 'Gamecurrently/' + fileName + '.html';
                 }
 
                 // ---------- 解析游戏名和标签 ----------
@@ -154,9 +142,11 @@
 
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
 
-        // 按钮：使用解析好的 link
+        // ---------- 按钮文案：有 +链接时显示“跳转！”，否则显示“玩这个！” ----------
+        var isExternal = game.link && game.link.indexOf('Gamecurrently/') !== 0;
+        var btnLabel = isExternal ? '跳转！' : '玩这个！';
         var btnLink = game.link || '#';
-        var btnHtml = '<a href="' + escapeHtml(btnLink) + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 玩这个！</a>';
+        var btnHtml = '<a href="' + escapeHtml(btnLink) + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 ' + btnLabel + '</a>';
 
         return (
             '<div class="game-card" data-index="' + index + '">' +

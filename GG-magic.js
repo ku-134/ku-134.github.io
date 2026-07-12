@@ -1,6 +1,7 @@
 // ============================================================
 // GG-magic.js —— 游戏发布页核心逻辑
 // 解析 Hexenzirkel.txt，以卡片网格展示游戏，支持图片浏览弹窗
+// 格式：## 游戏名 -标签1 -标签2 | 介绍 | 文件名 | +链接（可选）
 // ============================================================
 (function() {
     'use strict';
@@ -19,7 +20,7 @@
     // ---------- 状态 ----------
     var allGames = [];
     var isLoading = false;
-    var currentImages = [];        // 当前弹窗图片 src 数组
+    var currentImages = [];
     var currentIndex = 0;
 
     // ---------- 解析 Hexenzirkel.txt ----------
@@ -33,11 +34,15 @@
 
             if (line.indexOf('##') === 0) {
                 var content = line.replace(/^##\s*/, '').trim();
+
+                // 按 | 分割：游戏名+标签 | 介绍 | 文件名 | +链接（可选）
                 var parts = content.split('|').map(function(s) { return s.trim(); });
                 var nameAndTags = parts[0] || '';
                 var desc = parts[1] || '';
                 var fileName = parts[2] || '';
+                var extraLink = parts[3] || '';
 
+                // 解析游戏名和标签
                 var name = nameAndTags;
                 var tags = [];
                 var dashIndex = nameAndTags.indexOf(' -');
@@ -49,12 +54,30 @@
                     name = nameAndTags.trim();
                 }
 
+                // 处理 +链接：去掉前缀 +
+                var link = '';
+                if (extraLink) {
+                    var linkMatch = extraLink.match(/^\+\s*(.+)/);
+                    if (linkMatch) {
+                        link = linkMatch[1].trim();
+                    } else {
+                        // 如果没有 + 前缀，但用户写了链接，也尝试提取
+                        link = extraLink;
+                    }
+                }
+
+                // 如果没有额外链接，默认使用 Gamecurrently/文件名.html
+                if (!link && fileName) {
+                    link = 'Gamecurrently/' + fileName + '.html';
+                }
+
                 if (name) {
                     games.push({
                         name: name,
                         tags: tags,
                         desc: desc,
-                        fileName: fileName
+                        fileName: fileName,
+                        link: link      // 按钮跳转地址
                     });
                 }
             }
@@ -104,7 +127,10 @@
         }
 
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
-        var btnHtml = '<button class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 玩这个！</button>';
+
+        // 按钮：传入跳转链接
+        var btnLink = game.link || '#';
+        var btnHtml = '<a href="' + escapeHtml(btnLink) + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 玩这个！</a>';
 
         return (
             '<div class="game-card" data-index="' + index + '">' +
@@ -127,13 +153,10 @@
         var loadedSrcs = [];
         var maxAttempts = 5;
 
-        // 收集成功加载的图片 src
         function tryLoad(index) {
             if (index >= maxAttempts) {
-                // 所有图片尝试完毕，如果有加载成功则显示
                 if (loadedSrcs.length > 0) {
                     imgContainer.classList.add('has-images');
-                    // 绑定点击事件到每个图片
                     var imgs = imgContainer.querySelectorAll('.game-screenshot');
                     for (var i = 0; i < imgs.length; i++) {
                         (function(imgEl) {
@@ -150,7 +173,6 @@
             var extIndex = 0;
             function tryNextExt() {
                 if (extIndex >= extensions.length) {
-                    // 该序号所有扩展名都失败，尝试下一个序号
                     tryLoad(index + 1);
                     return;
                 }
@@ -158,14 +180,12 @@
                 var src = basePath + index + ext;
                 var img = new Image();
                 img.onload = function() {
-                    // 加载成功，添加到容器
                     var imgEl = document.createElement('img');
                     imgEl.src = src;
                     imgEl.alt = fileName + ' 截图' + index;
                     imgEl.className = 'game-screenshot';
                     imgContainer.appendChild(imgEl);
                     loadedSrcs.push(src);
-                    // 继续尝试下一个序号
                     tryLoad(index + 1);
                 };
                 img.onerror = function() {
@@ -226,7 +246,6 @@
     function closeImageViewer() {
         overlay.classList.remove('active');
         document.body.classList.remove('modal-open');
-        // 清空大图，避免残留
         viewer.src = '';
         currentImages = [];
         currentIndex = 0;
@@ -301,15 +320,6 @@
     }
 
     // ---------- 事件绑定 ----------
-    // “玩这个！”按钮
-    document.addEventListener('click', function(e) {
-        var target = e.target.closest('.game-play-btn');
-        if (target) {
-            var gameName = target.dataset.game || '这个游戏';
-            alert('🎮 “' + gameName + '” 即将上线，敬请期待！');
-        }
-    });
-
     // 图片浏览弹窗——点击蒙层关闭
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) {

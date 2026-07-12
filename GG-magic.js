@@ -1,8 +1,8 @@
 // ============================================================
 // GG-magic.js —— 游戏发布页核心逻辑
-// 解析 Hexenzirkel.txt，以卡片网格展示游戏，支持图片浏览弹窗
-// 格式：## 游戏名 -标签1 -标签2 | 介绍 | 文件名 | +链接（可选）
-// 注意：文件名和+链接的顺序可以互换
+// 解析 Hexenzirkel.txt
+// 格式1：## 游戏名 -标签1 -标签2 | 介绍 | 文件名 | +链接（可选）
+// 格式2：## 游戏名 -标签1 -标签2 | 介绍 | 文件名 +链接（可选）
 // ============================================================
 (function() {
     'use strict';
@@ -42,22 +42,33 @@
                 var nameAndTags = parts[0] || '';
                 var desc = parts[1] || '';
 
-                // ---------- 智能解析：遍历 parts[2] 开始 ----------
+                // ---------- 解析文件名和 +链接 ----------
                 var fileName = '';
                 var link = '';
 
+                // 从 parts[2] 开始遍历
                 for (var pi = 2; pi < parts.length; pi++) {
                     var part = parts[pi];
                     if (!part) continue;
 
-                    // 检测是否为 +链接（以 + 开头）
+                    // 检测是否为纯 +链接（以 + 开头）
                     var linkMatch = part.match(/^\+\s*(.+)/);
                     if (linkMatch) {
                         link = linkMatch[1].trim();
-                    } else {
-                        if (!fileName) {
-                            fileName = part;
-                        }
+                        continue;
+                    }
+
+                    // 检测是否为 "文件名 +链接" 格式（在同一段内）
+                    var combinedMatch = part.match(/^(.+?)\s+\+\s*(.+)$/);
+                    if (combinedMatch) {
+                        fileName = combinedMatch[1].trim();
+                        link = combinedMatch[2].trim();
+                        continue;
+                    }
+
+                    // 否则作为文件名
+                    if (!fileName) {
+                        fileName = part;
                     }
                 }
 
@@ -134,12 +145,12 @@
 
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
 
-        // 按钮文案：有 +链接且不是本地路径时显示“跳转！”，否则显示“玩这个！”
+        // 按钮文案：有外部链接时显示“跳转！”，否则显示“玩这个！”
         var isExternal = game.link && game.link.indexOf('Gamecurrently/') !== 0;
         var btnLabel = isExternal ? '跳转！' : '玩这个！';
         var btnLink = game.link || '#';
 
-        // 关键修复：链接不转义，只转义显示文本
+        // 链接不转义，只转义显示文本
         var btnHtml = '<a href="' + btnLink + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 ' + btnLabel + '</a>';
 
         return (
@@ -153,7 +164,7 @@
         );
     }
 
-    // ---------- 加载游戏图片并绑定点击事件 ----------
+    // ---------- 加载游戏图片 ----------
     function loadGameImages(card, fileName) {
         var imgContainer = card.querySelector('.game-images');
         if (!imgContainer) return;
@@ -210,7 +221,7 @@
         tryLoad(0);
     }
 
-    // ---------- 打开图片浏览弹窗 ----------
+    // ---------- 图片浏览弹窗 ----------
     function openImageViewer(srcList, startIndex) {
         if (!srcList || srcList.length === 0) return;
         currentImages = srcList.slice();
@@ -221,7 +232,6 @@
         document.body.classList.add('modal-open');
     }
 
-    // ---------- 渲染缩略图索引 ----------
     function renderThumbnails() {
         thumbnailsEl.innerHTML = '';
         var romanNumerals = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'];
@@ -245,14 +255,12 @@
         }
     }
 
-    // ---------- 显示大图 ----------
     function showImage(index) {
         if (index >= 0 && index < currentImages.length) {
             viewer.src = currentImages[index];
         }
     }
 
-    // ---------- 关闭弹窗 ----------
     function closeImageViewer() {
         overlay.classList.remove('active');
         document.body.classList.remove('modal-open');

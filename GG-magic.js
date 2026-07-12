@@ -17,6 +17,7 @@
     var overlay = document.getElementById('imageOverlay');
     var thumbnailsEl = document.getElementById('imageThumbnails');
     var viewer = document.getElementById('imageViewer');
+    var closeBtn = document.getElementById('imageModalClose');
 
     // ---------- 状态 ----------
     var allGames = [];
@@ -60,8 +61,7 @@
                     var plusIndex = part.indexOf(' +');
                     if (plusIndex !== -1) {
                         var beforePlus = part.substring(0, plusIndex).trim();
-                        var afterPlus = part.substring(plusIndex + 2).trim(); // 跳过 " +"
-                        // 如果 afterPlus 以 + 开头（容错），去掉
+                        var afterPlus = part.substring(plusIndex + 2).trim();
                         if (afterPlus.indexOf('+') === 0) {
                             afterPlus = afterPlus.substring(1).trim();
                         }
@@ -74,7 +74,7 @@
                         continue;
                     }
 
-                    // 情况3：普通文件名（且未被赋值）
+                    // 情况3：普通文件名
                     if (!fileName) {
                         fileName = part;
                     }
@@ -127,6 +127,7 @@
 
         gameGrid.innerHTML = html;
 
+        // 渲染完成后，异步加载每个游戏的图片
         var cards = gameGrid.querySelectorAll('.game-card');
         for (var ci = 0; ci < cards.length; ci++) {
             (function(card, idx) {
@@ -153,12 +154,11 @@
 
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
 
-        // 判断是否为外部链接（以 http:// 或 https:// 开头）
+        // 判断是否为外部链接
         var isExternal = game.link && (game.link.indexOf('http://') === 0 || game.link.indexOf('https://') === 0);
         var btnLabel = isExternal ? '跳转！' : '玩这个！';
         var btnLink = game.link || '#';
 
-        // 关键：链接不转义！
         var btnHtml = '<a href="' + btnLink + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 ' + btnLabel + '</a>';
 
         return (
@@ -172,7 +172,7 @@
         );
     }
 
-    // ---------- 加载游戏图片 ----------
+    // ---------- 加载游戏图片并绑定点击事件 ----------
     function loadGameImages(card, fileName) {
         var imgContainer = card.querySelector('.game-images');
         if (!imgContainer) return;
@@ -188,12 +188,13 @@
                     imgContainer.classList.add('has-images');
                     var imgs = imgContainer.querySelectorAll('.game-screenshot');
                     for (var i = 0; i < imgs.length; i++) {
-                        (function(imgEl) {
+                        (function(imgEl, imgIndex) {
                             imgEl.addEventListener('click', function(e) {
                                 e.stopPropagation();
-                                openImageViewer(loadedSrcs, i);
+                                // 点击哪张图，弹窗就切到哪张图
+                                openImageViewer(loadedSrcs, imgIndex);
                             });
-                        })(imgs[i]);
+                        })(imgs[i], i);
                     }
                 }
                 return;
@@ -229,7 +230,7 @@
         tryLoad(0);
     }
 
-    // ---------- 图片浏览弹窗 ----------
+    // ---------- 打开图片浏览弹窗 ----------
     function openImageViewer(srcList, startIndex) {
         if (!srcList || srcList.length === 0) return;
         currentImages = srcList.slice();
@@ -240,6 +241,7 @@
         document.body.classList.add('modal-open');
     }
 
+    // ---------- 渲染缩略图索引 ----------
     function renderThumbnails() {
         thumbnailsEl.innerHTML = '';
         var romanNumerals = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'];
@@ -263,12 +265,14 @@
         }
     }
 
+    // ---------- 显示大图 ----------
     function showImage(index) {
         if (index >= 0 && index < currentImages.length) {
             viewer.src = currentImages[index];
         }
     }
 
+    // ---------- 关闭弹窗 ----------
     function closeImageViewer() {
         overlay.classList.remove('active');
         document.body.classList.remove('modal-open');
@@ -346,18 +350,27 @@
     }
 
     // ---------- 事件绑定 ----------
+    // 关闭按钮
+    closeBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        closeImageViewer();
+    });
+
+    // 点击蒙层关闭
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) {
             closeImageViewer();
         }
     });
 
+    // ESC 关闭
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && overlay.classList.contains('active')) {
             closeImageViewer();
         }
     });
 
+    // 拉取按钮
     fetchBtn.addEventListener('click', fetchAndRender);
 
     // ---------- 初始化 ----------

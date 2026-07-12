@@ -21,7 +21,7 @@
             opacity: 0.3;
         }
 
-        /* ===== 编码工具弹窗（原有） ===== */
+        /* ===== 编码工具弹窗 ===== */
         .tool-overlay {
             position: fixed;
             inset: 0;
@@ -211,7 +211,7 @@
             margin-top: 0.6rem;
         }
 
-        /* ===== 缓存修改工具弹窗（独立） ===== */
+        /* ===== 缓存查看/修改工具（展示所有 LS 数据） ===== */
         .cache-overlay {
             position: fixed;
             inset: 0;
@@ -228,8 +228,8 @@
             display: flex;
         }
         .cache-modal {
-            max-width: 480px;
-            width: 92%;
+            max-width: 580px;
+            width: 94%;
             padding: 2rem 2rem 1.8rem;
             border-radius: 1.8rem;
             background: var(--modal-bg, rgba(12, 22, 12, 0.92));
@@ -267,54 +267,65 @@
             align-items: center;
             padding: 0.4rem 0;
             border-bottom: 1px solid rgba(128, 128, 128, 0.06);
+            gap: 0.5rem;
         }
         .cache-item:last-child {
             border-bottom: none;
         }
         .cache-item .key {
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             opacity: 0.7;
+            flex-shrink: 0;
+            min-width: 120px;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .cache-item .value-wrap {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.3rem;
+            flex: 1;
+            min-width: 0;
         }
         .cache-item input {
-            width: 120px;
+            flex: 1;
+            min-width: 60px;
             padding: 0.3rem 0.6rem;
             border-radius: 0.6rem;
             border: 1px solid rgba(128, 128, 128, 0.15);
             background: transparent;
             color: inherit;
-            font-family: inherit;
-            font-size: 0.9rem;
-            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
             transition: border-color 0.2s;
         }
         .cache-item input:focus {
             border-color: currentColor;
             outline: none;
         }
-        .cache-item .reset-btn {
+        .cache-item .del-btn {
             background: transparent;
-            border: 1px solid rgba(128, 128, 128, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.2);
             border-radius: 0.4rem;
             padding: 0.1rem 0.5rem;
             font-size: 0.7rem;
             cursor: pointer;
-            opacity: 0.3;
+            opacity: 0.2;
             transition: opacity 0.2s;
-            color: inherit;
+            color: #e74c3c;
+            flex-shrink: 0;
         }
-        .cache-item .reset-btn:hover {
+        .cache-item .del-btn:hover {
             opacity: 0.7;
         }
         .cache-modal .btn-row {
             display: flex;
             gap: 0.6rem;
             margin-top: 1rem;
+            flex-wrap: wrap;
             justify-content: flex-end;
         }
         .cache-modal .btn-row .btn {
@@ -351,6 +362,18 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(231, 76, 60, 0.25);
         }
+        .cache-modal .count-badge {
+            font-size: 0.7rem;
+            opacity: 0.3;
+            margin-left: 0.3rem;
+        }
+        .cache-modal .empty-hint {
+            text-align: center;
+            opacity: 0.3;
+            padding: 1rem 0;
+            font-size: 0.9rem;
+        }
+
         .cache-toast {
             position: fixed;
             bottom: 30px;
@@ -414,7 +437,7 @@
             ✦ 测试 · 无实际内容 ✦
         </div>
 
-        <!-- 可点击触发缓存工具的区域 -->
+        <!-- 点击触发缓存工具 -->
         <div class="click-hint" id="clickHint">测试，无实际内容</div>
     </div>
 
@@ -451,24 +474,25 @@
         </div>
     </div>
 
-    <!-- ===== 缓存修改工具弹窗（新增） ===== -->
+    <!-- ===== 缓存查看/修改工具（新增：展示全部 localStorage） ===== -->
     <div class="cache-overlay" id="cacheOverlay">
         <div class="cache-modal">
-            <div class="modal-icon">🧪</div>
-            <div class="modal-title">缓存数据修改器</div>
-            <div class="modal-sub">仅供娱乐，修改一些无伤大雅的数值</div>
+            <div class="modal-icon">🗂️</div>
+            <div class="modal-title">LocalStorage 数据查看器</div>
+            <div class="modal-sub">显示全部缓存数据 · 可编辑 · 可删除</div>
 
             <div id="cacheList"></div>
 
             <div class="btn-row">
                 <button class="btn btn-secondary" id="cacheCloseBtn">关闭</button>
-                <button class="btn btn-primary" id="cacheSaveBtn">💾 保存修改</button>
-                <button class="btn btn-danger" id="cacheResetBtn">🔄 全部重置</button>
+                <button class="btn btn-primary" id="cacheSaveBtn">💾 保存全部</button>
+                <button class="btn btn-danger" id="cacheClearAllBtn">🗑️ 清空全部</button>
+                <button class="btn btn-secondary" id="cacheRefreshBtn">🔄 刷新</button>
             </div>
         </div>
     </div>
 
-    <!-- ===== Toast 消息（用于缓存修改反馈） ===== -->
+    <!-- ===== Toast 消息 ===== -->
     <div class="cache-toast" id="cacheToast"></div>
 
     <!-- ===== 全局脚本 ===== -->
@@ -477,7 +501,9 @@
         (function() {
             'use strict';
 
-            // ---------- 编码工具（原有逻辑） ----------
+            // ============================================================
+            // 编码工具（原有逻辑）
+            // ============================================================
             const title = document.getElementById('clickableTitle');
             const overlay = document.getElementById('toolOverlay');
             const input = document.getElementById('inputText');
@@ -630,7 +656,8 @@
             closeBtn.addEventListener('click', closeTool);
 
             // ============================================================
-            // 新增：缓存修改工具（连续点击底部提示 5 次触发）
+            // 缓存查看/修改工具 —— 展示全部 localStorage
+            // 触发方式：连续点击底部文案 5 次
             // ============================================================
             const hint = document.getElementById('clickHint');
             let cacheClickCount = 0;
@@ -655,29 +682,142 @@
             const cacheList = document.getElementById('cacheList');
             const cacheCloseBtn = document.getElementById('cacheCloseBtn');
             const cacheSaveBtn = document.getElementById('cacheSaveBtn');
-            const cacheResetBtn = document.getElementById('cacheResetBtn');
+            const cacheClearAllBtn = document.getElementById('cacheClearAllBtn');
+            const cacheRefreshBtn = document.getElementById('cacheRefreshBtn');
             const cacheToast = document.getElementById('cacheToast');
 
-            // 可修改的缓存键（无伤大雅）
-            const CACHE_KEYS = [
-                'lastVisit',          // 上次访问时间戳
-                'recommendSubmitCount' // 推荐提交次数
-                // 不包含 favorites 和 resourceClicks
-            ];
+            // ---------- 工具函数 ----------
+            function getAllLocalStorage() {
+                const result = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key !== null) {
+                        try {
+                            result[key] = localStorage.getItem(key) || '';
+                        } catch (e) {
+                            result[key] = '';
+                        }
+                    }
+                }
+                return result;
+            }
 
-            let cacheData = {};
+            function showCacheToast(msg, isSuccess) {
+                cacheToast.textContent = msg;
+                cacheToast.className = 'cache-toast show';
+                cacheToast.style.borderColor = isSuccess ? '#66bb6a' : '#e74c3c';
+                clearTimeout(cacheToast._timer);
+                cacheToast._timer = setTimeout(function() {
+                    cacheToast.classList.remove('show');
+                }, 3000);
+            }
 
-            function openCacheTool() {
-                // 读取当前缓存
-                cacheData = {};
-                CACHE_KEYS.forEach(function(key) {
+            // ---------- 渲染 ----------
+            function renderCacheList() {
+                const data = getAllLocalStorage();
+                const keys = Object.keys(data);
+
+                if (keys.length === 0) {
+                    cacheList.innerHTML = '<div class="empty-hint">📭 localStorage 为空</div>';
+                    return;
+                }
+
+                let html = '';
+                keys.forEach(function(key) {
+                    const value = data[key] || '';
+                    // 对长值进行截断显示（但保留完整值在 input 中）
+                    const displayValue = value.length > 80 ? value.substring(0, 80) + '…' : value;
+                    html +=
+                        '<div class="cache-item" data-key="' + escapeHtml(key) + '">' +
+                        '<span class="key" title="' + escapeHtml(key) + '">' + escapeHtml(key) + '</span>' +
+                        '<div class="value-wrap">' +
+                        '<input type="text" value="' + escapeHtml(value) + '" data-key="' + escapeHtml(key) + '" spellcheck="false">' +
+                        '<button class="del-btn" data-key="' + escapeHtml(key) + '" title="删除此项">✕</button>' +
+                        '</div>' +
+                        '</div>';
+                });
+
+                cacheList.innerHTML = html;
+
+                // 绑定删除事件
+                cacheList.querySelectorAll('.del-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        const key = this.dataset.key;
+                        if (confirm('确定要删除 "' + key + '" 吗？')) {
+                            try {
+                                localStorage.removeItem(key);
+                                renderCacheList();
+                                showCacheToast('✅ 已删除 "' + key + '"', true);
+                            } catch (e) {
+                                showCacheToast('❌ 删除失败', false);
+                            }
+                        }
+                    });
+                });
+
+                // 输入框修改后自动保存（实时）
+                cacheList.querySelectorAll('input').forEach(function(inp) {
+                    inp.addEventListener('change', function() {
+                        const key = this.dataset.key;
+                        const val = this.value;
+                        try {
+                            localStorage.setItem(key, val);
+                            // 更新显示（如果值太长，截断显示）
+                            const parent = this.closest('.cache-item');
+                            if (parent) {
+                                const keySpan = parent.querySelector('.key');
+                                if (keySpan) {
+                                    const displayVal = val.length > 80 ? val.substring(0, 80) + '…' : val;
+                                    // 不强制刷新，保持原样
+                                }
+                            }
+                        } catch (e) {
+                            showCacheToast('⚠️ 保存 "' + key + '" 失败', false);
+                        }
+                    });
+                });
+            }
+
+            // ---------- 保存全部（从输入框读取并写入） ----------
+            function saveAllCache() {
+                const inputs = cacheList.querySelectorAll('input');
+                let successCount = 0;
+                inputs.forEach(function(inp) {
+                    const key = inp.dataset.key;
+                    const val = inp.value;
                     try {
-                        var val = localStorage.getItem(key);
-                        cacheData[key] = val !== null ? val : '';
+                        localStorage.setItem(key, val);
+                        successCount++;
                     } catch (e) {
-                        cacheData[key] = '';
+                        // 忽略
                     }
                 });
+                showCacheToast('✅ 已保存 ' + successCount + ' 项', true);
+                // 重新渲染以更新显示
+                renderCacheList();
+            }
+
+            // ---------- 清空全部 ----------
+            function clearAllCache() {
+                if (!confirm('⚠️ 确定要清空全部 localStorage 数据吗？此操作不可撤销！')) return;
+                if (!confirm('⚠️ 再次确认：真的清空所有本地数据？')) return;
+                try {
+                    localStorage.clear();
+                    renderCacheList();
+                    showCacheToast('🗑️ 已清空全部 localStorage', true);
+                } catch (e) {
+                    showCacheToast('❌ 清空失败', false);
+                }
+            }
+
+            // ---------- 刷新 ----------
+            function refreshCache() {
+                renderCacheList();
+                showCacheToast('🔄 已刷新', true);
+            }
+
+            // ---------- 打开/关闭 ----------
+            function openCacheTool() {
                 renderCacheList();
                 cacheOverlay.classList.add('active');
                 document.body.classList.add('modal-open');
@@ -688,116 +828,31 @@
                 document.body.classList.remove('modal-open');
             }
 
-            function renderCacheList() {
-                cacheList.innerHTML = '';
-                CACHE_KEYS.forEach(function(key) {
-                    var div = document.createElement('div');
-                    div.className = 'cache-item';
-
-                    var keySpan = document.createElement('span');
-                    keySpan.className = 'key';
-                    keySpan.textContent = key;
-
-                    var wrap = document.createElement('div');
-                    wrap.className = 'value-wrap';
-
-                    var input = document.createElement('input');
-                    input.type = 'text';
-                    input.value = cacheData[key] || '';
-                    input.dataset.key = key;
-                    input.addEventListener('change', function() {
-                        cacheData[this.dataset.key] = this.value;
-                    });
-
-                    var resetBtn = document.createElement('button');
-                    resetBtn.className = 'reset-btn';
-                    resetBtn.textContent = '↺';
-                    resetBtn.title = '重置为空';
-                    resetBtn.addEventListener('click', function() {
-                        var k = this.parentElement.querySelector('input').dataset.key;
-                        var inputEl = this.parentElement.querySelector('input');
-                        inputEl.value = '';
-                        cacheData[k] = '';
-                    });
-
-                    wrap.appendChild(input);
-                    wrap.appendChild(resetBtn);
-
-                    div.appendChild(keySpan);
-                    div.appendChild(wrap);
-                    cacheList.appendChild(div);
-                });
+            // ---------- 工具 ----------
+            function escapeHtml(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
             }
 
-            function showCacheToast(msg, isSuccess) {
-                cacheToast.textContent = msg;
-                cacheToast.className = 'cache-toast show';
-                if (isSuccess) {
-                    cacheToast.style.borderColor = '#66bb6a';
-                } else {
-                    cacheToast.style.borderColor = '#e74c3c';
-                }
-                clearTimeout(cacheToast._timer);
-                cacheToast._timer = setTimeout(function() {
-                    cacheToast.classList.remove('show');
-                }, 3000);
-            }
-
-            function saveCache() {
-                // 从输入框收集最新值（以防用户直接修改输入框后未触发 change）
-                var inputs = cacheList.querySelectorAll('input');
-                inputs.forEach(function(inp) {
-                    cacheData[inp.dataset.key] = inp.value;
-                });
-
-                // 写入 localStorage
-                var successCount = 0;
-                CACHE_KEYS.forEach(function(key) {
-                    try {
-                        localStorage.setItem(key, cacheData[key] || '');
-                        successCount++;
-                    } catch (e) {
-                        // 忽略
-                    }
-                });
-                if (successCount === CACHE_KEYS.length) {
-                    showCacheToast('✅ 所有缓存已更新！', true);
-                } else {
-                    showCacheToast('⚠️ 部分缓存更新失败', false);
-                }
-            }
-
-            function resetAllCache() {
-                CACHE_KEYS.forEach(function(key) {
-                    try {
-                        localStorage.removeItem(key);
-                        cacheData[key] = '';
-                    } catch (e) { /* 忽略 */ }
-                });
-                renderCacheList();
-                showCacheToast('🔄 已重置所有可修改缓存', true);
-            }
-
-            // 事件绑定
+            // ---------- 事件绑定 ----------
             cacheCloseBtn.addEventListener('click', closeCacheTool);
+            cacheSaveBtn.addEventListener('click', saveAllCache);
+            cacheClearAllBtn.addEventListener('click', clearAllCache);
+            cacheRefreshBtn.addEventListener('click', refreshCache);
+
             cacheOverlay.addEventListener('click', function(e) {
                 if (e.target === cacheOverlay) closeCacheTool();
             });
+
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape' && cacheOverlay.classList.contains('active')) {
                     closeCacheTool();
                 }
             });
-            cacheSaveBtn.addEventListener('click', saveCache);
-            cacheResetBtn.addEventListener('click', resetAllCache);
-
-            // 为了整洁，在关闭弹窗时清空可能残留的 toast
-            window.addEventListener('beforeunload', function() {
-                // 不需要处理
-            });
 
         })();
     </script>
-
 </body>
 </html>

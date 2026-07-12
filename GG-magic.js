@@ -2,6 +2,7 @@
 // GG-magic.js —— 游戏发布页核心逻辑
 // 解析 Hexenzirkel.txt，以卡片网格展示游戏，支持图片浏览弹窗
 // 格式：## 游戏名 -标签1 -标签2 | 介绍 | 文件名 | +链接（可选）
+// 注意：文件名和+链接的顺序可以互换
 // ============================================================
 (function() {
     'use strict';
@@ -35,14 +36,35 @@
             if (line.indexOf('##') === 0) {
                 var content = line.replace(/^##\s*/, '').trim();
 
-                // 按 | 分割：游戏名+标签 | 介绍 | 文件名 | +链接（可选）
+                // 按 | 分割
                 var parts = content.split('|').map(function(s) { return s.trim(); });
                 var nameAndTags = parts[0] || '';
                 var desc = parts[1] || '';
-                var fileName = parts[2] || '';
-                var extraLink = parts[3] || '';
 
-                // 解析游戏名和标签
+                // ---------- 智能解析文件名和 +链接 ----------
+                var fileName = '';
+                var link = '';
+
+                // 从 parts[2] 开始遍历，区分文件名和 +链接
+                for (var pi = 2; pi < parts.length; pi++) {
+                    var part = parts[pi];
+                    if (!part) continue;
+
+                    // 检测是否为 +链接（以 + 开头）
+                    var linkMatch = part.match(/^\+\s*(.+)/);
+                    if (linkMatch) {
+                        // 这是 +链接
+                        link = linkMatch[1].trim();
+                    } else {
+                        // 这是文件名（只取第一个非 + 开头的部分作为文件名）
+                        if (!fileName) {
+                            fileName = part;
+                        }
+                        // 如果有多个非 + 开头的部分，忽略后面的（但记录到 link 备用？不，保持简单）
+                    }
+                }
+
+                // ---------- 解析游戏名和标签 ----------
                 var name = nameAndTags;
                 var tags = [];
                 var dashIndex = nameAndTags.indexOf(' -');
@@ -54,19 +76,7 @@
                     name = nameAndTags.trim();
                 }
 
-                // ===== 修复：解析 +链接 =====
-                var link = '';
-                if (extraLink) {
-                    // 如果以 + 开头，提取后面的内容作为独立网址
-                    if (extraLink.indexOf('+') === 0) {
-                        link = extraLink.substring(1).trim();  // 去掉 + 号，保留完整链接
-                    } else {
-                        // 兼容：没有 + 号但也写了链接的情况
-                        link = extraLink;
-                    }
-                }
-
-                // 如果没有额外链接，默认使用 Gamecurrently/文件名.html
+                // ---------- 如果没有 +链接，使用默认跳转 ----------
                 if (!link && fileName) {
                     link = 'Gamecurrently/' + fileName + '.html';
                 }
@@ -77,7 +87,7 @@
                         tags: tags,
                         desc: desc,
                         fileName: fileName,
-                        link: link      // 按钮跳转地址
+                        link: link
                     });
                 }
             }
@@ -128,9 +138,9 @@
 
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
 
-        // 按钮使用 <a> 标签，直接跳转
+        // 按钮：使用解析好的 link
         var btnLink = game.link || '#';
-        var btnHtml = '<a href="' + escapeHtml(btnLink) + '" target="_blank" class="game-play-btn">🎮 玩这个！</a>';
+        var btnHtml = '<a href="' + escapeHtml(btnLink) + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 玩这个！</a>';
 
         return (
             '<div class="game-card" data-index="' + index + '">' +

@@ -96,7 +96,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.3);
             font-size: 1.2rem;
             font-weight: 300;
             letter-spacing: 2px;
@@ -104,12 +104,32 @@
             transition: border-color 0.3s;
             position: relative;
             overflow: hidden;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .game-screen .key-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.6);
+            min-height: 4rem;
+            transition: color 0.1s;
+        }
+        .game-screen .key-hint {
+            font-size: 0.8rem;
+            opacity: 0.2;
+            position: absolute;
+            bottom: 0.8rem;
+            right: 1rem;
         }
         .game-screen .placeholder-text {
-            opacity: 0.3;
-            font-size: 1.4rem;
+            opacity: 0.2;
+            font-size: 1rem;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
         }
-        /* 未来游戏画布会放在这里 */
 
         /* ----- 游戏操作框（手柄布局） ----- */
         .game-controls {
@@ -122,7 +142,7 @@
             gap: 1rem;
         }
 
-        /* 左侧十字键 */
+        /* 十字键 - 仅上下左右 + 中心装饰 */
         .dpad {
             display: grid;
             grid-template-columns: repeat(3, 3rem);
@@ -152,11 +172,26 @@
             transform: scale(0.88);
             background: rgba(128, 128, 128, 0.25);
         }
+        /* 四角空白按钮 - 移除（不显示） */
+        .dpad-btn.corner {
+            visibility: hidden;
+            pointer-events: none;
+            border: none;
+            background: transparent;
+        }
         .dpad-center {
             background: transparent !important;
             border: none !important;
             cursor: default;
             pointer-events: none;
+            font-size: 0.8rem;
+            opacity: 0.3;
+        }
+        /* 键盘高亮状态 */
+        .dpad-btn.active-key {
+            background: rgba(102, 187, 106, 0.3);
+            border-color: rgba(102, 187, 106, 0.5);
+            transform: scale(0.95);
         }
 
         /* 右侧按钮组 */
@@ -211,6 +246,11 @@
         .action-btn.start:hover {
             opacity: 0.7;
         }
+        .action-btn.active-key {
+            background: rgba(102, 187, 106, 0.2);
+            border-color: rgba(102, 187, 106, 0.4);
+            transform: scale(0.95);
+        }
 
         /* 响应式 */
         @media (max-width: 600px) {
@@ -222,6 +262,7 @@
             .action-btn { width: 3rem; height: 3rem; font-size: 1rem; }
             .action-btn.start { width: 2.4rem; height: 1.6rem; font-size: 0.6rem; }
             .game-controls { justify-content: center; gap: 1.2rem; }
+            .game-screen .key-display { font-size: 2rem; min-height: 3rem; }
         }
         @media (max-width: 400px) {
             .game-nav { flex-wrap: wrap; justify-content: center; gap: 0.3rem; }
@@ -244,54 +285,211 @@
         <!-- 游戏画面框 -->
         <div class="game-screen" id="gameScreen">
             <span class="placeholder-text">🎮 游戏画面</span>
+            <div class="key-display" id="keyDisplay">⌨️</div>
+            <span class="key-hint">WASD / 方向键 移动</span>
         </div>
 
         <!-- 游戏操作框 -->
         <div class="game-controls">
-            <!-- 十字键 -->
-            <div class="dpad">
-                <div class="dpad-btn"></div>
-                <div class="dpad-btn">↑</div>
-                <div class="dpad-btn"></div>
-                <div class="dpad-btn">←</div>
+            <!-- 十字键（仅上下左右 + 中心） -->
+            <div class="dpad" id="dpad">
+                <!-- 第一行：空、上、空 -->
+                <div class="dpad-btn corner"></div>
+                <div class="dpad-btn" data-dir="up">↑</div>
+                <div class="dpad-btn corner"></div>
+                <!-- 第二行：左、中心、右 -->
+                <div class="dpad-btn" data-dir="left">←</div>
                 <div class="dpad-btn dpad-center">•</div>
-                <div class="dpad-btn">→</div>
-                <div class="dpad-btn"></div>
-                <div class="dpad-btn">↓</div>
-                <div class="dpad-btn"></div>
+                <div class="dpad-btn" data-dir="right">→</div>
+                <!-- 第三行：空、下、空 -->
+                <div class="dpad-btn corner"></div>
+                <div class="dpad-btn" data-dir="down">↓</div>
+                <div class="dpad-btn corner"></div>
             </div>
 
             <!-- 右侧按钮 -->
             <div class="action-buttons">
-                <button class="action-btn a">A</button>
-                <button class="action-btn b">B</button>
-                <button class="action-btn start">START</button>
+                <button class="action-btn a" data-key="j">A</button>
+                <button class="action-btn b" data-key="k">B</button>
+                <button class="action-btn start" data-key="enter">START</button>
             </div>
         </div>
     </div>
 
-    <!-- ===== 全局打字机特效（本页无打字机，但保留引用以防后续） ===== -->
     <script src="../script.js"></script>
-
     <script>
-        // 刷新按钮：重新加载页面
-        document.getElementById('refreshBtn').addEventListener('click', function() {
-            location.reload();
-        });
+        (function() {
+            'use strict';
 
-        // 控制按钮占位反馈（无实际功能）
-        document.querySelectorAll('.dpad-btn, .action-btn').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                // 阻止点击十字键空白区域触发
-                if (this.classList.contains('dpad-center')) return;
-                if (this.textContent.trim() === '' || this.textContent.trim() === '•') return;
-                // 简单震动反馈
-                this.style.transform = 'scale(0.85)';
-                setTimeout(function() {
-                    this.style.transform = '';
-                }.bind(this), 150);
+            const screen = document.getElementById('gameScreen');
+            const keyDisplay = document.getElementById('keyDisplay');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const dpadBtns = document.querySelectorAll('.dpad-btn[data-dir]');
+            const actionBtns = document.querySelectorAll('.action-btn[data-key]');
+
+            // ---------- 刷新 ----------
+            refreshBtn.addEventListener('click', function() {
+                location.reload();
             });
-        });
+
+            // ---------- 按键反馈 ----------
+            function showKey(keyName) {
+                keyDisplay.textContent = keyName;
+                // 闪烁动画
+                keyDisplay.style.opacity = '0.3';
+                setTimeout(function() {
+                    keyDisplay.style.opacity = '1';
+                }, 50);
+            }
+
+            // ---------- 十字键高亮 ----------
+            function clearDpadHighlights() {
+                dpadBtns.forEach(function(btn) {
+                    btn.classList.remove('active-key');
+                });
+            }
+
+            function highlightDir(dir) {
+                clearDpadHighlights();
+                dpadBtns.forEach(function(btn) {
+                    if (btn.dataset.dir === dir) {
+                        btn.classList.add('active-key');
+                    }
+                });
+            }
+
+            // ---------- 动作键高亮 ----------
+            function clearActionHighlights() {
+                actionBtns.forEach(function(btn) {
+                    btn.classList.remove('active-key');
+                });
+            }
+
+            function highlightAction(key) {
+                clearActionHighlights();
+                actionBtns.forEach(function(btn) {
+                    if (btn.dataset.key === key) {
+                        btn.classList.add('active-key');
+                    }
+                });
+            }
+
+            // ---------- 键盘映射 ----------
+            const keyMap = {
+                // 方向
+                'w': 'up', 'W': 'up',
+                'ArrowUp': 'up',
+                's': 'down', 'S': 'down',
+                'ArrowDown': 'down',
+                'a': 'left', 'A': 'left',
+                'ArrowLeft': 'left',
+                'd': 'right', 'D': 'right',
+                'ArrowRight': 'right',
+                // 动作
+                'j': 'j', 'J': 'j',
+                'k': 'k', 'K': 'k',
+                'Enter': 'enter'
+            };
+
+            const keyDisplayNames = {
+                'up': '↑',
+                'down': '↓',
+                'left': '←',
+                'right': '→',
+                'j': 'J',
+                'k': 'K',
+                'enter': 'START'
+            };
+
+            document.addEventListener('keydown', function(e) {
+                const key = e.key;
+                const mapped = keyMap[key];
+                if (!mapped) return;
+
+                // 阻止默认行为（例如方向键滚动）
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(key)) {
+                    e.preventDefault();
+                }
+
+                // 显示按键
+                const displayName = keyDisplayNames[mapped] || key;
+                showKey(displayName);
+
+                // 高亮对应按钮
+                if (['up', 'down', 'left', 'right'].includes(mapped)) {
+                    highlightDir(mapped);
+                } else {
+                    highlightAction(mapped);
+                }
+
+                // 如果是 Enter（START），也触发点击效果
+                if (mapped === 'enter') {
+                    const startBtn = document.querySelector('.action-btn.start');
+                    if (startBtn) {
+                        startBtn.style.transform = 'scale(0.9)';
+                        setTimeout(function() {
+                            startBtn.style.transform = '';
+                        }, 150);
+                    }
+                }
+            });
+
+            document.addEventListener('keyup', function(e) {
+                const key = e.key;
+                const mapped = keyMap[key];
+                if (!mapped) return;
+
+                if (['up', 'down', 'left', 'right'].includes(mapped)) {
+                    clearDpadHighlights();
+                } else {
+                    clearActionHighlights();
+                }
+                // 松开按键后，稍后恢复显示占位符
+                setTimeout(function() {
+                    if (!document.querySelector('.dpad-btn.active-key') && !document.querySelector('.action-btn.active-key')) {
+                        keyDisplay.textContent = '⌨️';
+                    }
+                }, 300);
+            });
+
+            // ---------- 鼠标/触控点击反馈 ----------
+            dpadBtns.forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    const dir = this.dataset.dir;
+                    showKey(keyDisplayNames[dir] || dir);
+                    highlightDir(dir);
+                    setTimeout(function() {
+                        clearDpadHighlights();
+                        if (!document.querySelector('.action-btn.active-key')) {
+                            keyDisplay.textContent = '⌨️';
+                        }
+                    }, 500);
+                });
+            });
+
+            actionBtns.forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    const key = this.dataset.key;
+                    const displayName = keyDisplayNames[key] || key;
+                    showKey(displayName);
+                    highlightAction(key);
+                    setTimeout(function() {
+                        clearActionHighlights();
+                        if (!document.querySelector('.dpad-btn.active-key')) {
+                            keyDisplay.textContent = '⌨️';
+                        }
+                    }, 500);
+                });
+            });
+
+            // 点击画面框重置显示
+            screen.addEventListener('click', function() {
+                keyDisplay.textContent = '⌨️';
+                clearDpadHighlights();
+                clearActionHighlights();
+            });
+
+        })();
     </script>
 
 </body>

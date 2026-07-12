@@ -39,10 +39,6 @@
                 // 按 | 分割
                 var parts = content.split('|').map(function(s) { return s.trim(); });
 
-                // parts[0] = "游戏名 -标签1 -标签2 ..."
-                // parts[1] = "介绍"
-                // parts[2...] = 文件名 或 +链接（顺序任意）
-
                 var nameAndTags = parts[0] || '';
                 var desc = parts[1] || '';
 
@@ -57,14 +53,11 @@
                     // 检测是否为 +链接（以 + 开头）
                     var linkMatch = part.match(/^\+\s*(.+)/);
                     if (linkMatch) {
-                        // 这是 +链接，直接存储完整 URL
                         link = linkMatch[1].trim();
                     } else {
-                        // 这是文件名（只取第一个非 + 开头的部分）
                         if (!fileName) {
                             fileName = part;
                         }
-                        // 如果有多个非 + 开头的部分，忽略后面的
                     }
                 }
 
@@ -90,8 +83,8 @@
                         name: name,
                         tags: tags,
                         desc: desc,
-                        fileName: fileName,   // 仅用于加载图片
-                        link: link            // 按钮跳转地址
+                        fileName: fileName,
+                        link: link
                     });
                 }
             }
@@ -115,7 +108,6 @@
 
         gameGrid.innerHTML = html;
 
-        // 渲染完成后，异步加载每个游戏的图片
         var cards = gameGrid.querySelectorAll('.game-card');
         for (var ci = 0; ci < cards.length; ci++) {
             (function(card, idx) {
@@ -142,11 +134,13 @@
 
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
 
-        // ---------- 按钮文案：有 +链接时显示“跳转！”，否则显示“玩这个！” ----------
+        // 按钮文案：有 +链接且不是本地路径时显示“跳转！”，否则显示“玩这个！”
         var isExternal = game.link && game.link.indexOf('Gamecurrently/') !== 0;
         var btnLabel = isExternal ? '跳转！' : '玩这个！';
         var btnLink = game.link || '#';
-        var btnHtml = '<a href="' + escapeHtml(btnLink) + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 ' + btnLabel + '</a>';
+
+        // 关键修复：链接不转义，只转义显示文本
+        var btnHtml = '<a href="' + btnLink + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 ' + btnLabel + '</a>';
 
         return (
             '<div class="game-card" data-index="' + index + '">' +
@@ -336,21 +330,18 @@
     }
 
     // ---------- 事件绑定 ----------
-    // 图片浏览弹窗——点击蒙层关闭
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) {
             closeImageViewer();
         }
     });
 
-    // ESC 关闭
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && overlay.classList.contains('active')) {
             closeImageViewer();
         }
     });
 
-    // 拉取按钮
     fetchBtn.addEventListener('click', fetchAndRender);
 
     // ---------- 初始化 ----------

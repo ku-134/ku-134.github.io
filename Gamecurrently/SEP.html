@@ -6,14 +6,18 @@
     <title>肉鸽！贪吃！蛇！ · Kukuz</title>
     <link rel="preload" as="image" href="../background.webp">
     <link rel="stylesheet" href="../style.css">
+    <!-- 引入独立游戏风格 -->
+    <link rel="stylesheet" href="SHE-style.css">
     <style>
-        /* ===== 游戏页专用样式 ===== */
+        /* ===== 游戏页专用样式（保留原框架） ===== */
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
+            margin: 0;
+            background: #1a1a1a; /* 兜底背景 */
         }
 
         .game-container {
@@ -26,20 +30,9 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.12);
             transition: background 0.3s, color 0.3s, border-color 0.3s;
-        }
-        @media (prefers-color-scheme: light) {
-            .game-container {
-                background: rgba(255, 255, 255, 0.68);
-                color: #1a3b1a;
-                border-color: rgba(80, 160, 80, 0.25);
-            }
-        }
-        @media (prefers-color-scheme: dark) {
-            .game-container {
-                background: rgba(10, 20, 10, 0.72);
-                color: #c8e6c9;
-                border-color: rgba(60, 140, 60, 0.3);
-            }
+            background: rgba(10, 20, 10, 0.72);
+            color: #c8e6c9;
+            border-color: rgba(60, 140, 60, 0.3);
         }
 
         /* ----- 顶部导航栏 ----- */
@@ -69,11 +62,8 @@
         .game-nav .nav-btn:hover {
             opacity: 1;
             background: currentColor;
-            color: #fff;
+            color: #1a2e1a;
             transform: translateY(-2px);
-        }
-        @media (prefers-color-scheme: dark) {
-            .game-nav .nav-btn:hover { color: #1a2e1a; }
         }
         .game-nav .game-title {
             font-size: 1.6rem;
@@ -85,7 +75,7 @@
             white-space: nowrap;
         }
 
-        /* ----- 游戏画面框 ----- */
+        /* ----- 游戏画面框（黑屏容器） ----- */
         .game-screen {
             width: 100%;
             aspect-ratio: 16 / 9;
@@ -96,40 +86,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: rgba(255, 255, 255, 0.3);
-            font-size: 1.2rem;
-            font-weight: 300;
-            letter-spacing: 2px;
             user-select: none;
             transition: border-color 0.3s;
             position: relative;
             overflow: hidden;
-            flex-direction: column;
-            gap: 0.5rem;
         }
-        .game-screen .key-display {
-            font-size: 3rem;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.6);
-            min-height: 4rem;
-            transition: color 0.1s;
-        }
-        .game-screen .key-hint {
-            font-size: 0.8rem;
-            opacity: 0.2;
-            position: absolute;
-            bottom: 0.8rem;
-            right: 1rem;
-        }
-        .game-screen .placeholder-text {
-            opacity: 0.2;
-            font-size: 1rem;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-        }
+        /* 游戏内所有绝对定位元素都基于此容器 */
 
         /* ----- 游戏操作框（手柄布局） ----- */
         .game-controls {
@@ -142,7 +104,6 @@
             gap: 1rem;
         }
 
-        /* 十字键 - 仅上下左右 + 中心装饰 */
         .dpad {
             display: grid;
             grid-template-columns: repeat(3, 3rem);
@@ -172,7 +133,6 @@
             transform: scale(0.88);
             background: rgba(128, 128, 128, 0.25);
         }
-        /* 四角空白按钮 - 移除（不显示） */
         .dpad-btn.corner {
             visibility: hidden;
             pointer-events: none;
@@ -187,14 +147,12 @@
             font-size: 0.8rem;
             opacity: 0.3;
         }
-        /* 键盘高亮状态 */
         .dpad-btn.active-key {
             background: rgba(102, 187, 106, 0.3);
             border-color: rgba(102, 187, 106, 0.5);
             transform: scale(0.95);
         }
 
-        /* 右侧按钮组 */
         .action-buttons {
             display: flex;
             gap: 0.8rem;
@@ -252,7 +210,6 @@
             transform: scale(0.95);
         }
 
-        /* 响应式 */
         @media (max-width: 600px) {
             .game-container { padding: 1.2rem 1rem; }
             .game-nav .game-title { font-size: 1.2rem; margin: 0 0.5rem; }
@@ -262,7 +219,6 @@
             .action-btn { width: 3rem; height: 3rem; font-size: 1rem; }
             .action-btn.start { width: 2.4rem; height: 1.6rem; font-size: 0.6rem; }
             .game-controls { justify-content: center; gap: 1.2rem; }
-            .game-screen .key-display { font-size: 2rem; min-height: 3rem; }
         }
         @media (max-width: 400px) {
             .game-nav { flex-wrap: wrap; justify-content: center; gap: 0.3rem; }
@@ -284,213 +240,76 @@
 
         <!-- 游戏画面框 -->
         <div class="game-screen" id="gameScreen">
-            <span class="placeholder-text">🎮 游戏画面</span>
-            <div class="key-display" id="keyDisplay">⌨️</div>
-            <span class="key-hint">WASD / 方向键 移动</span>
+            <!-- 初始提示（由 JS 控制显示/隐藏） -->
+            <div id="startPrompt">按下「开始」后进入游戏</div>
+            
+            <!-- 蛇的容器（绝对定位，由 JS 控制移动） -->
+            <div id="snakeContainer">
+                <div id="snake">🐍</div>
+            </div>
+
+            <!-- 对话框容器（绝对定位） -->
+            <div id="dialogueBox" style="display: none;">
+                <div class="dialogue-arrow"></div>
+                <div class="dialogue-speaker" id="dialogueSpeaker">？？？</div>
+                <div class="dialogue-text" id="dialogueText"></div>
+                <div class="dialogue-action-hint" id="dialogueActionHint">按 A 继续</div>
+            </div>
+
+            <!-- 选择对话框容器 -->
+            <div id="choiceBox" style="display: none;">
+                <div class="choice-question" id="choiceQuestion">你选择？</div>
+                <div class="choice-options">
+                    <button class="choice-btn" data-choice="tutorial">不了。（新手教程）</button>
+                    <button class="choice-btn" data-choice="start">是的（直接开始）</button>
+                </div>
+            </div>
         </div>
 
         <!-- 游戏操作框 -->
         <div class="game-controls">
-            <!-- 十字键（仅上下左右 + 中心） -->
             <div class="dpad" id="dpad">
-                <!-- 第一行：空、上、空 -->
                 <div class="dpad-btn corner"></div>
                 <div class="dpad-btn" data-dir="up">↑</div>
                 <div class="dpad-btn corner"></div>
-                <!-- 第二行：左、中心、右 -->
                 <div class="dpad-btn" data-dir="left">←</div>
                 <div class="dpad-btn dpad-center">•</div>
                 <div class="dpad-btn" data-dir="right">→</div>
-                <!-- 第三行：空、下、空 -->
                 <div class="dpad-btn corner"></div>
                 <div class="dpad-btn" data-dir="down">↓</div>
                 <div class="dpad-btn corner"></div>
             </div>
 
-            <!-- 右侧按钮 -->
             <div class="action-buttons">
                 <button class="action-btn a" data-key="j">A</button>
                 <button class="action-btn b" data-key="k">B</button>
-                <button class="action-btn start" data-key="enter">START</button>
+                <button class="action-btn start" data-key="enter" id="startBtn">START</button>
             </div>
         </div>
     </div>
 
+    <!-- 引入独立脚本 -->
+    <script src="SHE-script.js"></script>
+    <!-- 保留原有按键反馈脚本（可选，但为了兼容最好保留） -->
     <script src="../script.js"></script>
     <script>
+        // 原有按键反馈（与游戏逻辑不冲突，保留作为界面反馈）
         (function() {
             'use strict';
-
             const screen = document.getElementById('gameScreen');
             const keyDisplay = document.getElementById('keyDisplay');
             const refreshBtn = document.getElementById('refreshBtn');
             const dpadBtns = document.querySelectorAll('.dpad-btn[data-dir]');
             const actionBtns = document.querySelectorAll('.action-btn[data-key]');
 
-            // ---------- 刷新 ----------
-            refreshBtn.addEventListener('click', function() {
-                location.reload();
-            });
-
-            // ---------- 按键反馈 ----------
-            function showKey(keyName) {
-                keyDisplay.textContent = keyName;
-                // 闪烁动画
-                keyDisplay.style.opacity = '0.3';
-                setTimeout(function() {
-                    keyDisplay.style.opacity = '1';
-                }, 50);
-            }
-
-            // ---------- 十字键高亮 ----------
-            function clearDpadHighlights() {
-                dpadBtns.forEach(function(btn) {
-                    btn.classList.remove('active-key');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', function() {
+                    location.reload();
                 });
             }
 
-            function highlightDir(dir) {
-                clearDpadHighlights();
-                dpadBtns.forEach(function(btn) {
-                    if (btn.dataset.dir === dir) {
-                        btn.classList.add('active-key');
-                    }
-                });
-            }
-
-            // ---------- 动作键高亮 ----------
-            function clearActionHighlights() {
-                actionBtns.forEach(function(btn) {
-                    btn.classList.remove('active-key');
-                });
-            }
-
-            function highlightAction(key) {
-                clearActionHighlights();
-                actionBtns.forEach(function(btn) {
-                    if (btn.dataset.key === key) {
-                        btn.classList.add('active-key');
-                    }
-                });
-            }
-
-            // ---------- 键盘映射 ----------
-            const keyMap = {
-                // 方向
-                'w': 'up', 'W': 'up',
-                'ArrowUp': 'up',
-                's': 'down', 'S': 'down',
-                'ArrowDown': 'down',
-                'a': 'left', 'A': 'left',
-                'ArrowLeft': 'left',
-                'd': 'right', 'D': 'right',
-                'ArrowRight': 'right',
-                // 动作
-                'j': 'j', 'J': 'j',
-                'k': 'k', 'K': 'k',
-                'Enter': 'enter'
-            };
-
-            const keyDisplayNames = {
-                'up': '↑',
-                'down': '↓',
-                'left': '←',
-                'right': '→',
-                'j': 'J',
-                'k': 'K',
-                'enter': 'START'
-            };
-
-            document.addEventListener('keydown', function(e) {
-                const key = e.key;
-                const mapped = keyMap[key];
-                if (!mapped) return;
-
-                // 阻止默认行为（例如方向键滚动）
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(key)) {
-                    e.preventDefault();
-                }
-
-                // 显示按键
-                const displayName = keyDisplayNames[mapped] || key;
-                showKey(displayName);
-
-                // 高亮对应按钮
-                if (['up', 'down', 'left', 'right'].includes(mapped)) {
-                    highlightDir(mapped);
-                } else {
-                    highlightAction(mapped);
-                }
-
-                // 如果是 Enter（START），也触发点击效果
-                if (mapped === 'enter') {
-                    const startBtn = document.querySelector('.action-btn.start');
-                    if (startBtn) {
-                        startBtn.style.transform = 'scale(0.9)';
-                        setTimeout(function() {
-                            startBtn.style.transform = '';
-                        }, 150);
-                    }
-                }
-            });
-
-            document.addEventListener('keyup', function(e) {
-                const key = e.key;
-                const mapped = keyMap[key];
-                if (!mapped) return;
-
-                if (['up', 'down', 'left', 'right'].includes(mapped)) {
-                    clearDpadHighlights();
-                } else {
-                    clearActionHighlights();
-                }
-                // 松开按键后，稍后恢复显示占位符
-                setTimeout(function() {
-                    if (!document.querySelector('.dpad-btn.active-key') && !document.querySelector('.action-btn.active-key')) {
-                        keyDisplay.textContent = '⌨️';
-                    }
-                }, 300);
-            });
-
-            // ---------- 鼠标/触控点击反馈 ----------
-            dpadBtns.forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    const dir = this.dataset.dir;
-                    showKey(keyDisplayNames[dir] || dir);
-                    highlightDir(dir);
-                    setTimeout(function() {
-                        clearDpadHighlights();
-                        if (!document.querySelector('.action-btn.active-key')) {
-                            keyDisplay.textContent = '⌨️';
-                        }
-                    }, 500);
-                });
-            });
-
-            actionBtns.forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    const key = this.dataset.key;
-                    const displayName = keyDisplayNames[key] || key;
-                    showKey(displayName);
-                    highlightAction(key);
-                    setTimeout(function() {
-                        clearActionHighlights();
-                        if (!document.querySelector('.dpad-btn.active-key')) {
-                            keyDisplay.textContent = '⌨️';
-                        }
-                    }, 500);
-                });
-            });
-
-            // 点击画面框重置显示
-            screen.addEventListener('click', function() {
-                keyDisplay.textContent = '⌨️';
-                clearDpadHighlights();
-                clearActionHighlights();
-            });
-
+            // 这里只做高亮反馈，不做核心逻辑，核心逻辑在 SHE-script.js 中
         })();
     </script>
-
 </body>
 </html>

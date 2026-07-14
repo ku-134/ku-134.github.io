@@ -11,7 +11,7 @@
 
     <div id="game-container">
 
-        <!-- 开始界面 (确保默认可见) -->
+        <!-- 开始界面 -->
         <div id="start-screen">
             <div id="start-bg"></div>
             <div id="start-overlay"></div>
@@ -30,7 +30,7 @@
             <div id="version-info">v1.0.4</div>
         </div>
 
-        <!-- 加载进度条（默认隐藏） -->
+        <!-- 加载进度条 -->
         <div id="loading-overlay" style="display:none;">
             <div id="loading-container">
                 <div id="loading-bar-track">
@@ -65,7 +65,7 @@
             const btnContinue = document.getElementById('btnContinue');
             const loadingOverlay = document.getElementById('loading-overlay');
 
-            // 确保开始界面可见，进度条隐藏
+            // 确保初始状态正确
             startScreen.style.display = 'block';
             loadingOverlay.style.display = 'none';
             gameScreen.style.display = 'none';

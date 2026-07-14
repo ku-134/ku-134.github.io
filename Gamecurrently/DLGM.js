@@ -1,7 +1,8 @@
 /**
- * 🍀 妲那给木 · 视觉小说引擎 v1.0.1
- * - 修复选项点击无响应问题
- * - 优化交互防抖
+ * 🍀 妲那给木 · 视觉小说引擎 v1.0.2
+ * - 修复加载问题
+ * - 修复角色垂直排列
+ * - 修复选项后不继续
  */
 const DLGM = (function() {
     'use strict';
@@ -25,7 +26,7 @@ const DLGM = (function() {
 
     function log(msg) { console.log('[DLGM]', msg); }
 
-    // ---------- 解析 ----------
+    // ---------- 解析（不变） ----------
     function parseScript(text) {
         const lines = text.split(/\r?\n/);
         const instructions = [];
@@ -144,7 +145,7 @@ const DLGM = (function() {
         return -1;
     }
 
-    // ---------- 跳转 ----------
+    // ---------- 跳转（修复：异步执行，重置标志） ----------
     function jumpToLabel(label) {
         const idx = findLabel(label);
         if (idx !== -1) {
@@ -153,9 +154,14 @@ const DLGM = (function() {
             // 关闭选项，显示对话框
             optionsContainer.style.display = 'none';
             dialogueBox.style.display = 'flex';
-            executeNext();
+            // 重置选项选择标志，允许后续选项
+            optionSelected = false;
+            // 使用 setTimeout 确保当前事件循环完成，避免栈冲突
+            setTimeout(() => executeNext(), 0);
         } else {
             console.error(`标签 @${label} 未找到`);
+            // 出错时尝试继续下一条
+            setTimeout(() => executeNext(), 0);
         }
     }
 
@@ -282,16 +288,22 @@ const DLGM = (function() {
                     btn.addEventListener('click', function() {
                         if (optionSelected) return;
                         optionSelected = true;
+                        // 禁用所有按钮
                         document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+                        // 隐藏选项，显示对话框
                         optionsContainer.style.display = 'none';
                         dialogueBox.style.display = 'flex';
+                        // 添加条件
                         if (opt.addCondition) {
                             conditions.add(opt.addCondition);
                             log(`添加条件: ${opt.addCondition}`);
                         }
+                        // 跳转或继续
                         if (opt.target) {
                             jumpToLabel(opt.target);
                         } else {
+                            // 直接继续，但重置标志
+                            optionSelected = false;
                             executeNext();
                         }
                     });

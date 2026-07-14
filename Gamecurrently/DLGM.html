@@ -9,10 +9,9 @@
 </head>
 <body>
 
-    <!-- ===== 游戏容器 ===== -->
     <div id="game-container">
 
-        <!-- ===== 开始界面 ===== -->
+        <!-- 开始界面 -->
         <div id="start-screen">
             <div id="start-bg"></div>
             <div id="start-overlay"></div>
@@ -28,10 +27,20 @@
             <div id="disclaimer">
                 <p>免责声明：本作为同人原创作品，仅供娱乐交流，不涉及任何商业用途。<br />所有角色与设定均属虚构，如有雷同纯属巧合。</p>
             </div>
-            <div id="version-info">v0.1.0</div>
+            <div id="version-info">v1.0.3</div>
         </div>
 
-        <!-- ===== 游戏主界面 ===== -->
+        <!-- 加载进度条（覆盖层） -->
+        <div id="loading-overlay" style="display:none;">
+            <div id="loading-container">
+                <div id="loading-bar-track">
+                    <div id="loading-bar-fill"></div>
+                </div>
+                <div id="loading-text">加载中… 0%</div>
+            </div>
+        </div>
+
+        <!-- 游戏主界面 -->
         <div id="game-screen" style="display:none;">
             <div id="stage-bg"></div>
             <div id="overlay"></div>
@@ -47,21 +56,15 @@
         </div>
     </div>
 
-    <!-- ===== 引入引擎 ===== -->
     <script src="DLGM.js"></script>
-
-    <!-- ===== 启动逻辑 ===== -->
     <script>
         (function() {
             const startScreen = document.getElementById('start-screen');
             const gameScreen = document.getElementById('game-screen');
             const btnStart = document.getElementById('btnStart');
             const btnContinue = document.getElementById('btnContinue');
-
-            // 设置开始背景
             document.getElementById('start-bg').style.backgroundImage = "url('DLGM-start.webp')";
 
-            // 等待引擎加载完成
             function waitForEngine(callback, retries) {
                 retries = retries || 0;
                 if (typeof DLGM !== 'undefined' && DLGM.startGame) {
@@ -77,6 +80,7 @@
                 waitForEngine(function() {
                     startScreen.style.display = 'none';
                     gameScreen.style.display = 'block';
+                    // 启动引擎（内部会显示进度条）
                     DLGM.startGame();
                 });
             });
@@ -85,7 +89,7 @@
                 alert('📖 存档功能开发中……');
             });
 
-            console.log('🍀 开始界面已就绪 (v1.0.2)');
+            console.log('🍀 开始界面已就绪 (v1.0.3)');
         })();
     </script>
 </body>

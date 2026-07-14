@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>🍀妲那给木 · 视觉小说</title>
+    <link rel="stylesheet" href="DLGM-style.css" />
+    <!-- 预加载首张背景 -->
+    <link rel="preload" as="image" href="DLGM-start.webp" />
+</head>
+<body>
+
+    <!-- ===== 游戏容器 ===== -->
+    <div id="game-container">
+
+        <!-- ===== 开始界面 ===== -->
+        <div id="start-screen">
+            <!-- 背景层（独立） -->
+            <div id="start-bg"></div>
+            <div id="start-overlay"></div>
+            <!-- 标题 -->
+            <div id="game-title">
+                <span class="title-icon">🍀</span>
+                <span class="title-text">妲那给木</span>
+                <span class="title-sub">— 视觉小说 —</span>
+            </div>
+            <!-- 按钮 -->
+            <div id="button-group">
+                <button class="game-btn btn-start" id="btnStart">▶ 开始</button>
+                <button class="game-btn btn-continue" id="btnContinue">⏎ 继续</button>
+            </div>
+            <!-- 免责声明 -->
+            <div id="disclaimer">
+                <p>免责声明：本作为同人原创作品，仅供娱乐交流，不涉及任何商业用途。<br />所有角色与设定均属虚构，如有雷同纯属巧合。</p>
+            </div>
+            <div id="version-info">v0.1.0</div>
+        </div>
+
+        <!-- ===== 游戏主界面（初始隐藏） ===== -->
+        <div id="game-screen" style="display:none;">
+            <!-- 背景图层（由引擎控制） -->
+            <div id="stage-bg"></div>
+            <div id="overlay"></div>
+
+            <!-- 角色展示区 -->
+            <div id="characters-container"></div>
+
+            <!-- 对话区域 -->
+            <div id="dialogue-box">
+                <div id="dialogue-name"></div>
+                <div id="dialogue-text"></div>
+            </div>
+
+            <!-- 选项区域（默认隐藏） -->
+            <div id="options-container" style="display:none;">
+                <div id="options-prompt"></div>
+                <div id="options-buttons"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 引入演出引擎 ===== -->
+    <script src="DLGM.js"></script>
+    <script>
+        (function() {
+            // 开始界面按钮逻辑
+            const btnStart = document.getElementById('btnStart');
+            const btnContinue = document.getElementById('btnContinue');
+            const startScreen = document.getElementById('start-screen');
+            const gameScreen = document.getElementById('game-screen');
+
+            // 开始新游戏
+            btnStart.addEventListener('click', function() {
+                startScreen.style.display = 'none';
+                gameScreen.style.display = 'block';
+                // 调用引擎启动
+                if (typeof DLGM !== 'undefined' && DLGM.startGame) {
+                    DLGM.startGame();
+                } else {
+                    console.error('🍀 引擎未加载');
+                }
+            });
+
+            // 继续（占位）
+            btnContinue.addEventListener('click', function() {
+                alert('📖 存档功能开发中……');
+            });
+
+            // 设置开始背景（同目录下 DLGM-start.webp）
+            const startBg = document.getElementById('start-bg');
+            startBg.style.backgroundImage = "url('DLGM-start.webp')";
+
+            // 预加载引擎（确保DLGM.js已加载）
+            console.log('🍀 开始界面已就绪');
+        })();
+    </script>
+</body>
+</html>

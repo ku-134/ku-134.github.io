@@ -1,8 +1,6 @@
 /**
- * 🍀 妲那给木 · 视觉小说引擎 v1.0.4
- * - 修复首页UI不显示
- * - 台本请求加时间戳
- * - 完整包含：预加载、进度条、打字机、分支解析、角色管理
+ * 🍀 妲那给木 · 视觉小说引擎 v1.0.5
+ * - ^ 等待时清空并隐藏对话框
  */
 const DLGM = (function() {
     'use strict';
@@ -421,6 +419,11 @@ const DLGM = (function() {
                 break;
             }
             case 'wait': {
+                // 清空并隐藏对话框
+                dialogueBox.style.display = 'none';
+                dialogueName.textContent = '';
+                dialogueText.textContent = '';
+
                 const sec = inst.seconds;
                 if (sec === 0) {
                     const allIds = Array.from(characters.keys());

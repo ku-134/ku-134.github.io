@@ -106,7 +106,6 @@
         }
 
         /* ===== 统计卡片内部 ===== */
-        /* 大标题 */
         .stats-section-title {
             font-size: 1.6rem;
             font-weight: 700;
@@ -179,7 +178,6 @@
             opacity: 0.2;
             margin-top: 0.05rem;
         }
-        /* 本地数据特殊标识 */
         .stats-item.local .number {
             color: #f5a623;
         }
@@ -192,7 +190,6 @@
             .stats-item .delta.negative { color: #c0392b; }
         }
 
-        /* 跨两列卡片 */
         .stats-item.full-width {
             grid-column: 1 / -1;
         }
@@ -522,7 +519,7 @@
             <div class="button-group fade-in-up delay-6">
                 <a href="RP.html" class="btn btn-primary">📦 我的资源</a>
                 <a href="#" class="btn btn-secondary">📝 我的文章</a>
-                <a href="GG.html" class="btn btn-primary">🎮 我的游戏</a>   <!-- 已修改 -->
+                <a href="GG.html" class="btn btn-primary">🎮 我的游戏</a>
                 <a href="contact.html" class="btn btn-secondary">🤝 交朋友</a>
             </div>
 
@@ -576,7 +573,19 @@
                 </div>
             </div>
 
-            <!-- 新增：你推荐的资源次数 -->
+            <!-- 游戏进入次数 -->
+            <div class="stats-grid fade-in-up delay-5">
+                <div class="stats-item local full-width" id="gameEntryItem">
+                    <div class="label">🎮 游戏进入</div>
+                    <div class="number-wrap">
+                        <span class="number" id="localGameEntry">0</span>
+                        <span class="delta hidden" id="gameEntryDelta"></span>
+                    </div>
+                    <div class="sub">你进入了游戏</div>
+                </div>
+            </div>
+
+            <!-- 资源推荐 -->
             <div class="stats-grid fade-in-up delay-6">
                 <div class="stats-item local full-width highlight" id="recommendItem">
                     <div class="label">📤 资源推荐</div>
@@ -692,7 +701,6 @@
             // 📊 统计卡片变化量对比逻辑
             // ============================================================
 
-            // ---------- 工具：获取元素数字 ----------
             function getNumberFromEl(id) {
                 const el = document.getElementById(id);
                 if (!el) return 0;
@@ -701,7 +709,6 @@
                 return isNaN(num) ? 0 : num;
             }
 
-            // ---------- 缓存读写 ----------
             function getCache() {
                 try {
                     const data = localStorage.getItem('statsCache');
@@ -715,7 +722,6 @@
                 localStorage.setItem('statsCache', JSON.stringify(cache));
             }
 
-            // ---------- 更新单个 delta ----------
             function updateDelta(deltaId, current, previous, label) {
                 const el = document.getElementById(deltaId);
                 if (!el) return;
@@ -731,47 +737,41 @@
                     return;
                 }
                 const prefix = diff > 0 ? '↑' : '↓';
-                const sign = diff > 0 ? '' : '';
                 el.textContent = prefix + Math.abs(diff);
                 el.className = 'delta' + (diff < 0 ? ' negative' : '');
             }
 
-            // ---------- 主更新函数 ----------
             function updateStatsWithDelta() {
-                // 读取当前值
                 const currentUV = getNumberFromEl('busuanzi_value_site_uv');
                 const currentPV = getNumberFromEl('busuanzi_value_site_pv');
                 const currentClicks = getNumberFromEl('localClicks');
                 const currentFavs = getNumberFromEl('localFavs');
                 const currentRecommend = getNumberFromEl('localRecommend');
+                const currentGameEntry = getNumberFromEl('localGameEntry');
 
-                // 读取缓存
                 const cache = getCache();
 
-                // 更新 delta
                 updateDelta('uvDelta', currentUV, cache.uv, '独立访客');
                 updateDelta('pvDelta', currentPV, cache.pv, '总访问量');
                 updateDelta('clicksDelta', currentClicks, cache.clicks, '资源跳转');
                 updateDelta('favsDelta', currentFavs, cache.favs, '资源收藏');
                 updateDelta('recommendDelta', currentRecommend, cache.recommend, '资源推荐');
+                updateDelta('gameEntryDelta', currentGameEntry, cache.gameEntry, '游戏进入');
 
-                // 保存新缓存
                 cache.uv = currentUV;
                 cache.pv = currentPV;
                 cache.clicks = currentClicks;
                 cache.favs = currentFavs;
                 cache.recommend = currentRecommend;
+                cache.gameEntry = currentGameEntry;
                 saveCache(cache);
             }
 
-            // ---------- 等待不蒜子加载 ----------
             function waitForBusuanzi() {
                 const uvEl = document.getElementById('busuanzi_value_site_uv');
                 if (uvEl && uvEl.textContent.trim() !== '' && uvEl.textContent.trim() !== '加载中...') {
-                    // 数据已填充
                     updateStatsWithDelta();
                 } else {
-                    // 未加载，继续等待，最多 8 秒
                     let attempts = 0;
                     const interval = setInterval(function() {
                         attempts++;
@@ -779,16 +779,14 @@
                         if (uv && uv.textContent.trim() !== '' && uv.textContent.trim() !== '加载中...') {
                             clearInterval(interval);
                             updateStatsWithDelta();
-                        } else if (attempts > 16) { // 8秒
+                        } else if (attempts > 16) {
                             clearInterval(interval);
-                            // 即使没有数据也尝试更新（显示当前值，无delta）
                             updateStatsWithDelta();
                         }
                     }, 500);
                 }
             }
 
-            // ---------- 读取本地数据并显示 ----------
             function updateLocalStats() {
                 try {
                     const clicks = JSON.parse(localStorage.getItem('resourceClicks') || '{}');
@@ -797,45 +795,42 @@
                     document.getElementById('localFavs').textContent = favs.length;
                     const recommends = parseInt(localStorage.getItem('recommendSubmitCount') || '0');
                     document.getElementById('localRecommend').textContent = recommends;
+                    const gameEntry = parseInt(localStorage.getItem('gameEntryCount') || '0');
+                    document.getElementById('localGameEntry').textContent = gameEntry;
                 } catch (e) { /* 静默降级 */ }
             }
 
-            // ---------- 初始化 ----------
             updateLocalStats();
-            // 等待不蒜子加载完成后再更新delta
             setTimeout(waitForBusuanzi, 1000);
 
-            // 监听 storage 变化（其他标签页修改时同步）
             window.addEventListener('storage', function(e) {
-                if (e.key === 'resourceClicks' || e.key === 'favorites' || e.key === 'recommendSubmitCount') {
+                if (e.key === 'resourceClicks' || e.key === 'favorites' || e.key === 'recommendSubmitCount' || e.key === 'gameEntryCount') {
                     updateLocalStats();
-                    // 延迟重新计算delta
                     setTimeout(function() {
                         const currentUV = getNumberFromEl('busuanzi_value_site_uv');
                         const currentPV = getNumberFromEl('busuanzi_value_site_pv');
                         const currentClicks = getNumberFromEl('localClicks');
                         const currentFavs = getNumberFromEl('localFavs');
                         const currentRecommend = getNumberFromEl('localRecommend');
+                        const currentGameEntry = getNumberFromEl('localGameEntry');
                         const cache = getCache();
                         updateDelta('uvDelta', currentUV, cache.uv, '独立访客');
                         updateDelta('pvDelta', currentPV, cache.pv, '总访问量');
                         updateDelta('clicksDelta', currentClicks, cache.clicks, '资源跳转');
                         updateDelta('favsDelta', currentFavs, cache.favs, '资源收藏');
                         updateDelta('recommendDelta', currentRecommend, cache.recommend, '资源推荐');
-                        // 更新缓存
+                        updateDelta('gameEntryDelta', currentGameEntry, cache.gameEntry, '游戏进入');
                         cache.uv = currentUV;
                         cache.pv = currentPV;
                         cache.clicks = currentClicks;
                         cache.favs = currentFavs;
                         cache.recommend = currentRecommend;
+                        cache.gameEntry = currentGameEntry;
                         saveCache(cache);
                     }, 500);
                 }
             });
 
-            // 不蒜子数据加载完成后会自动更新，但我们也轮询检查
-            // 每5秒检查一次是否数据有更新（但不要频繁更新缓存，只在有变化时更新）
-            // 这里简单处理：每次页面可见时刷新delta
             document.addEventListener('visibilitychange', function() {
                 if (!document.hidden) {
                     updateLocalStats();

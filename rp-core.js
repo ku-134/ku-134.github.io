@@ -47,6 +47,7 @@
     var searchQuery = '';
     var favorites = [];
     var pendingLink = null;
+    var pendingName = null;    // 修复：保存当前点击的资源名
     var countdownTimer = null;
     var countdownValue = 3;
     var isLoading = false;
@@ -116,6 +117,8 @@
         }
         saveFavorites();
         renderCurrentView();
+        // 刷新侧边栏收藏数
+        renderSidebar(allCategories);
         try {
             window.dispatchEvent(new Event('storage'));
         } catch (e) { /* 静默降级 */ }
@@ -251,6 +254,7 @@
                 var cat = allCategories[ci];
                 for (var ii = 0; ii < cat.items.length; ii++) {
                     var item = cat.items[ii];
+                    if (item.type === 'placeholder') continue;
                     if (isFavorited(item.name)) {
                         items.push({ name: item.name, desc: item.desc, link: item.link, type: item.type, category: cat.name });
                     }
@@ -261,6 +265,7 @@
                 var cat2 = allCategories[ci2];
                 for (var ii2 = 0; ii2 < cat2.items.length; ii2++) {
                     var item2 = cat2.items[ii2];
+                    if (item2.type === 'placeholder') continue;
                     items.push({ name: item2.name, desc: item2.desc, link: item2.link, type: item2.type, category: cat2.name });
                 }
             }
@@ -516,6 +521,7 @@
                         if (targetCat) {
                             for (var ii = 0; ii < targetCat.items.length; ii++) {
                                 var it = targetCat.items[ii];
+                                if (it.type === 'placeholder') continue;
                                 catItems.push({ name: it.name, desc: it.desc, link: it.link, type: it.type, category: targetCat.name });
                             }
                         }
@@ -530,6 +536,7 @@
     function openModal(name, desc, link, type) {
         if (!link) return;
         pendingLink = link;
+        pendingName = name;   // 修复：保存资源名
         var typeLabel = getTypeLabel(type);
         var icon = getTypeIcon(type);
 
@@ -569,6 +576,7 @@
             countdownTimer = null;
         }
         pendingLink = null;
+        pendingName = null;
         btnConfirm.classList.remove('ready');
         btnConfirm.disabled = true;
         countdownRing.textContent = '3';
@@ -576,9 +584,10 @@
 
     function confirmJump() {
         if (!pendingLink || btnConfirm.disabled) return;
-        var parent = document.querySelector('.rp-resource-item.favorited, .rp-resource-item');
-        var nameEl = parent ? parent.querySelector('.name a') : null;
-        if (nameEl) recordClick(nameEl.textContent.trim());
+        // 修复：使用保存的资源名，不依赖 DOM
+        if (pendingName) {
+            recordClick(pendingName);
+        }
         window.open(pendingLink, '_blank', 'noopener,noreferrer');
         closeModal();
     }
@@ -620,7 +629,6 @@
         var category = recCategory.value || '未指定';
         var nick = recNick.value.trim() || '匿名';
 
-        // 🆕 增加推荐计数
         incrementRecommendCount();
 
         var subject = encodeURIComponent('📤 资源推荐：' + name);
@@ -639,7 +647,7 @@
     }
 
     // ============================================================
-    // 📂 拉取数据（表面拉取 category.txt，实际先解码 Nahida.dat）
+    // 📂 拉取数据
     // ============================================================
     function fetchAndRender() {
         if (isLoading) return;
@@ -647,70 +655,49 @@
         fetchBtn.classList.add('loading');
         fetchBtn.innerHTML = '<span class="spinner">⟳</span> 加载中...';
 
+        // 显示加载状态
+        categoryListEl.innerHTML = '<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">⏳ 加载中...</div>';
+
         var dataLoaded = false;
 
-        // ============================================================
-        // 第一步：尝试拉取 Nahida.dat（加密版本）
-        // ============================================================
         fetch('Nahida.dat?t=' + Date.now())
             .then(function(res) {
                 if (!res.ok) throw new Error('Nahida.dat 不存在');
                 return res.text();
             })
             .then(function(encoded) {
-                // 尝试 Base64 解码
                 var decoded;
                 try {
                     decoded = base64Decode(encoded.trim());
                 } catch (e) {
-                    // 解码失败 → 降级到 category.txt
                     throw new Error('解码失败');
                 }
-
-                // 检查解码后是否像有效的 category 数据
                 if (!looksLikeCategoryData(decoded)) {
                     throw new Error('解码后格式无效');
                 }
-
-                // 解码成功且格式有效 → 渲染
                 dataLoaded = true;
                 renderData(decoded);
             })
             .catch(function(err) {
-                // ============================================================
-                // 第二步：降级到 category.txt（明文版本）
-                // ============================================================
-                // 不汇报任何错误，静默降级
                 return fetch('category.txt?t=' + Date.now());
             })
             .then(function(res) {
-                // 如果数据已加载，跳过
                 if (dataLoaded) return;
-
                 if (!res) return;
                 if (!res.ok) throw new Error('category.txt 不存在');
-
                 return res.text();
             })
             .then(function(text) {
                 if (dataLoaded) return;
                 if (!text) return;
-
-                // 检查是否有效
                 if (!looksLikeCategoryData(text)) {
                     throw new Error('category.txt 格式无效');
                 }
-
-                // 渲染明文数据
                 dataLoaded = true;
                 renderData(text);
             })
             .catch(function(err) {
-                // ============================================================
-                // 第三步：都失败了 → 显示友好错误
-                // ============================================================
                 if (dataLoaded) return;
-
                 resourceAreaEl.innerHTML =
                     '<div class="rp-empty">❌ 加载失败：' + err.message +
                     '<br><button class="btn btn-secondary" style="margin-top:1rem;" onclick="location.reload()">🔄 重试</button>' +
@@ -758,6 +745,7 @@
                             var items = [];
                             for (var ii = 0; ii < cat.items.length; ii++) {
                                 var it = cat.items[ii];
+                                if (it.type === 'placeholder') continue;
                                 items.push({ name: it.name, desc: it.desc, link: it.link, type: it.type, category: cat.name });
                             }
                             renderFilteredItems(items, cat.name);
@@ -773,31 +761,8 @@
             searchInput.value = '';
             searchQuery = '';
             this.style.display = 'none';
-            var activeCat = document.querySelector('.rp-category-item.active');
-            if (activeCat) {
-                var name = activeCat.dataset.category;
-                if (name === '__all__' || name === '__favorites__') {
-                    renderCurrentView();
-                } else {
-                    var cat = null;
-                    for (var ci = 0; ci < allCategories.length; ci++) {
-                        if (allCategories[ci].name === name) {
-                            cat = allCategories[ci];
-                            break;
-                        }
-                    }
-                    if (cat) {
-                        var items = [];
-                        for (var ii = 0; ii < cat.items.length; ii++) {
-                            var it = cat.items[ii];
-                            items.push({ name: it.name, desc: it.desc, link: it.link, type: it.type, category: cat.name });
-                        }
-                        renderFilteredItems(items, cat.name);
-                    }
-                }
-            } else {
-                renderCurrentView();
-            }
+            // 触发 input 事件同步状态
+            searchInput.dispatchEvent(new Event('input'));
         });
     }
 
@@ -876,6 +841,8 @@
     function init() {
         loadFavorites();
         bindEvents();
+        bindSearchEvents();
+        bindFavToggle();
     }
 
     if (document.readyState === 'loading') {

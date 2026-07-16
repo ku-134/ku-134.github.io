@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>游戏发布页 · Kukuz</title>
-    <link rel="preload" as="image" href="background.webp">
-    <link rel="stylesheet" href="style.css">
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="stylesheet" href="../style.css">
     <style>
         /* ===== 游戏页专属样式 ===== */
         .game-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 2rem 1.8rem;
-            margin: 1.8rem 0 1.2rem;
+            margin: 1.5rem 0 1.2rem;
             min-height: 200px;
         }
 
@@ -91,11 +91,9 @@
             transform: scale(1.03);
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
         }
-        /* 单张图片占满 */
         .game-card .game-images.has-images .game-screenshot:only-child {
             width: 100%;
         }
-        /* 三张图片时第一张占满，其余两列 */
         .game-card .game-images.has-images .game-screenshot:first-child:nth-last-child(3) {
             width: 100%;
         }
@@ -137,11 +135,6 @@
             opacity: 0.5;
             font-size: 1.1rem;
             grid-column: 1 / -1;
-        }
-        .game-empty .big-icon {
-            font-size: 3rem;
-            display: block;
-            margin-bottom: 0.5rem;
         }
 
         /* 拉取区域 */
@@ -203,12 +196,48 @@
             opacity: 0.3;
         }
 
-        /* 统计 */
+        /* 统计 + 搜索栏 */
         .game-stats {
             text-align: center;
             font-size: 0.95rem;
             opacity: 0.5;
             margin-bottom: 0.2rem;
+        }
+        .game-search-bar {
+            display: flex;
+            gap: 0.6rem;
+            margin: 0.8rem 0 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .game-search-bar input {
+            flex: 1;
+            min-width: 160px;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .game-search-bar input:focus {
+            border-color: currentColor;
+        }
+        .game-search-bar input::placeholder {
+            opacity: 0.4;
+        }
+        .game-search-bar .clear-btn {
+            cursor: pointer;
+            opacity: 0.4;
+            font-size: 1.2rem;
+            padding: 0 0.3rem;
+            transition: opacity 0.2s;
+        }
+        .game-search-bar .clear-btn:hover {
+            opacity: 0.8;
         }
 
         /* ===== 图片浏览弹窗 ===== */
@@ -260,7 +289,6 @@
             }
         }
 
-        /* ===== 关闭按钮（左上角） ===== */
         .image-modal-close {
             position: absolute;
             top: -0.8rem;
@@ -303,7 +331,6 @@
             }
         }
 
-        /* 左侧缩略图索引列表 */
         .image-thumbnails {
             display: flex;
             flex-direction: column;
@@ -344,7 +371,6 @@
             box-shadow: 0 0 20px rgba(128, 128, 128, 0.08);
         }
 
-        /* 右侧大图展示 */
         .image-display {
             flex: 1;
             display: flex;
@@ -364,7 +390,7 @@
             background: rgba(0, 0, 0, 0.1);
         }
 
-        /* 响应式：小屏设备 */
+        /* 响应式 */
         @media (max-width: 700px) {
             .game-grid {
                 grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -431,18 +457,24 @@
     </style>
 </head>
 <body>
-    <div class="card card-narrow">
+    <div class="card card-narrow" style="max-width: 820px; margin: 0 auto; padding: 2rem 2rem 1.8rem;">
         <h1 class="typing-title">🎮 游戏发布页</h1>
         <div class="sub fade-in-up delay-2">— 来自小站的游戏 —</div>
         <div class="divider fade-in-up delay-3"></div>
 
         <div class="nav-menu fade-in-up delay-4">
-            <a href="index.html" class="nav-link">🏠 首页</a>
+            <a href="../index.html" class="nav-link">🏠 首页</a>
             <a href="#" class="nav-link active">🎮 游戏</a>
-            <a href="RP.html" class="nav-link">📦 看点资源？</a>
+            <a href="../RP.html" class="nav-link">📦 看点资源？</a>
         </div>
 
         <div class="game-stats fade-in-up delay-5" id="stats"></div>
+
+        <!-- 搜索栏 -->
+        <div class="game-search-bar fade-in-up delay-5">
+            <input type="text" id="gameSearchInput" placeholder="🔍 搜索游戏..." autocomplete="off">
+            <span class="clear-btn" id="gameClearSearch" style="display:none;">✕</span>
+        </div>
 
         <div class="game-grid fade-in-up delay-6" id="gameGrid">
             <div class="fetch-area" id="fetchArea">
@@ -461,22 +493,17 @@
     <!-- ===== 图片浏览弹窗 ===== -->
     <div class="image-overlay" id="imageOverlay">
         <div class="image-modal" id="imageModal">
-            <!-- 关闭按钮（左上角） -->
             <button class="image-modal-close" id="imageModalClose" title="关闭">✕</button>
-            <!-- 左侧缩略图索引列表 -->
             <div class="image-thumbnails" id="imageThumbnails"></div>
-            <!-- 右侧大图 -->
             <div class="image-display" id="imageDisplay">
                 <img id="imageViewer" src="" alt="游戏截图">
             </div>
         </div>
     </div>
 
-    <!-- ===== 不蒜子统计（仅采集） ===== -->
+    <!-- ===== 不蒜子统计 ===== -->
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <script src="script.js"></script>
-
-    <!-- ===== 游戏页核心逻辑 ===== -->
+    <script src="../script.js"></script>
     <script src="GG-magic.js"></script>
 </body>
 </html>

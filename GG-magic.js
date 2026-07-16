@@ -12,6 +12,8 @@
     var statsEl = document.getElementById('stats');
     var fetchBtn = document.getElementById('fetchBtn');
     var fetchArea = document.getElementById('fetchArea');
+    var searchInput = document.getElementById('gameSearchInput');
+    var clearBtn = document.getElementById('gameClearSearch');
 
     // 弹窗
     var overlay = document.getElementById('imageOverlay');
@@ -24,6 +26,7 @@
     var isLoading = false;
     var currentImages = [];
     var currentIndex = 0;
+    var searchQuery = '';
 
     // ---------- 解析 Hexenzirkel.txt ----------
     function parseHexenzirkel(text) {
@@ -37,13 +40,11 @@
             if (line.indexOf('##') === 0) {
                 var content = line.replace(/^##\s*/, '').trim();
 
-                // 按 | 分割
                 var parts = content.split('|').map(function(s) { return s.trim(); });
 
                 var nameAndTags = parts[0] || '';
                 var desc = parts[1] || '';
 
-                // ---------- 解析文件名和 +链接 ----------
                 var fileName = '';
                 var link = '';
 
@@ -51,13 +52,11 @@
                     var part = parts[pi];
                     if (!part) continue;
 
-                    // 情况1：以 + 开头 → 纯链接
                     if (part.indexOf('+') === 0) {
                         link = part.substring(1).trim();
                         continue;
                     }
 
-                    // 情况2：包含 + → 文件名 +链接（如 "genshin +https://xxx"）
                     var plusIndex = part.indexOf(' +');
                     if (plusIndex !== -1) {
                         var beforePlus = part.substring(0, plusIndex).trim();
@@ -74,18 +73,15 @@
                         continue;
                     }
 
-                    // 情况3：普通文件名
                     if (!fileName) {
                         fileName = part;
                     }
                 }
 
-                // ---------- 如果没有 +链接，使用默认跳转 ----------
                 if (!link && fileName) {
                     link = 'Gamecurrently/' + fileName + '.html';
                 }
 
-                // ---------- 解析游戏名和标签 ----------
                 var name = nameAndTags;
                 var tags = [];
                 var dashIndex = nameAndTags.indexOf(' -');
@@ -103,7 +99,8 @@
                         tags: tags,
                         desc: desc,
                         fileName: fileName,
-                        link: link
+                        link: link,
+                        _searchText: (name + ' ' + desc + ' ' + tags.join(' ')).toLowerCase()
                     });
                 }
             }
@@ -119,6 +116,8 @@
             return;
         }
 
+        allGames = games;
+
         var html = '';
         for (var i = 0; i < games.length; i++) {
             var game = games[i];
@@ -127,7 +126,6 @@
 
         gameGrid.innerHTML = html;
 
-        // 渲染完成后，异步加载每个游戏的图片
         var cards = gameGrid.querySelectorAll('.game-card');
         for (var ci = 0; ci < cards.length; ci++) {
             (function(card, idx) {
@@ -138,6 +136,8 @@
             })(cards[ci], ci);
         }
 
+        bindGameEntryClicks();
+        applySearchFilter();
         updateStats(games.length, countTotalTags(games));
     }
 
@@ -154,15 +154,14 @@
 
         var imagesHtml = '<div class="game-images" id="gameImages_' + index + '"></div>';
 
-        // 判断是否为外部链接
         var isExternal = game.link && (game.link.indexOf('http://') === 0 || game.link.indexOf('https://') === 0);
         var btnLabel = isExternal ? '跳转！' : '玩这个！';
         var btnLink = game.link || '#';
 
-        var btnHtml = '<a href="' + btnLink + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '">🎮 ' + btnLabel + '</a>';
+        var btnHtml = '<a href="' + btnLink + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '" data-link="' + escapeHtml(btnLink) + '">🎮 ' + btnLabel + '</a>';
 
         return (
-            '<div class="game-card" data-index="' + index + '">' +
+            '<div class="game-card" data-index="' + index + '" data-search="' + escapeHtml(game._searchText || '') + '">' +
                 '<div class="game-name">' + escapeHtml(game.name) + '</div>' +
                 tagsHtml +
                 (game.desc ? '<div class="game-desc">' + escapeHtml(game.desc) + '</div>' : '') +
@@ -172,7 +171,7 @@
         );
     }
 
-    // ---------- 加载游戏图片并绑定点击事件 ----------
+    // ---------- 加载游戏图片 ----------
     function loadGameImages(card, fileName) {
         var imgContainer = card.querySelector('.game-images');
         if (!imgContainer) return;
@@ -191,7 +190,6 @@
                         (function(imgEl, imgIndex) {
                             imgEl.addEventListener('click', function(e) {
                                 e.stopPropagation();
-                                // 点击哪张图，弹窗就切到哪张图
                                 openImageViewer(loadedSrcs, imgIndex);
                             });
                         })(imgs[i], i);
@@ -230,7 +228,48 @@
         tryLoad(0);
     }
 
-    // ---------- 打开图片浏览弹窗 ----------
+    // ---------- 绑定游戏跳转计数 ----------
+    function bindGameEntryClicks() {
+        var btns = document.querySelectorAll('.game-play-btn');
+        btns.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                try {
+                    var count = parseInt(localStorage.getItem('gameEntryCount') || '0');
+                    count++;
+                    localStorage.setItem('gameEntryCount', String(count));
+                    try {
+                        window.dispatchEvent(new Event('storage'));
+                    } catch (ex) { /* 忽略 */ }
+                } catch (ex) { /* 忽略 */ }
+            });
+        });
+    }
+
+    // ---------- 搜索功能 ----------
+    function applySearchFilter() {
+        var query = searchQuery.trim().toLowerCase();
+        var cards = document.querySelectorAll('.game-card');
+        var visibleCount = 0;
+        cards.forEach(function(card) {
+            var searchText = card.dataset.search || '';
+            if (query === '' || searchText.indexOf(query) !== -1) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+        if (statsEl) {
+            var total = allGames.length;
+            if (query !== '') {
+                statsEl.textContent = '🔍 找到 ' + visibleCount + ' 款游戏（共 ' + total + ' 款）';
+            } else {
+                statsEl.textContent = '🎮 共 ' + total + ' 款游戏 · ' + countTotalTags(allGames) + ' 个标签';
+            }
+        }
+    }
+
+    // ---------- 图片浏览弹窗 ----------
     function openImageViewer(srcList, startIndex) {
         if (!srcList || srcList.length === 0) return;
         currentImages = srcList.slice();
@@ -241,7 +280,6 @@
         document.body.classList.add('modal-open');
     }
 
-    // ---------- 渲染缩略图索引 ----------
     function renderThumbnails() {
         thumbnailsEl.innerHTML = '';
         var romanNumerals = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ'];
@@ -265,14 +303,12 @@
         }
     }
 
-    // ---------- 显示大图 ----------
     function showImage(index) {
         if (index >= 0 && index < currentImages.length) {
             viewer.src = currentImages[index];
         }
     }
 
-    // ---------- 关闭弹窗 ----------
     function closeImageViewer() {
         overlay.classList.remove('active');
         document.body.classList.remove('modal-open');
@@ -285,6 +321,7 @@
     // ---------- 统计 ----------
     function updateStats(gameCount, tagCount) {
         if (!statsEl) return;
+        if (searchQuery.trim() !== '') return;
         if (gameCount === 0) {
             statsEl.textContent = '📂 暂无游戏';
             return;
@@ -323,10 +360,10 @@
             })
             .then(function(text) {
                 if (!text || text.trim() === '') throw new Error('文件为空');
-                allGames = parseHexenzirkel(text);
-                if (allGames.length === 0) throw new Error('未解析到有效游戏数据');
-                renderGames(allGames);
-                fetchBtn.innerHTML = '📂 已加载 ' + allGames.length + ' 款游戏';
+                var games = parseHexenzirkel(text);
+                if (games.length === 0) throw new Error('未解析到有效游戏数据');
+                renderGames(games);
+                fetchBtn.innerHTML = '📂 已加载 ' + games.length + ' 款游戏';
                 fetchBtn.style.opacity = '0.4';
                 fetchBtn.style.cursor = 'default';
                 fetchBtn.disabled = true;
@@ -349,37 +386,59 @@
             });
     }
 
+    // ---------- 搜索事件绑定 ----------
+    var searchTimer = null;
+    function bindSearchEvents() {
+        if (!searchInput) return;
+        searchInput.addEventListener('input', function() {
+            var val = this.value.trim();
+            searchQuery = val;
+            clearBtn.style.display = val.length > 0 ? 'inline' : 'none';
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function() {
+                applySearchFilter();
+            }, 200);
+        });
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                searchQuery = '';
+                this.style.display = 'none';
+                applySearchFilter();
+            });
+        }
+    }
+
     // ---------- 事件绑定 ----------
-    // 关闭按钮
     closeBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         closeImageViewer();
     });
 
-    // 点击蒙层关闭
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) {
             closeImageViewer();
         }
     });
 
-    // ESC 关闭
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && overlay.classList.contains('active')) {
             closeImageViewer();
         }
     });
 
-    // 拉取按钮
     fetchBtn.addEventListener('click', fetchAndRender);
 
     // ---------- 初始化 ----------
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
             setTimeout(fetchAndRender, 300);
+            bindSearchEvents();
         });
     } else {
         setTimeout(fetchAndRender, 300);
+        bindSearchEvents();
     }
 
 })();

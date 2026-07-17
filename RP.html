@@ -66,7 +66,7 @@
             opacity: 0.7;
         }
 
-        /* ===== 🆕 “我有推荐”按钮 ===== */
+        /* ===== “我有推荐”按钮 ===== */
         .recommend-divider {
             margin: 0.8rem 0 0.6rem 0;
             border: none;
@@ -396,7 +396,6 @@
             }
             .search-bar input { min-width: 100px; font-size: 0.85rem; }
             .search-bar .fav-toggle { font-size: 0.8rem; padding: 0.2rem 0.6rem; }
-            /* 移动端推荐按钮调整 */
             .recommend-divider { display: none; }
             .recommend-btn {
                 width: auto;
@@ -409,7 +408,7 @@
             }
         }
 
-        /* ===== 弹窗 ===== */
+        /* ===== 弹窗（通用） ===== */
         .rp-overlay {
             position: fixed;
             inset: 0;
@@ -607,7 +606,7 @@
             }
         }
 
-        /* ===== 🆕 投稿弹窗表单样式 ===== */
+        /* ===== 投稿弹窗表单样式 ===== */
         #recommendModal .modal-icon { font-size: 2.4rem; }
         #recommendModal .modal-title { font-size: 1.5rem; }
         #recommendModal .modal-sub {
@@ -703,6 +702,64 @@
                 color: #1a2e1a;
             }
         }
+
+        /* ===== 🆕 免责声明弹窗（独立样式） ===== */
+        #disclaimerModal .modal-icon { font-size: 2.4rem; }
+        #disclaimerModal .modal-title { font-size: 1.6rem; }
+        #disclaimerModal .modal-sub {
+            font-size: 0.95rem;
+            opacity: 0.8;
+            line-height: 1.8;
+            text-align: left;
+            padding: 0 0.2rem;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        #disclaimerModal .modal-sub p {
+            margin-bottom: 0.6rem;
+        }
+        #disclaimerModal .modal-sub .highlight {
+            color: #f5a623;
+            font-weight: 700;
+        }
+        #disclaimerModal .modal-actions .btn-confirm {
+            background: #4a90d9;
+            border-color: #4a90d9;
+            opacity: 0.4;
+            cursor: not-allowed;
+            color: #fff;
+            min-width: 140px;
+        }
+        #disclaimerModal .modal-actions .btn-confirm.ready {
+            opacity: 1;
+            cursor: pointer;
+            background: #4a90d9;
+            border-color: #4a90d9;
+        }
+        #disclaimerModal .modal-actions .btn-confirm.ready:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(74, 144, 217, 0.3);
+            background: #5a9ee9;
+            border-color: #5a9ee9;
+        }
+        @media (prefers-color-scheme: dark) {
+            #disclaimerModal .modal-actions .btn-confirm {
+                background: #66bb6a;
+                border-color: #66bb6a;
+                color: #1a2e1a;
+            }
+            #disclaimerModal .modal-actions .btn-confirm.ready:hover {
+                background: #81c784;
+                border-color: #81c784;
+            }
+        }
+        /* 弹窗遮罩不可点击关闭 */
+        #disclaimerOverlay {
+            cursor: default;
+        }
+        #disclaimerOverlay .rp-modal {
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body>
@@ -714,7 +771,7 @@
         <div class="nav-menu fade-in-up delay-4">
             <a href="index.html" class="nav-link">🏠 首页</a>
             <a href="#" class="nav-link active">📦 资源</a>
-            <a href="GG.html" class="nav-link">🎮 玩点游戏？</a>   <!-- 已修改 -->
+            <a href="GG.html" class="nav-link">🎮 玩点游戏？</a>
         </div>
 
         <div class="resource-stats fade-in-up delay-5" id="stats"></div>
@@ -731,7 +788,6 @@
                 <div id="categoryList">
                     <div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">⬅️ 点击右侧拉取</div>
                 </div>
-                <!-- ===== 🆕 “我有推荐”按钮（侧边栏底部） ===== -->
                 <hr class="recommend-divider">
                 <button class="recommend-btn" id="recommendBtn">📤 我有推荐</button>
             </div>
@@ -793,7 +849,7 @@
         </div>
     </div>
 
-    <!-- ===== 🆕 投稿弹窗 ===== -->
+    <!-- ===== 投稿弹窗 ===== -->
     <div class="rp-overlay" id="recommendOverlay">
         <div class="rp-modal" id="recommendModal">
             <div class="modal-icon">📤</div>
@@ -838,7 +894,29 @@
         </div>
     </div>
 
-    <!-- ===== 不蒜子统计脚本（仅用于数据采集） ===== -->
+    <!-- ===== 🆕 免责声明弹窗 ===== -->
+    <div class="rp-overlay" id="disclaimerOverlay">
+        <div class="rp-modal" id="disclaimerModal">
+            <div class="modal-icon">⚖️</div>
+            <div class="modal-title">免责声明</div>
+            <div class="modal-sub">
+                <p>本网站（“虚空终端”）为个人分享站点，所有资源均来源于网络公开信息或用户投稿，仅供个人学习、研究和交流使用。</p>
+                <p><span class="highlight">请务必遵守以下条款：</span></p>
+                <p>1. 本站所有资源均**不提供任何形式的保证**，包括但不限于安全性、完整性、时效性及适用性。使用资源所产生的一切风险由使用者自行承担。</p>
+                <p>2. 本站资源**仅供学习参考**，请勿用于商业用途或非法目的。如需商用，请务必获得相应版权方的正式授权。</p>
+                <p>3. 本站尊重知识产权，如您认为本网站提供的资源侵犯了您的合法权益，请通过 <a href="mailto:3074341324@qq.com">邮件</a> 联系我们，我们将在核实后第一时间删除相关内容。</p>
+                <p>4. 用户通过本网站跳转至第三方页面时，其内容及安全性与本网站无关，请自行甄别。</p>
+                <p style="margin-top:0.8rem; opacity:0.6; font-size:0.9rem;">继续使用本网站即表示您已阅读并同意以上条款。</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-confirm" id="disclaimerConfirm">
+                    了解 <span class="countdown-ring" id="disclaimerCountdown">5</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 不蒜子统计脚本 ===== -->
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
     <!-- ===== 全局打字机特效 ===== -->

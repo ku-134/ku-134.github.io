@@ -405,3 +405,311 @@ body {
     .card h1 { font-size: 1.6rem; }
     .card { padding: 1.5rem 1rem; }
 }
+/* ============================================================
+   🆕 全局主题切换（data-theme 控制）
+   ============================================================ */
+
+/* ----- 默认主题（跟随系统） ----- */
+:root {
+    /* 背景图变量 */
+    --bg-image: url('background.webp');
+    /* 卡片背景 */
+    --card-bg-light: rgba(255, 255, 255, 0.68);
+    --card-bg-dark: rgba(10, 20, 10, 0.72);
+    /* 文字颜色 */
+    --text-light: #1a3b1a;
+    --text-dark: #c8e6c9;
+    /* 边框颜色 */
+    --border-light: rgba(80, 160, 80, 0.25);
+    --border-dark: rgba(60, 140, 60, 0.3);
+    /* 统计项背景 */
+    --stats-bg-light: rgba(0, 0, 0, 0.03);
+    --stats-bg-dark: rgba(255, 255, 255, 0.03);
+    /* 按钮颜色 */
+    --btn-primary-bg-light: #1b5e20;
+    --btn-primary-bg-dark: #66bb6a;
+    --btn-primary-text-light: #fff;
+    --btn-primary-text-dark: #1a2e1a;
+    /* 设置按钮 */
+    --settings-bg-light: rgba(255, 255, 255, 0.6);
+    --settings-bg-dark: rgba(10, 20, 10, 0.6);
+}
+
+/* 默认状态下，根据系统偏好自动适配 */
+@media (prefers-color-scheme: light) {
+    :root {
+        --card-bg: var(--card-bg-light);
+        --text-color: var(--text-light);
+        --border-color: var(--border-light);
+        --stats-bg: var(--stats-bg-light);
+        --btn-primary-bg: var(--btn-primary-bg-light);
+        --btn-primary-text: var(--btn-primary-text-light);
+        --settings-bg: var(--settings-bg-light);
+        --card-h1: #1a4f1a;
+        --card-sub: #2d5e2d;
+        --card-divider: rgba(60, 140, 60, 0.2);
+        --card-footer: #3d6b3d;
+        --nav-link: #1a3b1a;
+        --nav-link-active: #1a4f1a;
+    }
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --card-bg: var(--card-bg-dark);
+        --text-color: var(--text-dark);
+        --border-color: var(--border-dark);
+        --stats-bg: var(--stats-bg-dark);
+        --btn-primary-bg: var(--btn-primary-bg-dark);
+        --btn-primary-text: var(--btn-primary-text-dark);
+        --settings-bg: var(--settings-bg-dark);
+        --card-h1: #a5d6a7;
+        --card-sub: #81c784;
+        --card-divider: rgba(100, 200, 100, 0.15);
+        --card-footer: #6f9e76;
+        --nav-link: #c8e6c9;
+        --nav-link-active: #a5d6a7;
+    }
+}
+
+/* ----- data-theme="light" 强制亮色 ----- */
+html[data-theme="light"] {
+    --card-bg: var(--card-bg-light);
+    --text-color: var(--text-light);
+    --border-color: var(--border-light);
+    --stats-bg: var(--stats-bg-light);
+    --btn-primary-bg: var(--btn-primary-bg-light);
+    --btn-primary-text: var(--btn-primary-text-light);
+    --settings-bg: var(--settings-bg-light);
+    --card-h1: #1a4f1a;
+    --card-sub: #2d5e2d;
+    --card-divider: rgba(60, 140, 60, 0.2);
+    --card-footer: #3d6b3d;
+    --nav-link: #1a3b1a;
+    --nav-link-active: #1a4f1a;
+    --loader-bg: #f0f5f0;
+    --code-color: #1b5e20;
+    --code-glow: rgba(27, 94, 32, 0.2);
+    --toast-bg: rgba(255,255,255,0.9);
+    --toast-color: #1a3b1a;
+    --toast-border: rgba(0,0,0,0.05);
+    --toast-highlight: #1b5e20;
+    --tag-bg: rgba(27, 94, 32, 0.10);
+    --tag-color: #1a4f1a;
+    --contact-label: #2d5e2d;
+    --contact-value: #1a4f1a;
+    --section-title: #1a4f1a;
+    --rp-modal-bg: rgba(245, 250, 245, 0.92);
+    --rp-modal-border: rgba(0,0,0,0.06);
+    --rp-fetch-border: rgba(0,0,0,0.2);
+    --rp-search-border: rgba(0,0,0,0.15);
+    --rp-category-active: rgba(0,0,0,0.06);
+    --game-card-bg: rgba(255, 255, 255, 0.4);
+    --game-tag-bg: rgba(0,0,0,0.04);
+    --image-thumb-bg: rgba(0,0,0,0.04);
+    --image-modal-bg: rgba(245, 250, 245, 0.7);
+    --image-modal-border: rgba(0,0,0,0.06);
+    --image-modal-close-bg: rgba(245, 250, 245, 0.8);
+    --image-modal-close-hover: rgba(200, 60, 60, 0.8);
+    --settings-panel-bg: rgba(245, 250, 245, 0.94);
+    --settings-panel-border: rgba(0,0,0,0.06);
+    /* 不蒜子加载状态文字颜色 */
+    --busuanzi-color: inherit;
+}
+
+/* ----- data-theme="dark" 强制暗色 ----- */
+html[data-theme="dark"] {
+    --card-bg: var(--card-bg-dark);
+    --text-color: var(--text-dark);
+    --border-color: var(--border-dark);
+    --stats-bg: var(--stats-bg-dark);
+    --btn-primary-bg: var(--btn-primary-bg-dark);
+    --btn-primary-text: var(--btn-primary-text-dark);
+    --settings-bg: var(--settings-bg-dark);
+    --card-h1: #a5d6a7;
+    --card-sub: #81c784;
+    --card-divider: rgba(100, 200, 100, 0.15);
+    --card-footer: #6f9e76;
+    --nav-link: #c8e6c9;
+    --nav-link-active: #a5d6a7;
+    --loader-bg: #0d1a0d;
+    --code-color: #66bb6a;
+    --code-glow: rgba(102, 187, 106, 0.3);
+    --toast-bg: rgba(0,0,0,0.8);
+    --toast-color: #fff;
+    --toast-border: rgba(255,255,255,0.1);
+    --toast-highlight: #a5d6a7;
+    --tag-bg: rgba(102, 187, 106, 0.15);
+    --tag-color: #a5d6a7;
+    --contact-label: #81c784;
+    --contact-value: #a5d6a7;
+    --section-title: #a5d6a7;
+    --rp-modal-bg: rgba(12, 22, 12, 0.92);
+    --rp-modal-border: rgba(255,255,255,0.06);
+    --rp-fetch-border: rgba(255,255,255,0.15);
+    --rp-search-border: rgba(255,255,255,0.15);
+    --rp-category-active: rgba(255,255,255,0.06);
+    --game-card-bg: rgba(255, 255, 255, 0.03);
+    --game-tag-bg: rgba(255, 255, 255, 0.04);
+    --image-thumb-bg: rgba(255, 255, 255, 0.04);
+    --image-modal-bg: rgba(10, 20, 10, 0.6);
+    --image-modal-border: rgba(255,255,255,0.08);
+    --image-modal-close-bg: rgba(10, 20, 10, 0.7);
+    --image-modal-close-hover: rgba(200, 60, 60, 0.7);
+    --settings-panel-bg: rgba(12, 22, 12, 0.92);
+    --settings-panel-border: rgba(255,255,255,0.06);
+    --busuanzi-color: inherit;
+}
+
+/* ----- 背景图统一控制 ----- */
+html {
+    background: var(--bg-image) no-repeat center center / cover;
+    background-attachment: fixed;
+    background-color: #1a2e1a;
+}
+
+/* 切换背景图片时，只需修改 --bg-image 变量 */
+html[data-bg="food"] {
+    --bg-image: url('background1.webp');
+}
+
+/* ----- 所有卡片使用 CSS 变量 ----- */
+.card,
+.stats-card,
+.game-container,
+.game-card,
+.settings-panel,
+.rp-modal,
+.image-modal,
+.tool-modal,
+.cache-modal {
+    background: var(--card-bg, var(--card-bg-dark));
+    color: var(--text-color, var(--text-dark));
+    border-color: var(--border-color, var(--border-dark));
+}
+
+/* 卡片标题颜色 */
+.card h1 { color: var(--card-h1, #a5d6a7); }
+.card .sub { color: var(--card-sub, #81c784); }
+.card .divider { background: var(--card-divider, rgba(100, 200, 100, 0.15)); }
+.card .footer { color: var(--card-footer, #6f9e76); }
+
+/* 导航链接 */
+.nav-link { color: var(--nav-link, #c8e6c9); }
+.nav-link.active { color: var(--nav-link-active, #a5d6a7); }
+
+/* 统计项 */
+.stats-item { background: var(--stats-bg, rgba(255, 255, 255, 0.03)); }
+
+/* 主要按钮 */
+.btn-primary {
+    background: var(--btn-primary-bg, #66bb6a);
+    border-color: var(--btn-primary-bg, #66bb6a);
+    color: var(--btn-primary-text, #1a2e1a);
+}
+.btn-primary:hover {
+    filter: brightness(1.1);
+}
+
+/* 次要按钮（保持原有透明逻辑） */
+.btn-secondary { color: var(--text-color, #c8e6c9); }
+.btn-secondary:hover {
+    background: var(--btn-primary-bg, #66bb6a);
+    border-color: var(--btn-primary-bg, #66bb6a);
+    color: var(--btn-primary-text, #1a2e1a);
+}
+
+/* 设置按钮 */
+.settings-toggle {
+    background: var(--settings-bg, rgba(10, 20, 10, 0.6));
+    color: var(--text-color, #c8e6c9);
+}
+.settings-toggle:hover {
+    background: var(--settings-bg-dark, rgba(10, 20, 10, 0.8));
+}
+/* 亮色模式下的设置按钮悬停 */
+html[data-theme="light"] .settings-toggle:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+html[data-theme="dark"] .settings-toggle:hover {
+    background: rgba(10, 20, 10, 0.8);
+}
+
+/* 设置面板 */
+.settings-panel {
+    background: var(--settings-panel-bg, rgba(12, 22, 12, 0.92));
+    border-color: var(--settings-panel-border, rgba(255,255,255,0.06));
+}
+
+/* Toast */
+.toast {
+    background: var(--toast-bg, rgba(0,0,0,0.8));
+    color: var(--toast-color, #fff);
+    border-color: var(--toast-border, rgba(255,255,255,0.1));
+}
+.toast .highlight { color: var(--toast-highlight, #a5d6a7); }
+
+/* 标签 */
+.tag {
+    background: var(--tag-bg, rgba(102, 187, 106, 0.15));
+    color: var(--tag-color, #a5d6a7);
+}
+
+/* 联系页 */
+.contact-label { color: var(--contact-label, #81c784); }
+.contact-value a { color: var(--contact-value, #a5d6a7); }
+.section-title { color: var(--section-title, #a5d6a7); }
+
+/* RP 弹窗 */
+.rp-modal {
+    background: var(--rp-modal-bg, rgba(12, 22, 12, 0.92));
+    border-color: var(--rp-modal-border, rgba(255,255,255,0.06));
+}
+.rp-fetch-btn { border-color: var(--rp-fetch-border, rgba(255,255,255,0.15)); }
+.search-bar input { border-color: var(--rp-search-border, rgba(255,255,255,0.15)); }
+.search-bar .fav-toggle { border-color: var(--rp-search-border, rgba(255,255,255,0.15)); }
+.rp-category-item.active { background: var(--rp-category-active, rgba(255,255,255,0.06)); }
+
+/* 游戏页 */
+.game-card { background: var(--game-card-bg, rgba(255, 255, 255, 0.03)); }
+.game-card .game-tag { background: var(--game-tag-bg, rgba(255, 255, 255, 0.04)); }
+
+/* 图片浏览弹窗 */
+.image-modal {
+    background: var(--image-modal-bg, rgba(10, 20, 10, 0.6));
+    border-color: var(--image-modal-border, rgba(255,255,255,0.08));
+}
+.image-thumb { background: var(--image-thumb-bg, rgba(255, 255, 255, 0.04)); }
+.image-modal-close {
+    background: var(--image-modal-close-bg, rgba(10, 20, 10, 0.7));
+}
+.image-modal-close:hover {
+    background: var(--image-modal-close-hover, rgba(200, 60, 60, 0.7));
+}
+
+/* 加载层 */
+#loader {
+    background: var(--loader-bg, #0d1a0d);
+}
+.code-block {
+    color: var(--code-color, #66bb6a);
+    text-shadow: 0 0 8px var(--code-glow, rgba(102, 187, 106, 0.3));
+}
+
+/* 不蒜子数据（保持可读） */
+#busuanzi_value_site_uv,
+#busuanzi_value_site_pv {
+    color: var(--text-color, #c8e6c9);
+}
+
+/* 其他页面背景统一 */
+body {
+    background: var(--bg-image) no-repeat center center / cover;
+    background-attachment: fixed;
+    background-color: #1a2e1a;
+}
+
+/* 确保所有页面卡片风格统一 */
+.card-narrow {
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+}

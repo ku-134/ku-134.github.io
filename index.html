@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>虚空终端 · Kukuz分享页</title>
+    <!-- 预加载所有背景图 -->
     <link rel="preload" as="image" href="background.webp">
     <link rel="preload" as="image" href="background1.webp">
+    <link rel="preload" as="image" href="background2.webp">
+    <link rel="preload" as="image" href="background3.webp">
+    <link rel="preload" as="image" href="background4.webp">
     <link rel="stylesheet" href="style.css">
     <style>
         /* ===== 入场动画 ===== */
@@ -379,7 +383,7 @@
         }
 
         /* ============================================================
-           🆕 底部控制栏（设置按钮 + 隐藏按钮）
+           底部控制栏（设置按钮 + 隐藏按钮）
            ============================================================ */
         .bottom-controls {
             position: fixed;
@@ -442,12 +446,20 @@
         /* 🆕 全局隐藏模式：所有 UI 隐藏，只留背景和底部控制栏 */
         body.ui-hidden .main-container,
         body.ui-hidden #toast,
-        body.ui-hidden #visitToast,
-        body.ui-hidden .settings-overlay {
+        body.ui-hidden #visitToast {
             opacity: 0 !important;
             pointer-events: none !important;
         }
-        /* 但底部控制栏本身保留可见 */
+        /* 但设置面板如果是激活状态，必须可交互且可见 */
+        body.ui-hidden .settings-overlay:not(.active) {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        body.ui-hidden .settings-overlay.active {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        /* 底部控制栏本身保留可见 */
         body.ui-hidden .bottom-controls {
             opacity: 1 !important;
             pointer-events: auto !important;
@@ -578,6 +590,13 @@
         .settings-panel .panel-actions .btn-secondary:hover {
             background: rgba(128,128,128,0.06);
         }
+
+        /* ===== 🆕 背景图选择（CSS 变量） ===== */
+        /* 背景图映射，由 data-bg 属性控制 */
+        html[data-bg="food"] { --bg-image: url('background1.webp'); }
+        html[data-bg="trip"] { --bg-image: url('background2.webp'); }
+        html[data-bg="electric1"] { --bg-image: url('background3.webp'); }
+        html[data-bg="electric2"] { --bg-image: url('background4.webp'); }
 
         /* ===== 响应式 ===== */
         @media (max-width: 860px) {
@@ -726,7 +745,7 @@
     </div>
 
     <!-- ============================================================
-         🆕 底部控制栏（设置 + 隐藏按钮）
+         底部控制栏（设置 + 隐藏按钮）
          ============================================================ -->
     <div class="bottom-controls" id="bottomControls">
         <!-- 隐藏按钮 -->
@@ -754,7 +773,10 @@
                 <label>🖼️ 背景图片</label>
                 <div class="options" id="bgOptions">
                     <button class="opt-btn" data-bg="default">默认</button>
-                    <button class="opt-btn" data-bg="food">美食</button>
+                    <button class="opt-btn" data-bg="food">海边</button>
+                    <button class="opt-btn" data-bg="trip">旅途</button>
+                    <button class="opt-btn" data-bg="electric1">！？电电？！（1）</button>
+                    <button class="opt-btn" data-bg="electric2">！？电电？！（2）</button>
                 </div>
             </div>
 
@@ -817,7 +839,6 @@
             function showAll() {
                 mainCard.classList.add('show');
                 statsCard.classList.add('show');
-                // 🆕 控制栏与卡片一起出现
                 bottomControls.classList.add('show');
             }
 
@@ -1084,7 +1105,7 @@
             applySettings(loadSettings());
 
             // ============================================================
-            // 🆕 隐藏/显示所有 UI（只看背景）
+            // 隐藏/显示所有 UI（只看背景）
             // ============================================================
             const hideToggle = document.getElementById('hideToggle');
             let isHidden = false;
@@ -1092,7 +1113,6 @@
             hideToggle.addEventListener('click', function() {
                 isHidden = !isHidden;
                 document.body.classList.toggle('ui-hidden', isHidden);
-                // 切换按钮文案/样式
                 if (isHidden) {
                     this.textContent = '👁️‍🗨️';
                     this.classList.add('active');

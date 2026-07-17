@@ -378,19 +378,37 @@
             50% { opacity: 0; }
         }
 
-        /* ===== 设置按钮 & 面板 ===== */
-        .settings-toggle {
+        /* ============================================================
+           🆕 底部控制栏（设置按钮 + 隐藏按钮）
+           ============================================================ */
+        .bottom-controls {
             position: fixed;
             bottom: 30px;
             right: 30px;
             z-index: 1500;
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+        }
+        .bottom-controls.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .ctrl-btn {
             width: 48px;
             height: 48px;
             border-radius: 50%;
             border: 1px solid rgba(255,255,255,0.15);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -401,12 +419,41 @@
             font-family: inherit;
             line-height: 1;
             padding: 0;
+            background: var(--settings-bg, rgba(10,20,10,0.6));
+            color: var(--text-color, #c8e6c9);
+            border-color: var(--border-color, rgba(255,255,255,0.15));
         }
-        .settings-toggle:hover {
+        .ctrl-btn:hover {
             opacity: 1;
+            transform: scale(1.08);
+        }
+        .ctrl-btn.hide-btn:hover {
+            transform: scale(1.08) rotate(0deg);
+        }
+        .ctrl-btn.settings-btn:hover {
             transform: scale(1.08) rotate(60deg);
         }
+        .ctrl-btn.hide-btn.active {
+            background: rgba(231, 76, 60, 0.3);
+            border-color: #e74c3c;
+            opacity: 0.8;
+        }
 
+        /* 🆕 全局隐藏模式：所有 UI 隐藏，只留背景和底部控制栏 */
+        body.ui-hidden .main-container,
+        body.ui-hidden #toast,
+        body.ui-hidden #visitToast,
+        body.ui-hidden .settings-overlay {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        /* 但底部控制栏本身保留可见 */
+        body.ui-hidden .bottom-controls {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        /* ===== 设置面板 ===== */
         .settings-overlay {
             position: fixed;
             inset: 0;
@@ -440,6 +487,8 @@
             max-height: 90vh;
             overflow-y: auto;
             text-align: center;
+            background: var(--settings-panel-bg, rgba(12,22,12,0.92));
+            border-color: var(--settings-panel-border, rgba(255,255,255,0.06));
         }
         @keyframes modalPop {
             0% { transform: scale(0.92) translateY(16px); opacity: 0; }
@@ -450,11 +499,13 @@
             font-size: 1.4rem;
             font-weight: 700;
             margin-bottom: 0.2rem;
+            color: var(--text-color, #c8e6c9);
         }
         .settings-panel .panel-sub {
             font-size: 0.85rem;
             opacity: 0.4;
             margin-bottom: 1.2rem;
+            color: var(--text-color, #c8e6c9);
         }
 
         .settings-group {
@@ -467,6 +518,7 @@
             opacity: 0.6;
             display: block;
             margin-bottom: 0.4rem;
+            color: var(--text-color, #c8e6c9);
         }
         .settings-group .options {
             display: flex;
@@ -483,6 +535,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             opacity: 0.5;
+            color: var(--text-color, #c8e6c9);
         }
         .settings-group .options .opt-btn:hover {
             opacity: 0.8;
@@ -520,6 +573,7 @@
         .settings-panel .panel-actions .btn-secondary {
             background: transparent;
             border: 1px solid rgba(128,128,128,0.15);
+            color: var(--text-color, #c8e6c9);
         }
         .settings-panel .panel-actions .btn-secondary:hover {
             background: rgba(128,128,128,0.06);
@@ -531,7 +585,8 @@
             .card, .stats-card { flex: 1 1 auto; width: 100%; max-width: 580px; padding: 2rem 1.8rem; }
             .stats-card { max-width: 580px; padding: 1.6rem 1.5rem; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
-            .settings-toggle { bottom: 20px; right: 20px; width: 42px; height: 42px; font-size: 1.2rem; }
+            .bottom-controls { bottom: 20px; right: 20px; }
+            .ctrl-btn { width: 42px; height: 42px; font-size: 1rem; }
         }
         @media (max-width: 480px) {
             .card { padding: 1.8rem 1.2rem; }
@@ -549,7 +604,8 @@
             .stats-item { padding: 0.5rem 0.3rem; }
             .stats-section-title { font-size: 1.2rem; }
             .settings-panel { padding: 1.5rem; }
-            .settings-toggle { bottom: 15px; right: 15px; width: 38px; height: 38px; font-size: 1rem; }
+            .bottom-controls { bottom: 15px; right: 15px; gap: 0.4rem; }
+            .ctrl-btn { width: 38px; height: 38px; font-size: 0.9rem; }
         }
         @media (max-width: 359px) {
             .card h1 { font-size: 1.6rem; min-height: 2.6rem; }
@@ -669,8 +725,15 @@
 
     </div>
 
-    <!-- ===== 设置按钮 ===== -->
-    <button class="settings-toggle" id="settingsToggle" title="全局样式设置">⚙️</button>
+    <!-- ============================================================
+         🆕 底部控制栏（设置 + 隐藏按钮）
+         ============================================================ -->
+    <div class="bottom-controls" id="bottomControls">
+        <!-- 隐藏按钮 -->
+        <button class="ctrl-btn hide-btn" id="hideToggle" title="隐藏所有UI，只看背景">👁️</button>
+        <!-- 设置按钮 -->
+        <button class="ctrl-btn settings-btn" id="settingsToggle" title="全局样式设置">⚙️</button>
+    </div>
 
     <!-- ===== 设置面板 ===== -->
     <div class="settings-overlay" id="settingsOverlay">
@@ -747,14 +810,20 @@
             const match = bgUrl.match(/url\(["']?([^"')]+)["']?\)/);
             const imageUrl = match ? match[1] : 'background.webp';
 
-            function showCards() {
-                document.getElementById('mainCard').classList.add('show');
-                document.getElementById('statsCard').classList.add('show');
+            const mainCard = document.getElementById('mainCard');
+            const statsCard = document.getElementById('statsCard');
+            const bottomControls = document.getElementById('bottomControls');
+
+            function showAll() {
+                mainCard.classList.add('show');
+                statsCard.classList.add('show');
+                // 🆕 控制栏与卡片一起出现
+                bottomControls.classList.add('show');
             }
 
             function onBackgroundLoaded() {
                 loader.classList.add('hide');
-                showCards();
+                showAll();
             }
 
             bgImage.src = imageUrl;
@@ -1013,6 +1082,27 @@
             });
 
             applySettings(loadSettings());
+
+            // ============================================================
+            // 🆕 隐藏/显示所有 UI（只看背景）
+            // ============================================================
+            const hideToggle = document.getElementById('hideToggle');
+            let isHidden = false;
+
+            hideToggle.addEventListener('click', function() {
+                isHidden = !isHidden;
+                document.body.classList.toggle('ui-hidden', isHidden);
+                // 切换按钮文案/样式
+                if (isHidden) {
+                    this.textContent = '👁️‍🗨️';
+                    this.classList.add('active');
+                    this.title = '显示所有UI';
+                } else {
+                    this.textContent = '👁️';
+                    this.classList.remove('active');
+                    this.title = '隐藏所有UI，只看背景';
+                }
+            });
 
         })();
     </script>

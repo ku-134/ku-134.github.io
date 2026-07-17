@@ -59,7 +59,7 @@
             flex-wrap: wrap;
         }
 
-        /* ===== 主卡片 ===== */
+        /* ===== 卡片 ===== */
         .card {
             flex: 1 1 420px;
             max-width: 580px;
@@ -204,7 +204,7 @@
             .stats-item.highlight .number { color: #ff6b6b; }
         }
 
-        /* ===== 亮色模式 ===== */
+        /* ===== 亮色模式（系统） ===== */
         @media (prefers-color-scheme: light) {
             .card, .stats-card {
                 background: rgba(255, 255, 255, 0.68);
@@ -219,7 +219,7 @@
             .stats-item { background: rgba(0, 0, 0, 0.03); }
         }
 
-        /* ===== 深色模式 ===== */
+        /* ===== 深色模式（系统） ===== */
         @media (prefers-color-scheme: dark) {
             .card, .stats-card {
                 background: rgba(10, 20, 10, 0.72);
@@ -234,7 +234,74 @@
             .stats-item { background: rgba(255, 255, 255, 0.03); }
         }
 
-        /* ===== 主卡片内部 ===== */
+        /* ===== 🆕 手动主题覆盖（优先级高于系统） ===== */
+        body.theme-light .card,
+        body.theme-light .stats-card {
+            background: rgba(255, 255, 255, 0.68) !important;
+            color: #1a3b1a !important;
+            border-color: rgba(80, 160, 80, 0.2) !important;
+            box-shadow: 0 20px 60px rgba(0, 40, 0, 0.12) !important;
+        }
+        body.theme-light .card h1 { color: #1a4f1a !important; }
+        body.theme-light .card .sub { color: #2d5e2d !important; }
+        body.theme-light .card .divider { background: rgba(60, 140, 60, 0.2) !important; }
+        body.theme-light .card .footer { color: #3d6b3d !important; }
+        body.theme-light .stats-item { background: rgba(0, 0, 0, 0.03) !important; }
+        body.theme-light .nav-link { color: #1a3b1a !important; }
+        body.theme-light .nav-link.active { color: #1a4f1a !important; }
+        body.theme-light .btn-secondary { color: #1a3b1a !important; }
+        body.theme-light .btn-secondary:hover { background: #1a4f1a !important; color: #fff !important; }
+        body.theme-light .btn-primary {
+            background: #1b5e20 !important;
+            border-color: #1b5e20 !important;
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(27, 94, 32, 0.3) !important;
+        }
+        body.theme-light .btn-primary:hover {
+            background: #2e7d32 !important;
+            border-color: #2e7d32 !important;
+        }
+        body.theme-light .toast {
+            background: rgba(255,255,255,0.9) !important;
+            color: #1a3b1a !important;
+            border-color: rgba(0,0,0,0.05) !important;
+        }
+        body.theme-light .toast .highlight { color: #1b5e20 !important; }
+
+        body.theme-dark .card,
+        body.theme-dark .stats-card {
+            background: rgba(10, 20, 10, 0.72) !important;
+            color: #c8e6c9 !important;
+            border-color: rgba(60, 140, 60, 0.25) !important;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+        }
+        body.theme-dark .card h1 { color: #a5d6a7 !important; }
+        body.theme-dark .card .sub { color: #81c784 !important; }
+        body.theme-dark .card .divider { background: rgba(100, 200, 100, 0.15) !important; }
+        body.theme-dark .card .footer { color: #6f9e76 !important; }
+        body.theme-dark .stats-item { background: rgba(255, 255, 255, 0.03) !important; }
+        body.theme-dark .nav-link { color: #c8e6c9 !important; }
+        body.theme-dark .nav-link.active { color: #a5d6a7 !important; }
+        body.theme-dark .btn-secondary { color: #c8e6c9 !important; }
+        body.theme-dark .btn-secondary:hover { background: #66bb6a !important; color: #1a2e1a !important; }
+        body.theme-dark .btn-primary {
+            background: #66bb6a !important;
+            border-color: #66bb6a !important;
+            color: #1a2e1a !important;
+            box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3) !important;
+        }
+        body.theme-dark .btn-primary:hover {
+            background: #81c784 !important;
+            border-color: #81c784 !important;
+        }
+        body.theme-dark .toast {
+            background: rgba(0,0,0,0.8) !important;
+            color: #fff !important;
+            border-color: rgba(255,255,255,0.1) !important;
+        }
+        body.theme-dark .toast .highlight { color: #a5d6a7 !important; }
+
+        /* ===== 主卡片内部（通用） ===== */
         .card h1 {
             font-size: 2.8rem;
             font-weight: 700;
@@ -291,7 +358,6 @@
             padding: 0.3rem 0.2rem;
             border-bottom: 2px solid transparent;
             transition: all 0.25s ease;
-            color: inherit;
             opacity: 0.75;
         }
         .nav-link:hover {
@@ -327,23 +393,17 @@
         .btn-primary {
             font-size: 1.25rem;
             padding: 0.75rem 2.4rem;
-            background: #1b5e20;
-            border-color: #1b5e20;
-            color: #fff;
             box-shadow: 0 4px 12px rgba(27, 94, 32, 0.3);
         }
         .btn-primary:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 24px rgba(27, 94, 32, 0.4);
-            background: #2e7d32;
-            border-color: #2e7d32;
         }
         .btn-secondary {
             font-size: 0.95rem;
             padding: 0.5rem 1.6rem;
             background: transparent;
             border-color: currentColor;
-            color: inherit;
             opacity: 0.8;
         }
         .btn-secondary:hover {
@@ -351,25 +411,6 @@
             transform: translateY(-2px);
             background: currentColor;
             color: #fff;
-        }
-        @media (prefers-color-scheme: dark) {
-            .btn-primary {
-                background: #66bb6a;
-                border-color: #66bb6a;
-                color: #1a2e1a;
-                box-shadow: 0 4px 12px rgba(102, 187, 106, 0.3);
-            }
-            .btn-primary:hover {
-                background: #81c784;
-                border-color: #81c784;
-                color: #1a2e1a;
-                box-shadow: 0 8px 24px rgba(102, 187, 106, 0.4);
-            }
-            .btn-secondary:hover {
-                background: #66bb6a;
-                border-color: #66bb6a;
-                color: #1a2e1a;
-            }
         }
 
         /* ===== Toast ===== */
@@ -406,10 +447,6 @@
             .toast { font-size: 0.85rem; padding: 10px 18px; white-space: normal; max-width: 90%; }
             #toast { bottom: 20px; }
             #visitToast { bottom: 80px; }
-        }
-        @media (prefers-color-scheme: light) {
-            .toast { background: rgba(255,255,255,0.9); color: #1a3b1a; border-color: rgba(0,0,0,0.05); }
-            .toast .highlight { color: #1b5e20; }
         }
 
         /* ===== 入场延迟工具 ===== */
@@ -456,12 +493,178 @@
             50% { opacity: 0; }
         }
 
+        /* ===== 🆕 设置按钮 & 面板 ===== */
+        .settings-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1500;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(10,20,10,0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: inherit;
+            font-size: 1.4rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            opacity: 0.6;
+            font-family: inherit;
+            line-height: 1;
+            padding: 0;
+        }
+        .settings-toggle:hover {
+            opacity: 1;
+            transform: scale(1.08) rotate(60deg);
+            background: rgba(10,20,10,0.8);
+        }
+        @media (prefers-color-scheme: light) {
+            .settings-toggle {
+                background: rgba(255,255,255,0.6);
+                border-color: rgba(0,0,0,0.08);
+            }
+            .settings-toggle:hover {
+                background: rgba(255,255,255,0.8);
+            }
+        }
+
+        .settings-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1600;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            animation: overlayIn 0.25s ease-out;
+        }
+        .settings-overlay.active {
+            display: flex;
+        }
+        @keyframes overlayIn {
+            0% { opacity: 0; backdrop-filter: blur(0px); }
+            100% { opacity: 1; backdrop-filter: blur(6px); }
+        }
+
+        .settings-panel {
+            max-width: 420px;
+            width: 90%;
+            padding: 2rem 2rem 1.8rem;
+            border-radius: 1.8rem;
+            background: rgba(12, 22, 12, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-height: 90vh;
+            overflow-y: auto;
+            text-align: center;
+        }
+        @media (prefers-color-scheme: light) {
+            .settings-panel { background: rgba(245, 250, 245, 0.94); border-color: rgba(0,0,0,0.06); }
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.92) translateY(16px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .settings-panel .panel-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+        .settings-panel .panel-sub {
+            font-size: 0.85rem;
+            opacity: 0.4;
+            margin-bottom: 1.2rem;
+        }
+
+        .settings-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
+        }
+        .settings-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            opacity: 0.6;
+            display: block;
+            margin-bottom: 0.4rem;
+        }
+        .settings-group .options {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .settings-group .options .opt-btn {
+            padding: 0.3rem 1.2rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.15);
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0.5;
+        }
+        .settings-group .options .opt-btn:hover {
+            opacity: 0.8;
+            background: rgba(128,128,128,0.05);
+        }
+        .settings-group .options .opt-btn.active {
+            opacity: 1;
+            border-color: currentColor;
+            background: rgba(128,128,128,0.08);
+        }
+        .settings-panel .panel-actions {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: flex-end;
+            margin-top: 0.8rem;
+        }
+        .settings-panel .panel-actions .btn {
+            padding: 0.4rem 1.4rem;
+            border-radius: 2rem;
+            border: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+        .settings-panel .panel-actions .btn-primary {
+            background: #66bb6a;
+            color: #1a2e1a;
+        }
+        .settings-panel .panel-actions .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102,187,106,0.25);
+        }
+        .settings-panel .panel-actions .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(128,128,128,0.15);
+            color: inherit;
+        }
+        .settings-panel .panel-actions .btn-secondary:hover {
+            background: rgba(128,128,128,0.06);
+        }
+
         /* ===== 响应式 ===== */
         @media (max-width: 860px) {
             .main-container { flex-direction: column; align-items: center; gap: 1.2rem; }
             .card, .stats-card { flex: 1 1 auto; width: 100%; max-width: 580px; padding: 2rem 1.8rem; }
             .stats-card { max-width: 580px; padding: 1.6rem 1.5rem; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
+            .settings-toggle { bottom: 20px; right: 20px; width: 42px; height: 42px; font-size: 1.2rem; }
         }
         @media (max-width: 480px) {
             .card { padding: 1.8rem 1.2rem; }
@@ -478,6 +681,8 @@
             .stats-grid { gap: 0.5rem; }
             .stats-item { padding: 0.5rem 0.3rem; }
             .stats-section-title { font-size: 1.2rem; }
+            .settings-panel { padding: 1.5rem; }
+            .settings-toggle { bottom: 15px; right: 15px; width: 38px; height: 38px; font-size: 1rem; }
         }
         @media (max-width: 359px) {
             .card h1 { font-size: 1.6rem; min-height: 2.6rem; }
@@ -599,6 +804,38 @@
 
         </div>
 
+    </div>
+
+    <!-- ===== 🆕 设置按钮 ===== -->
+    <button class="settings-toggle" id="settingsToggle" title="全局样式设置">⚙️</button>
+
+    <!-- ===== 🆕 设置面板 ===== -->
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-panel">
+            <div class="panel-title">⚙️ 样式设置</div>
+            <div class="panel-sub">自定义你的浏览体验</div>
+
+            <div class="settings-group">
+                <label>🎨 主题模式</label>
+                <div class="options" id="themeOptions">
+                    <button class="opt-btn" data-theme="default">默认</button>
+                    <button class="opt-btn" data-theme="light">亮色</button>
+                    <button class="opt-btn" data-theme="dark">暗色</button>
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <label>🖼️ 背景图片</label>
+                <div class="options" id="bgOptions">
+                    <button class="opt-btn" data-bg="default">默认</button>
+                    <button class="opt-btn" data-bg="food">美食</button>
+                </div>
+            </div>
+
+            <div class="panel-actions">
+                <button class="btn btn-secondary" id="settingsClose">关闭</button>
+            </div>
+        </div>
     </div>
 
     <!-- ===== 不蒜子统计脚本 ===== -->
@@ -837,6 +1074,150 @@
                     setTimeout(updateStatsWithDelta, 300);
                 }
             });
+
+            // ============================================================
+            // 🆕 全局样式设置
+            // ============================================================
+
+            // DOM 引用
+            const settingsToggle = document.getElementById('settingsToggle');
+            const settingsOverlay = document.getElementById('settingsOverlay');
+            const settingsClose = document.getElementById('settingsClose');
+            const themeOptions = document.getElementById('themeOptions');
+            const bgOptions = document.getElementById('bgOptions');
+
+            // 读取保存的设置
+            function loadSettings() {
+                try {
+                    const saved = localStorage.getItem('siteSettings');
+                    if (saved) {
+                        return JSON.parse(saved);
+                    }
+                } catch (e) { /* 忽略 */ }
+                return { theme: 'default', bg: 'default' };
+            }
+
+            function saveSettings(settings) {
+                try {
+                    localStorage.setItem('siteSettings', JSON.stringify(settings));
+                } catch (e) { /* 忽略 */ }
+            }
+
+            // 应用设置到页面
+            function applySettings(settings) {
+                // 主题
+                const theme = settings.theme || 'default';
+                document.body.classList.remove('theme-light', 'theme-dark');
+                if (theme === 'light') {
+                    document.body.classList.add('theme-light');
+                } else if (theme === 'dark') {
+                    document.body.classList.add('theme-dark');
+                }
+                // 主题按钮高亮
+                document.querySelectorAll('#themeOptions .opt-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.theme === theme);
+                });
+
+                // 背景
+                const bg = settings.bg || 'default';
+                if (bg === 'food') {
+                    document.body.style.backgroundImage = 'url(background1.webp)';
+                } else {
+                    document.body.style.backgroundImage = 'url(background.webp)';
+                }
+                // 背景按钮高亮
+                document.querySelectorAll('#bgOptions .opt-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.bg === bg);
+                });
+            }
+
+            // 打开设置面板
+            function openSettings() {
+                const settings = loadSettings();
+                applySettings(settings); // 确保与当前一致
+                settingsOverlay.classList.add('active');
+                document.body.classList.add('modal-open');
+            }
+
+            function closeSettings() {
+                settingsOverlay.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            }
+
+            // 点击设置按钮
+            settingsToggle.addEventListener('click', openSettings);
+
+            // 关闭按钮
+            settingsClose.addEventListener('click', closeSettings);
+
+            // 点击遮罩关闭
+            settingsOverlay.addEventListener('click', function(e) {
+                if (e.target === settingsOverlay) closeSettings();
+            });
+
+            // ESC 关闭
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && settingsOverlay.classList.contains('active')) {
+                    closeSettings();
+                }
+            });
+
+            // 主题选项点击
+            themeOptions.addEventListener('click', function(e) {
+                const btn = e.target.closest('.opt-btn');
+                if (!btn) return;
+                const theme = btn.dataset.theme;
+                const settings = loadSettings();
+                settings.theme = theme;
+                saveSettings(settings);
+                applySettings(settings);
+                // 显示一个小反馈
+                const msg = theme === 'default' ? '默认模式' : (theme === 'light' ? '亮色模式' : '暗色模式');
+                showToast('🎨 已切换至：' + msg);
+            });
+
+            // 背景选项点击
+            bgOptions.addEventListener('click', function(e) {
+                const btn = e.target.closest('.opt-btn');
+                if (!btn) return;
+                const bg = btn.dataset.bg;
+                const settings = loadSettings();
+                settings.bg = bg;
+                saveSettings(settings);
+                applySettings(settings);
+                const msg = bg === 'default' ? '默认背景' : '美食背景';
+                showToast('🖼️ 已切换至：' + msg);
+            });
+
+            // Toast 辅助
+            function showToast(msg) {
+                const existing = document.querySelector('.settings-toast');
+                if (existing) existing.remove();
+                const toast = document.createElement('div');
+                toast.className = 'toast settings-toast';
+                toast.textContent = msg;
+                toast.style.bottom = '80px';
+                toast.style.zIndex = '1700';
+                document.body.appendChild(toast);
+                // 显示
+                setTimeout(() => toast.classList.add('show'), 50);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 500);
+                }, 2000);
+            }
+
+            // 页面加载时应用已保存的设置
+            const initialSettings = loadSettings();
+            applySettings(initialSettings);
+
+            // 确保背景图片预加载（setting 可能改为 food，背景图需要预加载）
+            function preloadBg(bgUrl) {
+                const img = new Image();
+                img.src = bgUrl;
+            }
+            preloadBg('background.webp');
+            preloadBg('background1.webp');
 
         })();
     </script>

@@ -41,13 +41,18 @@
     var recCategory = document.getElementById('recCategory');
     var recNick = document.getElementById('recNick');
 
+    // ---------- 🆕 免责声明弹窗 DOM ----------
+    var disclaimerOverlay = document.getElementById('disclaimerOverlay');
+    var disclaimerConfirm = document.getElementById('disclaimerConfirm');
+    var disclaimerCountdown = document.getElementById('disclaimerCountdown');
+
     // ---------- 核心数据 ----------
     var allCategories = [];
     var currentView = 'all';
     var searchQuery = '';
     var favorites = [];
     var pendingLink = null;
-    var pendingName = null;    // 修复：保存当前点击的资源名
+    var pendingName = null;
     var countdownTimer = null;
     var countdownValue = 3;
     var isLoading = false;
@@ -117,7 +122,6 @@
         }
         saveFavorites();
         renderCurrentView();
-        // 刷新侧边栏收藏数
         renderSidebar(allCategories);
         try {
             window.dispatchEvent(new Event('storage'));
@@ -536,7 +540,7 @@
     function openModal(name, desc, link, type) {
         if (!link) return;
         pendingLink = link;
-        pendingName = name;   // 修复：保存资源名
+        pendingName = name;
         var typeLabel = getTypeLabel(type);
         var icon = getTypeIcon(type);
 
@@ -584,7 +588,6 @@
 
     function confirmJump() {
         if (!pendingLink || btnConfirm.disabled) return;
-        // 修复：使用保存的资源名，不依赖 DOM
         if (pendingName) {
             recordClick(pendingName);
         }
@@ -647,6 +650,48 @@
     }
 
     // ============================================================
+    // 🆕 免责声明弹窗（自动弹出）
+    // ============================================================
+    var disclaimerTimer = null;
+    var disclaimerCountdownValue = 5;
+
+    function openDisclaimer() {
+        disclaimerOverlay.classList.add('active');
+        document.body.classList.add('modal-open');
+        // 按钮禁用，倒计时开始
+        disclaimerConfirm.classList.remove('ready');
+        disclaimerConfirm.disabled = true;
+        disclaimerCountdownValue = 5;
+        disclaimerCountdown.textContent = '5';
+
+        if (disclaimerTimer) clearInterval(disclaimerTimer);
+        disclaimerTimer = setInterval(function() {
+            disclaimerCountdownValue -= 1;
+            disclaimerCountdown.textContent = disclaimerCountdownValue;
+            if (disclaimerCountdownValue <= 0) {
+                clearInterval(disclaimerTimer);
+                disclaimerTimer = null;
+                disclaimerConfirm.classList.add('ready');
+                disclaimerConfirm.disabled = false;
+                disclaimerCountdown.textContent = '✓';
+            }
+        }, 1000);
+    }
+
+    function closeDisclaimer() {
+        disclaimerOverlay.classList.remove('active');
+        document.body.classList.remove('modal-open');
+        if (disclaimerTimer) {
+            clearInterval(disclaimerTimer);
+            disclaimerTimer = null;
+        }
+        // 重置按钮状态以备下次
+        disclaimerConfirm.classList.remove('ready');
+        disclaimerConfirm.disabled = true;
+        disclaimerCountdown.textContent = '5';
+    }
+
+    // ============================================================
     // 📂 拉取数据
     // ============================================================
     function fetchAndRender() {
@@ -655,7 +700,6 @@
         fetchBtn.classList.add('loading');
         fetchBtn.innerHTML = '<span class="spinner">⟳</span> 加载中...';
 
-        // 显示加载状态
         categoryListEl.innerHTML = '<div class="rp-empty" style="padding:0.5rem 0;font-size:0.85rem;">⏳ 加载中...</div>';
 
         var dataLoaded = false;
@@ -761,7 +805,6 @@
             searchInput.value = '';
             searchQuery = '';
             this.style.display = 'none';
-            // 触发 input 事件同步状态
             searchInput.dispatchEvent(new Event('input'));
         });
     }
@@ -821,6 +864,8 @@
             if (e.key === 'Escape' && recommendOverlay.classList.contains('active')) {
                 closeRecommend();
             }
+            // 免责声明弹窗按 ESC 不关闭（需求要求只能点按钮）
+            // 所以不处理 ESC 关闭
         });
 
         feedbackTrigger.addEventListener('click', openFeedback);
@@ -835,6 +880,19 @@
             if (e.target === recommendOverlay) closeRecommend();
         });
         recommendSubmit.addEventListener('click', handleRecommendSubmit);
+
+        // ---------- 免责声明按钮 ----------
+        disclaimerConfirm.addEventListener('click', function() {
+            if (!this.disabled) {
+                closeDisclaimer();
+            }
+        });
+        // 点击遮罩不关闭（防止误触）
+        disclaimerOverlay.addEventListener('click', function(e) {
+            if (e.target === disclaimerOverlay) {
+                // 不关闭，仅做忽略
+            }
+        });
     }
 
     // ---------- 初始化 ----------
@@ -843,6 +901,11 @@
         bindEvents();
         bindSearchEvents();
         bindFavToggle();
+
+        // 🆕 延迟显示免责声明弹窗，确保其他元素加载完成
+        setTimeout(function() {
+            openDisclaimer();
+        }, 600);
     }
 
     if (document.readyState === 'loading') {

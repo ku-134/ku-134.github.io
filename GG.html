@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -505,5 +505,33 @@
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <script src="../script.js"></script>
     <script src="GG-magic.js"></script>
+
+<!-- ===== 全局样式同步（读取 localStorage 设置） ===== -->
+<script>
+(function() {
+    var htmlRoot = document.getElementById('htmlRoot') || document.documentElement;
+    try {
+        var saved = localStorage.getItem('siteSettings');
+        if (saved) {
+            var settings = JSON.parse(saved);
+
+            // 主题
+            htmlRoot.removeAttribute('data-theme');
+            if (settings.theme && settings.theme !== 'default') {
+                htmlRoot.setAttribute('data-theme', settings.theme);
+            }
+
+            // 背景
+            htmlRoot.removeAttribute('data-bg');
+            if (settings.bg && settings.bg !== 'default') {
+                htmlRoot.setAttribute('data-bg', settings.bg);
+            }
+        }
+    } catch(e) {
+        // 静默失败，不影响页面
+    }
+})();
+</script>
+
 </body>
 </html>

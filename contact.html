@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" id="htmlRoot">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>联系方式 · Kukuz</title>
     <link rel="preload" as="image" href="background.webp">
+    <link rel="preload" as="image" href="background1.webp">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -76,8 +77,26 @@
         </div>
     </div>
 
-    <!-- ===== 不蒜子仅用于数据采集（不展示） ===== -->
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <script src="script.js"></script>
+    <script>
+        (function() {
+            const htmlRoot = document.getElementById('htmlRoot') || document.documentElement;
+            try {
+                const saved = localStorage.getItem('siteSettings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    htmlRoot.removeAttribute('data-theme');
+                    if (settings.theme && settings.theme !== 'default') {
+                        htmlRoot.setAttribute('data-theme', settings.theme);
+                    }
+                    htmlRoot.removeAttribute('data-bg');
+                    if (settings.bg && settings.bg !== 'default') {
+                        htmlRoot.setAttribute('data-bg', settings.bg);
+                    }
+                }
+            } catch(e) {}
+        })();
+    </script>
 </body>
 </html>

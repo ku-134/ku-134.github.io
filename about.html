@@ -48,8 +48,29 @@
         </div>
     </div>
 
-    <!-- ===== 不蒜子仅用于数据采集（不展示） ===== -->
+        <!-- ===== 不蒜子仅用于数据采集（不展示） ===== -->
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <script src="script.js"></script>
+    <!-- ===== 🆕 同步全局样式设置 ===== -->
+    <script>
+    (function() {
+        try {
+            var saved = localStorage.getItem('siteSettings');
+            if (saved) {
+                var settings = JSON.parse(saved);
+                document.body.classList.remove('theme-light', 'theme-dark');
+                if (settings.theme === 'light') {
+                    document.body.classList.add('theme-light');
+                } else if (settings.theme === 'dark') {
+                    document.body.classList.add('theme-dark');
+                }
+                if (settings.bg === 'food') {
+                    document.body.style.backgroundImage = 'url(background1.webp)';
+                } else {
+                    document.body.style.backgroundImage = 'url(background.webp)';
+                }
+            }
+        } catch(e) { /* 静默降级 */ }
+    })();
+    </script>
 </body>
-</html>

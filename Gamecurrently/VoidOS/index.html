@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>虚空OS - 手机模拟器</title>
+    <style>
+        /* 全局重置 & 字体 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a1a;
+            touch-action: none;
+        }
+
+        /* 手机外壳 */
+        #phone {
+            width: 380px;
+            height: 780px;
+            background: #0a0a0a;
+            border-radius: 44px;
+            padding: 12px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 0 0 2px #2a2a2a;
+            position: relative;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #0d0d0d;
+            border-radius: 36px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* ======== 状态栏 ======== */
+        #status-bar {
+            height: 48px;
+            min-height: 48px;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            background: transparent;
+            position: relative;
+            z-index: 10;
+            letter-spacing: 0.3px;
+        }
+
+        #status-bar .time {
+            font-weight: 700;
+        }
+        #status-bar .icons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        #status-bar .icons svg {
+            fill: #fff;
+            width: 18px;
+            height: 18px;
+        }
+        .signal-bars {
+            display: flex;
+            gap: 1px;
+            align-items: flex-end;
+            height: 14px;
+        }
+        .signal-bars span {
+            display: block;
+            width: 3px;
+            background: #fff;
+            border-radius: 1px;
+        }
+        .signal-bars span:nth-child(1) { height: 4px; }
+        .signal-bars span:nth-child(2) { height: 7px; }
+        .signal-bars span:nth-child(3) { height: 10px; }
+        .signal-bars span:nth-child(4) { height: 13px; }
+
+        /* ======== 桌面区域 ======== */
+        #desktop {
+            flex: 1;
+            padding: 8px 4px 12px 4px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 8px 6px;
+            position: relative;
+            background: #0d0d0d;
+            transition: background 0.2s;
+        }
+
+        /* 每个网格单元 */
+        .cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            background: transparent;
+            transition: background 0.15s;
+            position: relative;
+            cursor: default;
+            min-height: 0;
+        }
+
+        /* 网格占位高亮（拖拽时） */
+        .cell.highlight {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1.5px dashed rgba(255, 255, 255, 0.25);
+            border-radius: 18px;
+        }
+
+        /* App 图标容器 */
+        .app-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 4px 0;
+            border-radius: 16px;
+            transition: transform 0.1s;
+            cursor: pointer;
+            position: relative;
+        }
+        .app-icon .icon-wrapper {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            background: linear-gradient(145deg, #1e7cf0, #0f5bb5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .app-icon .icon-wrapper svg {
+            width: 40px;
+            height: 40px;
+            fill: #fff;
+        }
+        .app-icon .app-label {
+            color: #eee;
+            font-size: 12px;
+            margin-top: 6px;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 72px;
+            font-weight: 400;
+        }
+
+        /* 编辑模式：图标抖动 */
+        #desktop.editing .app-icon .icon-wrapper {
+            animation: shake 0.25s infinite alternate ease-in-out;
+        }
+        #desktop.editing .app-icon .icon-wrapper {
+            animation-delay: calc(var(--i, 0) * 0.03s);
+        }
+
+        @keyframes shake {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-2deg) scale(0.97); }
+            75% { transform: rotate(2deg) scale(1.03); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+
+        /* 拖动时的克隆元素 */
+        #drag-ghost {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            width: 80px;
+            height: 90px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            opacity: 0.92;
+            transform: scale(1.08) translate(-50%, -50%);
+            transition: none;
+        }
+        #drag-ghost .icon-wrapper {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            background: linear-gradient(145deg, #1e7cf0, #0f5bb5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+        }
+        #drag-ghost .icon-wrapper svg {
+            width: 44px;
+            height: 44px;
+            fill: #fff;
+        }
+        #drag-ghost .app-label {
+            color: #fff;
+            font-size: 12px;
+            margin-top: 4px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+        }
+
+        /* 状态栏附加的“完成”按钮（仅编辑模式显示） */
+        #edit-done-btn {
+            display: none;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(4px);
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            cursor: pointer;
+            transition: background 0.2s;
+            position: relative;
+            z-index: 20;
+        }
+        #edit-done-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        #desktop.editing ~ #edit-done-btn {
+            display: block;
+        }
+
+        /* 适配小屏 */
+        @media (max-width: 420px) {
+            #phone {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+                padding: 0;
+                box-shadow: none;
+            }
+            .phone-screen {
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="phone">
+        <div class="phone-screen">
+            <!-- 状态栏 -->
+            <div id="status-bar">
+                <span class="time" id="status-time">12:00</span>
+                <div class="icons">
+                    <div class="signal-bars">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <!-- 电池 SVG -->
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="6" width="18" height="12" rx="2" fill="rgba(255,255,255,0.2)" stroke="currentColor" />
+                        <path d="M22 10v4" stroke="currentColor" />
+                        <rect x="4" y="8" width="12" height="8" rx="1" fill="#4cd964" />
+                    </svg>
+                    <!-- 编辑模式下的完成按钮（放在状态栏右侧） -->
+                    <button id="edit-done-btn">完成</button>
+                </div>
+            </div>
+
+            <!-- 桌面网格 -->
+            <div id="desktop"></div>
+
+            <!-- 拖拽幽灵元素 -->
+            <div id="drag-ghost">
+                <div class="icon-wrapper">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                </div>
+                <span class="app-label">设置</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ---------- 配置 ----------
+            const COLS = 6;
+            const ROWS = 4;
+            const LONG_PRESS_DELAY = 600; // ms
+            const MOVE_THRESHOLD = 8; // px
+
+            // ---------- 数据 ----------
+            // 存储每个格子的 App，键 "row_col" => appId
+            let gridItems = {};
+            // 初始只有 "设置" 在 (0,0)
+            gridItems['0_0'] = 'settings';
+
+            // App 定义
+            const APPS = {
+                settings: {
+                    id: 'settings',
+                    label: '设置',
+                    icon: `<svg viewBox="0 0 24 24"><path d="M19.14 12.94a7.07 7.07 0 0 0 0-1.88l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.04 7.04 0 0 0-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84a.49.49 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58a7.07 7.07 0 0 0 0 1.88l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.49.37 1.03.7 1.62.94l.36 2.54c.05.24.26.41.48.41h3.84c.22 0 .43-.17.48-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 15.6 12 3.6 3.6 0 0 1 12 15.6z"/></svg>`
+                }
+            };
+
+            // ---------- DOM 引用 ----------
+            const desktop = document.getElementById('desktop');
+            const statusTime = document.getElementById('status-time');
+            const dragGhost = document.getElementById('drag-ghost');
+            const editDoneBtn = document.getElementById('edit-done-btn');
+
+            // ---------- 状态 ----------
+            let isEditing = false;          // 编辑模式
+            let isDragging = false;         // 是否正在拖拽
+            let dragAppId = null;           // 当前拖拽的 app id
+            let dragStartRow = -1, dragStartCol = -1; // 起始格子
+            let ghostVisible = false;
+
+            // 长按定时器 & 移动检测
+            let longPressTimer = null;
+            let pressStartX = 0, pressStartY = 0;
+            let pressTarget = null;         // 按下时的目标元素
+            let pressCell = null;           // 按下时所在的 cell 元素
+            let isLongPressTriggered = false;
+
+            // 当前鼠标/触摸位置（用于拖拽）
+            let currentX = 0, currentY = 0;
+
+            // ---------- 工具函数 ----------
+            function getCellKey(row, col) { return row + '_' + col; }
+
+            function getAppIdAt(row, col) {
+                return gridItems[getCellKey(row, col)] || null;
+            }
+
+            function findAppGrid(appId) {
+                for (let key in gridItems) {
+                    if (gridItems[key] === appId) {
+                        const [row, col] = key.split('_').map(Number);
+                        return { row, col };
+                    }
+                }
+                return null;
+            }
+
+            // ---------- 渲染桌面 ----------
+            function renderGrid() {
+                desktop.innerHTML = '';
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+                        const appId = getAppIdAt(r, c);
+                        if (appId && APPS[appId]) {
+                            const app = APPS[appId];
+                            const iconDiv = document.createElement('div');
+                            iconDiv.className = 'app-icon';
+                            iconDiv.dataset.appId = appId;
+                            // 随机延迟索引用于抖动
+                            const idx = r * COLS + c;
+                            iconDiv.style.setProperty('--i', idx % 10);
+                            iconDiv.innerHTML = `
+                                <div class="icon-wrapper">${app.icon}</div>
+                                <span class="app-label">${app.label}</span>
+                            `;
+                            cell.appendChild(iconDiv);
+                        }
+                        desktop.appendChild(cell);
+                    }
+                }
+
+                // 如果处于编辑模式，重新添加抖动类
+                if (isEditing) {
+                    desktop.classList.add('editing');
+                    editDoneBtn.style.display = 'block';
+                } else {
+                    desktop.classList.remove('editing');
+                    editDoneBtn.style.display = 'none';
+                }
+            }
+
+            // ---------- 更新状态栏时间 ----------
+            function updateClock() {
+                const now = new Date();
+                const h = String(now.getHours()).padStart(2, '0');
+                const m = String(now.getMinutes()).padStart(2, '0');
+                statusTime.textContent = h + ':' + m;
+            }
+            updateClock();
+            setInterval(updateClock, 10000);
+
+            // ---------- 进入/退出编辑模式 ----------
+            function enterEditMode(triggerAppId = null) {
+                if (isEditing) return;
+                isEditing = true;
+                desktop.classList.add('editing');
+                editDoneBtn.style.display = 'block';
+                // 如果触发时指定了 app，则立即开始拖拽该 app
+                if (triggerAppId && APPS[triggerAppId]) {
+                    startDragging(triggerAppId);
+                }
+            }
+
+            function exitEditMode() {
+                if (!isEditing) return;
+                isEditing = false;
+                desktop.classList.remove('editing');
+                editDoneBtn.style.display = 'none';
+                // 如果正在拖拽，取消
+                if (isDragging) {
+                    stopDragging(true); // 取消放置
+                }
+                // 清除所有高亮
+                document.querySelectorAll('.cell.highlight').forEach(el => el.classList.remove('highlight'));
+            }
+
+            // ---------- 拖拽逻辑 ----------
+            function startDragging(appId) {
+                if (isDragging) return;
+                const pos = findAppGrid(appId);
+                if (!pos) return;
+                dragAppId = appId;
+                dragStartRow = pos.row;
+                dragStartCol = pos.col;
+                isDragging = true;
+
+                // 从网格中移除该 app（隐藏原图标）
+                const cell = getCellElement(dragStartRow, dragStartCol);
+                if (cell) {
+                    const icon = cell.querySelector('.app-icon');
+                    if (icon) icon.style.display = 'none';
+                }
+
+                // 设置幽灵元素
+                const app = APPS[appId];
+                dragGhost.querySelector('.icon-wrapper').innerHTML = app.icon;
+                dragGhost.querySelector('.app-label').textContent = app.label;
+                dragGhost.style.display = 'flex';
+                ghostVisible = true;
+
+                // 移动到当前鼠标位置
+                updateGhostPosition(currentX, currentY);
+
+                // 高亮起始格子（不显示高亮，因为移除了图标）
+                // 但我们可以高亮目标格子，初始高亮起始格？
+                // 清除所有高亮
+                document.querySelectorAll('.cell.highlight').forEach(el => el.classList.remove('highlight'));
+                // 高亮当前鼠标所在的格子（稍后在 move 中更新）
+            }
+
+            function stopDragging(cancel = false) {
+                if (!isDragging) return;
+                isDragging = false;
+                dragGhost.style.display = 'none';
+                ghostVisible = false;
+
+                if (!cancel) {
+                    // 放置：计算目标格子
+                    const target = getTargetGridFromPoint(currentX, currentY);
+                    if (target) {
+                        const { row, col } = target;
+                        // 如果目标格子与起始相同，或者目标格子有 app（冲突），则回退？
+                        // 但只有一个 app，冲突不会发生，但以防万一，如果目标有其他 app 则交换，但我们只有一个，所以直接放置
+                        const existing = getAppIdAt(row, col);
+                        if (existing && existing !== dragAppId) {
+                            // 交换（但只有一个，不可能）
+                            // 简单处理：将原 app 移到目标，目标 app 移到起始
+                            const startKey = getCellKey(dragStartRow, dragStartCol);
+                            const targetKey = getCellKey(row, col);
+                            const temp = gridItems[startKey];
+                            gridItems[startKey] = gridItems[targetKey];
+                            gridItems[targetKey] = temp;
+                        } else {
+                            // 目标格为空或自身
+                            // 从原位置移除
+                            const startKey = getCellKey(dragStartRow, dragStartCol);
+                            if (gridItems[startKey] === dragAppId) {
+                                delete gridItems[startKey];
+                            }
+                            // 放置到目标
+                            const targetKey = getCellKey(row, col);
+                            gridItems[targetKey] = dragAppId;
+                        }
+                    } else {
+                        // 没有目标（拖到外面），回退到起始
+                        const startKey = getCellKey(dragStartRow, dragStartCol);
+                        gridItems[startKey] = dragAppId;
+                    }
+                } else {
+                    // 取消：恢复显示
+                    const cell = getCellElement(dragStartRow, dragStartCol);
+                    if (cell) {
+                        const icon = cell.querySelector('.app-icon');
+                        if (icon) icon.style.display = 'flex';
+                    }
+                }
+
+                // 清除高亮
+                document.querySelectorAll('.cell.highlight').forEach(el => el.classList.remove('highlight'));
+
+                // 重新渲染网格（保留编辑模式）
+                renderGrid();
+                // 如果还在编辑模式，重新添加抖动
+                if (isEditing) {
+                    desktop.classList.add('editing');
+                    editDoneBtn.style.display = 'block';
+                }
+
+                dragAppId = null;
+                dragStartRow = dragStartCol = -1;
+                // 清除幽灵
+                dragGhost.style.display = 'none';
+                ghostVisible = false;
+            }
+
+            function getCellElement(row, col) {
+                return document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+            }
+
+            function updateGhostPosition(clientX, clientY) {
+                if (!ghostVisible) return;
+                dragGhost.style.left = clientX + 'px';
+                dragGhost.style.top = clientY + 'px';
+                // 更新高亮
+                const target = getTargetGridFromPoint(clientX, clientY);
+                document.querySelectorAll('.cell.highlight').forEach(el => el.classList.remove('highlight'));
+                if (target) {
+                    const cell = getCellElement(target.row, target.col);
+                    if (cell) cell.classList.add('highlight');
+                }
+            }
+
+            function getTargetGridFromPoint(clientX, clientY) {
+                const rect = desktop.getBoundingClientRect();
+                const x = clientX - rect.left;
+                const y = clientY - rect.top;
+                if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+                const cellWidth = rect.width / COLS;
+                const cellHeight = rect.height / ROWS;
+                const col = Math.floor(x / cellWidth);
+                const row = Math.floor(y / cellHeight);
+                if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return null;
+                return { row, col };
+            }
+
+            // ---------- 事件处理（同时支持鼠标和触摸） ----------
+            function getClientPos(e) {
+                if (e.touches) {
+                    return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
+                }
+                return { clientX: e.clientX, clientY: e.clientY };
+            }
+
+            function onPointerDown(e) {
+                const pos = getClientPos(e);
+                pressStartX = pos.clientX;
+                pressStartY = pos.clientY;
+                currentX = pos.clientX;
+                currentY = pos.clientY;
+
+                // 获取目标 cell
+                const target = e.target.closest ? e.target.closest('.cell') : null;
+                pressCell = target;
+                if (target) {
+                    // 检查该 cell 是否有 app
+                    const row = parseInt(target.dataset.row);
+                    const col = parseInt(target.dataset.col);
+                    const appId = getAppIdAt(row, col);
+                    pressTarget = appId ? { row, col, appId } : null;
+                } else {
+                    pressTarget = null;
+                }
+
+                isLongPressTriggered = false;
+
+                // 设置长按定时器
+                if (longPressTimer) clearTimeout(longPressTimer);
+                longPressTimer = setTimeout(() => {
+                    isLongPressTriggered = true;
+                    handleLongPress();
+                }, LONG_PRESS_DELAY);
+            }
+
+            function onPointerMove(e) {
+                const pos = getClientPos(e);
+                currentX = pos.clientX;
+                currentY = pos.clientY;
+
+                // 如果移动距离超过阈值，取消长按
+                if (!isLongPressTriggered && longPressTimer) {
+                    const dx = currentX - pressStartX;
+                    const dy = currentY - pressStartY;
+                    if (Math.sqrt(dx*dx + dy*dy) > MOVE_THRESHOLD) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+                }
+
+                // 如果正在拖拽，更新幽灵位置
+                if (isDragging && ghostVisible) {
+                    updateGhostPosition(currentX, currentY);
+                }
+            }
+
+            function onPointerUp(e) {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+
+                // 如果正在拖拽，执行放置
+                if (isDragging) {
+                    stopDragging(false); // 放置
+                    // 如果点击的是空白 cell 且编辑模式，退出编辑模式（但这里拖拽释放后不退出）
+                    // 用户可以通过点击空白退出
+                    return;
+                }
+
+                // 如果长按触发了，但未拖拽（长按空白进入编辑模式），则不做额外处理
+                if (isLongPressTriggered) {
+                    // 长按可能进入了编辑模式但无拖拽，此时点击空白退出编辑模式由下面的逻辑处理
+                    // 但这里我们不允许点击空白退出？我们放在点击空白退出
+                    // 继续往下
+                }
+
+                // 处理点击退出编辑模式：在编辑模式下，点击空白 cell（没有 app）退出
+                if (isEditing) {
+                    const target = e.target.closest ? e.target.closest('.cell') : null;
+                    if (target) {
+                        const row = parseInt(target.dataset.row);
+                        const col = parseInt(target.dataset.col);
+                        const appId = getAppIdAt(row, col);
+                        if (!appId) {
+                            // 点击空白 cell，退出编辑模式
+                            exitEditMode();
+                        }
+                    } else {
+                        // 点击状态栏或其他区域，不退出
+                    }
+                }
+            }
+
+            function handleLongPress() {
+                if (isEditing) {
+                    // 已经在编辑模式，如果长按在 app 上，则重新开始拖拽（允许重新拖动）
+                    if (pressTarget) {
+                        startDragging(pressTarget.appId);
+                    }
+                    return;
+                }
+
+                // 不在编辑模式
+                if (pressTarget) {
+                    // 长按在 app 上 -> 进入编辑模式 + 拖拽该 app
+                    enterEditMode(pressTarget.appId);
+                } else {
+                    // 长按在空白处 -> 进入编辑模式（不拖拽）
+                    enterEditMode(null);
+                }
+            }
+
+            // ---------- 注册事件（鼠标 + 触摸） ----------
+            function attachEvents() {
+                const screen = document.querySelector('.phone-screen');
+                // 鼠标
+                screen.addEventListener('mousedown', onPointerDown);
+                window.addEventListener('mousemove', onPointerMove);
+                window.addEventListener('mouseup', onPointerUp);
+                // 触摸
+                screen.addEventListener('touchstart', onPointerDown, { passive: true });
+                window.addEventListener('touchmove', onPointerMove, { passive: true });
+                window.addEventListener('touchend', onPointerUp, { passive: true });
+                // 防止 context menu
+                screen.addEventListener('contextmenu', e => e.preventDefault());
+            }
+
+            // ---------- 完成按钮 ----------
+            editDoneBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                exitEditMode();
+            });
+
+            // ---------- 初始化 ----------
+            renderGrid();
+            attachEvents();
+
+            // 额外：点击桌面空白退出编辑模式（通过 cell 的点击处理已经在 up 中处理）
+
+            // 确保拖拽时不会触发页面滚动等
+            window.addEventListener('touchmove', function(e) {
+                if (isDragging) e.preventDefault();
+            }, { passive: false });
+
+            console.log('虚空OS 已启动！');
+        })();
+    </script>
+</body>
+  </html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>红包套路系列</title>
+<style>
+  :root {
+    --red: #c0392b;
+    --dark-red: #8b1a1a;
+    --gold: #f0c060;
+    --gold-light: #fde8b0;
+    --bg: #2c0a0a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ===== 背景装饰 ===== */
+  .bg-layer {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+  }
+  .bg-layer .circle {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(240,192,96,0.12) 0%, transparent 70%);
+  }
+  .bg-layer .c1 { width: 60vmin; height: 60vmin; top: -20%; left: -10%; }
+  .bg-layer .c2 { width: 50vmin; height: 50vmin; bottom: -15%; right: -10%; }
+  .bg-layer .c3 { width: 30vmin; height: 30vmin; top: 50%; left: 60%; }
+
+  /* 飘落金币 */
+  .coins {
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 0;
+    overflow: hidden;
+  }
+  .coin {
+    position: absolute;
+    font-size: 24px;
+    animation: fall linear infinite;
+    opacity: 0.3;
+  }
+  @keyframes fall {
+    0%   { transform: translateY(-10vh) rotate(0deg); opacity: 0.35; }
+    100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ===== 主容器 ===== */
+  .main {
+    position: relative; z-index: 1;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    /* 横屏适配 */
+  }
+
+  .title-area {
+    text-align: center;
+    margin-bottom: 6vh;
+  }
+  .title-area .icon {
+    font-size: clamp(40px, 8vmin, 64px);
+    display: block;
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-12px); }
+  }
+  .title-area h1 {
+    font-size: clamp(20px, 4vmin, 30px);
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin-top: 6px;
+    text-shadow: 0 0 20px rgba(240,192,96,0.5);
+  }
+  .title-area .sub {
+    font-size: clamp(12px, 2.2vmin, 15px);
+    color: #c9956b;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== 关卡路线 ===== */
+  .levels {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    max-width: 380px;
+  }
+
+  .level-node {
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 关卡之间的连线 */
+  .connector {
+    width: 3px;
+    height: clamp(24px, 5vmin, 40px);
+    background: linear-gradient(180deg, var(--gold) 0%, #8b6914 100%);
+    border-radius: 2px;
+    position: relative;
+  }
+  .connector.locked {
+    background: linear-gradient(180deg, #555 0%, #333 100%);
+  }
+
+  /* 关卡按钮 */
+  .level-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: clamp(14px, 2.5vmin, 18px) clamp(16px, 3vmin, 24px);
+    border-radius: 16px;
+    border: 2px solid var(--gold);
+    background: linear-gradient(135deg, #5c1313 0%, #3d0a0a 100%);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    color: inherit;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .level-btn:active {
+    transform: scale(0.97);
+  }
+  .level-btn.unlocked {
+    box-shadow: 0 0 24px rgba(240,192,96,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .level-btn.locked {
+    border-color: #555;
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* 关卡编号圆圈 */
+  .level-num {
+    flex-shrink: 0;
+    width: clamp(40px, 8vmin, 50px);
+    height: clamp(40px, 8vmin, 50px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(16px, 3vmin, 22px);
+    font-weight: bold;
+    background: var(--gold);
+    color: var(--dark-red);
+    box-shadow: 0 0 12px rgba(240,192,96,0.4);
+  }
+  .level-btn.locked .level-num {
+    background: #555;
+    color: #999;
+    box-shadow: none;
+  }
+
+  /* 关卡文字 */
+  .level-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .level-info .lv-title {
+    font-size: clamp(14px, 2.6vmin, 18px);
+    color: var(--gold-light);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .level-btn.locked .lv-title {
+    color: #888;
+  }
+  .level-info .lv-desc {
+    font-size: clamp(11px, 1.8vmin, 13px);
+    color: #b87a5a;
+    margin-top: 2px;
+  }
+  .level-btn.locked .lv-desc {
+    color: #666;
+  }
+
+  /* 箭头 */
+  .level-arrow {
+    flex-shrink: 0;
+    font-size: clamp(18px, 3vmin, 24px);
+    color: var(--gold);
+  }
+  .level-btn.locked .level-arrow {
+    color: #555;
+  }
+
+  /* 红包角标 */
+  .red-envelope-badge {
+    position: absolute;
+    top: -10px;
+    right: -6px;
+    font-size: clamp(22px, 4vmin, 30px);
+    animation: pulse 1.5s ease-in-out infinite;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.15); }
+  }
+
+  /* ===== 免责弹窗 ===== */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.78);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .overlay.hidden {
+    display: none;
+  }
+
+  .modal {
+    background: linear-gradient(160deg, #3d1111 0%, #1f0505 100%);
+    border: 2px solid var(--gold);
+    border-radius: 20px;
+    padding: clamp(20px, 4vmin, 28px);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(240,192,96,0.2), 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .modal .modal-icon {
+    font-size: clamp(36px, 7vmin, 50px);
+    display: block;
+    margin-bottom: 8px;
+  }
+  .modal h2 {
+    color: var(--gold);
+    font-size: clamp(16px, 3vmin, 20px);
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+  }
+  .modal .disclaimer-text {
+    color: #d4b896;
+    font-size: clamp(12px, 2vmin, 14px);
+    line-height: 1.8;
+    text-align: left;
+    padding: 12px 8px;
+    max-height: 30vh;
+    overflow-y: auto;
+  }
+  .modal .disclaimer-text p {
+    margin-bottom: 8px;
+  }
+  .modal .countdown {
+    display: inline-block;
+    color: var(--gold);
+    font-size: clamp(24px, 5vmin, 32px);
+    font-weight: bold;
+    margin: 12px 0;
+    width: 50px; height: 50px;
+    line-height: 50px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+  }
+  .modal .btn {
+    display: block;
+    width: 100%;
+    padding: clamp(10px, 2vmin, 14px);
+    border-radius: 12px;
+    border: none;
+    font-size: clamp(14px, 2.5vmin, 17px);
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #555;
+    color: #999;
+  }
+  .modal .btn.active {
+    background: linear-gradient(135deg, #d4380d, #b71c1c);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(200,40,20,0.4);
+  }
+  .modal .btn.active:active {
+    transform: scale(0.96);
+  }
+
+  /* ===== 横屏适配 ===== */
+  @media (orientation: landscape) {
+    .main {
+      flex-direction: row;
+      gap: 6vw;
+    }
+    .title-area {
+      margin-bottom: 0;
+      flex-shrink: 0;
+    }
+    .levels {
+      max-width: 340px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- 背景装饰 -->
+<div class="bg-layer">
+  <div class="circle c1"></div>
+  <div class="circle c2"></div>
+  <div class="circle c3"></div>
+</div>
+
+<!-- 飘落金币 -->
+<div class="coins" id="coins"></div>
+
+<!-- 主内容 -->
+<div class="main">
+  <div class="title-area">
+    <span class="icon">🧧</span>
+    <h1>红包套路系列</h1>
+    <p class="sub">揭秘闯关 · 娱乐至上</p>
+  </div>
+
+  <div class="levels">
+    <!-- 第1关 -->
+    <div class="level-node">
+      <a class="level-btn unlocked" href="PXX.html">
+        <span class="level-num">1</span>
+        <span class="level-info">
+          <span class="lv-title">拼夕夕百元红包</span>
+          <span class="lv-desc">差0.01元，永远在路上</span>
+        </span>
+        <span class="level-arrow">▶</span>
+      </a>
+      <span class="red-envelope-badge">🧧</span>
+    </div>
+
+    <div class="connector locked"></div>
+
+    <!-- 第2关（锁定） -->
+    <div class="level-node">
+      <div class="level-btn locked">
+        <span class="level-num">🔒</span>
+        <span class="level-info">
+          <span class="lv-title">敬请期待</span>
+          <span class="lv-desc">新关卡开发中…</span>
+        </span>
+        <span class="level-arrow">▶</span>
+      </div>
+    </div>
+
+    <div class="connector locked"></div>
+
+    <!-- 第3关（锁定） -->
+    <div class="level-node">
+      <div class="level-btn locked">
+        <span class="level-num">🔒</span>
+        <span class="level-info">
+          <span class="lv-title">敬请期待</span>
+          <span class="lv-desc">新关卡开发中…</span>
+        </span>
+        <span class="level-arrow">▶</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 免责弹窗 -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <span class="modal-icon">⚠️</span>
+    <h2>免责声明</h2>
+    <div class="disclaimer-text">
+      <p>📌 本页面仅为<strong>娱乐性质</strong>的闯关小游戏，所有内容纯属虚构，以幽默调侃的方式呈现。</p>
+      <p>📌 页面中的关卡名称、描述及后续内容<strong>不构成任何事实陈述</strong>，不代表对各平台产品的真实评价，<strong>无任何引导、教唆或抹黑意图</strong>。</p>
+      <p>📌 请勿将本游戏内容作为实际行为参考。如对相关平台的红包活动有疑问，请以各平台官方规则为准。</p>
+      <p>📌 继续浏览即表示你已理解并同意以上声明，知晓这仅是一款<strong>娱乐消遣</strong>产品。</p>
+    </div>
+    <div class="countdown" id="countdown">5</div>
+    <button class="btn" id="confirmBtn" disabled>请阅读声明（<span id="btnTimer">5</span>s）</button>
+  </div>
+</div>
+
+<script>
+  // ===== 飘落金币 =====
+  (function spawnCoins() {
+    const container = document.getElementById('coins');
+    const emojis = ['🪙','💰','✨','🏮'];
+    for (let i = 0; i < 8; i++) {
+      const el = document.createElement('span');
+      el.className = 'coin';
+      el.textContent = emojis[i % emojis.length];
+      el.style.left = Math.random() * 100 + '%';
+      el.style.animationDuration = (6 + Math.random() * 10) + 's';
+      el.style.animationDelay = Math.random() * 8 + 's';
+      el.style.fontSize = (16 + Math.random() * 20) + 'px';
+      container.appendChild(el);
+    }
+  })();
+
+  // ===== 免责弹窗 5秒倒计时 =====
+  (function disclaimer() {
+    const overlay = document.getElementById('overlay');
+    const countdownEl = document.getElementById('countdown');
+    const btn = document.getElementById('confirmBtn');
+    const btnTimer = document.getElementById('btnTimer');
+
+    let sec = 5;
+
+    function tick() {
+      countdownEl.textContent = sec;
+      btnTimer.textContent = sec;
+      if (sec <= 0) {
+        countdownEl.textContent = '✓';
+        btn.disabled = false;
+        btn.classList.add('active');
+        btn.textContent = '我知道了，开始闯关';
+        return;
+      }
+      sec--;
+      setTimeout(tick, 1000);
+    }
+
+    btn.addEventListener('click', () => {
+      if (!btn.disabled) {
+        overlay.classList.add('hidden');
+      }
+    });
+
+    tick();
+  })();
+</script>
+
+</body>
+</html>

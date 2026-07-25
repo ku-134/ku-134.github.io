@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>关于我 · Kukuz</title>
+    <title>关于 · 虚空终端</title>
     <link rel="preload" as="image" href="background.webp">
     <link rel="preload" as="image" href="background1.webp">
     <link rel="preload" as="image" href="background2.webp">
@@ -11,7 +11,158 @@
     <link rel="preload" as="image" href="background4.webp">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ===== 控制栏样式 ===== */
+        /* ===== 关于页专属样式 ===== */
+        .about-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            max-width: 820px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .about-container .card {
+            max-width: 820px;
+            width: 100%;
+            margin: 0;
+        }
+
+        /* 关于本站正文样式 */
+        .about-content {
+            text-align: left;
+            line-height: 1.9;
+            font-size: 1rem;
+        }
+        .about-content p {
+            margin-bottom: 1rem;
+        }
+        .about-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .about-content .section-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 1.4rem 0 0.6rem 0;
+            letter-spacing: 0.5px;
+            border-bottom: 2px dashed rgba(128, 128, 128, 0.12);
+            padding-bottom: 0.3rem;
+        }
+        .about-content .section-title:first-of-type {
+            margin-top: 0;
+        }
+
+        .about-content .highlight-big {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: inline-block;
+            line-height: 1.4;
+            letter-spacing: 1px;
+            color: #f5a623;
+        }
+        @media (prefers-color-scheme: dark) {
+            .about-content .highlight-big {
+                color: #f5a623;
+            }
+        }
+
+        .about-content .highlight-num {
+            font-size: 2.2rem;
+            font-weight: 800;
+            display: inline-block;
+            line-height: 1.3;
+            color: #e74c3c;
+            text-shadow: 0 0 20px rgba(231, 76, 60, 0.15);
+        }
+        @media (prefers-color-scheme: dark) {
+            .about-content .highlight-num {
+                color: #ff6b6b;
+            }
+        }
+
+        .about-content .text-muted {
+            opacity: 0.5;
+            font-size: 0.9rem;
+        }
+
+        .about-content .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 0.4rem 0 0.8rem 0;
+        }
+        .about-content .feature-list li {
+            padding: 0.3rem 0 0.3rem 1.6rem;
+            position: relative;
+            line-height: 1.7;
+        }
+        .about-content .feature-list li::before {
+            content: "·";
+            position: absolute;
+            left: 0.2rem;
+            font-weight: 700;
+            opacity: 0.4;
+        }
+
+        .about-content .sub-section {
+            padding-left: 1.2rem;
+            border-left: 2px solid rgba(128, 128, 128, 0.08);
+            margin: 0.4rem 0 0.8rem 0;
+        }
+
+        .about-content .inline-link {
+            color: inherit;
+            text-decoration: none;
+            border-bottom: 2px solid #f5a623;
+            font-weight: 600;
+            transition: border-color 0.2s;
+        }
+        .about-content .inline-link:hover {
+            border-bottom-color: currentColor;
+        }
+
+        .about-content .divider-light {
+            width: 100%;
+            height: 1px;
+            border: none;
+            background: rgba(128, 128, 128, 0.08);
+            margin: 1rem 0;
+        }
+
+        .about-content .closing {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            opacity: 0.7;
+            margin-top: 1.2rem;
+            letter-spacing: 2px;
+        }
+        .about-content .closing small {
+            display: block;
+            font-size: 0.85rem;
+            opacity: 0.5;
+            font-weight: 400;
+            margin-top: 0.2rem;
+        }
+
+        /* 关于我卡片保持原有样式，但去掉导航 */
+        .about-me-card .nav-menu {
+            display: none;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 600px) {
+            .about-container { gap: 1.2rem; }
+            .about-content .highlight-big { font-size: 1.4rem; }
+            .about-content .highlight-num { font-size: 1.8rem; }
+            .about-content .sub-section { padding-left: 0.6rem; }
+        }
+        @media (max-width: 400px) {
+            .about-content { font-size: 0.92rem; }
+            .about-content .highlight-big { font-size: 1.2rem; }
+            .about-content .highlight-num { font-size: 1.5rem; }
+        }
+
+        /* ===== 底部控制栏 ===== */
         .bottom-controls {
             position: fixed;
             bottom: 30px;
@@ -69,9 +220,7 @@
             opacity: 0.8;
         }
 
-        body.ui-hidden .card,
-        body.ui-hidden .footer-meta,
-        body.ui-hidden .tags-wrap {
+        body.ui-hidden .about-container {
             opacity: 0 !important;
             pointer-events: none !important;
         }
@@ -88,7 +237,6 @@
             pointer-events: auto !important;
         }
 
-        /* ===== 设置面板 ===== */
         .settings-overlay {
             position: fixed;
             inset: 0;
@@ -203,7 +351,6 @@
             background: rgba(128,128,128,0.06);
         }
 
-        /* 背景图映射（与 style.css 保持一致） */
         html[data-bg="food"] { --bg-image: url('background1.webp'); }
         html[data-bg="trip"] { --bg-image: url('background2.webp'); }
         html[data-bg="electric1"] { --bg-image: url('background3.webp'); }
@@ -213,48 +360,153 @@
             .bottom-controls { bottom: 15px; right: 15px; gap: 0.4rem; }
             .ctrl-btn { width: 38px; height: 38px; font-size: 0.9rem; }
             .settings-panel { padding: 1.5rem; }
+            .about-container { gap: 1rem; }
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1 class="typing-title">📖 关于我</h1>
-        <div class="sub fade-in-up delay-2">— 最畜的贤者 —</div>
-        <div class="divider fade-in-up delay-3"></div>
 
-        <div class="nav-menu fade-in-up delay-4">
-            <a href="index.html" class="nav-link">🏠 首页</a>
-            <a href="#" class="nav-link active">📖 关于</a>
+    <div class="about-container">
+
+        <!-- ============================================================
+             第一个卡片：关于本站（含导航）
+             ============================================================ -->
+        <div class="card" id="aboutSiteCard">
+            <h1 class="typing-title">📖 关于虚空终端</h1>
+            <div class="sub fade-in-up delay-2">— 站点说明与使用指南 —</div>
+            <div class="divider fade-in-up delay-3"></div>
+
+            <!-- 导航栏（保留在第一个卡片） -->
+            <div class="nav-menu fade-in-up delay-4">
+                <a href="index.html" class="nav-link">🏠 首页</a>
+                <a href="#" class="nav-link active">📖 关于</a>
+            </div>
+
+            <!-- 正文 -->
+            <div class="about-content fade-in-up delay-5">
+
+                <!-- 概述 -->
+                <p>
+                    <strong>虚空终端</strong> 是一个以优质<span class="text-muted">（主观）</span>资源归档与轻量级网页应用为核心内容的<strong>个人数字项目</strong>（追真）。本站致力于在信息过载的网络环境中，筛选并呈现经过实测、分类的实用工具与趣味内容，为访客提供高效、透明、无干扰的浏览体验。
+                </p>
+
+                <hr class="divider-light">
+
+                <!-- 内容架构 -->
+                <div class="section-title">📂 内容架构</div>
+                <p>当前终端开放三个主要板块：</p>
+
+                <div class="sub-section">
+                    <p><strong>一、资源库</strong><br>
+                    收录经实测可用的开源应用程序、效率工具及 PC 端游戏。所有条目均附带简要说明，并支持关键词搜索与分类筛选。</p>
+                    <p>部分资源通过网盘分发，由于主旨是 <span class="highlight-big">“免费的”</span>，所以要付费下载的网盘可尝试通过其他方式规避，不会涉及任何第三方广告或付费。<span class="text-muted">（如：123云盘中PC端下载可能要额外收费，可通过用手机登陆下载后，把文件转存到电脑上的方式来规避）</span>；如果还是通过网盘下载为我产生了微量收益，我就当是打赏啦！</p>
+                </div>
+
+                <div class="sub-section">
+                    <p><strong>二、游戏合集</strong><br>
+                    汇集由 AI 辅助生成的网页游戏作品，包括本站自主构思开发的原创游戏，以及其他作者的标注来源的公开作品。我<span class="highlight-big">“尊重原创”</span>，如果给你带来不满，我会删除相关文件/代码。</p>
+                </div>
+
+                <div class="sub-section">
+                    <p><strong>三、文章板块</strong><span class="text-muted">（筹备中）</span><br>
+                    3.0.0 的更新目标……</p>
+                </div>
+
+                <hr class="divider-light">
+
+                <!-- 技术实现 -->
+                <div class="section-title">⚙️ 技术实现</div>
+                <p>
+                    本站前端与交互逻辑的 <span class="highlight-num">90%</span> 由 AI 编程工具辅助生成，我负责需求定义、代码整合、界面优化及内容填充。
+                </p>
+                <p>
+                    这种开发模式既体现了 AI 在快速原型构建中的实用性，也保留了人工筛选与审美判断的介入空间。<span class="text-muted">“其实就是我自己菜”</span>
+                </p>
+                <p>
+                    若您在使用过程中发现任何功能异常或体验瑕疵，欢迎通过站点内 <a href="contact.html" class="inline-link">「交朋友」</a> 提交反馈！每一份报告都将被认真对待并用于持续改进。
+                </p>
+
+                <hr class="divider-light">
+
+                <!-- 运营原则 -->
+                <div class="section-title">🌟 运营原则</div>
+                <ul class="feature-list">
+                    <li><strong>透明性：</strong>明确标注资源来源（多为开源项目）、下载渠道及可能的收益关联；</li>
+                    <li><strong>免费性：</strong>全站内容无付费门槛，无需注册即可访问；</li>
+                    <li><strong>轻量性：</strong>无追踪脚本、无个性化推荐算法、无弹窗广告；</li>
+                    <li><strong>可持续性：</strong>以最小化运维成本为前提，长期保持可用状态。</li>
+                </ul>
+
+                <hr class="divider-light">
+
+                <!-- 更新策略 -->
+                <div class="section-title">🔄 更新策略</div>
+                <p>
+                    本站遵循 <span class="highlight-big">“随缘更新，随缘维护”</span> 的节奏<span class="text-muted">（我懒）</span>，不设固定排期，但所有已上线内容均保证链接有效与信息准确。重要更新或板块变动会通过首页公告或独立日志告知访客。
+                </p>
+
+                <hr class="divider-light">
+
+                <!-- 版权与免责 -->
+                <div class="section-title">⚖️ 版权与免责</div>
+                <p>
+                    资源库中所有第三方软件及游戏均保留其原始版权，本站仅作索引与分发辅助，不修改任何原文件。用户下载或使用第三方资源前，请自行查阅相应授权协议。
+                </p>
+                <p>
+                    本站内原创内容（包括页面设计、原创游戏逻辑及文章）保留所有权利，未经允许不得转载或用于商业用途。
+                </p>
+
+                <hr class="divider-light">
+
+                <!-- 结语 -->
+                <div class="closing">
+                    万物虚寂，终有回响。
+                    <small>—— 虚空终端 · 持续运行中 ——</small>
+                </div>
+
+            </div>
         </div>
 
-        <div class="tags-wrap fade-in-up delay-5">
-            <span class="tag">📱 安卓搞机党</span>
-            <span class="tag">👀 小书虫3k+h</span>
-            <span class="tag">🗡️ 原神老登</span>
-            <span class="tag">🌱 纳西妲狂热粉</span>
-            <span class="tag">✍️ 同人小说作者</span>
+        <!-- ============================================================
+             第二个卡片：关于我（无导航）
+             ============================================================ -->
+        <div class="card about-me-card" id="aboutMeCard">
+            <h1 class="typing-title">🧑 关于我</h1>
+            <div class="sub fade-in-up delay-2">— 最畜的贤者 —</div>
+            <div class="divider fade-in-up delay-3"></div>
+
+            <!-- 个人标签 -->
+            <div class="tags-wrap fade-in-up delay-4">
+                <span class="tag">📱 安卓搞机党</span>
+                <span class="tag">👀 小书虫3k+h</span>
+                <span class="tag">🗡️ 原神老登</span>
+                <span class="tag">🌱 纳西妲狂热粉</span>
+                <span class="tag">✍️ 同人小说作者</span>
+            </div>
+
+            <!-- 自我介绍 -->
+            <div class="content fade-in-up delay-5">
+                <p class="greeting">👋 致来访者：</p>
+                <p>
+                    欢迎来到我的个人站点。作为刚完成九年义务教育的毕业生，目前正在假期内
+                    <span class="strikethrough">打游戏</span>
+                    <span class="highlight-big">学习各种知识</span>。
+                </p>
+                <p>
+                    在这个互联网信息爆炸的时代，我们能找到各种各样<span style="opacity:0.6;">（？）</span>的资源。
+                    但我还是希望能通过这个小站，把我折腾过的东西、写过的文、玩过的冷门游戏分享给你。
+                </p>
+                <p>
+                    站内资源均免费分享，如果有帮到你，点个赞 / 加个星就是对我最大的鼓励。<br>
+                    愿我们都能在赛博世界里找到自己的快乐！ ✨
+                </p>
+            </div>
+
+            <div class="footer-meta fade-in-up delay-6">
+                🌟 保持好奇 · 保持热爱
+            </div>
         </div>
 
-        <div class="content fade-in-up delay-6">
-            <p class="greeting">👋 致来访者：</p>
-            <p>
-                欢迎来到我的个人站点。作为刚完成九年义务教育的毕业生，目前正在假期内
-                <span class="strikethrough">打游戏</span>
-                <span class="highlight-big">学习各种知识</span>。
-            </p>
-            <p>
-                在这个互联网信息爆炸的时代，我们能找到各种各样<span style="opacity:0.6;">（？）</span>的资源。
-                但我还是希望能通过这个小站，把我折腾过的东西、写过的文、玩过的冷门游戏分享给你。
-            </p>
-            <p>
-                站内资源均免费分享，如果有帮到你，点个赞 / 加个星就是对我最大的鼓励。<br>
-                愿我们都能在赛博世界里找到自己的快乐！ ✨
-            </p>
-        </div>
-
-        <div class="footer-meta fade-in-up delay-7">
-            🌟 保持好奇 · 保持热爱
-        </div>
     </div>
 
     <!-- ===== 底部控制栏 ===== -->
@@ -295,7 +547,7 @@
         </div>
     </div>
 
-    <!-- ===== 不蒜子 ===== -->
+    <!-- ===== 不蒜子统计 ===== -->
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
     <script src="script.js"></script>
     <script>
@@ -406,5 +658,6 @@
             });
         })();
     </script>
+
 </body>
 </html>

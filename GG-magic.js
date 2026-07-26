@@ -126,6 +126,7 @@
 
         gameGrid.innerHTML = html;
 
+        // 加载图片（异步）
         var cards = gameGrid.querySelectorAll('.game-card');
         for (var ci = 0; ci < cards.length; ci++) {
             (function(card, idx) {
@@ -171,61 +172,102 @@
         );
     }
 
-    // ---------- 加载游戏图片 ----------
+    // ---------- 加载游戏图片（使用占位图 + 呼吸动画，修复布局） ----------
     function loadGameImages(card, fileName) {
         var imgContainer = card.querySelector('.game-images');
         if (!imgContainer) return;
 
         var basePath = 'Gamecurrently/' + fileName;
         var extensions = ['.png', '.jpg', '.webp'];
-        var loadedSrcs = [];
         var maxAttempts = 5;
+        var placeholderSrc = 'Placeholder.webp';
 
-        function tryLoad(index) {
-            if (index >= maxAttempts) {
-                if (loadedSrcs.length > 0) {
-                    imgContainer.classList.add('has-images');
-                    var imgs = imgContainer.querySelectorAll('.game-screenshot');
-                    for (var i = 0; i < imgs.length; i++) {
-                        (function(imgEl, imgIndex) {
-                            imgEl.addEventListener('click', function(e) {
-                                e.stopPropagation();
-                                openImageViewer(loadedSrcs, imgIndex);
-                            });
-                        })(imgs[i], i);
+        // 用于存储每个索引的加载结果
+        var loadPromises = [];
+
+        // 对每个索引尝试加载
+        for (var idx = 0; idx < maxAttempts; idx++) {
+            loadPromises.push(new Promise(function(resolve, reject) {
+                var extIndex = 0;
+                function tryNextExt() {
+                    if (extIndex >= extensions.length) {
+                        // 所有扩展名都失败
+                        resolve(null); // 表示该索引无图片
+                        return;
                     }
+                    var ext = extensions[extIndex];
+                    var src = basePath + idx + ext;
+                    var img = new Image();
+                    img.onload = function() {
+                        // 图片存在，返回src
+                        resolve(src);
+                    };
+                    img.onerror = function() {
+                        extIndex++;
+                        tryNextExt();
+                    };
+                    img.src = src;
                 }
+                tryNextExt();
+            }));
+        }
+
+        // 等待所有索引尝试完成
+        Promise.all(loadPromises).then(function(srcs) {
+            // srcs 数组包含每个索引的结果（成功为src，失败为null）
+            var successSrcs = srcs.filter(function(s) { return s !== null; });
+
+            // 如果没有成功图片，标记容器无图片（但保留占位高度？我们通过占位图保持高度，所以即使没有成功图片，容器也不显示任何元素，但保持高度？我们需要给容器一个最小高度？我们已经设置了aspect-ratio，但容器内无内容时高度为0，所以还是会有高度变化。为了处理这种情况，如果没有任何图片，我们保持容器空白，但高度由aspect-ratio撑起，所以容器会有高度，但内部无内容，这样卡片高度稳定。但我们需要给容器设置背景色或占位提示？我们保留空容器，但aspect-ratio会撑起高度，这样卡片高度稳定。
+            // 但我们可能希望没有图片时隐藏容器？不，为了布局稳定，我们保留容器，但内部无元素。
+            // 但如果没有任何图片，容器的aspect-ratio仍然有效，所以高度存在，但卡片会有一个空白区域，可能不好看。但可以接受。
+            // 更好的做法：如果没有任何图片，隐藏容器（display:none），但这样卡片高度会变化。所以我们保留容器，并添加一个占位提示？但会破坏美观。
+            // 我们可以添加一个默认的占位背景图，但这里我们简单处理：如果无图片，容器内显示一个"无截图"的文字占位。
+            // 但用户可能不希望显示额外文字。我们选择让容器保持空白，但高度由aspect-ratio撑起，这样卡片高度与其他卡片一致（因为其他卡片有图片，高度由图片决定，所以空白卡片高度也会被拉伸）。
+            // 实际上，grid会拉伸所有卡片到相同高度，所以即使某个卡片没有图片，它的容器高度也会被拉伸，但内容为空，所以卡片底部会有空白。这样视觉上可能不协调，但至少布局不乱。
+            // 我们可以给游戏卡片设置flex:1，让内容填充，但图片容器的高度由aspect-ratio决定，所以即使没有图片，容器也有高度，卡片高度一致。
+            if (successSrcs.length === 0) {
+                // 无图片，在容器中显示一个占位文字或背景
+                // 我们选择添加一个提示，但为了简洁，我们添加一个灰色占位文字
+                var emptyMsg = document.createElement('div');
+                emptyMsg.textContent = '📷 暂无截图';
+                emptyMsg.style.cssText = 'display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:rgba(128,128,128,0.3); font-size:0.8rem;';
+                imgContainer.appendChild(emptyMsg);
+                imgContainer.classList.add('has-images'); // 标记有内容，但实际是提示
                 return;
             }
 
-            var extIndex = 0;
-            function tryNextExt() {
-                if (extIndex >= extensions.length) {
-                    tryLoad(index + 1);
-                    return;
-                }
-                var ext = extensions[extIndex];
-                var src = basePath + index + ext;
-                var img = new Image();
-                img.onload = function() {
-                    var imgEl = document.createElement('img');
-                    imgEl.src = src;
-                    imgEl.alt = fileName + ' 截图' + index;
-                    imgEl.className = 'game-screenshot';
-                    imgContainer.appendChild(imgEl);
-                    loadedSrcs.push(src);
-                    tryLoad(index + 1);
-                };
-                img.onerror = function() {
-                    extIndex++;
-                    tryNextExt();
-                };
-                img.src = src;
-            }
-            tryNextExt();
-        }
+            // 有成功图片，创建占位图元素并替换
+            // 为每个成功src创建一个img元素
+            successSrcs.forEach(function(src, index) {
+                // 创建img元素，先显示占位图
+                var imgEl = document.createElement('img');
+                imgEl.src = placeholderSrc;
+                imgEl.alt = fileName + ' 截图' + (index);
+                imgEl.className = 'game-screenshot loading';
+                imgContainer.appendChild(imgEl);
 
-        tryLoad(0);
+                // 加载真实图片（因为之前已经测试过，浏览器可能缓存，但为了保险，我们再次加载）
+                var realImg = new Image();
+                realImg.onload = function() {
+                    imgEl.src = src;
+                    imgEl.classList.remove('loading');
+                    // 绑定点击事件
+                    (function(el, srcList, idx) {
+                        el.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            openImageViewer(srcList, idx);
+                        });
+                    })(imgEl, successSrcs, index);
+                };
+                realImg.onerror = function() {
+                    // 如果真实图片加载失败，移除占位图
+                    imgEl.remove();
+                };
+                realImg.src = src;
+            });
+
+            imgContainer.classList.add('has-images');
+        });
     }
 
     // ---------- 绑定游戏跳转计数 ----------

@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>游戏发布页 · Kukuz</title>
-    <link rel="preload" as="image" href="background.webp">
-    <link rel="preload" as="image" href="background1.webp">
-    <link rel="preload" as="image" href="background2.webp">
-    <link rel="preload" as="image" href="background3.webp">
-    <link rel="preload" as="image" href="background4.webp">
-    <link rel="preload" as="image" href="Placeholder.webp">
-    <link rel="stylesheet" href="style.css">
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <!-- 🆕 预加载占位图 -->
+    <link rel="preload" as="image" href="../Gamecurrently/Placeholder.webp">
+    <link rel="stylesheet" href="../style.css">
     <style>
         /* ===== 游戏页专属样式 ===== */
         .game-grid {
@@ -19,6 +20,7 @@
             gap: 2rem 1.8rem;
             margin: 1.5rem 0 1.2rem;
             min-height: 200px;
+            align-items: start; /* 🆕 修复：防止卡片互相拉伸 */
         }
 
         .game-card {
@@ -30,7 +32,7 @@
             backdrop-filter: blur(4px);
             display: flex;
             flex-direction: column;
-            height: auto; /* 由 grid 自动拉伸 */
+            height: fit-content; /* 🆕 修复：高度由内容决定，不拉伸 */
         }
         .game-card:hover {
             transform: translateY(-6px);
@@ -72,66 +74,83 @@
             flex: 1;
         }
 
-        /* ===== 图片容器 - 固定宽高比稳定布局 ===== */
+        /* ===== 🆕 图片容器（固定宽高比，防止布局抖动） ===== */
         .game-card .game-images {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
             margin-bottom: 1rem;
-            aspect-ratio: 16 / 9;
+            min-height: 0;
             width: 100%;
-            position: relative;
-            background: rgba(128, 128, 128, 0.03);
-            border-radius: 0.7rem;
-            overflow: hidden;
-            align-content: flex-start;
         }
         .game-card .game-images:not(.has-images) {
-            /* 无图片时隐藏容器，但保留占位高度？我们通过占位图保持高度，所以即使没有图片，容器也会有占位图，所以不隐藏 */
-            /* 默认显示，因为占位图会存在 */
+            min-height: 0;
         }
 
-        .game-card .game-screenshot {
-            flex: 0 0 calc(50% - 0.25rem);
-            max-width: calc(50% - 0.25rem);
-            height: auto;
+        /* 🆕 每个图片的包装器 - 固定 16:9 比例 */
+        .game-image-wrapper {
+            position: relative;
+            width: calc(50% - 0.25rem);
             aspect-ratio: 16 / 9;
-            object-fit: cover;
-            border-radius: 0.4rem;
+            border-radius: 0.7rem;
+            overflow: hidden;
+            background: rgba(128, 128, 128, 0.05);
             border: 1px solid rgba(128, 128, 128, 0.06);
-            background: rgba(128, 128, 128, 0.03);
-            transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.3s ease;
-            cursor: pointer;
-            min-height: 0; /* 防止溢出 */
+            flex-shrink: 0;
+            flex-grow: 0;
         }
-        /* 单张图片占满整行 */
-        .game-card .game-images.has-images .game-screenshot:only-child {
-            flex: 0 0 100%;
-            max-width: 100%;
+        /* 单张图片占满 */
+        .game-images.has-images .game-image-wrapper:only-child {
+            width: 100%;
         }
         /* 三张图片时第一张占满，其余两列 */
-        .game-card .game-images.has-images .game-screenshot:first-child:nth-last-child(3) {
-            flex: 0 0 100%;
-            max-width: 100%;
+        .game-images.has-images .game-image-wrapper:first-child:nth-last-child(3) {
+            width: 100%;
         }
-        .game-card .game-images.has-images .game-screenshot:first-child:nth-last-child(3) ~ .game-screenshot {
-            flex: 0 0 calc(50% - 0.25rem);
-            max-width: calc(50% - 0.25rem);
+        .game-images.has-images .game-image-wrapper:first-child:nth-last-child(3) ~ .game-image-wrapper {
+            width: calc(50% - 0.25rem);
         }
 
-        .game-card .game-screenshot:hover {
-            transform: scale(1.03);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        /* 🆕 图片本身 - 铺满容器 */
+        .game-image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: opacity 0.5s ease;
         }
 
-        /* ===== 🆕 占位图加载状态 ===== */
-        .game-card .game-screenshot.loading {
-            filter: blur(6px) grayscale(0.6);
-            animation: breathe 1.8s ease-in-out infinite;
+        /* 🆕 占位图样式：灰色模糊滤镜 + 呼吸动画 */
+        .game-image-wrapper .placeholder-img {
+            filter: grayscale(40%) blur(2px);
+            animation: breathe 2s ease-in-out infinite;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
+        /* 真实图片在占位图上层，加载完成后淡入 */
+        .game-image-wrapper .real-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            opacity: 0;
+        }
+        .game-image-wrapper .real-img.loaded {
+            opacity: 1;
+        }
+        /* 加载完成后，占位图淡出 */
+        .game-image-wrapper .real-img.loaded ~ .placeholder-img {
+            opacity: 0;
+            animation: none;
+            pointer-events: none;
+        }
+
+        /* 🆕 呼吸动画 */
         @keyframes breathe {
-            0%, 100% { opacity: 0.5; filter: blur(6px) grayscale(0.6); }
-            50% { opacity: 0.9; filter: blur(3px) grayscale(0.3); }
+            0%, 100% { opacity: 0.6; filter: grayscale(40%) blur(2px); }
+            50% { opacity: 1; filter: grayscale(30%) blur(1.5px); }
         }
 
         .game-card .game-play-btn {
@@ -619,12 +638,11 @@
             background: rgba(128,128,128,0.06);
         }
 
-        html[data-bg="food"] { --bg-image: url('background1.webp'); }
-        html[data-bg="trip"] { --bg-image: url('background2.webp'); }
-        html[data-bg="electric1"] { --bg-image: url('background3.webp'); }
-        html[data-bg="electric2"] { --bg-image: url('background4.webp'); }
+        html[data-bg="food"] { --bg-image: url('../background1.webp'); }
+        html[data-bg="trip"] { --bg-image: url('../background2.webp'); }
+        html[data-bg="electric1"] { --bg-image: url('../background3.webp'); }
+        html[data-bg="electric2"] { --bg-image: url('../background4.webp'); }
 
-        /* 响应式 */
         @media (max-width: 700px) {
             .game-grid {
                 grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -633,6 +651,10 @@
             .game-card .game-name { font-size: 1.4rem; }
             .game-card .game-desc { font-size: 0.85rem; }
             .game-card { padding: 1.2rem 1rem 1rem; }
+            .game-image-wrapper { width: calc(50% - 0.25rem); }
+            .game-images.has-images .game-image-wrapper:first-child:nth-last-child(3) ~ .game-image-wrapper {
+                width: calc(50% - 0.25rem);
+            }
 
             .image-modal {
                 flex-direction: column-reverse;
@@ -667,7 +689,6 @@
                 max-width: calc(96vw - 1.2rem);
                 max-height: calc(96vh - 6rem);
             }
-            .game-card .game-screenshot { aspect-ratio: 16 / 10; }
             .fetch-btn { font-size: 1.2rem; padding: 0.9rem 2rem; flex-direction: column; gap: 0.4rem; }
         }
         @media (max-width: 600px) {
@@ -675,7 +696,6 @@
             .game-card .game-name { font-size: 1.2rem; }
             .game-card .game-desc { font-size: 0.8rem; }
             .game-card .game-tag { font-size: 0.6rem; padding: 0 0.5rem; }
-            .game-card .game-screenshot { aspect-ratio: 16 / 10; }
             .fetch-btn { font-size: 1.2rem; padding: 0.9rem 2rem; flex-direction: column; gap: 0.4rem; }
         }
         @media (max-width: 400px) {
@@ -710,9 +730,9 @@
         <div class="divider fade-in-up delay-3"></div>
 
         <div class="nav-menu fade-in-up delay-4">
-            <a href="index.html" class="nav-link">🏠 首页</a>
+            <a href="../index.html" class="nav-link">🏠 首页</a>
             <a href="#" class="nav-link active">🎮 游戏</a>
-            <a href="RP.html" class="nav-link">📦 看点资源？</a>
+            <a href="../RP.html" class="nav-link">📦 看点资源？</a>
         </div>
 
         <div class="game-stats fade-in-up delay-5" id="stats"></div>
@@ -786,7 +806,7 @@
     </div>
 
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-    <script src="script.js"></script>
+    <script src="../script.js"></script>
     <script src="GG-magic.js"></script>
     <script>
         (function() {

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虚空终端 · 文章页</title>
+    <!-- 复用全局样式 -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 引入 marked.js 渲染 Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* ===== 文章页专属样式 ===== */
+        body {
+            background: url('background.webp') no-repeat center center / cover;
+            background-attachment: fixed;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .void-container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* 顶部导航 */
+        .void-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 0.8rem 1.8rem;
+            border-radius: 2rem;
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            background: rgba(10, 20, 10, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            color: var(--text-color, #c8e6c9);
+        }
+        .void-header .brand {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .void-header .nav-links {
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+        }
+        .void-header .nav-links a {
+            text-decoration: none;
+            color: inherit;
+            opacity: 0.7;
+            transition: 0.25s;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            padding-bottom: 2px;
+        }
+        .void-header .nav-links a:hover {
+            opacity: 1;
+            border-bottom-color: currentColor;
+        }
+        .void-header .nav-links a.active {
+            opacity: 1;
+            border-bottom-color: currentColor;
+        }
+
+        /* 面包屑 */
+        .breadcrumb {
+            font-size: 0.9rem;
+            opacity: 0.6;
+            margin-bottom: 1.2rem;
+            padding: 0 0.2rem;
+            cursor: default;
+            color: var(--text-color, #c8e6c9);
+        }
+        .breadcrumb span {
+            cursor: pointer;
+            transition: 0.2s;
+            opacity: 0.7;
+        }
+        .breadcrumb span:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        .breadcrumb .separator {
+            margin: 0 6px;
+            opacity: 0.3;
+            cursor: default;
+        }
+        .breadcrumb .current {
+            opacity: 1;
+            font-weight: 500;
+            cursor: default;
+        }
+
+        /* 内容卡片 */
+        .void-card {
+            padding: 2.8rem 2.5rem;
+            border-radius: 2rem;
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            transition: background 0.3s, color 0.3s, border-color 0.3s;
+            background: rgba(10, 20, 10, 0.6);
+            color: var(--text-color, #c8e6c9);
+            min-height: 300px;
+        }
+
+        /* 系列卡片网格 */
+        .series-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .series-item {
+            background: rgba(128, 128, 128, 0.05);
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            border-radius: 1.5rem;
+            padding: 1.5rem 1.2rem;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            text-align: left;
+        }
+        .series-item:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+        .series-item .title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        .series-item .desc {
+            font-size: 0.95rem;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+        .series-item .badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            background: rgba(102, 187, 106, 0.2);
+            padding: 0.1rem 0.6rem;
+            border-radius: 1rem;
+            margin-top: 0.5rem;
+            opacity: 0.7;
+            border: 1px solid rgba(102, 187, 106, 0.2);
+        }
+
+        /* 文章列表 */
+        .article-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .article-item {
+            padding: 1rem 1.2rem;
+            border-radius: 1.2rem;
+            background: rgba(128, 128, 128, 0.04);
+            border-left: 4px solid rgba(102, 187, 106, 0.3);
+            transition: background 0.2s, transform 0.2s;
+            cursor: pointer;
+            text-align: left;
+        }
+        .article-item:hover {
+            background: rgba(128, 128, 128, 0.08);
+            transform: translateX(4px);
+        }
+        .article-item .title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+        .article-item .desc {
+            font-size: 0.95rem;
+            opacity: 0.6;
+        }
+        .article-item .meta {
+            font-size: 0.75rem;
+            opacity: 0.3;
+            margin-top: 0.3rem;
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .article-item .meta .tag {
+            background: rgba(128,128,128,0.1);
+            padding: 0.05rem 0.6rem;
+            border-radius: 1rem;
+        }
+        .article-item .encrypted-badge {
+            color: #e74c3c;
+            font-size: 0.7rem;
+            border: 1px solid #e74c3c;
+            border-radius: 1rem;
+            padding: 0.05rem 0.6rem;
+            margin-left: 0.5rem;
+            opacity: 0.7;
+        }
+
+        /* 正文区域 */
+        .article-body {
+            text-align: left;
+            line-height: 1.8;
+            font-size: 1.05rem;
+            padding: 0.2rem 0;
+        }
+        .article-body h1, .article-body h2, .article-body h3 {
+            margin-top: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .article-body p {
+            margin-bottom: 0.8rem;
+        }
+        .article-body img {
+            max-width: 100%;
+            border-radius: 0.8rem;
+        }
+        .article-body pre {
+            background: rgba(0,0,0,0.3);
+            padding: 1rem;
+            border-radius: 0.8rem;
+            overflow-x: auto;
+        }
+        .article-body code {
+            background: rgba(0,0,0,0.2);
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* Toast 复用 index 样式，已在全局定义，这里补充位置 */
+        #voidToast {
+            bottom: 30px;
+        }
+        #voidToast .highlight {
+            color: #a5d6a7;
+            font-weight: 700;
+        }
+
+        /* 弹窗（仿设置面板） */
+        .void-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1600;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            animation: overlayIn 0.25s ease-out;
+        }
+        .void-overlay.active {
+            display: flex;
+        }
+        .void-panel {
+            max-width: 440px;
+            width: 90%;
+            padding: 2rem 2rem 1.8rem;
+            border-radius: 1.8rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: rgba(12,22,12,0.92);
+            color: var(--text-color, #c8e6c9);
+            text-align: center;
+        }
+        .void-panel .panel-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+        .void-panel .panel-sub {
+            font-size: 0.85rem;
+            opacity: 0.4;
+            margin-bottom: 1.2rem;
+        }
+        .void-panel input[type="password"],
+        .void-panel input[type="text"] {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.2);
+            background: rgba(255,255,255,0.05);
+            color: inherit;
+            font-size: 1rem;
+            margin-bottom: 0.8rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .void-panel input:focus {
+            border-color: #66bb6a;
+        }
+        .void-panel .panel-actions {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: flex-end;
+        }
+        .void-panel .panel-actions .btn {
+            padding: 0.4rem 1.4rem;
+            border-radius: 2rem;
+            border: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+        .void-panel .panel-actions .btn-primary {
+            background: #66bb6a;
+            color: #1a2e1a;
+        }
+        .void-panel .panel-actions .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102,187,106,0.25);
+        }
+        .void-panel .panel-actions .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(128,128,128,0.15);
+            color: var(--text-color, #c8e6c9);
+        }
+        .void-panel .panel-actions .btn-secondary:hover {
+            background: rgba(128,128,128,0.06);
+        }
+        .void-panel .hint {
+            font-size: 0.8rem;
+            opacity: 0.5;
+            margin: 0.5rem 0 0.8rem;
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .void-card { padding: 1.8rem 1.2rem; }
+            .void-header { flex-direction: column; align-items: stretch; }
+            .series-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 400px) {
+            .void-card { padding: 1.2rem 0.8rem; }
+            .article-item { padding: 0.8rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="void-container">
+        <!-- 顶部导航 -->
+        <header class="void-header">
+            <div class="brand">📖 虚空终端 · 文章</div>
+            <div class="nav-links">
+                <a href="index.html">🏠 首页</a>
+                <a href="about.html">📖 关于</a>
+                <a href="#" class="active">📝 文章</a>
+            </div>
+        </header>
+
+        <!-- 面包屑 -->
+        <div class="breadcrumb" id="breadcrumb">
+            <span data-target="series">📚 所有系列</span>
+        </div>
+
+        <!-- 主卡片 -->
+        <div class="void-card" id="voidContent">
+            <!-- 由 JS 动态渲染 -->
+            <div id="contentInner" style="min-height:200px;">
+                <p style="text-align:center; opacity:0.5;">加载中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="voidToast" class="toast"></div>
+
+    <!-- ===== 弹窗（解锁） ===== -->
+    <div class="void-overlay" id="voidOverlay">
+        <div class="void-panel">
+            <div class="panel-title" id="dialogTitle">🔐 解锁内容</div>
+            <div class="panel-sub" id="dialogSub">请输入密码或系列名称</div>
+            <input type="text" id="dialogInput" placeholder="输入密码或 *系列名" autofocus>
+            <div class="hint" id="dialogHint">提示：隐藏内容输入密码；加密系列输入 *系列名</div>
+            <div class="panel-actions">
+                <button class="btn btn-secondary" id="dialogCancel">取消</button>
+                <button class="btn btn-primary" id="dialogConfirm">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 正文解密弹窗（加密2，暂为占位） ===== -->
+    <div class="void-overlay" id="decryptOverlay">
+        <div class="void-panel">
+            <div class="panel-title">🔑 解密正文</div>
+            <div class="panel-sub">请输入该文章的专属密钥</div>
+            <input type="password" id="decryptInput" placeholder="输入密钥">
+            <div class="panel-actions">
+                <button class="btn btn-secondary" id="decryptCancel">取消</button>
+                <button class="btn btn-primary" id="decryptConfirm">解密</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 脚本 ===== -->
+    <script src="VOID-core.js"></script>
+    <script>
+        // 额外：Toast 显示函数（与 index 保持一致的风格）
+        function showVoidToast(msg, duration = 4000) {
+            const el = document.getElementById('voidToast');
+            el.textContent = msg;
+            el.classList.add('show');
+            clearTimeout(el._hideTimer);
+            el._hideTimer = setTimeout(() => el.classList.remove('show'), duration);
+        }
+
+        // 暴露给 core
+        window.showVoidToast = showVoidToast;
+    </script>
+</body>
+</html>

@@ -5,14 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>VoidOS · 虚空终端</title>
 
-    <!-- 预加载占位（项目资源留空） -->
-    <!-- <link rel="stylesheet" href="assets/css/main.css" /> -->
-    <!-- <script src="assets/js/core.js" defer></script> -->
-
     <style>
         /* ============================================================
-               0. 全局重置 & 绿色主题变量
-               ============================================================ */
+           0. 全局重置 & 绿色主题变量
+           ============================================================ */
         *,
         *::before,
         *::after {
@@ -22,28 +18,17 @@
         }
 
         :root {
-            /* 绿色系主色 */
             --void-primary: #8FB991;
             --void-dark: #314015;
             --void-accent: #58A25C;
             --void-light: #A7C0A6;
-
-            /* 半透明衍生 */
             --void-primary-dim: rgba(143, 185, 145, 0.15);
             --void-primary-glow: rgba(143, 185, 145, 0.45);
             --void-accent-dim: rgba(88, 162, 92, 0.25);
-
-            /* 背景深绿黑 */
             --void-bg: #0f160f;
             --void-bg-green: #1a2a1a;
-
-            /* 字体 */
             --font-display: 'Segoe UI', system-ui, -apple-system, sans-serif;
-
-            /* 过渡 */
-            --t-micro: 0.15s;
-            --t-fast: 0.25s;
-            --t-smooth: 0.4s;
+            --font-mono: 'Courier New', 'Fira Code', monospace;
         }
 
         html,
@@ -59,8 +44,8 @@
         }
 
         /* ============================================================
-               1. 背景层 — 黑绿渐变 · 时隐时现
-               ============================================================ */
+           1. 背景层 — 黑绿渐变 · 时隐时现
+           ============================================================ */
         #bg-layer {
             position: fixed;
             inset: 0;
@@ -121,8 +106,8 @@
         }
 
         /* ============================================================
-               2. Canvas 粒子层 (绿色调)
-               ============================================================ */
+           2. Canvas 粒子层
+           ============================================================ */
         #particle-canvas {
             position: fixed;
             inset: 0;
@@ -133,8 +118,76 @@
         }
 
         /* ============================================================
-               3. 内容层
-               ============================================================ */
+           3. 终端输出特效 (左下角, 半透明)
+           ============================================================ */
+        #terminal-overlay {
+            position: fixed;
+            left: 1.2rem;
+            bottom: 1.2rem;
+            z-index: 1;
+            max-width: 70vw;
+            max-height: 60vh;
+            pointer-events: none;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            line-height: 1.25;
+            color: rgba(143, 185, 145, 0.45);
+            text-shadow: none;
+            white-space: pre-wrap;
+            word-break: break-all;
+            overflow: hidden;
+            letter-spacing: 0.02em;
+            opacity: 0;
+            animation: terminalFadeIn 2s ease 1s forwards;
+            transition: opacity 0.3s ease;
+        }
+
+        #terminal-overlay.hidden {
+            opacity: 0 !important;
+            animation: none;
+            transition: opacity 0.3s ease;
+        }
+
+        @keyframes terminalFadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* 终端每一行 */
+        .line {
+            display: block;
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: none;
+            will-change: transform, opacity;
+        }
+        .line-enter {
+            animation: lineEnter 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+        }
+        .line-exit {
+            animation: lineExit 0.35s cubic-bezier(0.55, 0, 0.55, 0.2) forwards !important;
+        }
+
+        @keyframes lineEnter {
+            0% { opacity: 0; transform: translateX(-20px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes lineExit {
+            0% { opacity: 1; transform: translateX(0); }
+            100% { opacity: 0; transform: translateX(-20px); }
+        }
+
+        #terminal-output .ascii-art {
+            white-space: pre;
+            font-size: 9px;
+            line-height: 1.1;
+            letter-spacing: 0.05em;
+            color: rgba(143, 185, 145, 0.5);
+        }
+
+        /* ============================================================
+           4. 主内容层 (文案)
+           ============================================================ */
         #container {
             position: relative;
             z-index: 2;
@@ -147,7 +200,7 @@
             padding: 2rem 1.5rem;
         }
 
-        /* ---- 3-a. 虚空之眼 (SVG) 绿色版 ---- */
+        /* 虚空之眼 */
         #eye-wrapper {
             flex-shrink: 0;
             width: 80px;
@@ -169,14 +222,9 @@
             transform-origin: center;
             will-change: transform;
         }
-
         @keyframes ringSpin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .eye-diamond {
@@ -184,16 +232,9 @@
             transform-origin: center;
             will-change: transform, opacity;
         }
-
         @keyframes diamondPulse {
-            0% {
-                transform: scale(0.85) rotate(0deg);
-                opacity: 0.6;
-            }
-            100% {
-                transform: scale(1.05) rotate(12deg);
-                opacity: 1;
-            }
+            0% { transform: scale(0.85) rotate(0deg); opacity: 0.6; }
+            100% { transform: scale(1.05) rotate(12deg); opacity: 1; }
         }
 
         .eye-dot {
@@ -201,33 +242,22 @@
             transform-origin: center;
             will-change: opacity, r;
         }
-
         @keyframes dotBreathe {
-            0% {
-                opacity: 0.4;
-                r: 2.5;
-            }
-            100% {
-                opacity: 1;
-                r: 4.5;
-            }
+            0% { opacity: 0.4; r: 2.5; }
+            100% { opacity: 1; r: 4.5; }
         }
 
         @keyframes eyeFloat {
-            0% {
-                transform: translateY(-4px) scale(1);
-            }
-            100% {
-                transform: translateY(8px) scale(1.02);
-            }
+            0% { transform: translateY(-4px) scale(1); }
+            100% { transform: translateY(8px) scale(1.02); }
         }
 
-        /* ---- 3-b. 标题容器 ---- */
+        /* 文案容器 */
         #title-container {
             position: relative;
             flex-shrink: 0;
             width: 100%;
-            max-width: 600px;
+            max-width: 700px;
             text-align: center;
             min-height: 6rem;
             display: flex;
@@ -236,8 +266,7 @@
             perspective: 800px;
         }
 
-        /* 共用标题样式 */
-        .title-main {
+        .title-stage {
             position: absolute;
             inset: 0;
             display: flex;
@@ -245,8 +274,6 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 0.04em;
-            transition: opacity 0.7s ease;
-            pointer-events: none;
             font-size: clamp(2.2rem, 10vw, 4.2rem);
             font-weight: 300;
             letter-spacing: 0.12em;
@@ -254,57 +281,57 @@
                 0 0 20px var(--void-primary-glow),
                 0 0 60px var(--void-primary-dim);
             line-height: 1.2;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            pointer-events: none;
         }
 
-        #title-connecting {
+        .title-stage.active {
             opacity: 1;
             pointer-events: none;
         }
 
-        #title-login {
-            opacity: 0;
-            pointer-events: none;
+        .title-stage.clickable {
+            pointer-events: auto;
+            cursor: pointer;
             text-decoration: none;
             color: var(--void-primary);
-            cursor: pointer;
         }
-        #title-login.clickable {
-            pointer-events: auto;
-        }
-        #title-login.clickable:hover {
+        .title-stage.clickable:hover {
             text-shadow:
                 0 0 30px var(--void-primary-glow),
                 0 0 80px var(--void-primary-dim);
         }
 
-        /* 每个字符的推出动画（默认暂停，由父级 .animate-char 触发） */
+        /* 字符推出动画 */
         .char {
             display: inline-block;
             opacity: 0;
             transform: translateZ(-280px) scale(0.4) rotateX(12deg);
             filter: blur(8px);
             transition: none;
-            /* 动画由父级控制 */
         }
 
         .animate-char .char {
             animation: charReveal 0.9s cubic-bezier(0.23, 1, 0.32, 1) forwards;
         }
 
-        /* 每个字不同的延迟 (间隔不一) */
-        #title-connecting .char:nth-child(1) { animation-delay: 0.00s; }
-        #title-connecting .char:nth-child(2) { animation-delay: 0.22s; }
-        #title-connecting .char:nth-child(3) { animation-delay: 0.48s; }
-        #title-connecting .char:nth-child(4) { animation-delay: 0.65s; }
-        #title-connecting .char:nth-child(5) { animation-delay: 0.88s; }
+        #stage1 .char:nth-child(1) { animation-delay: 0.00s; }
+        #stage1 .char:nth-child(2) { animation-delay: 0.15s; }
+        #stage1 .char:nth-child(3) { animation-delay: 0.30s; }
+        #stage1 .char:nth-child(4) { animation-delay: 0.45s; }
+        #stage1 .char:nth-child(5) { animation-delay: 0.60s; }
 
-        #title-login .char:nth-child(1) { animation-delay: 0.00s; }
-        #title-login .char:nth-child(2) { animation-delay: 0.20s; }
-        #title-login .char:nth-child(3) { animation-delay: 0.45s; }
-        #title-login .char:nth-child(4) { animation-delay: 0.60s; }
-        #title-login .char:nth-child(5) { animation-delay: 0.80s; }
-        #title-login .char:nth-child(6) { animation-delay: 1.00s; }
-        #title-login .char:nth-child(7) { animation-delay: 1.15s; }
+        #stage2 .char:nth-child(1) { animation-delay: 0.00s; }
+        #stage2 .char:nth-child(2) { animation-delay: 0.20s; }
+        #stage2 .char:nth-child(3) { animation-delay: 0.40s; }
+        #stage2 .char:nth-child(4) { animation-delay: 0.60s; }
+        #stage2 .char:nth-child(5) { animation-delay: 0.80s; }
+
+        #stage3 .char:nth-child(1) { animation-delay: 0.00s; }
+        #stage3 .char:nth-child(2) { animation-delay: 0.18s; }
+        #stage3 .char:nth-child(3) { animation-delay: 0.36s; }
+        #stage3 .char:nth-child(4) { animation-delay: 0.54s; }
 
         @keyframes charReveal {
             0% {
@@ -323,7 +350,33 @@
             }
         }
 
-        /* ---- 3-c. 下划线装饰 ---- */
+        /* 三个点独立跳动 */
+        .dots-container {
+            display: inline-block;
+            opacity: 0;
+            animation: dotsFadeIn 0.5s ease 0.8s forwards;
+            margin-left: 0.1em;
+        }
+        @keyframes dotsFadeIn {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .dot {
+            display: inline-block;
+            animation: dotJump 0.8s ease-in-out infinite alternate;
+            margin: 0 0.02em;
+        }
+        .dot:nth-child(1) { animation-delay: 0.0s; }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotJump {
+            0% { transform: translateY(0); opacity: 0.3; }
+            100% { transform: translateY(-8px); opacity: 1; }
+        }
+
+        /* 下划线 */
         #title-underline {
             flex-shrink: 0;
             width: clamp(60px, 20vw, 160px);
@@ -334,19 +387,12 @@
             animation: lineFadeIn 1.2s ease-out 1.2s forwards;
             box-shadow: 0 0 12px var(--void-primary-glow);
         }
-
         @keyframes lineFadeIn {
-            0% {
-                opacity: 0;
-                transform: scaleX(0.3);
-            }
-            100% {
-                opacity: 0.6;
-                transform: scaleX(1);
-            }
+            0% { opacity: 0; transform: scaleX(0.3); }
+            100% { opacity: 0.6; transform: scaleX(1); }
         }
 
-        /* ---- 3-d. 底部角落版本 ---- */
+        /* 版本号 */
         #corner-deco {
             position: fixed;
             bottom: 1.2rem;
@@ -360,53 +406,47 @@
             animation: cornerFade 3s ease-out 2s forwards;
             opacity: 0;
         }
-
         @keyframes cornerFade {
-            0% {
-                opacity: 0;
-            }
-            100% {
-                opacity: 1;
-            }
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
 
         /* ============================================================
-               4. 响应式兼容
-               ============================================================ */
+           5. 黑屏遮罩（用于跳转过渡）
+           ============================================================ */
+        #blackout {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 9999;
+            transition: opacity 1s ease;
+        }
+        #blackout.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ============================================================
+           6. 响应式
+           ============================================================ */
         @media (max-width: 480px) {
-            #eye-wrapper {
-                width: 60px;
-                height: 60px;
-                margin-bottom: 1.6rem;
-            }
-            .title-main {
-                font-size: clamp(1.8rem, 12vw, 2.6rem);
-                letter-spacing: 0.06em;
-            }
-            #title-container {
-                min-height: 4.5rem;
-            }
+            #eye-wrapper { width: 60px; height: 60px; margin-bottom: 1.6rem; }
+            .title-stage { font-size: clamp(1.8rem, 12vw, 2.6rem); letter-spacing: 0.06em; }
+            #title-container { min-height: 4.5rem; }
+            #terminal-overlay { font-size: 8px; max-width: 80vw; max-height: 50vh; }
+            #terminal-overlay .ascii-art { font-size: 7px; }
         }
-
         @media (min-width: 768px) {
-            #eye-wrapper {
-                width: 100px;
-                height: 100px;
-                margin-bottom: 2.8rem;
-            }
-            .title-main {
-                font-size: clamp(3rem, 6vw, 5rem);
-            }
-            #title-container {
-                min-height: 7rem;
-            }
+            #eye-wrapper { width: 100px; height: 100px; margin-bottom: 2.8rem; }
+            .title-stage { font-size: clamp(3rem, 6vw, 5rem); }
+            #title-container { min-height: 7rem; }
         }
 
-        /* 安全区域适配 */
         @supports (padding: max(0px)) {
-            #corner-deco {
-                bottom: max(1.2rem, env(safe-area-inset-bottom, 0.5rem));
-            }
+            #corner-deco { bottom: max(1.2rem, env(safe-area-inset-bottom, 0.5rem)); }
+            #terminal-overlay { bottom: max(1.2rem, env(safe-area-inset-bottom, 0.5rem)); }
         }
 
         /* 减少动画偏好 */
@@ -418,47 +458,39 @@
                 animation-iteration-count: 1 !important;
                 transition-duration: 0.01ms !important;
             }
-            .char {
-                opacity: 1 !important;
-                transform: none !important;
-                filter: none !important;
-                animation: none !important;
-            }
-            #title-connecting,
-            #title-login {
-                opacity: 1 !important;
-                pointer-events: auto !important;
-            }
-            #title-login {
-                display: block !important;
-                opacity: 1 !important;
-            }
-            #title-connecting {
-                display: none !important;
-            }
-            #title-underline {
-                opacity: 0.6;
-                animation: none;
-            }
-            #corner-deco {
-                opacity: 1;
-                animation: none;
-            }
+            .char { opacity: 1 !important; transform: none !important; filter: none !important; animation: none !important; }
+            .dot { animation: none !important; transform: none !important; opacity: 1 !important; }
+            .dots-container { opacity: 1 !important; animation: none !important; }
+            .title-stage { opacity: 1 !important; pointer-events: auto !important; }
+            .title-stage:not(.active) { display: none; }
+            .line { opacity: 1 !important; transform: none !important; }
+            .line-enter, .line-exit { animation: none !important; }
+            #terminal-overlay { opacity: 1; animation: none; }
+            #terminal-overlay.hidden { opacity: 0 !important; }
+            #title-underline { opacity: 0.6; animation: none; }
+            #corner-deco { opacity: 1; animation: none; }
+            #blackout { transition: none; }
+            #blackout.active { opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ====== 背景 ====== -->
+    <!-- 背景 -->
     <div id="bg-layer" aria-hidden="true"></div>
 
-    <!-- ====== Canvas 粒子 ====== -->
+    <!-- Canvas 粒子 -->
     <canvas id="particle-canvas" aria-hidden="true"></canvas>
 
-    <!-- ====== 主内容 ====== -->
+    <!-- 终端输出 -->
+    <div id="terminal-overlay" aria-hidden="true">
+        <div id="terminal-output"></div>
+    </div>
+
+    <!-- 主内容 -->
     <div id="container">
 
-        <!-- 虚空之眼 (绿色) -->
+        <!-- 虚空之眼 -->
         <div id="eye-wrapper" aria-hidden="true">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <circle class="eye-ring" cx="50" cy="50" r="42"
@@ -467,19 +499,15 @@
                 <circle class="eye-ring" cx="50" cy="50" r="36"
                 stroke="var(--void-primary)" stroke-width="0.5"
                 stroke-dasharray="2 12" opacity="0.3" />
-
                 <polygon class="eye-diamond" points="50,18 74,50 50,82 26,50"
                 stroke="var(--void-primary)" stroke-width="1.2"
                 stroke-linejoin="round" opacity="0.7" />
-
                 <polygon class="eye-diamond" points="50,26 66,50 50,74 34,50"
                 stroke="var(--void-primary)" stroke-width="0.5"
                 stroke-linejoin="round" opacity="0.3"
                 style="animation-direction: reverse; animation-duration: 4s;" />
-
                 <circle class="eye-dot" cx="50" cy="50" r="3.5"
                 fill="var(--void-primary)" opacity="0.9" />
-
                 <circle cx="50" cy="12" r="1.2" fill="var(--void-primary)" opacity="0.25" />
                 <circle cx="88" cy="50" r="1.2" fill="var(--void-primary)" opacity="0.25" />
                 <circle cx="50" cy="88" r="1.2" fill="var(--void-primary)" opacity="0.25" />
@@ -487,44 +515,60 @@
             </svg>
         </div>
 
-        <!-- 标题容器 (两个标题叠加) -->
+        <!-- 文案轮播 -->
         <div id="title-container">
-            <!-- “虚空连接中” -->
-            <h1 id="title-connecting" class="title-main animate-char" aria-label="虚空连接中">
+
+            <!-- 阶段1 -->
+            <div id="stage1" class="title-stage active animate-char">
+                <span class="char">接</span>
+                <span class="char">入</span>
                 <span class="char">虚</span>
                 <span class="char">空</span>
+                <span class="char">中</span>
+                <span class="dots-container">
+                    <span class="dot">.</span>
+                    <span class="dot">.</span>
+                    <span class="dot">.</span>
+                </span>
+            </div>
+
+            <!-- 阶段2 -->
+            <div id="stage2" class="title-stage">
                 <span class="char">连</span>
                 <span class="char">接</span>
-                <span class="char">中</span>
-            </h1>
+                <span class="char">已</span>
+                <span class="char">确</span>
+                <span class="char">认</span>
+            </div>
 
-            <!-- “强行登录虚空？”(可点击) -->
-            <a id="title-login" class="title-main" href="TableTop.html" aria-label="点击强行登录">
+            <!-- 阶段3 (改为不可直接跳转，由JS控制) -->
+            <a id="stage3" class="title-stage" href="javascript:void(0)">
                 <span class="char">点</span>
                 <span class="char">击</span>
-                <span class="char">强</span>
-                <span class="char">行</span>
                 <span class="char">登</span>
                 <span class="char">录</span>
-                
             </a>
+
         </div>
 
         <!-- 下划线 -->
         <div id="title-underline" aria-hidden="true"></div>
 
         <!-- 版本号 -->
-        <div id="corner-deco" aria-hidden="true">VOID · 0.1</div>
+        <div id="corner-deco" aria-hidden="true">VOID · 0.2</div>
     </div>
 
+    <!-- 黑屏遮罩 -->
+    <div id="blackout"></div>
+
     <!-- ============================================================
-    JavaScript — 粒子系统 & 标题切换
-    ============================================================ -->
+       JavaScript
+       ============================================================ -->
     <script>
         (function() {
             'use strict';
 
-            // ---------- 粒子系统 (绿色调) ----------
+            // ---------- 粒子系统 ----------
             const canvas = document.getElementById('particle-canvas');
             const ctx = canvas.getContext('2d');
             let width, height;
@@ -555,18 +599,14 @@
 
             function drawParticles() {
                 ctx.clearRect(0, 0, width, height);
-                const primary = getComputedStyle(document.documentElement).getPropertyValue('--void-primary').trim();
-                // 转为RGB，因为我们是绿色，直接用 rgba(143,185,145,)
                 for (const p of particles) {
                     p.x += p.vx;
                     p.y += p.vy;
                     p.pulse += p.pulseSpeed;
-
                     if (p.x < 0) p.x = width;
                     if (p.x > width) p.x = 0;
                     if (p.y < 0) p.y = height;
                     if (p.y > height) p.y = 0;
-
                     const pulseAlpha = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse));
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
@@ -575,7 +615,6 @@
                     ctx.shadowBlur = 12;
                     ctx.fill();
                     ctx.shadowBlur = 0;
-
                     if (p.radius > 1.6) {
                         ctx.beginPath();
                         ctx.arc(p.x - p.vx * 3, p.y - p.vy * 3, p.radius * 0.4, 0, Math.PI * 2);
@@ -601,37 +640,128 @@
                 }, 200);
             });
 
-            // ---------- 标题切换 (5秒后) ----------
-            const connecting = document.getElementById('title-connecting');
-            const login = document.getElementById('title-login');
+            // ---------- 文案轮播 ----------
+            const stage1 = document.getElementById('stage1');
+            const stage2 = document.getElementById('stage2');
+            const stage3 = document.getElementById('stage3');
+            const terminalOverlay = document.getElementById('terminal-overlay');
+            const outputEl = document.getElementById('terminal-output');
 
-            function switchTitle() {
-                // 1. 旧标题渐隐
-                connecting.style.opacity = '0';
-                // 2. 新标题渐显并触发动画
-                login.style.opacity = '1';
-                login.classList.add('clickable');
-                // 添加动画类触发字符推出
-                login.classList.add('animate-char');
-                // 移除旧标题的动画类（可选）
-                connecting.classList.remove('animate-char');
+            function showStage(stage) {
+                [stage1, stage2, stage3].forEach(el => {
+                    el.classList.remove('active');
+                    el.classList.remove('animate-char');
+                });
+                stage.classList.add('active');
+                void stage.offsetWidth;
+                stage.classList.add('animate-char');
             }
 
-            // 页面加载后5秒执行切换
-            setTimeout(switchTitle, 5000);
+            // ---------- 终端输出控制 ----------
+            const logLines = [
+                '██╗  ██╗     ██╗   ██╗    ██╗  ██╗     ██╗   ██╗    ███████╗',
+                '██║ ██╔╝    ██║   ██║    ██║ ██╔╝    ██║   ██║    ╚══███╔╝',
+                '█████╔╝     ██║   ██║    █████╔╝     ██║   ██║      ███╔╝ ',
+                '██╔═██╗     ██║   ██║    ██╔═██╗     ██║   ██║     ███╔╝  ',
+                '██║  ██╗    ╚██████║    ██║  ██╗    ╚██████║    ███████╗',
+                '╚═╝  ╚═╝     ╚═════╝     ╚═╝  ╚═╝     ╚═════╝     ╚══════╝',
+                '[SYSTEM] VoidOS kernel v0.2 initialized.',
+                '[INFO]  Detected Void Terminal hardware interface.',
+                '[INFO]  Memory self-test passed.',
+                '[WARN]  High latency to Irminsul (World Tree) detected.',
+                '[INFO]  Neural link handshake successful.',
+                '[OK]    Environment variables loaded.',
+                '[INFO]  Loading void mapping table...',
+                '[OK]    Void identity loaded.',
+                '[INFO]  System ready. Awaiting login command.'
+            ];
 
-            // ---------- 启动粒子 ----------
+            let lineIndex = 0;
+            let stopOutput = false;
+            let outputTimer = null;
+
+            function appendNextLine() {
+                if (stopOutput) return;
+                if (lineIndex < logLines.length) {
+                    const line = logLines[lineIndex];
+                    const isAscii = line.includes('█') || line.includes('╔') || line.includes('╝') || line.includes('═');
+                    const span = document.createElement('div');
+                    span.textContent = line;
+                    span.className = 'line';
+                    if (isAscii) {
+                        span.classList.add('ascii-art');
+                    }
+                    outputEl.appendChild(span);
+                    requestAnimationFrame(() => {
+                        span.classList.add('line-enter');
+                    });
+                    lineIndex++;
+                    const delay = 150 + Math.random() * 300;
+                    outputTimer = setTimeout(appendNextLine, delay);
+                }
+            }
+
+            function hideTerminal() {
+                stopOutput = true;
+                if (outputTimer) {
+                    clearTimeout(outputTimer);
+                    outputTimer = null;
+                }
+                const lines = outputEl.querySelectorAll('.line');
+                lines.forEach(line => {
+                    line.classList.remove('line-enter');
+                    line.classList.add('line-exit');
+                });
+                setTimeout(() => {
+                    terminalOverlay.classList.add('hidden');
+                }, 400);
+            }
+
+            // ---------- 跳转动画 (黑屏过渡) ----------
+            const blackout = document.getElementById('blackout');
+            let isNavigating = false; // 防止多次点击
+
+            function navigateWithBlackout() {
+                if (isNavigating) return;
+                isNavigating = true;
+
+                // 触发黑屏过渡 (1s 渐黑)
+                blackout.classList.add('active');
+
+                // 1s 过渡 + 0.5s 等待 = 1.5s 后跳转
+                setTimeout(function() {
+                    window.location.href = 'TableTop.html';
+                }, 1500);
+            }
+
+            // ---------- 启动时间线 ----------
+            // 阶段1：8s，然后阶段2 + 隐藏终端
+            setTimeout(function() {
+                showStage(stage2);
+                hideTerminal();
+
+                // 2s后显示阶段3
+                setTimeout(function() {
+                    showStage(stage3);
+                    stage3.classList.add('clickable');
+                }, 2000);
+            }, 8000);
+
+            // ---------- 阶段3点击事件 (使用自定义跳转) ----------
+            stage3.addEventListener('click', function(e) {
+                e.preventDefault(); // 阻止默认跳转 (href="javascript:void(0)")
+                if (navigator.vibrate) navigator.vibrate(12);
+                navigateWithBlackout();
+            });
+
+            // ---------- 启动粒子与终端输出 ----------
             if (document.readyState === 'complete') {
                 initParticles();
             } else {
                 window.addEventListener('load', initParticles);
             }
 
-            // 点击新标题时触感反馈
-            login.addEventListener('click', function(e) {
-                if (navigator.vibrate) navigator.vibrate(12);
-                // 正常跳转
-            });
+            setTimeout(appendNextLine, 1500);
 
             console.log('🟢 VoidOS · 虚空终端 (绿色版) 已启动');
         })();

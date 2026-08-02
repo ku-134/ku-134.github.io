@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>VoidOS · 桌面</title>
+    <!-- 独立样式 -->
+    <link rel="stylesheet" href="style.css?v=20260802" />
+</head>
+<body>
+
+    <!-- 桌面背景 -->
+    <div id="desktop-bg"></div>
+
+    <!-- 桌面元素容器 -->
+    <div id="desktop"></div>
+
+    <!-- Home 键 (虚空之眼) -->
+    <div id="home-eye" title="虚空之眼">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle class="eye-ring" cx="50" cy="50" r="42" stroke="#8FB991" stroke-width="1.2" stroke-dasharray="4 8" opacity="0.5" />
+            <circle class="eye-ring" cx="50" cy="50" r="36" stroke="#8FB991" stroke-width="0.8" stroke-dasharray="2 12" opacity="0.3" />
+            <polygon class="eye-diamond" points="50,18 74,50 50,82 26,50" stroke="#8FB991" stroke-width="1.5" stroke-linejoin="round" opacity="0.7" />
+            <polygon class="eye-diamond" points="50,26 66,50 50,74 34,50" stroke="#8FB991" stroke-width="0.8" stroke-linejoin="round" opacity="0.3" style="animation-direction: reverse; animation-duration: 4s;" />
+            <circle class="eye-dot" cx="50" cy="50" r="4" fill="#8FB991" opacity="0.9" />
+            <circle cx="50" cy="12" r="1.5" fill="#8FB991" opacity="0.25" />
+            <circle cx="88" cy="50" r="1.5" fill="#8FB991" opacity="0.25" />
+            <circle cx="50" cy="88" r="1.5" fill="#8FB991" opacity="0.25" />
+            <circle cx="12" cy="50" r="1.5" fill="#8FB991" opacity="0.25" />
+        </svg>
+    </div>
+
+    <!-- 底部输入框 -->
+    <div id="terminal-input-area">
+        <span class="prompt">➜</span>
+        <input type="text" id="terminal-input" placeholder="输入命令 (暂不可用) ..." disabled />
+    </div>
+
+    <!-- 缩放指示器 -->
+    <div id="zoom-indicator">缩放: <span id="zoom-value">100%</span></div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ---------- 核心变量 ----------
+            const desktop = document.getElementById('desktop');
+            const homeEye = document.getElementById('home-eye');
+            const terminalArea = document.getElementById('terminal-input-area');
+            const terminalInput = document.getElementById('terminal-input');
+            const zoomIndicator = document.getElementById('zoom-indicator');
+            const zoomSpan = document.getElementById('zoom-value');
+
+            const elements = []; // 存储所有桌面元素数据
+            let currentScale = 1;
+            const MIN_SCALE = 0.3;
+            const MAX_SCALE = 2.0;
+            let terminalVisible = false;
+            let dragData = null;
+            let longPressTimer = null;
+            let isDragging = false;
+
+            // ---------- 工具函数 ----------
+            function getElementRect(el) {
+                const left = parseFloat(el.style.left) || 0;
+                const top = parseFloat(el.style.top) || 0;
+                const w = parseFloat(el.style.width) || 60;
+                const h = parseFloat(el.style.height) || 60;
+                return { x: left, y: top, w, h };
+            }
+
+            function setElementGeometry(el, x, y, w, h) {
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                el.style.width = w + 'px';
+                el.style.height = h + 'px';
+            }
+
+            // ---------- 注册应用管理器 ----------
+            const appRegistry = {};
+
+            window.VoidOS = {
+                registerApp: function(id, def) {
+                    appRegistry[id] = def;
+                },
+                launchApp: function(id) {
+                    const app = appRegistry[id];
+                    if (app && app.launch) {
+                        app.launch();
+                    } else {
+                        alert(`应用 "${id}" 尚未实现启动逻辑`);
+                    }
+                }
+            };
+
+            // ---------- 创建桌面元素 ----------
+            function createDesktopElement(config) {
+                const el = document.createElement('div');
+                el.className = 'desktop-element';
+                if (config.type) el.dataset.type = config.type;
+
+                // 浮动随机偏移
+                const randX = (Math.random() - 0.5) * 4;
+                const randY = (Math.random() - 0.5) * 4;
+                const randRot = (Math.random() - 0.5) * 2;
+                el.style.setProperty('--float-x', randX + 'px');
+                el.style.setProperty('--float-y', randY + 'px');
+                el.style.setProperty('--float-rot', randRot + 'deg');
+                const duration = 3 + Math.random() * 2;
+                el.style.animationDuration = duration + 's';
+
+                // 填充内容
+                if (config.type === 'time') {
+                    el.innerHTML = `
+                        <div class="time" id="time-display">--:--:--</div>
+                        <div class="date" id="date-display">----年--月--日</div>
+                    `;
+                    el.classList.add('time-component');
+                    updateTimeComponent(el);
+                } else if (config.type === 'calendar') {
+                    el.innerHTML = `
+                        <div class="month" id="month-display">一月</div>
+                        <div class="day" id="day-display">1</div>
+                    `;
+                    el.classList.add('calendar-component');
+                    updateCalendarComponent(el);
+                } else if (config.type === 'notification') {
+                    el.classList.add('notification-bubble');
+                    el.innerHTML = `
+                        <span class="notify-close">✕</span>
+                        <div class="notify-title">${config.title || '通知'}</div>
+                        <div class="notify-body">${config.body || ''}</div>
+                    `;
+                    // 关闭按钮事件（阻止冒泡，避免触发拖动）
+                    const closeBtn = el.querySelector('.notify-close');
+                    closeBtn.addEventListener('mousedown', function(e) {
+                        e.stopPropagation();
+                    });
+                    closeBtn.addEventListener('touchstart', function(e) {
+                        e.stopPropagation();
+                    });
+                    closeBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        removeElement(el);
+                    });
+                } else if (config.type === 'app') {
+                    // 应用图标
+                    const icon = config.icon || '📱';
+                    const label = config.label || '应用';
+                    el.innerHTML = `
+                        <span class="icon">${icon}</span>
+                        <span class="label">${label}</span>
+                    `;
+                    el.dataset.appId = config.appId || '';
+                    // 点击启动应用
+                    el.addEventListener('click', function(e) {
+                        if (!isDragging) {
+                            const id = this.dataset.appId;
+                            if (id && appRegistry[id]) {
+                                VoidOS.launchApp(id);
+                            } else {
+                                console.warn('应用未注册:', id);
+                            }
+                        }
+                    });
+                }
+
+                const w = config.w || 80;
+                const h = config.h || 80;
+                el.style.width = w + 'px';
+                el.style.height = h + 'px';
+                el.style.left = (config.x || 0) + 'px';
+                el.style.top = (config.y || 0) + 'px';
+
+                desktop.appendChild(el);
+
+                const elemData = {
+                    el: el,
+                    x: config.x || 0,
+                    y: config.y || 0,
+                    w: w,
+                    h: h,
+                    type: config.type || 'app',
+                    data: config.data || {}
+                };
+                elements.push(elemData);
+
+                bindElementEvents(el, elements.length - 1);
+
+                return elemData;
+            }
+
+            // ---------- 更新时间和日历 ----------
+            function updateTimeComponent(el) {
+                const now = new Date();
+                const timeStr = now.toTimeString().slice(0, 8);
+                const dateStr = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+                const timeDisplay = el.querySelector('#time-display');
+                const dateDisplay = el.querySelector('#date-display');
+                if (timeDisplay) timeDisplay.textContent = timeStr;
+                if (dateDisplay) dateDisplay.textContent = dateStr;
+            }
+
+            function updateCalendarComponent(el) {
+                const now = new Date();
+                const month = now.toLocaleString('zh-CN', { month: 'long' });
+                const day = now.getDate();
+                const monthDisplay = el.querySelector('#month-display');
+                const dayDisplay = el.querySelector('#day-display');
+                if (monthDisplay) monthDisplay.textContent = month;
+                if (dayDisplay) dayDisplay.textContent = day;
+            }
+
+            // 定时刷新时间/日历
+            setInterval(() => {
+                elements.forEach(item => {
+                    if (item.type === 'time') updateTimeComponent(item.el);
+                    else if (item.type === 'calendar') updateCalendarComponent(item.el);
+                });
+            }, 1000);
+
+            // ---------- 通知 API ----------
+            window.createNotification = function(title, body) {
+                const margin = 20;
+                const maxX = window.innerWidth - 200;
+                const maxY = window.innerHeight - 120;
+                let x = margin + Math.random() * (maxX - margin);
+                let y = margin + Math.random() * (maxY - margin);
+
+                const config = {
+                    type: 'notification',
+                    x: x,
+                    y: y,
+                    w: 180,
+                    h: 80,
+                    title: title || '通知',
+                    body: body || '这是一条来自虚空的消息'
+                };
+                const elem = createDesktopElement(config);
+                // 重新触发动画（移除并重新添加类）
+                const el = elem.el;
+                el.style.animation = 'none';
+                void el.offsetHeight;
+                el.style.animation = '';
+                // 确保弹出动画重新播放
+                el.classList.remove('notification-bubble');
+                void el.offsetHeight;
+                el.classList.add('notification-bubble');
+            };
+
+            function removeElement(el) {
+                const idx = elements.findIndex(item => item.el === el);
+                if (idx !== -1) {
+                    elements.splice(idx, 1);
+                    el.remove();
+                }
+            }
+
+            // ---------- 拖动绑定（优化） ----------
+            function bindElementEvents(el, index) {
+                let startX, startY, startLeft, startTop, offsetX, offsetY;
+                let longPressTriggered = false;
+
+                function onPointerDown(e) {
+                    // 如果点击的是关闭按钮，不启动长按
+                    if (e.target.closest('.notify-close')) return;
+
+                    const ev = e.touches ? e.touches[0] : e;
+                    startX = ev.clientX;
+                    startY = ev.clientY;
+                    startLeft = parseFloat(el.style.left) || 0;
+                    startTop = parseFloat(el.style.top) || 0;
+                    longPressTriggered = false;
+
+                    // 计算鼠标相对于元素左上角的偏移
+                    offsetX = ev.clientX - startLeft;
+                    offsetY = ev.clientY - startTop;
+
+                    longPressTimer = setTimeout(() => {
+                        longPressTriggered = true;
+                        isDragging = true;
+                        el.classList.add('dragging');
+                        dragData = {
+                            el: el,
+                            offsetX: offsetX,
+                            offsetY: offsetY,
+                            startLeft: startLeft,
+                            startTop: startTop,
+                            index: index
+                        };
+                        // 全局监听移动和释放
+                        document.addEventListener('mousemove', onPointerMove);
+                        document.addEventListener('mouseup', onPointerUp);
+                        document.addEventListener('touchmove', onPointerMove, { passive: false });
+                        document.addEventListener('touchend', onPointerUp, { passive: false });
+                    }, 300);
+                }
+
+                function onPointerMove(e) {
+                    e.preventDefault();
+                    if (!isDragging || !dragData) return;
+                    const ev = e.touches ? e.touches[0] : e;
+                    // 计算新位置（相对于左上角）
+                    let newX = ev.clientX - dragData.offsetX;
+                    let newY = ev.clientY - dragData.offsetY;
+                    // 限制边界
+                    const maxX = window.innerWidth - parseFloat(el.style.width);
+                    const maxY = window.innerHeight - parseFloat(el.style.height);
+                    newX = Math.max(0, Math.min(newX, maxX));
+                    newY = Math.max(0, Math.min(newY, maxY));
+                    el.style.left = newX + 'px';
+                    el.style.top = newY + 'px';
+                    const data = elements.find(item => item.el === el);
+                    if (data) {
+                        data.x = newX;
+                        data.y = newY;
+                    }
+                }
+
+                function onPointerUp(e) {
+                    clearTimeout(longPressTimer);
+                    if (isDragging) {
+                        el.classList.remove('dragging');
+                        document.removeEventListener('mousemove', onPointerMove);
+                        document.removeEventListener('mouseup', onPointerUp);
+                        document.removeEventListener('touchmove', onPointerMove);
+                        document.removeEventListener('touchend', onPointerUp);
+                        dragData = null;
+                        isDragging = false;
+                    }
+                }
+
+                el.addEventListener('mousedown', onPointerDown);
+                el.addEventListener('touchstart', onPointerDown, { passive: false });
+                el.addEventListener('selectstart', e => e.preventDefault());
+            }
+
+            // ---------- 缩放控制 ----------
+            let lastTouchDist = 0;
+
+            function handleZoom(factor, centerX, centerY) {
+                const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, currentScale * factor));
+                if (newScale === currentScale) return;
+                currentScale = newScale;
+
+                const cx = centerX || window.innerWidth / 2;
+                const cy = centerY || window.innerHeight / 2;
+
+                for (const item of elements) {
+                    const el = item.el;
+                    const left = parseFloat(el.style.left) || 0;
+                    const top = parseFloat(el.style.top) || 0;
+                    const w = parseFloat(el.style.width) || 80;
+                    const h = parseFloat(el.style.height) || 80;
+
+                    const dx = left + w / 2 - cx;
+                    const dy = top + h / 2 - cy;
+
+                    const newW = w * factor;
+                    const newH = h * factor;
+                    const newLeft = cx + dx * factor - newW / 2;
+                    const newTop = cy + dy * factor - newH / 2;
+
+                    el.style.left = newLeft + 'px';
+                    el.style.top = newTop + 'px';
+                    el.style.width = newW + 'px';
+                    el.style.height = newH + 'px';
+
+                    item.x = newLeft;
+                    item.y = newTop;
+                    item.w = newW;
+                    item.h = newH;
+                }
+
+                zoomSpan.textContent = Math.round(currentScale * 100) + '%';
+                zoomIndicator.classList.add('show');
+                clearTimeout(zoomIndicator._hideTimer);
+                zoomIndicator._hideTimer = setTimeout(() => {
+                    zoomIndicator.classList.remove('show');
+                }, 1500);
+            }
+
+            document.addEventListener('wheel', function(e) {
+                if (e.target.closest('#terminal-input-area')) return;
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                handleZoom(delta, e.clientX, e.clientY);
+            }, { passive: false });
+
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 2) {
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    lastTouchDist = Math.sqrt(dx * dx + dy * dy);
+                }
+            }, { passive: true });
+
+            document.addEventListener('touchmove', function(e) {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const dx = e.touches[0].clientX - e.touches[1].clientX;
+                    const dy = e.touches[0].clientY - e.touches[1].clientY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (lastTouchDist > 0) {
+                        const factor = dist / lastTouchDist;
+                        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                        handleZoom(factor, cx, cy);
+                    }
+                    lastTouchDist = dist;
+                }
+            }, { passive: false });
+
+            // ---------- Home 键与终端 ----------
+            homeEye.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleTerminal();
+            });
+
+            function toggleTerminal() {
+                terminalVisible = !terminalVisible;
+                if (terminalVisible) {
+                    homeEye.classList.add('shifted');
+                    terminalArea.classList.add('active');
+                    terminalInput.disabled = false;
+                    terminalInput.focus();
+                } else {
+                    homeEye.classList.remove('shifted');
+                    terminalArea.classList.remove('active');
+                    terminalInput.disabled = true;
+                    terminalInput.blur();
+                }
+            }
+
+            // ---------- 加载应用 (从 Desktop-Process.txt) ----------
+            async function loadApps() {
+                try {
+                    const response = await fetch('Desktop-Process.txt?t=' + Date.now());
+                    const text = await response.text();
+                    const lines = text.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+                    for (const fileName of lines) {
+                        const jsFile = `apos/${fileName}?t=${Date.now()}`;
+                        try {
+                            await import(jsFile); // 动态 import 自动处理缓存
+                            console.log(`✅ 应用加载成功: ${fileName}`);
+                        } catch (err) {
+                            console.error(`❌ 加载应用失败 ${fileName}:`, err);
+                        }
+                    }
+                } catch (err) {
+                    console.warn('无法读取 Desktop-Process.txt，使用默认应用占位。', err);
+                    // 降级：添加一个占位应用
+                    if (Object.keys(appRegistry).length === 0) {
+                        createDesktopElement({
+                            type: 'app',
+                            x: 30,
+                            y: 150,
+                            w: 80,
+                            h: 80,
+                            icon: '📦',
+                            label: '示例应用',
+                            appId: 'demo'
+                        });
+                        window.VoidOS.registerApp('demo', {
+                            icon: '📦',
+                            name: '示例应用',
+                            launch: () => alert('这是一个占位应用，请创建 Desktop-Process.txt 并放置 JS 文件到 apos/ 目录。')
+                        });
+                    }
+                }
+                // 加载完成后，根据注册表创建图标
+                renderAppIcons();
+            }
+
+            // ---------- 渲染应用图标 ----------
+            function renderAppIcons() {
+                // 清除已有的应用图标（保留组件和通知）
+                const appElements = [];
+                elements.forEach((item, idx) => {
+                    if (item.type === 'app') {
+                        appElements.push(idx);
+                    }
+                });
+                // 从后往前删除
+                appElements.sort((a, b) => b - a).forEach(idx => {
+                    const item = elements[idx];
+                    item.el.remove();
+                    elements.splice(idx, 1);
+                });
+
+                // 重新创建应用图标
+                const appIds = Object.keys(appRegistry);
+                const startX = 30,
+                    startY = 150;
+                const perRow = 4;
+                appIds.forEach((id, i) => {
+                    const def = appRegistry[id];
+                    const col = i % perRow;
+                    const row = Math.floor(i / perRow);
+                    createDesktopElement({
+                        type: 'app',
+                        x: startX + col * 100,
+                        y: startY + row * 100,
+                        w: 80,
+                        h: 80,
+                        icon: def.icon || '📱',
+                        label: def.name || id,
+                        appId: id
+                    });
+                });
+            }
+
+            // ---------- 初始化桌面 ----------
+            function initDesktop() {
+                // 添加时间组件（默认显示）
+                createDesktopElement({
+                    type: 'time',
+                    x: 30,
+                    y: 40,
+                    w: 160,
+                    h: 90
+                });
+                // 添加日历组件
+                createDesktopElement({
+                    type: 'calendar',
+                    x: window.innerWidth - 180,
+                    y: 40,
+                    w: 120,
+                    h: 100
+                });
+
+                // 加载应用
+                loadApps();
+
+                // 示例通知（3秒后）
+                setTimeout(() => {
+                    window.createNotification('系统提示', '欢迎来到虚空桌面');
+                }, 3000);
+                // 10秒后第二条
+                setTimeout(() => {
+                    window.createNotification('来自世界树', '神经链接已建立');
+                }, 10000);
+
+                console.log('💡 长按桌面元素可拖动，滚轮/双指缩放');
+                console.log('💡 点击底部虚空之眼呼出终端');
+                console.log('💡 调用 window.createNotification(title, body) 创建通知');
+            }
+
+            // ---------- 入场过渡（黑屏亮起） ----------
+            function entrance() {
+                // 创建全屏黑遮罩
+                const overlay = document.createElement('div');
+                overlay.style.cssText = `
+                    position: fixed; inset: 0; z-index: 9999;
+                    background: #000;
+                    transition: opacity 1.2s ease;
+                    pointer-events: none;
+                    opacity: 1;
+                `;
+                document.body.appendChild(overlay);
+
+                // 初始化桌面（元素在遮罩下方）
+                initDesktop();
+
+                // 强制重绘后淡出遮罩
+                requestAnimationFrame(() => {
+                    overlay.style.opacity = '0';
+                });
+
+                // 移除遮罩
+                setTimeout(() => {
+                    overlay.remove();
+                }, 1500);
+            }
+
+            // 启动
+            if (document.readyState === 'complete') {
+                entrance();
+            } else {
+                window.addEventListener('load', entrance);
+            }
+
+            // 暴露全局 API
+            window.__void = {
+                createNotification: window.createNotification,
+                elements: elements,
+                scale: () => currentScale,
+                registerApp: window.VoidOS.registerApp,
+                launchApp: window.VoidOS.launchApp
+            };
+
+            console.log('🟢 VoidOS 桌面已启动 (应用动态加载)');
+
+        })();
+    </script>
+</body>
+</html>

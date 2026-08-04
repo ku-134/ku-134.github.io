@@ -490,7 +490,7 @@
             if (e.target === settingsOverlay) closeSettings();
         });
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && settingsOverlay.classLition.contains('active')) closeSettings();
+            if (e.key === 'Escape' && settingsOverlay.classList.contains('active')) closeSettings();
         });
         themeOptions.addEventListener('click', function(e) {
             const btn = e.target.closest('.opt-btn');
@@ -511,7 +511,7 @@
         applySettings(loadSettings());
     }
 
-    // =========== 隐藏/显示UI ==========
+    // ========== 隐藏/显示UI ==========
     function setupHideUI() {
         const hideToggle = document.getElementById('hideToggle');
         let isHidden = false;
@@ -525,7 +525,7 @@
             } else {
                 this.textContent = '👁️';
                 this.classList.remove('active');
-                this.title = '隐藏所月UI，只看背景';
+                this.title = '隐藏所有UI，只看背景';
             }
         });
     }

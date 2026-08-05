@@ -15,7 +15,7 @@
     <!-- marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        /* ===== 文章页专属样式（基于全局卡片风格） ===== */
+        /* ===== 文章页专属样式 ===== */
         .void-container {
             max-width: 920px;
             width: 100%;
@@ -112,7 +112,6 @@
             width: 100%;
         }
 
-        /* 单个文章卡片 */
         .article-card {
             display: block !important;
             width: 100% !important;
@@ -171,7 +170,6 @@
             font-style: italic;
         }
 
-        /* 空状态 */
         .void-empty {
             text-align: center;
             padding: 3rem 0;
@@ -316,6 +314,37 @@
             pointer-events: auto !important;
         }
 
+        /* ===== 修复：设置弹窗强制覆盖 ===== */
+        .settings-overlay {
+            display: none !important;
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 1600 !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(0,0,0,0.35) !important;
+            backdrop-filter: blur(6px) !important;
+            -webkit-backdrop-filter: blur(6px) !important;
+        }
+        .settings-overlay.active {
+            display: flex !important;
+        }
+        .settings-overlay .settings-panel {
+            max-width: 420px !important;
+            width: 90% !important;
+            padding: 2rem 2rem 1.8rem !important;
+            border-radius: 1.8rem !important;
+            backdrop-filter: blur(16px) !important;
+            -webkit-backdrop-filter: blur(16px) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5) !important;
+            max-height: 90vh !important;
+            overflow-y: auto !important;
+            text-align: center !important;
+            background: var(--settings-panel-bg, rgba(12,22,12,0.92)) !important;
+            border-color: var(--settings-panel-border, rgba(255,255,255,0.06)) !important;
+        }
+
         /* ===== 响应式 ===== */
         @media (max-width: 600px) {
             .void-card { padding: 1.5rem 1rem; }
@@ -327,7 +356,6 @@
             .void-card { padding: 1rem 0.8rem; }
         }
 
-        /* 动画 */
         @keyframes overlayIn {
             0% { opacity: 0; backdrop-filter: blur(0px); }
             100% { opacity: 1; backdrop-filter: blur(6px); }
@@ -342,7 +370,6 @@
 
     <div class="void-container">
         <div class="void-card">
-            <!-- 标题 + 导航 -->
             <header class="void-header">
                 <div class="brand" id="brandTitle">
                     <span class="typing-title">📗 文章</span>
@@ -353,19 +380,16 @@
                 </div>
             </header>
 
-            <!-- 搜索栏 -->
             <div class="void-toolbar">
                 <input type="text" id="searchInput" placeholder="🔍 搜索文章标题..." />
             </div>
 
-            <!-- 文章列表（瀑布式垂直排列） -->
             <div id="articleContainer" class="article-list">
                 <div class="void-empty">⏳ 加载中...</div>
             </div>
         </div>
     </div>
 
-    <!-- ===== Toast ===== -->
     <div id="voidToast"></div>
 
     <!-- ===== 密码弹窗 ===== -->
@@ -382,7 +406,7 @@
         </div>
     </div>
 
-    <!-- ===== 底部控制栏（全局） ===== -->
+    <!-- ===== 底部控制栏 ===== -->
     <div class="bottom-controls" id="bottomControls">
         <button class="ctrl-btn hide-btn" id="hideToggle" title="隐藏所有UI，只看背景">👁️</button>
         <button class="ctrl-btn settings-btn" id="settingsToggle" title="全局样式设置">⚙️</button>
@@ -417,12 +441,12 @@
         </div>
     </div>
 
-    <!-- ===== 全局脚本 ===== -->
+    <!-- ===== 脚本 ===== -->
     <script src="script.js"></script>
     <script src="VOID-core.js"></script>
     <script>
         (function() {
-            // ===== 全局样式设置（复用首页逻辑） =====
+            // ===== 全局样式设置 =====
             const htmlRoot = document.getElementById('htmlRoot') || document.documentElement;
             const settingsToggle = document.getElementById('settingsToggle');
             const settingsOverlay = document.getElementById('settingsOverlay');

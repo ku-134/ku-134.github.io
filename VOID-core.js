@@ -132,7 +132,8 @@
         if (!card) return;
         const filename = card.dataset.filename;
         if (filename) {
-            window.location.href = 'article.html?file=' + encodeURIComponent(filename);
+            // 传完整路径（VOID/ 前缀），article.html 亦兼容纯文件名
+            window.location.href = 'article.html?file=' + encodeURIComponent('VOID/' + filename);
         }
     });
 

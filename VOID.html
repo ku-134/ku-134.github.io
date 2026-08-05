@@ -104,20 +104,25 @@
             opacity: 0.4;
         }
 
-        /* 文章卡片网格（瀑布流，垂直排列） */
+        /* ===== 文章卡片列表（瀑布式垂直排列） ===== */
         .article-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 1.5rem !important;
+            width: 100%;
         }
 
+        /* 单个文章卡片 */
         .article-card {
+            display: block !important;
+            width: 100% !important;
             background: rgba(128, 128, 128, 0.04);
             border: 1px solid rgba(128, 128, 128, 0.08);
             border-radius: 1.2rem;
             padding: 1.2rem 1.5rem 1.2rem;
             transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
             cursor: pointer;
+            box-sizing: border-box;
         }
         .article-card:hover {
             background: rgba(128, 128, 128, 0.07);
@@ -130,6 +135,7 @@
             display: flex;
             align-items: center;
             gap: 0.6rem;
+            flex-wrap: wrap;
         }
         .article-card .card-title .badge {
             font-size: 0.65rem;
@@ -155,7 +161,7 @@
             font-size: 0.95rem;
             border-top: 1px dashed rgba(128, 128, 128, 0.08);
             padding-top: 0.8rem;
-            display: none; /* 默认隐藏，加载后显示 */
+            display: none;
         }
         .article-card .card-body.loaded {
             display: block;
@@ -170,9 +176,10 @@
             text-align: center;
             padding: 3rem 0;
             opacity: 0.5;
+            width: 100%;
         }
 
-        /* ===== 解锁弹窗（自定义） ===== */
+        /* ===== 解锁弹窗 ===== */
         .void-pw-overlay {
             position: fixed;
             inset: 0;
@@ -257,7 +264,6 @@
         .void-pw-panel .panel-actions .btn-secondary:hover {
             background: rgba(128, 128, 128, 0.06);
         }
-
         .void-pw-panel .hint {
             font-size: 0.7rem;
             opacity: 0.3;
@@ -275,12 +281,12 @@
             border-radius: 2rem;
             font-size: 1rem;
             font-weight: 500;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
             opacity: 0;
             transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             pointer-events: none;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: var(--toast-bg, rgba(0,0,0,0.8));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--toast-bg, rgba(0, 0, 0, 0.8));
             color: var(--toast-color, #fff);
         }
         #voidToast.show {
@@ -294,6 +300,7 @@
         body.ui-hidden .void-header,
         body.ui-hidden .void-toolbar,
         body.ui-hidden .article-list,
+        body.ui-hidden .article-card,
         body.ui-hidden .void-pw-overlay,
         body.ui-hidden #voidToast {
             opacity: 0 !important;
@@ -309,7 +316,7 @@
             pointer-events: auto !important;
         }
 
-        /* 响应式 */
+        /* ===== 响应式 ===== */
         @media (max-width: 600px) {
             .void-card { padding: 1.5rem 1rem; }
             .void-header { flex-direction: column; align-items: stretch; }
@@ -318,6 +325,16 @@
         }
         @media (max-width: 400px) {
             .void-card { padding: 1rem 0.8rem; }
+        }
+
+        /* 动画 */
+        @keyframes overlayIn {
+            0% { opacity: 0; backdrop-filter: blur(0px); }
+            100% { opacity: 1; backdrop-filter: blur(6px); }
+        }
+        @keyframes modalPop {
+            0% { transform: scale(0.92) translateY(16px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
         }
     </style>
 </head>
@@ -341,7 +358,7 @@
                 <input type="text" id="searchInput" placeholder="🔍 搜索文章标题..." />
             </div>
 
-            <!-- 文章列表 -->
+            <!-- 文章列表（瀑布式垂直排列） -->
             <div id="articleContainer" class="article-list">
                 <div class="void-empty">⏳ 加载中...</div>
             </div>
@@ -405,7 +422,7 @@
     <script src="VOID-core.js"></script>
     <script>
         (function() {
-            // 全局设置相关（复用首页逻辑）
+            // ===== 全局样式设置（复用首页逻辑） =====
             const htmlRoot = document.getElementById('htmlRoot') || document.documentElement;
             const settingsToggle = document.getElementById('settingsToggle');
             const settingsOverlay = document.getElementById('settingsOverlay');
@@ -472,7 +489,7 @@
             });
             applySettings(loadSettings());
 
-            // 隐藏 UI
+            // ===== 隐藏 UI =====
             const hideToggle = document.getElementById('hideToggle');
             let isHidden = false;
             hideToggle.addEventListener('click', function() {
@@ -483,18 +500,20 @@
                 this.title = isHidden ? '显示所有UI' : '隐藏所有UI，只看背景';
             });
 
-            // 显示控制栏
+            // ===== 显示控制栏 =====
             const bottomControls = document.getElementById('bottomControls');
-            setTimeout(() => { bottomControls.classList.add('show'); }, 800);
+            setTimeout(function() {
+                bottomControls.classList.add('show');
+            }, 800);
 
-            // Toast 工具
+            // ===== Toast 工具 =====
             window.showVoidToast = function(msg, duration) {
                 duration = duration || 4000;
                 const el = document.getElementById('voidToast');
                 el.textContent = msg;
                 el.classList.add('show');
                 clearTimeout(el._hideTimer);
-                el._hideTimer = setTimeout(() => {
+                el._hideTimer = setTimeout(function() {
                     el.classList.remove('show');
                 }, duration);
             };

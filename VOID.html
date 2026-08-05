@@ -288,6 +288,27 @@
             transform: translateX(-50%) translateY(0);
         }
 
+        /* ===== 修复：文章页隐藏 UI 适配 ===== */
+        body.ui-hidden .void-container,
+        body.ui-hidden .void-card,
+        body.ui-hidden .void-header,
+        body.ui-hidden .void-toolbar,
+        body.ui-hidden .article-list,
+        body.ui-hidden .void-pw-overlay,
+        body.ui-hidden #voidToast {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            transition: opacity 0.3s ease;
+        }
+        body.ui-hidden .settings-overlay.active {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        body.ui-hidden .bottom-controls {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
         /* 响应式 */
         @media (max-width: 600px) {
             .void-card { padding: 1.5rem 1rem; }

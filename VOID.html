@@ -50,9 +50,15 @@
             cursor: pointer;
             user-select: none;
             letter-spacing: 0.02em;
+            /* 修复：点击时不显示浏览器选择高亮 */
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
         }
         .void-header .brand .typing-title {
             display: inline-block;
+            /* 修复：点击时不显示浏览器选择高亮 */
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
         .void-header .nav-links {
             display: flex;
@@ -135,6 +141,7 @@
             align-items: center;
             gap: 0.6rem;
             flex-wrap: wrap;
+            user-select: none;
         }
         .article-card .card-title .badge {
             font-size: 0.65rem;
@@ -217,7 +224,8 @@
             opacity: 0.4;
             margin-bottom: 1.2rem;
         }
-        .void-pw-panel input[type="password"] {
+        /* 修复：密码输入框使用 text 类型 + CSS 掩码，避免触发系统保密输入法 */
+        .void-pw-panel input#pwInput {
             width: 100%;
             padding: 0.6rem 1rem;
             border-radius: 2rem;
@@ -227,8 +235,11 @@
             font-size: 1rem;
             margin-bottom: 0.8rem;
             outline: none;
+            -webkit-text-security: disc;
+            text-security: disc;
+            font-family: inherit;
         }
-        .void-pw-panel input:focus {
+        .void-pw-panel input#pwInput:focus {
             border-color: #66bb6a;
         }
         .void-pw-panel .panel-actions {
@@ -268,7 +279,7 @@
             margin-top: 0.4rem;
         }
 
-        /* ===== 样式设置弹窗（参考 GG/RP 内联样式，补齐全局缺失） ===== */
+        /* ===== 样式设置弹窗 ===== */
         .settings-overlay {
             position: fixed;
             inset: 0;
@@ -470,12 +481,13 @@
     <!-- ===== Toast ===== -->
     <div id="voidToast"></div>
 
-    <!-- ===== 密码弹窗 ===== -->
+    <!-- ===== 密码弹窗（输入框已改为 text + CSS 掩码） ===== -->
     <div class="void-pw-overlay" id="pwOverlay">
         <div class="void-pw-panel">
             <div class="panel-title">🔐 解锁隐藏文章</div>
             <div class="panel-sub">请输入密码</div>
-            <input type="password" id="pwInput" placeholder="密码" />
+            <!-- 使用 type="text" + CSS text-security 掩码，避免触发系统保密输入法 -->
+            <input type="text" id="pwInput" placeholder="密码" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             <div class="panel-actions">
                 <button class="btn btn-secondary" id="pwCancel">取消</button>
                 <button class="btn btn-primary" id="pwConfirm">确认</button>
@@ -490,7 +502,7 @@
         <button class="ctrl-btn settings-btn" id="settingsToggle" title="全局样式设置">⚙️</button>
     </div>
 
-    <!-- ===== 设置面板（样式完全由全局 style.css 控制） ===== -->
+    <!-- ===== 设置面板 ===== -->
     <div class="settings-overlay" id="settingsOverlay">
         <div class="settings-panel">
             <div class="panel-title">⚙️ 样式设置</div>

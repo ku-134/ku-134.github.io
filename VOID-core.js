@@ -61,23 +61,38 @@
             .then(text => {
                 const lines = text.split('\n');
                 const articles = [];
-                let hasHidden = false;
                 for (let raw of lines) {
                     raw = raw.trim();
                     if (!raw) continue;
                     let hidden = false;
-                    let filename = raw;
-                    if (raw.startsWith('#')) {
+                    let line = raw;
+                    if (line.startsWith('#')) {
                         hidden = true;
-                        filename = raw.substring(1).trim();
-                        hasHidden = true;
+                        line = line.substring(1).trim();
                     }
+                    if (!line) continue;
+                    // 解析简介：| 之后
+                    let desc = '';
+                    const barIdx = line.lastIndexOf('|');
+                    if (barIdx !== -1) {
+                        desc = line.substring(barIdx + 1).trim();
+                        line = line.substring(0, barIdx).trim();
+                    }
+                    // 解析自定义标题：' -' 之后
+                    let title = '';
+                    const dashIdx = line.indexOf(' -');
+                    if (dashIdx !== -1) {
+                        title = line.substring(dashIdx + 2).trim();
+                        line = line.substring(0, dashIdx).trim();
+                    }
+                    const filename = line;
                     if (!filename) continue;
-                    let title = filename.replace(/\.md$/i, '').trim();
+                    if (!title) title = filename.replace(/\.md$/i, '').trim();
                     if (!title) continue;
                     articles.push({
                         filename: filename,
                         title: title,
+                        desc: desc,
                         hidden: hidden,
                     });
                 }
@@ -90,12 +105,6 @@
                 }
                 filteredArticles = visible.slice();
                 renderArticles(filteredArticles);
-
-                if (tokenOk && hasHidden) {
-                    showToast('🔓 隐藏文章已解锁（有效期至明天）', 3000);
-                } else if (hasHidden && !tokenOk) {
-                    showToast('🔒 有隐藏文章，连续点击标题 5 次解锁', 4000);
-                }
             })
             .catch(err => {
                 container.innerHTML = `<div class="void-empty">❌ 加载失败：${err.message}</div>`;
@@ -113,12 +122,14 @@
         let html = '';
         for (const art of articles) {
             const hiddenBadge = art.hidden ? '<span class="badge hidden-badge">🔒 隐藏</span>' : '';
+            const descHtml = art.desc ? `<div class="card-desc">${art.desc}</div>` : '';
             html += `
                 <div class="article-card" data-filename="${art.filename}">
                     <div class="card-title">
                         ${art.title}
                         ${hiddenBadge}
                     </div>
+                    ${descHtml}
                     <div class="card-meta">${art.filename}</div>
                 </div>
             `;
@@ -155,7 +166,10 @@
         if (!tokenOk) {
             candidates = allArticles.filter(a => !a.hidden);
         }
-        const matched = candidates.filter(a => a.title.toLowerCase().includes(keyword));
+        const matched = candidates.filter(a =>
+            a.title.toLowerCase().includes(keyword) ||
+            (a.desc && a.desc.toLowerCase().includes(keyword))
+        );
         filteredArticles = matched;
         renderArticles(filteredArticles);
     }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文章分类 · Kukuz</title>
+    <title>文章 · 虚空终端</title>
     <!-- 预加载背景 -->
     <link rel="preload" as="image" href="background.webp">
     <link rel="preload" as="image" href="background1.webp">
@@ -12,51 +12,44 @@
     <link rel="preload" as="image" href="background4.webp">
     <!-- 全局样式 -->
     <link rel="stylesheet" href="style.css">
-    <!-- marked.js 用于渲染 Markdown -->
+    <!-- marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        /* ===== 文章页独有样式（复用全局卡片风格） ===== */
-        body {
-            background: url('background.webp') no-repeat center center / cover;
-            background-attachment: fixed;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .void-wrapper {
-            max-width: 1100px;
+        /* ===== 文章页专属样式（基于全局卡片风格） ===== */
+        .void-container {
+            max-width: 920px;
             width: 100%;
+            margin: 0 auto;
         }
-        /* 主卡片 – 与首页风格统一 */
+
         .void-card {
-            padding: 2rem 2.5rem 2.5rem;
+            padding: 2.2rem 2.2rem 2rem;
             border-radius: 2rem;
             backdrop-filter: blur(14px) saturate(180%);
             -webkit-backdrop-filter: blur(14px) saturate(180%);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: rgba(10, 20, 10, 0.6);
-            color: var(--text-color, #c8e6c9);
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
+            color: var(--text-color);
             transition: background 0.3s, color 0.3s, border-color 0.3s;
         }
-        /* 标题 + 导航 */
+
         .void-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.8rem;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 1.2rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.1);
         }
         .void-header .brand {
             font-size: 2rem;
             font-weight: 700;
+            cursor: pointer;
+            user-select: none;
             letter-spacing: 0.02em;
-            cursor: default;
         }
         .void-header .brand .typing-title {
             display: inline-block;
@@ -80,166 +73,241 @@
             border-bottom-color: currentColor;
         }
 
-        /* 工具栏（系列选择 + 搜索） */
+        /* 工具栏 */
         .void-toolbar {
             display: flex;
             flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1.8rem;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
             align-items: center;
-        }
-        .void-toolbar select,
-        .void-toolbar input {
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.05);
-            color: inherit;
-            font-size: 0.95rem;
-            outline: none;
-            backdrop-filter: blur(4px);
-            transition: border-color 0.2s;
-        }
-        .void-toolbar select {
-            min-width: 140px;
-            cursor: pointer;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23c8e6c9' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            appearance: none;
-            padding-right: 2.5rem;
-        }
-        .void-toolbar select option {
-            background: #1a2e1a;
-            color: #c8e6c9;
         }
         .void-toolbar input {
             flex: 1;
-            min-width: 160px;
-            padding-left: 2.2rem;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c8e6c9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+            min-width: 180px;
+            padding: 0.5rem 1rem 0.5rem 2.4rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            background: transparent;
+            color: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: 0.8rem center;
             background-size: 1.2rem;
+            transition: border-color 0.2s;
         }
         .void-toolbar input:focus {
             border-color: #66bb6a;
         }
+        .void-toolbar input::placeholder {
+            opacity: 0.4;
+        }
 
-        /* 文章展示区 */
-        .void-content {
-            min-height: 300px;
+        /* 文章卡片网格（瀑布流，垂直排列） */
+        .article-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
-        /* 文章列表（二级） */
-        .article-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.2rem;
-        }
-        .article-item {
-            background: rgba(128,128,128,0.05);
-            border: 1px solid rgba(128,128,128,0.1);
+
+        .article-card {
+            background: rgba(128, 128, 128, 0.04);
+            border: 1px solid rgba(128, 128, 128, 0.08);
             border-radius: 1.2rem;
-            padding: 1.2rem 1.2rem 1rem;
-            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            padding: 1.2rem 1.5rem 1.2rem;
+            transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
             cursor: pointer;
         }
-        .article-item:hover {
-            transform: translateY(-4px);
-            border-color: rgba(255,255,255,0.2);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        .article-card:hover {
+            background: rgba(128, 128, 128, 0.07);
+            border-color: rgba(128, 128, 128, 0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
         }
-        .article-item .title {
-            font-size: 1.2rem;
+        .article-card .card-title {
+            font-size: 1.3rem;
             font-weight: 600;
-            margin-bottom: 0.2rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-        }
-        .article-item .title .badge {
-            font-size: 0.6rem;
-            background: rgba(102,187,106,0.15);
-            padding: 0.05rem 0.6rem;
-            border-radius: 1rem;
-            opacity: 0.6;
-            border: 1px solid rgba(102,187,106,0.15);
-        }
-        .article-item .desc {
-            font-size: 0.9rem;
-            opacity: 0.6;
-            line-height: 1.4;
-        }
-        .article-item .meta {
-            font-size: 0.75rem;
-            opacity: 0.3;
-            margin-top: 0.5rem;
-            display: flex;
             gap: 0.6rem;
-            flex-wrap: wrap;
         }
-        .article-item .meta .tag {
-            background: rgba(128,128,128,0.08);
-            padding: 0.05rem 0.6rem;
+        .article-card .card-title .badge {
+            font-size: 0.65rem;
+            background: rgba(102, 187, 106, 0.15);
+            padding: 0.05rem 0.7rem;
             border-radius: 1rem;
+            opacity: 0.7;
+            border: 1px solid rgba(102, 187, 106, 0.15);
         }
-        /* 正文展示 */
-        .article-body {
-            text-align: left;
-            line-height: 1.8;
-            font-size: 1.05rem;
-            padding: 0.2rem 0;
+        .article-card .card-title .badge.hidden-badge {
+            background: rgba(231, 76, 60, 0.15);
+            border-color: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
         }
-        .article-body h1, .article-body h2, .article-body h3 {
-            margin-top: 1.2rem;
-            margin-bottom: 0.5rem;
+        .article-card .card-meta {
+            font-size: 0.8rem;
+            opacity: 0.4;
+            margin-top: 0.1rem;
         }
-        .article-body p { margin-bottom: 0.8rem; }
-        .article-body img { max-width: 100%; border-radius: 0.8rem; }
-        .article-body pre {
-            background: rgba(0,0,0,0.3);
-            padding: 1rem;
-            border-radius: 0.8rem;
-            overflow-x: auto;
+        .article-card .card-body {
+            margin-top: 0.8rem;
+            line-height: 1.7;
+            font-size: 0.95rem;
+            border-top: 1px dashed rgba(128, 128, 128, 0.08);
+            padding-top: 0.8rem;
+            display: none; /* 默认隐藏，加载后显示 */
         }
-        .article-body code {
-            background: rgba(0,0,0,0.2);
-            padding: 0.1rem 0.4rem;
-            border-radius: 0.3rem;
-            font-size: 0.9rem;
+        .article-card .card-body.loaded {
+            display: block;
         }
+        .article-card .card-body .loading-placeholder {
+            opacity: 0.4;
+            font-style: italic;
+        }
+
         /* 空状态 */
         .void-empty {
             text-align: center;
-            opacity: 0.5;
             padding: 3rem 0;
+            opacity: 0.5;
         }
-        /* Toast 与首页保持一致 */
+
+        /* ===== 解锁弹窗（自定义） ===== */
+        .void-pw-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1600;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            animation: overlayIn 0.25s ease-out;
+        }
+        .void-pw-overlay.active {
+            display: flex;
+        }
+        .void-pw-panel {
+            max-width: 400px;
+            width: 90%;
+            padding: 2rem 2rem 1.8rem;
+            border-radius: 1.8rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: var(--card-bg);
+            color: var(--text-color);
+            text-align: center;
+        }
+        .void-pw-panel .panel-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+        .void-pw-panel .panel-sub {
+            font-size: 0.85rem;
+            opacity: 0.4;
+            margin-bottom: 1.2rem;
+        }
+        .void-pw-panel input[type="password"] {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: inherit;
+            font-size: 1rem;
+            margin-bottom: 0.8rem;
+            outline: none;
+        }
+        .void-pw-panel input:focus {
+            border-color: #66bb6a;
+        }
+        .void-pw-panel .panel-actions {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: flex-end;
+        }
+        .void-pw-panel .panel-actions .btn {
+            padding: 0.4rem 1.4rem;
+            border-radius: 2rem;
+            border: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.25s ease;
+        }
+        .void-pw-panel .panel-actions .btn-primary {
+            background: #66bb6a;
+            color: #1a2e1a;
+        }
+        .void-pw-panel .panel-actions .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 187, 106, 0.25);
+        }
+        .void-pw-panel .panel-actions .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(128, 128, 128, 0.15);
+            color: inherit;
+        }
+        .void-pw-panel .panel-actions .btn-secondary:hover {
+            background: rgba(128, 128, 128, 0.06);
+        }
+
+        .void-pw-panel .hint {
+            font-size: 0.7rem;
+            opacity: 0.3;
+            margin-top: 0.4rem;
+        }
+
+        /* Toast */
         #voidToast {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
             bottom: 30px;
+            z-index: 2000;
+            padding: 12px 28px;
+            border-radius: 2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--toast-bg, rgba(0,0,0,0.8));
+            color: var(--toast-color, #fff);
         }
-        /* 弹窗（仿设置面板） */
-        .void-overlay { /* 与之前相同，省略，在HTML中内联 */ }
-        /* 右下控制按钮 – 复用首页样式，已在全局定义 */
-        .bottom-controls { /* 复用首页样式，这里只补充定位 */ }
+        #voidToast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
         /* 响应式 */
         @media (max-width: 600px) {
             .void-card { padding: 1.5rem 1rem; }
             .void-header { flex-direction: column; align-items: stretch; }
-            .article-grid { grid-template-columns: 1fr; }
-            .void-toolbar { flex-direction: column; align-items: stretch; }
+            .article-card { padding: 1rem; }
+            .article-card .card-title { font-size: 1.1rem; }
+        }
+        @media (max-width: 400px) {
+            .void-card { padding: 1rem 0.8rem; }
         }
     </style>
 </head>
 <body>
 
-    <div class="void-wrapper">
-        <!-- 主卡片 -->
-        <div class="void-card" id="voidCard">
+    <div class="void-container">
+        <div class="void-card">
             <!-- 标题 + 导航 -->
             <header class="void-header">
-                <div class="brand">
-                    <span class="typing-title">📗 我的文章</span>
+                <div class="brand" id="brandTitle">
+                    <span class="typing-title">📗 文章</span>
                 </div>
                 <div class="nav-links">
                     <a href="index.html">🏠 首页</a>
@@ -247,58 +315,42 @@
                 </div>
             </header>
 
-            <!-- 工具栏 -->
+            <!-- 搜索栏 -->
             <div class="void-toolbar">
-                <select id="seriesFilter">
-                    <option value="__all__">📂 全部系列</option>
-                </select>
-                <input type="text" id="searchInput" placeholder="搜索文章标题 / 简介..." />
+                <input type="text" id="searchInput" placeholder="🔍 搜索文章标题..." />
             </div>
 
-            <!-- 内容区 -->
-            <div class="void-content" id="voidContent">
-                <div class="void-empty">加载中...</div>
+            <!-- 文章列表 -->
+            <div id="articleContainer" class="article-list">
+                <div class="void-empty">⏳ 加载中...</div>
             </div>
         </div>
     </div>
 
-    <!-- Toast -->
-    <div id="voidToast" class="toast"></div>
+    <!-- ===== Toast ===== -->
+    <div id="voidToast"></div>
 
-    <!-- ===== 解锁弹窗（隐藏/加密系列） ===== -->
-    <div class="void-overlay" id="unlockOverlay">
-        <div class="void-panel">
-            <div class="panel-title">🔐 解锁内容</div>
-            <div class="panel-sub">请输入密码或系列名称</div>
-            <input type="text" id="unlockInput" placeholder="密码 或 *系列名">
-            <div class="hint">隐藏内容输入密码；加密系列输入 *系列名</div>
+    <!-- ===== 密码弹窗 ===== -->
+    <div class="void-pw-overlay" id="pwOverlay">
+        <div class="void-pw-panel">
+            <div class="panel-title">🔐 解锁隐藏文章</div>
+            <div class="panel-sub">请输入密码</div>
+            <input type="password" id="pwInput" placeholder="密码" />
             <div class="panel-actions">
-                <button class="btn btn-secondary" id="unlockCancel">取消</button>
-                <button class="btn btn-primary" id="unlockConfirm">确认</button>
+                <button class="btn btn-secondary" id="pwCancel">取消</button>
+                <button class="btn btn-primary" id="pwConfirm">确认</button>
             </div>
+            <div class="hint">连续点击标题 5 次触发</div>
         </div>
     </div>
 
-    <!-- ===== 正文解密弹窗（加密2） ===== -->
-    <div class="void-overlay" id="decryptOverlay">
-        <div class="void-panel">
-            <div class="panel-title">🔑 解密正文</div>
-            <div class="panel-sub">请输入该文章的专属密钥</div>
-            <input type="password" id="decryptInput" placeholder="密钥">
-            <div class="panel-actions">
-                <button class="btn btn-secondary" id="decryptCancel">取消</button>
-                <button class="btn btn-primary" id="decryptConfirm">解密</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== 右下控制栏（与首页完全一致） ===== -->
+    <!-- ===== 底部控制栏（全局） ===== -->
     <div class="bottom-controls" id="bottomControls">
         <button class="ctrl-btn hide-btn" id="hideToggle" title="隐藏所有UI，只看背景">👁️</button>
         <button class="ctrl-btn settings-btn" id="settingsToggle" title="全局样式设置">⚙️</button>
     </div>
 
-    <!-- ===== 设置面板（复用首页） ===== -->
+    <!-- ===== 设置面板 ===== -->
     <div class="settings-overlay" id="settingsOverlay">
         <div class="settings-panel">
             <div class="panel-title">⚙️ 样式设置</div>
@@ -327,132 +379,105 @@
         </div>
     </div>
 
-    <!-- 脚本 -->
+    <!-- ===== 全局脚本 ===== -->
     <script src="script.js"></script>
     <script src="VOID-core.js"></script>
     <script>
         (function() {
-            // Toast 函数
-            function showVoidToast(msg, duration) {
+            // 全局设置相关（复用首页逻辑）
+            const htmlRoot = document.getElementById('htmlRoot') || document.documentElement;
+            const settingsToggle = document.getElementById('settingsToggle');
+            const settingsOverlay = document.getElementById('settingsOverlay');
+            const settingsClose = document.getElementById('settingsClose');
+            const themeOptions = document.getElementById('themeOptions');
+            const bgOptions = document.getElementById('bgOptions');
+
+            function loadSettings() {
+                try {
+                    const saved = localStorage.getItem('siteSettings');
+                    if (saved) return JSON.parse(saved);
+                } catch (e) {}
+                return { theme: 'default', bg: 'default' };
+            }
+            function saveSettings(settings) {
+                try { localStorage.setItem('siteSettings', JSON.stringify(settings)); } catch (e) {}
+            }
+            function applySettings(settings) {
+                const theme = settings.theme || 'default';
+                htmlRoot.removeAttribute('data-theme');
+                if (theme !== 'default') htmlRoot.setAttribute('data-theme', theme);
+                document.querySelectorAll('#themeOptions .opt-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.theme === theme);
+                });
+                const bg = settings.bg || 'default';
+                htmlRoot.removeAttribute('data-bg');
+                if (bg !== 'default') htmlRoot.setAttribute('data-bg', bg);
+                document.querySelectorAll('#bgOptions .opt-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.bg === bg);
+                });
+            }
+            function openSettings() {
+                applySettings(loadSettings());
+                settingsOverlay.classList.add('active');
+                document.body.classList.add('modal-open');
+            }
+            function closeSettings() {
+                settingsOverlay.classList.remove('active');
+                document.body.classList.remove('modal-open');
+            }
+            settingsToggle.addEventListener('click', openSettings);
+            settingsClose.addEventListener('click', closeSettings);
+            settingsOverlay.addEventListener('click', function(e) {
+                if (e.target === settingsOverlay) closeSettings();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && settingsOverlay.classList.contains('active')) closeSettings();
+            });
+            themeOptions.addEventListener('click', function(e) {
+                const btn = e.target.closest('.opt-btn');
+                if (!btn) return;
+                const settings = loadSettings();
+                settings.theme = btn.dataset.theme;
+                saveSettings(settings);
+                applySettings(settings);
+            });
+            bgOptions.addEventListener('click', function(e) {
+                const btn = e.target.closest('.opt-btn');
+                if (!btn) return;
+                const settings = loadSettings();
+                settings.bg = btn.dataset.bg;
+                saveSettings(settings);
+                applySettings(settings);
+            });
+            applySettings(loadSettings());
+
+            // 隐藏 UI
+            const hideToggle = document.getElementById('hideToggle');
+            let isHidden = false;
+            hideToggle.addEventListener('click', function() {
+                isHidden = !isHidden;
+                document.body.classList.toggle('ui-hidden', isHidden);
+                this.textContent = isHidden ? '👁️‍🗨️' : '👁️';
+                this.classList.toggle('active', isHidden);
+                this.title = isHidden ? '显示所有UI' : '隐藏所有UI，只看背景';
+            });
+
+            // 显示控制栏
+            const bottomControls = document.getElementById('bottomControls');
+            setTimeout(() => { bottomControls.classList.add('show'); }, 800);
+
+            // Toast 工具
+            window.showVoidToast = function(msg, duration) {
                 duration = duration || 4000;
                 const el = document.getElementById('voidToast');
                 el.textContent = msg;
                 el.classList.add('show');
                 clearTimeout(el._hideTimer);
-                el._hideTimer = setTimeout(function() {
+                el._hideTimer = setTimeout(() => {
                     el.classList.remove('show');
                 }, duration);
-            }
-            window.showVoidToast = showVoidToast;
-
-            // 右下控制栏显示（与首页一致）
-            const bottomControls = document.getElementById('bottomControls');
-            // 延迟显示（模仿首页）
-            setTimeout(function() {
-                bottomControls.classList.add('show');
-            }, 800);
-
-            // 设置面板（完全复用首页逻辑，已在 core 中处理）
+            };
         })();
     </script>
-
-    <!-- 以下为内联样式补全（因为弹窗样式未复用） -->
-    <style>
-        /* 弹窗样式（与首页设置面板一致） */
-        .void-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 1600;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.35);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            animation: overlayIn 0.25s ease-out;
-        }
-        .void-overlay.active { display: flex; }
-        .void-panel {
-            max-width: 440px;
-            width: 90%;
-            padding: 2rem 2rem 1.8rem;
-            border-radius: 1.8rem;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            background: rgba(12,22,12,0.92);
-            color: var(--text-color, #c8e6c9);
-            text-align: center;
-        }
-        .void-panel .panel-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 0.2rem;
-        }
-        .void-panel .panel-sub {
-            font-size: 0.85rem;
-            opacity: 0.4;
-            margin-bottom: 1.2rem;
-        }
-        .void-panel input[type="password"],
-        .void-panel input[type="text"] {
-            width: 100%;
-            padding: 0.6rem 1rem;
-            border-radius: 2rem;
-            border: 1px solid rgba(128,128,128,0.2);
-            background: rgba(255,255,255,0.05);
-            color: inherit;
-            font-size: 1rem;
-            margin-bottom: 0.8rem;
-            outline: none;
-        }
-        .void-panel input:focus { border-color: #66bb6a; }
-        .void-panel .panel-actions {
-            display: flex;
-            gap: 0.6rem;
-            justify-content: flex-end;
-        }
-        .void-panel .panel-actions .btn {
-            padding: 0.4rem 1.4rem;
-            border-radius: 2rem;
-            border: none;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            font-family: inherit;
-            transition: all 0.25s ease;
-        }
-        .void-panel .panel-actions .btn-primary {
-            background: #66bb6a;
-            color: #1a2e1a;
-        }
-        .void-panel .panel-actions .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102,187,106,0.25);
-        }
-        .void-panel .panel-actions .btn-secondary {
-            background: transparent;
-            border: 1px solid rgba(128,128,128,0.15);
-            color: var(--text-color, #c8e6c9);
-        }
-        .void-panel .panel-actions .btn-secondary:hover {
-            background: rgba(128,128,128,0.06);
-        }
-        .void-panel .hint {
-            font-size: 0.8rem;
-            opacity: 0.5;
-            margin: 0.5rem 0 0.8rem;
-        }
-        @keyframes overlayIn {
-            0% { opacity: 0; backdrop-filter: blur(0px); }
-            100% { opacity: 1; backdrop-filter: blur(6px); }
-        }
-        @keyframes modalPop {
-            0% { transform: scale(0.92) translateY(16px); opacity: 0; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
-        }
-    </style>
 </body>
 </html>

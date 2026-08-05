@@ -19,7 +19,6 @@
     let allArticles = [];          // 原始文章对象数组
     let filteredArticles = [];     // 当前搜索结果
     let observer = null;           // IntersectionObserver 实例
-    let loadedBodies = {};         // 缓存已加载的正文 { filename: html }
 
     const HIDDEN_PASSWORD = '纳西妲天下第一可爱';
     const TOKEN_KEY = 'voidHiddenToken';
@@ -44,7 +43,7 @@
                 localStorage.removeItem(TOKEN_EXPIRE_KEY);
                 return false;
             }
-            return token === 'true'; // 简单令牌，只存标志
+            return token === 'true';
         } catch { return false; }
     }
 
@@ -52,13 +51,6 @@
         try {
             localStorage.setItem(TOKEN_KEY, 'true');
             localStorage.setItem(TOKEN_EXPIRE_KEY, String(Date.now() + 24 * 60 * 60 * 1000));
-        } catch (e) { /* ignore */ }
-    }
-
-    function clearHiddenToken() {
-        try {
-            localStorage.removeItem(TOKEN_KEY);
-            localStorage.removeItem(TOKEN_EXPIRE_KEY);
         } catch (e) { /* ignore */ }
     }
 
@@ -86,35 +78,26 @@
                         hasHidden = true;
                     }
                     if (!filename) continue;
-                    // 提取标题（去掉 .md）
                     let title = filename.replace(/\.md$/i, '').trim();
                     if (!title) continue;
                     articles.push({
                         filename: filename,
                         title: title,
                         hidden: hidden,
-                        loaded: false,    // 正文是否已加载
+                        loaded: false,
                         bodyHtml: null,
                     });
                 }
                 allArticles = articles;
 
-                // 检查隐藏令牌
                 const tokenOk = getHiddenToken();
-                if (!tokenOk && hasHidden) {
-                    // 有隐藏文章但未解锁，提示
-                    // 但仍可显示普通文章
-                }
-                // 过滤隐藏文章：若未解锁，则过滤掉 hidden=true 的条目
                 let visible = allArticles;
                 if (!tokenOk) {
                     visible = allArticles.filter(a => !a.hidden);
                 }
-                // 若已解锁，显示全部，但隐藏文章会带标记
                 filteredArticles = visible.slice();
                 renderArticles(filteredArticles);
                 setupObserver();
-                // 如果已解锁但有隐藏文章，显示一条提示
                 if (tokenOk && hasHidden) {
                     showToast('🔓 隐藏文章已解锁（有效期至明天）', 3000);
                 } else if (hasHidden && !tokenOk) {
@@ -164,19 +147,14 @@
                     if (!filename) return;
                     const art = allArticles.find(a => a.filename === filename);
                     if (!art) return;
-                    if (art.loaded) {
-                        // 已加载，无需再次
-                        return;
-                    }
-                    // 加载正文
+                    if (art.loaded) return;
                     loadBody(art, card);
                 }
             });
         }, {
-            rootMargin: '0px 0px 200px 0px' // 提前 200px 加载
+            rootMargin: '0px 0px 200px 0px'
         });
 
-        // 观察所有卡片
         document.querySelectorAll('.article-card').forEach(card => {
             observer.observe(card);
         });
@@ -188,7 +166,6 @@
         const bodyEl = document.getElementById(bodyId);
         if (!bodyEl) return;
 
-        // 显示加载占位
         bodyEl.innerHTML = '<div class="loading-placeholder">⏳ 加载中...</div>';
 
         const url = 'VOID/' + encodeURIComponent(article.filename) + '?t=' + Date.now();
@@ -198,19 +175,17 @@
                 return res.text();
             })
             .then(md => {
-                // 渲染 Markdown
                 const html = marked.parse(md);
                 bodyEl.innerHTML = html;
                 bodyEl.classList.add('loaded');
                 article.loaded = true;
                 article.bodyHtml = html;
-                // 移除观察
                 if (observer) observer.unobserve(card);
             })
             .catch(err => {
                 bodyEl.innerHTML = `<div style="color:#e74c3c;">❌ 正文加载失败：${err.message}</div>`;
                 bodyEl.classList.add('loaded');
-                article.loaded = true; // 标记为已尝试，避免反复请求
+                article.loaded = true;
                 showToast('❌ 加载正文失败');
             });
     }
@@ -218,23 +193,16 @@
     // ========== 搜索过滤 ==========
     function filterArticles(keyword) {
         keyword = keyword.trim().toLowerCase();
-        if (!keyword) {
-            // 恢复可见性（依据令牌）
-            const tokenOk = getHiddenToken();
-            let visible = allArticles;
-            if (!tokenOk) {
-                visible = allArticles.filter(a => !a.hidden);
-            }
-            filteredArticles = visible.slice();
-            renderArticles(filteredArticles);
-            setupObserver();
-            return;
-        }
-        // 搜索匹配标题（不区分大小写）
         const tokenOk = getHiddenToken();
         let candidates = allArticles;
         if (!tokenOk) {
             candidates = allArticles.filter(a => !a.hidden);
+        }
+        if (!keyword) {
+            filteredArticles = candidates.slice();
+            renderArticles(filteredArticles);
+            setupObserver();
+            return;
         }
         const matched = candidates.filter(a => a.title.toLowerCase().includes(keyword));
         filteredArticles = matched;
@@ -269,7 +237,6 @@
             setHiddenToken();
             closePasswordDialog();
             showToast('✅ 解锁成功！刷新页面显示隐藏文章', 3000);
-            // 刷新视图（重新加载索引，显示隐藏）
             loadIndex();
         } else {
             showToast('❌ 密码错误');
@@ -288,7 +255,6 @@
         if (clickCount >= 5) {
             clickCount = 0;
             clearTimeout(clickTimer);
-            // 检查是否已解锁，若已解锁则提示
             if (getHiddenToken()) {
                 showToast('🔓 隐藏文章已解锁，无需重复操作');
             } else {

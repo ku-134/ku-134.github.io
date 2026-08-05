@@ -4,24 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文章 · 虚空终端</title>
-    <!-- 预加载背景 -->
     <link rel="preload" as="image" href="background.webp">
     <link rel="preload" as="image" href="background1.webp">
     <link rel="preload" as="image" href="background2.webp">
     <link rel="preload" as="image" href="background3.webp">
     <link rel="preload" as="image" href="background4.webp">
-    <!-- 全局样式 -->
     <link rel="stylesheet" href="style.css">
-    <!-- marked.js -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         /* ===== 文章页专属样式 ===== */
-        .void-container {
-            max-width: 920px;
-            width: 100%;
-            margin: 0 auto;
-        }
-
+        .void-container { max-width: 920px; width: 100%; margin: 0 auto; }
         .void-card {
             padding: 2.2rem 2.2rem 2rem;
             border-radius: 2rem;
@@ -33,7 +24,6 @@
             color: var(--text-color);
             transition: background 0.3s, color 0.3s, border-color 0.3s;
         }
-
         .void-header {
             display: flex;
             justify-content: space-between;
@@ -50,13 +40,11 @@
             cursor: pointer;
             user-select: none;
             letter-spacing: 0.02em;
-            /* 修复：点击时不显示浏览器选择高亮 */
             -webkit-tap-highlight-color: transparent;
             outline: none;
         }
         .void-header .brand .typing-title {
             display: inline-block;
-            /* 修复：点击时不显示浏览器选择高亮 */
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
@@ -79,7 +67,6 @@
             border-bottom-color: currentColor;
         }
 
-        /* 工具栏 */
         .void-toolbar {
             display: flex;
             flex-wrap: wrap;
@@ -103,21 +90,17 @@
             background-size: 1.2rem;
             transition: border-color 0.2s;
         }
-        .void-toolbar input:focus {
-            border-color: #66bb6a;
-        }
-        .void-toolbar input::placeholder {
-            opacity: 0.4;
-        }
+        .void-toolbar input:focus { border-color: #66bb6a; }
+        .void-toolbar input::placeholder { opacity: 0.4; }
 
-        /* ===== 文章卡片列表（瀑布式垂直排列） ===== */
+        /* ===== 文章卡片列表 ===== */
         .article-list {
             display: flex !important;
             flex-direction: column !important;
             gap: 1.5rem !important;
             width: 100%;
         }
-
+        /* 修复：卡片蓝色高亮 */
         .article-card {
             display: block !important;
             width: 100% !important;
@@ -128,6 +111,9 @@
             transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
             cursor: pointer;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            user-select: none;
         }
         .article-card:hover {
             background: rgba(128, 128, 128, 0.07);
@@ -141,7 +127,6 @@
             align-items: center;
             gap: 0.6rem;
             flex-wrap: wrap;
-            user-select: none;
         }
         .article-card .card-title .badge {
             font-size: 0.65rem;
@@ -160,21 +145,6 @@
             font-size: 0.8rem;
             opacity: 0.4;
             margin-top: 0.1rem;
-        }
-        .article-card .card-body {
-            margin-top: 0.8rem;
-            line-height: 1.7;
-            font-size: 0.95rem;
-            border-top: 1px dashed rgba(128, 128, 128, 0.08);
-            padding-top: 0.8rem;
-            display: none;
-        }
-        .article-card .card-body.loaded {
-            display: block;
-        }
-        .article-card .card-body .loading-placeholder {
-            opacity: 0.4;
-            font-style: italic;
         }
 
         .void-empty {
@@ -197,9 +167,7 @@
             -webkit-backdrop-filter: blur(6px);
             animation: overlayIn 0.25s ease-out;
         }
-        .void-pw-overlay.active {
-            display: flex;
-        }
+        .void-pw-overlay.active { display: flex; }
         .void-pw-panel {
             max-width: 400px;
             width: 90%;
@@ -224,7 +192,6 @@
             opacity: 0.4;
             margin-bottom: 1.2rem;
         }
-        /* 修复：密码输入框使用 text 类型 + CSS 掩码，避免触发系统保密输入法 */
         .void-pw-panel input#pwInput {
             width: 100%;
             padding: 0.6rem 1rem;
@@ -239,9 +206,7 @@
             text-security: disc;
             font-family: inherit;
         }
-        .void-pw-panel input#pwInput:focus {
-            border-color: #66bb6a;
-        }
+        .void-pw-panel input#pwInput:focus { border-color: #66bb6a; }
         .void-pw-panel .panel-actions {
             display: flex;
             gap: 0.6rem;
@@ -292,9 +257,7 @@
             -webkit-backdrop-filter: blur(6px);
             animation: overlayIn 0.25s ease-out;
         }
-        .settings-overlay.active {
-            display: flex;
-        }
+        .settings-overlay.active { display: flex; }
         .settings-panel {
             max-width: 420px;
             width: 90%;
@@ -407,7 +370,7 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        /* ===== 修复：文章页隐藏 UI 适配 ===== */
+        /* ===== 隐藏 UI 适配 ===== */
         body.ui-hidden .void-container,
         body.ui-hidden .void-card,
         body.ui-hidden .void-header,
@@ -420,7 +383,6 @@
             pointer-events: none !important;
             transition: opacity 0.3s ease;
         }
-        /* 设置面板在隐藏 UI 模式下如果打开，保持可见 */
         body.ui-hidden .settings-overlay.active {
             opacity: 1 !important;
             pointer-events: auto !important;
@@ -430,7 +392,6 @@
             pointer-events: auto !important;
         }
 
-        /* ===== 响应式 ===== */
         @media (max-width: 600px) {
             .void-card { padding: 1.5rem 1rem; }
             .void-header { flex-direction: column; align-items: stretch; }
@@ -440,7 +401,6 @@
         @media (max-width: 400px) {
             .void-card { padding: 1rem 0.8rem; }
         }
-
         @keyframes overlayIn {
             0% { opacity: 0; backdrop-filter: blur(0px); }
             100% { opacity: 1; backdrop-filter: blur(6px); }
@@ -452,10 +412,8 @@
     </style>
 </head>
 <body>
-
     <div class="void-container">
         <div class="void-card">
-            <!-- 标题 + 导航 -->
             <header class="void-header">
                 <div class="brand" id="brandTitle">
                     <span class="typing-title">📗 文章</span>
@@ -465,28 +423,21 @@
                     <a href="#" class="active">📝 文章</a>
                 </div>
             </header>
-
-            <!-- 搜索栏 -->
             <div class="void-toolbar">
                 <input type="text" id="searchInput" placeholder="🔍 搜索文章标题..." />
             </div>
-
-            <!-- 文章列表 -->
             <div id="articleContainer" class="article-list">
                 <div class="void-empty">⏳ 加载中...</div>
             </div>
         </div>
     </div>
 
-    <!-- ===== Toast ===== -->
     <div id="voidToast"></div>
 
-    <!-- ===== 密码弹窗（输入框已改为 text + CSS 掩码） ===== -->
     <div class="void-pw-overlay" id="pwOverlay">
         <div class="void-pw-panel">
             <div class="panel-title">🔐 解锁隐藏文章</div>
             <div class="panel-sub">请输入密码</div>
-            <!-- 使用 type="text" + CSS text-security 掩码，避免触发系统保密输入法 -->
             <input type="text" id="pwInput" placeholder="密码" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             <div class="panel-actions">
                 <button class="btn btn-secondary" id="pwCancel">取消</button>
@@ -496,13 +447,11 @@
         </div>
     </div>
 
-    <!-- ===== 底部控制栏 ===== -->
     <div class="bottom-controls" id="bottomControls">
         <button class="ctrl-btn hide-btn" id="hideToggle" title="隐藏所有UI，只看背景">👁️</button>
         <button class="ctrl-btn settings-btn" id="settingsToggle" title="全局样式设置">⚙️</button>
     </div>
 
-    <!-- ===== 设置面板 ===== -->
     <div class="settings-overlay" id="settingsOverlay">
         <div class="settings-panel">
             <div class="panel-title">⚙️ 样式设置</div>
@@ -531,12 +480,10 @@
         </div>
     </div>
 
-    <!-- ===== 全局脚本 ===== -->
     <script src="script.js"></script>
     <script src="VOID-core.js"></script>
     <script>
         (function() {
-            // ===== 全局样式设置 =====
             const htmlRoot = document.getElementById('htmlRoot') || document.documentElement;
             const settingsToggle = document.getElementById('settingsToggle');
             const settingsOverlay = document.getElementById('settingsOverlay');
@@ -603,7 +550,6 @@
             });
             applySettings(loadSettings());
 
-            // ===== 隐藏 UI =====
             const hideToggle = document.getElementById('hideToggle');
             let isHidden = false;
             hideToggle.addEventListener('click', function() {
@@ -614,13 +560,11 @@
                 this.title = isHidden ? '显示所有UI' : '隐藏所有UI，只看背景';
             });
 
-            // ===== 显示控制栏 =====
             const bottomControls = document.getElementById('bottomControls');
             setTimeout(function() {
                 bottomControls.classList.add('show');
             }, 800);
 
-            // ===== Toast =====
             window.showVoidToast = function(msg, duration) {
                 duration = duration || 4000;
                 const el = document.getElementById('voidToast');

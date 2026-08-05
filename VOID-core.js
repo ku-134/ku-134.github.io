@@ -16,9 +16,10 @@
     const pwCancel = document.getElementById('pwCancel');
 
     // ========== 状态 ==========
-    let allArticles = [];          // 原始文章对象数组
-    let filteredArticles = [];     // 当前搜索结果
-    let observer = null;           // IntersectionObserver 实例
+    let allArticles = [];
+    let filteredArticles = [];
+    let observer = null;
+    let loadedBodies = {};
 
     const HIDDEN_PASSWORD = '纳西妲天下第一可爱';
     const TOKEN_KEY = 'voidHiddenToken';
@@ -54,7 +55,7 @@
         } catch (e) { /* ignore */ }
     }
 
-    // ========== 数据加载 ==========
+    // ========== 加载索引 ==========
     function loadIndex() {
         container.innerHTML = '<div class="void-empty">⏳ 加载索引...</div>';
         const url = 'VOID/index.txt?t=' + Date.now();
@@ -98,6 +99,7 @@
                 filteredArticles = visible.slice();
                 renderArticles(filteredArticles);
                 setupObserver();
+
                 if (tokenOk && hasHidden) {
                     showToast('🔓 隐藏文章已解锁（有效期至明天）', 3000);
                 } else if (hasHidden && !tokenOk) {
@@ -110,7 +112,7 @@
             });
     }
 
-    // ========== 渲染文章卡片 ==========
+    // ========== 渲染文章卡片（瀑布式垂直排列） ==========
     function renderArticles(articles) {
         if (!articles || articles.length === 0) {
             container.innerHTML = '<div class="void-empty">📭 没有找到文章</div>';
@@ -193,16 +195,21 @@
     // ========== 搜索过滤 ==========
     function filterArticles(keyword) {
         keyword = keyword.trim().toLowerCase();
+        if (!keyword) {
+            const tokenOk = getHiddenToken();
+            let visible = allArticles;
+            if (!tokenOk) {
+                visible = allArticles.filter(a => !a.hidden);
+            }
+            filteredArticles = visible.slice();
+            renderArticles(filteredArticles);
+            setupObserver();
+            return;
+        }
         const tokenOk = getHiddenToken();
         let candidates = allArticles;
         if (!tokenOk) {
             candidates = allArticles.filter(a => !a.hidden);
-        }
-        if (!keyword) {
-            filteredArticles = candidates.slice();
-            renderArticles(filteredArticles);
-            setupObserver();
-            return;
         }
         const matched = candidates.filter(a => a.title.toLowerCase().includes(keyword));
         filteredArticles = matched;
@@ -245,7 +252,7 @@
         }
     }
 
-    // ========== 连续点击标题事件 ==========
+    // ========== 连续点击标题 ==========
     brandTitle.addEventListener('click', function() {
         clickCount++;
         clearTimeout(clickTimer);
@@ -263,7 +270,7 @@
         }
     });
 
-    // ====== 弹窗按钮事件 ======
+    // ========== 弹窗事件 ==========
     pwConfirm.addEventListener('click', handlePasswordConfirm);
     pwCancel.addEventListener('click', closePasswordDialog);
     pwInput.addEventListener('keydown', function(e) {
@@ -279,7 +286,7 @@
         }
     });
 
-    // ========== 搜索事件（防抖） ==========
+    // ========== 搜索防抖 ==========
     let searchTimer = null;
     searchInput.addEventListener('input', function() {
         clearTimeout(searchTimer);

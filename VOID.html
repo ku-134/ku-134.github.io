@@ -15,7 +15,7 @@
     <!-- marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        /* ===== 文章页专属样式（基于全局卡片风格） ===== */
+        /* ===== 文章页专属样式 ===== */
         .void-container {
             max-width: 920px;
             width: 100%;
@@ -292,25 +292,6 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        /* ============================================================
-           修复：设置面板强制隐藏（由齿轮按钮控制）
-           ============================================================ */
-        .settings-overlay {
-            display: none !important;
-            position: fixed !important;
-            inset: 0 !important;
-            z-index: 1600 !important;
-            align-items: center !important;
-            justify-content: center !important;
-            background: rgba(0, 0, 0, 0.35) !important;
-            backdrop-filter: blur(6px) !important;
-            -webkit-backdrop-filter: blur(6px) !important;
-            animation: overlayIn 0.25s ease-out !important;
-        }
-        .settings-overlay.active {
-            display: flex !important;
-        }
-
         /* ===== 修复：文章页隐藏 UI 适配 ===== */
         body.ui-hidden .void-container,
         body.ui-hidden .void-card,
@@ -324,6 +305,7 @@
             pointer-events: none !important;
             transition: opacity 0.3s ease;
         }
+        /* 设置面板在隐藏 UI 模式下如果打开，保持可见 */
         body.ui-hidden .settings-overlay.active {
             opacity: 1 !important;
             pointer-events: auto !important;
@@ -404,7 +386,7 @@
         <button class="ctrl-btn settings-btn" id="settingsToggle" title="全局样式设置">⚙️</button>
     </div>
 
-    <!-- ===== 设置面板 ===== -->
+    <!-- ===== 设置面板（样式完全由全局 style.css 控制） ===== -->
     <div class="settings-overlay" id="settingsOverlay">
         <div class="settings-panel">
             <div class="panel-title">⚙️ 样式设置</div>

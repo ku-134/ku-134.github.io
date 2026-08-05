@@ -15,7 +15,7 @@
     <!-- marked.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        /* ===== 文章页专属样式 ===== */
+        /* ===== 文章页专属样式（基于全局卡片风格） ===== */
         .void-container {
             max-width: 920px;
             width: 100%;
@@ -292,6 +292,25 @@
             transform: translateX(-50%) translateY(0);
         }
 
+        /* ============================================================
+           修复：设置面板强制隐藏（由齿轮按钮控制）
+           ============================================================ */
+        .settings-overlay {
+            display: none !important;
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 1600 !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(0, 0, 0, 0.35) !important;
+            backdrop-filter: blur(6px) !important;
+            -webkit-backdrop-filter: blur(6px) !important;
+            animation: overlayIn 0.25s ease-out !important;
+        }
+        .settings-overlay.active {
+            display: flex !important;
+        }
+
         /* ===== 修复：文章页隐藏 UI 适配 ===== */
         body.ui-hidden .void-container,
         body.ui-hidden .void-card,
@@ -312,37 +331,6 @@
         body.ui-hidden .bottom-controls {
             opacity: 1 !important;
             pointer-events: auto !important;
-        }
-
-        /* ===== 修复：设置弹窗强制覆盖 ===== */
-        .settings-overlay {
-            display: none !important;
-            position: fixed !important;
-            inset: 0 !important;
-            z-index: 1600 !important;
-            align-items: center !important;
-            justify-content: center !important;
-            background: rgba(0,0,0,0.35) !important;
-            backdrop-filter: blur(6px) !important;
-            -webkit-backdrop-filter: blur(6px) !important;
-        }
-        .settings-overlay.active {
-            display: flex !important;
-        }
-        .settings-overlay .settings-panel {
-            max-width: 420px !important;
-            width: 90% !important;
-            padding: 2rem 2rem 1.8rem !important;
-            border-radius: 1.8rem !important;
-            backdrop-filter: blur(16px) !important;
-            -webkit-backdrop-filter: blur(16px) !important;
-            border: 1px solid rgba(255,255,255,0.08) !important;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.5) !important;
-            max-height: 90vh !important;
-            overflow-y: auto !important;
-            text-align: center !important;
-            background: var(--settings-panel-bg, rgba(12,22,12,0.92)) !important;
-            border-color: var(--settings-panel-border, rgba(255,255,255,0.06)) !important;
         }
 
         /* ===== 响应式 ===== */
@@ -370,6 +358,7 @@
 
     <div class="void-container">
         <div class="void-card">
+            <!-- 标题 + 导航 -->
             <header class="void-header">
                 <div class="brand" id="brandTitle">
                     <span class="typing-title">📗 文章</span>
@@ -380,16 +369,19 @@
                 </div>
             </header>
 
+            <!-- 搜索栏 -->
             <div class="void-toolbar">
                 <input type="text" id="searchInput" placeholder="🔍 搜索文章标题..." />
             </div>
 
+            <!-- 文章列表 -->
             <div id="articleContainer" class="article-list">
                 <div class="void-empty">⏳ 加载中...</div>
             </div>
         </div>
     </div>
 
+    <!-- ===== Toast ===== -->
     <div id="voidToast"></div>
 
     <!-- ===== 密码弹窗 ===== -->
@@ -441,7 +433,7 @@
         </div>
     </div>
 
-    <!-- ===== 脚本 ===== -->
+    <!-- ===== 全局脚本 ===== -->
     <script src="script.js"></script>
     <script src="VOID-core.js"></script>
     <script>
@@ -530,7 +522,7 @@
                 bottomControls.classList.add('show');
             }, 800);
 
-            // ===== Toast 工具 =====
+            // ===== Toast =====
             window.showVoidToast = function(msg, duration) {
                 duration = duration || 4000;
                 const el = document.getElementById('voidToast');

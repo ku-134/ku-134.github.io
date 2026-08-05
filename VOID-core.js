@@ -1,12 +1,10 @@
 /**
  * VOID-core.js
- * 文章页核心逻辑（瀑布加载 + 隐藏策略）
- * 依赖 marked.js
+ * 文章列表页：加载索引、搜索、跳转至独立阅读页
  */
 (function() {
     'use strict';
 
-    // ========== DOM 引用 ==========
     const container = document.getElementById('articleContainer');
     const searchInput = document.getElementById('searchInput');
     const brandTitle = document.getElementById('brandTitle');
@@ -15,17 +13,13 @@
     const pwConfirm = document.getElementById('pwConfirm');
     const pwCancel = document.getElementById('pwCancel');
 
-    // ========== 状态 ==========
     let allArticles = [];
     let filteredArticles = [];
-    let observer = null;
-    let loadedBodies = {};
 
     const HIDDEN_PASSWORD = '纳西妲天下第一可爱';
     const TOKEN_KEY = 'voidHiddenToken';
     const TOKEN_EXPIRE_KEY = 'voidHiddenExpire';
 
-    // ========== 工具函数 ==========
     function showToast(msg, duration) {
         if (window.showVoidToast) {
             window.showVoidToast(msg, duration);
@@ -85,8 +79,6 @@
                         filename: filename,
                         title: title,
                         hidden: hidden,
-                        loaded: false,
-                        bodyHtml: null,
                     });
                 }
                 allArticles = articles;
@@ -98,7 +90,6 @@
                 }
                 filteredArticles = visible.slice();
                 renderArticles(filteredArticles);
-                setupObserver();
 
                 if (tokenOk && hasHidden) {
                     showToast('🔓 隐藏文章已解锁（有效期至明天）', 3000);
@@ -112,7 +103,7 @@
             });
     }
 
-    // ========== 渲染文章卡片（瀑布式垂直排列） ==========
+    // ========== 渲染卡片 ==========
     function renderArticles(articles) {
         if (!articles || articles.length === 0) {
             container.innerHTML = '<div class="void-empty">📭 没有找到文章</div>';
@@ -123,74 +114,27 @@
         for (const art of articles) {
             const hiddenBadge = art.hidden ? '<span class="badge hidden-badge">🔒 隐藏</span>' : '';
             html += `
-                <div class="article-card" data-filename="${art.filename}" data-loaded="false">
+                <div class="article-card" data-filename="${art.filename}">
                     <div class="card-title">
                         ${art.title}
                         ${hiddenBadge}
                     </div>
                     <div class="card-meta">${art.filename}</div>
-                    <div class="card-body" id="body-${art.filename.replace(/\./g, '_')}">
-                        <div class="loading-placeholder">⏳ 滚动至此加载正文...</div>
-                    </div>
                 </div>
             `;
         }
         container.innerHTML = html;
     }
 
-    // ========== 瀑布加载正文（IntersectionObserver） ==========
-    function setupObserver() {
-        if (observer) observer.disconnect();
-        observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const card = entry.target;
-                    const filename = card.dataset.filename;
-                    if (!filename) return;
-                    const art = allArticles.find(a => a.filename === filename);
-                    if (!art) return;
-                    if (art.loaded) return;
-                    loadBody(art, card);
-                }
-            });
-        }, {
-            rootMargin: '0px 0px 200px 0px'
-        });
-
-        document.querySelectorAll('.article-card').forEach(card => {
-            observer.observe(card);
-        });
-    }
-
-    function loadBody(article, card) {
-        if (article.loaded) return;
-        const bodyId = 'body-' + article.filename.replace(/\./g, '_');
-        const bodyEl = document.getElementById(bodyId);
-        if (!bodyEl) return;
-
-        bodyEl.innerHTML = '<div class="loading-placeholder">⏳ 加载中...</div>';
-
-        const url = 'VOID/' + encodeURIComponent(article.filename) + '?t=' + Date.now();
-        fetch(url)
-            .then(res => {
-                if (!res.ok) throw new Error('加载失败 (HTTP ' + res.status + ')');
-                return res.text();
-            })
-            .then(md => {
-                const html = marked.parse(md);
-                bodyEl.innerHTML = html;
-                bodyEl.classList.add('loaded');
-                article.loaded = true;
-                article.bodyHtml = html;
-                if (observer) observer.unobserve(card);
-            })
-            .catch(err => {
-                bodyEl.innerHTML = `<div style="color:#e74c3c;">❌ 正文加载失败：${err.message}</div>`;
-                bodyEl.classList.add('loaded');
-                article.loaded = true;
-                showToast('❌ 加载正文失败');
-            });
-    }
+    // ========== 卡片点击 → 跳转独立页 ==========
+    container.addEventListener('click', function(e) {
+        const card = e.target.closest('.article-card');
+        if (!card) return;
+        const filename = card.dataset.filename;
+        if (filename) {
+            window.location.href = 'article.html?file=' + encodeURIComponent(filename);
+        }
+    });
 
     // ========== 搜索过滤 ==========
     function filterArticles(keyword) {
@@ -203,7 +147,6 @@
             }
             filteredArticles = visible.slice();
             renderArticles(filteredArticles);
-            setupObserver();
             return;
         }
         const tokenOk = getHiddenToken();
@@ -214,7 +157,6 @@
         const matched = candidates.filter(a => a.title.toLowerCase().includes(keyword));
         filteredArticles = matched;
         renderArticles(filteredArticles);
-        setupObserver();
     }
 
     // ========== 密码弹窗 ==========
@@ -225,9 +167,6 @@
         pwOverlay.classList.add('active');
         pwInput.value = '';
         pwInput.focus();
-        pwInput.disabled = false;
-        pwConfirm.disabled = false;
-        pwConfirm.textContent = '确认';
     }
 
     function closePasswordDialog() {
@@ -252,7 +191,6 @@
         }
     }
 
-    // ========== 连续点击标题 ==========
     brandTitle.addEventListener('click', function() {
         clickCount++;
         clearTimeout(clickTimer);
@@ -270,7 +208,6 @@
         }
     });
 
-    // ========== 弹窗事件 ==========
     pwConfirm.addEventListener('click', handlePasswordConfirm);
     pwCancel.addEventListener('click', closePasswordDialog);
     pwInput.addEventListener('keydown', function(e) {
@@ -286,7 +223,6 @@
         }
     });
 
-    // ========== 搜索防抖 ==========
     let searchTimer = null;
     searchInput.addEventListener('input', function() {
         clearTimeout(searchTimer);
@@ -296,7 +232,6 @@
         }, 300);
     });
 
-    // ========== 初始化 ==========
     function init() {
         loadIndex();
     }
@@ -306,5 +241,4 @@
     } else {
         init();
     }
-
 })();

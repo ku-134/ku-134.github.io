@@ -530,14 +530,16 @@
                 }, duration);
             };
 
-            // ===== 加载文章（?file=VOID/xxx.md） =====
+            // ===== 加载文章（?file=xxx.md 或 ?file=VOID/xxx.md） =====
             const articleBody = document.getElementById('articleBody');
             const params = new URLSearchParams(location.search);
-            const file = params.get('file');
+            let file = params.get('file');
             if (!file) {
                 articleBody.innerHTML = '<div class="article-empty">📭 未指定文章<br>请在链接后添加 <code>?file=VOID/测试文本.md</code></div>';
                 return;
             }
+            // 兼容纯文件名（自动补 VOID/ 前缀）与完整路径
+            if (!file.includes('/')) file = 'VOID/' + file;
             fetch(file)
                 .then(function(res) {
                     if (!res.ok) throw new Error('HTTP ' + res.status);

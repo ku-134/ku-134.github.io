@@ -61,6 +61,9 @@
 
     stage.appendChild(page);
     api.setTitle('🔔 通知测试');
+
+    // 若配置为开启且循环未运行（如页面刷新后），自动恢复后台循环
+    if (cfg.on && !isLoopActive()) startLoop(cfg, api);
   }
 
   function makeInputRow(label, value, onChange) {

@@ -8,12 +8,27 @@
   var core = window.__voidCore;
   var sys = window.__voidSystem;
 
-  /* ---------- 初始桌面组件：时间 / 日历 ---------- */
+  /* ---------- 初始桌面组件：按组件中心状态加载 ---------- */
+  function loadComponentState() {
+    try {
+      var s = JSON.parse(localStorage.getItem('voidos.components.state'));
+      if (s && typeof s === 'object') return s;
+    } catch (e) {}
+    return {};
+  }
+
+  function defaultPos(type) {
+    if (type === 'time') return { x: 30, y: 40, w: 170, h: 92 };
+    if (type === 'calendar') return { x: Math.max(30, window.innerWidth - 190), y: 40, w: 130, h: 108 };
+    return { x: 30, y: 200, w: 160, h: 100 };
+  }
+
   function initWidgets() {
-    sys.createComponent('time', { x: 30, y: 40, w: 170, h: 92 });
-    sys.createComponent('calendar', {
-      x: Math.max(30, window.innerWidth - 190),
-      y: 40, w: 130, h: 108
+    var state = loadComponentState();
+    ['time', 'calendar'].forEach(function (type) {
+      if (state[type] !== false) {
+        sys.createComponent(type, defaultPos(type));
+      }
     });
   }
 

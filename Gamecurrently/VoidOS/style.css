@@ -309,6 +309,7 @@ body {
     position: fixed;
     inset: 0;
     z-index: 9000;
+    pointer-events: auto;
     background: rgba(10, 15, 10, 0.96);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);

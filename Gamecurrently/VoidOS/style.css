@@ -253,6 +253,49 @@ body {
 }
 
 /* ============================================================
+   通知区（右下角，只展示最新一条 + 倒计时进度条）
+   ============================================================ */
+#notify-stack {
+    position: fixed;
+    right: 16px;
+    bottom: 104px;
+    z-index: 9200;
+    width: 280px;
+    max-width: calc(100vw - 32px);
+    display: none;
+    pointer-events: none;
+}
+#notify-stack.active {
+    display: block;
+}
+.notify-slot {
+    pointer-events: auto;
+    position: relative;
+    overflow: hidden;
+    animation: notifyPop 0.15s ease-out;
+    width: 100%;
+}
+.notify-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: rgba(143, 185, 145, 0.12);
+}
+.notify-bar i {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #58A25C, #A7C0A6);
+    box-shadow: 0 0 8px rgba(88, 162, 92, 0.6);
+}
+#notify-stack .bubble-close {
+    top: 8px;
+    right: 10px;
+}
+
+/* ============================================================
    应用窗口（窗口模式气泡）
    ============================================================ */
 .desktop-element.app-window {
@@ -368,10 +411,11 @@ body {
     gap: 10px;
 }
 .fg-item {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 4px;
-    padding: 14px 16px;
+    padding: 14px 40px 14px 16px;
     border-radius: 12px;
     background: rgba(143, 185, 145, 0.06);
     border: 1px solid rgba(143, 185, 145, 0.12);
@@ -392,6 +436,22 @@ body {
 .fg-item-desc {
     font-size: 12px;
     opacity: 0.55;
+    font-weight: 300;
+}
+.fg-item-arrow {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    color: rgba(143, 185, 145, 0.35);
+    font-weight: 300;
+}
+.fg-section {
+    font-size: 12px;
+    color: rgba(143, 185, 145, 0.45);
+    letter-spacing: 0.15em;
+    margin: 18px 4px 8px;
     font-weight: 300;
 }
 .fg-center {

@@ -23,34 +23,60 @@
      ============================================================ */
   function notify(title, body, opts) {
     opts = opts || {};
-    var data = core.createElement({
-      type: 'notification',
-      w: opts.w || 230, h: opts.h || 92,
-      closable: true,
-      data: {
-        title: title || '通知', body: body || '', icon: opts.icon || '✨',
-        timeout: opts.timeout != null ? opts.timeout : 5000, onClick: opts.onClick
-      }
-    });
-    var el = data.el;
-    el.classList.add('notification-bubble');
-    el.innerHTML = '<span class="notify-icon">' + data.data.icon + '</span>' +
-      '<div class="notify-text"><div class="notify-title">' + core.escapeHtml(data.data.title) + '</div>' +
-      '<div class="notify-body">' + core.escapeHtml(data.data.body) + '</div></div>';
-    // 点击通知：执行回调并关闭
-    data.onClick = function () {
-      if (data.data.onClick) data.data.onClick(data);
-      core.removeElement(el);
-    };
-    if (data.data.timeout > 0) {
+    var timeout = opts.timeout != null ? opts.timeout : 5000;
+    var stack = document.getElementById('notify-stack');
+    if (!stack) return null;
+    // 通知区：只展示最新一条，清空旧通知
+    stack.innerHTML = '';
+    stack.classList.add('active');
+
+    var el = document.createElement('div');
+    el.className = 'desktop-element notification-bubble notify-slot';
+    el.innerHTML =
+      '<span class="notify-icon">' + (opts.icon || '✨') + '</span>' +
+      '<div class="notify-text"><div class="notify-title">' + core.escapeHtml(title || '通知') + '</div>' +
+      '<div class="notify-body">' + core.escapeHtml(body || '') + '</div></div>' +
+      '<div class="notify-bar"><i></i></div>';
+    stack.appendChild(el);
+
+    // 关闭按钮
+    var closeBtn = document.createElement('span');
+    closeBtn.className = 'bubble-close';
+    closeBtn.textContent = '✕';
+    el.appendChild(closeBtn);
+    var dismiss = function () {
+      if (!el.parentNode) return;
+      el.classList.add('bubble-exit');
       setTimeout(function () {
-        if (core.elements.indexOf(data) !== -1) {
-          el.classList.add('bubble-exit');
-          setTimeout(function () { core.removeElement(el); }, 300);
-        }
-      }, data.data.timeout);
+        if (el.parentNode) el.remove();
+        if (!stack.querySelector('.notify-slot')) stack.classList.remove('active');
+      }, 250);
+    };
+    closeBtn.addEventListener('pointerdown', function (e) { e.stopPropagation(); });
+    closeBtn.addEventListener('click', function (e) { e.stopPropagation(); dismiss(); });
+
+    // 点击通知本体：执行回调并关闭
+    el.addEventListener('click', function () {
+      if (opts.onClick) opts.onClick();
+      dismiss();
+    });
+
+    // 进度条（显示倒计时）
+    var bar = el.querySelector('.notify-bar i');
+    if (bar) {
+      bar.style.transition = 'none';
+      bar.style.width = '100%';
+      requestAnimationFrame(function () {
+        bar.style.transition = 'width ' + timeout + 'ms linear';
+        bar.style.width = '0%';
+      });
     }
-    return data;
+
+    // 超时自动消失
+    if (timeout > 0) {
+      setTimeout(dismiss, timeout);
+    }
+    return el;
   }
 
   /* ============================================================
@@ -286,15 +312,34 @@
      5. 应用图标渲染（由 loader 调用）
      ============================================================ */
   function renderAppIcons() {
+    // 移除旧的应用图标元素
     core.elements.slice().forEach(function (item) {
       if (item.type === 'app' && item.el && item.el.parentNode) {
         var idx = core.elements.indexOf(item);
         if (idx !== -1) { core.elements.splice(idx, 1); item.el.remove(); }
       }
     });
+    // 读取"展示桌面应用"设置（默认 true；系统设置始终展示）
+    var showApps = true;
+    try {
+      var sv = JSON.parse(localStorage.getItem('voidos.showapps'));
+      if (sv === false) showApps = false;
+    } catch (e) {}
     var ids = Object.keys(apps.appRegistry);
+    if (!showApps) {
+      ids = ids.filter(function (id) { return id === 'setting'; });
+    }
+    // 布局：从组件底部下方开始排图标，避免重叠
+    var startY = 24;
+    core.elements.forEach(function (item) {
+      if (item.type === 'component' && item.el && item.el.parentNode) {
+        var bottom = (item.y || 0) + (item.h || 100);
+        if (bottom > startY) startY = bottom;
+      }
+    });
+    startY += 24;
     var perRow = window.innerWidth < 480 ? 4 : (window.innerWidth < 900 ? 6 : 8);
-    var startX = 24, startY = 24;
+    var startX = 24;
     var cell = 92;
     ids.forEach(function (id, i) {
       var def = apps.appRegistry[id];

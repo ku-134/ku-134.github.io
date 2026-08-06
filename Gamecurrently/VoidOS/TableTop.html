@@ -4,12 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>VoidOS · 桌面</title>
-    <link rel="stylesheet" href="style.css?v=0.5" />
+    <link rel="stylesheet" href="style.css?v=0.6" />
 </head>
 <body>
 
     <!-- 桌面背景 -->
     <div id="desktop-bg"></div>
+
+    <!-- 通知区（右下角，无通知时隐藏） -->
+    <div id="notify-stack" aria-hidden="true"></div>
 
     <!-- 桌面元素容器（气泡弹窗、组件、应用图标） -->
     <div id="desktop"></div>
@@ -42,9 +45,9 @@
     <div id="zoom-indicator">缩放: <span id="zoom-value">100%</span></div>
 
     <!-- 引擎模块 -->
-    <script src="assets/js/core.js?v=0.5"></script>
-    <script src="assets/js/apps.js?v=0.5"></script>
-    <script src="assets/js/system.js?v=0.5"></script>
-    <script src="assets/js/loader.js?v=0.5"></script>
+    <script src="assets/js/core.js?v=0.6"></script>
+    <script src="assets/js/apps.js?v=0.6"></script>
+    <script src="assets/js/system.js?v=0.6"></script>
+    <script src="assets/js/loader.js?v=0.6"></script>
 </body>
 </html>

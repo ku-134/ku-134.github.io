@@ -1,6 +1,0 @@
-// test escaped quotes
-var a = "double quote";
-var b = 'single quote';
-var c = "escaped \" quote";
-var regex = /[&<>"']/g;
-// end

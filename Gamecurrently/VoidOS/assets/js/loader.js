@@ -1,0 +1,66 @@
+/* ============================================================
+   VoidOS · 加载器 (assets/js/loader.js)
+   初始化桌面组件 / 读取 Desktop-Process.txt 加载应用 / 入场过渡
+   ============================================================ */
+(function () {
+  'use strict';
+
+  var core = window.__voidCore;
+  var sys = window.__voidSystem;
+
+  /* ---------- 初始桌面组件：时间 / 日历 ---------- */
+  function initWidgets() {
+    sys.createComponent('time', { x: 30, y: 40, w: 170, h: 92 });
+    sys.createComponent('calendar', {
+      x: Math.max(30, window.innerWidth - 190),
+      y: 40, w: 130, h: 108
+    });
+  }
+
+  /* ---------- 加载应用（从 Desktop-Process.txt） ---------- */
+  async function loadApps() {
+    try {
+      var response = await fetch('Desktop-Process.txt?t=' + Date.now());
+      var text = await response.text();
+      var lines = text.split('\n').map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+      for (var i = 0; i < lines.length; i++) {
+        var fileName = lines[i];
+        try {
+          await import('./apos/' + fileName + '?t=' + Date.now());
+          console.log('✅ 应用加载成功: ' + fileName);
+        } catch (err) {
+          console.error('❌ 加载应用失败 ' + fileName + ':', err);
+        }
+      }
+    } catch (err) {
+      console.warn('无法读取 Desktop-Process.txt:', err);
+    }
+    sys.renderAppIcons();
+  }
+
+  /* ---------- 入场过渡（黑屏亮起） ---------- */
+  function entrance() {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = [
+      'position:fixed;inset:0;z-index:99999;background:#000;',
+      'transition:opacity 1.2s ease;pointer-events:none;opacity:1;'
+    ].join('');
+    document.body.appendChild(overlay);
+
+    initWidgets();
+    loadApps();
+
+    setTimeout(function () { sys.notify('系统提示', '欢迎来到虚空桌面', { icon: '🕳️' }); }, 2500);
+    setTimeout(function () { sys.notify('来自世界树', '神经链接已建立', { icon: '🌳' }); }, 8000);
+
+    requestAnimationFrame(function () { overlay.style.opacity = '0'; });
+    setTimeout(function () { overlay.remove(); }, 1400);
+
+    console.log('💡 长按桌面元素可拖动，滚轮/双指缩放');
+    console.log('💡 虚空之眼：无前台时打开终端；有前台时返回');
+    console.log('💡 API: VoidOS.notify / launchApp / createComponent');
+  }
+
+  if (document.readyState === 'complete') entrance();
+  else window.addEventListener('load', entrance);
+})();

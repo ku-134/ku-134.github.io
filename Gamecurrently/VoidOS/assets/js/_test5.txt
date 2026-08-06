@@ -1,0 +1,6 @@
+// test backslash slash
+var a = 10 / 2;
+var b = 10 / 3;
+// comment with slash
+var c = a / b;
+// end

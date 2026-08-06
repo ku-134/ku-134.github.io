@@ -57,7 +57,7 @@
     });
     var el = data.el;
     el.classList.add('app-window');
-    el.innerHTML = '';
+    // 保留 createElement 生成的关闭按钮（不做 innerHTML 清空）
     // 标题栏
     var bar = document.createElement('div');
     bar.className = 'app-window-bar';

@@ -1,2 +1,4 @@
 setting.js
 notepad.js
+components.js
+notifytest.js

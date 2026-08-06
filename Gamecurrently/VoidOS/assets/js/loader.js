@@ -32,6 +32,17 @@
     });
   }
 
+  // 动态加载应用脚本（script 标签，相对路径基于文档 URL → apos/ 目录）
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = src;
+      s.onload = function () { resolve(); };
+      s.onerror = function () { reject(new Error('加载失败: ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
   /* ---------- 加载应用（从 Desktop-Process.txt） ---------- */
   async function loadApps() {
     try {
@@ -41,7 +52,7 @@
       for (var i = 0; i < lines.length; i++) {
         var fileName = lines[i];
         try {
-          await import('./apos/' + fileName + '?t=' + Date.now());
+          await loadScript('apos/' + fileName + '?t=' + Date.now());
           console.log('✅ 应用加载成功: ' + fileName);
         } catch (err) {
           console.error('❌ 加载应用失败 ' + fileName + ':', err);

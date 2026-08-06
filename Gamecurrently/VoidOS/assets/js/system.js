@@ -340,7 +340,7 @@
     startY += 24;
     var perRow = window.innerWidth < 480 ? 4 : (window.innerWidth < 900 ? 6 : 8);
     var startX = 24;
-    var cell = 92;
+    var cell = window.innerWidth < 480 ? 84 : 92;
     ids.forEach(function (id, i) {
       var def = apps.appRegistry[id];
       var col = i % perRow;

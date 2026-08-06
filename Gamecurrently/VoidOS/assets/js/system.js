@@ -29,7 +29,7 @@
       closable: true,
       data: {
         title: title || '通知', body: body || '', icon: opts.icon || '✨',
-        timeout: opts.timeout != null ? opts.timeout : 6000, onClick: opts.onClick
+        timeout: opts.timeout != null ? opts.timeout : 5000, onClick: opts.onClick
       }
     });
     var el = data.el;

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>🍀妲那给木 · 视觉小说</title>
-    <link rel="stylesheet" href="DLGM-style.css" />
-    <link rel="preload" as="image" href="DLGM-start.webp" />
+    <link rel="stylesheet" href="DLGM/DLGM-style.css" />
+    <link rel="preload" as="image" href="DLGM/DLGM-start.webp" />
 </head>
 <body>
 
@@ -56,7 +56,7 @@
         </div>
     </div>
 
-    <script src="DLGM.js"></script>
+    <script src="DLGM/DLGM.js"></script>
     <script>
         (function() {
             const startScreen = document.getElementById('start-screen');
@@ -70,7 +70,7 @@
             loadingOverlay.style.display = 'none';
             gameScreen.style.display = 'none';
 
-            document.getElementById('start-bg').style.backgroundImage = "url('DLGM-start.webp')";
+            document.getElementById('start-bg').style.backgroundImage = "url('DLGM/DLGM-start.webp')";
 
             function waitForEngine(callback, retries) {
                 retries = retries || 0;

@@ -21,7 +21,7 @@
     },
 
     onClose: function () {
-      stopLoop();
+      // 循环在后台继续执行，脱离应用前台（重新打开应用可关闭开关停止）
     }
   });
 
@@ -40,6 +40,9 @@
   function render(stage, api) {
     stage.innerHTML = '';
     var cfg = loadCfg();
+    // 若循环已在后台运行，开关状态同步为开启
+    if (isLoopActive()) cfg.on = true;
+    saveCfg(cfg);
     currentCfg = cfg;
 
     var page = document.createElement('div');
@@ -53,7 +56,7 @@
     var status = document.createElement('div');
     status.className = 'void-hint';
     status.id = 'notify-status';
-    status.textContent = cfg.on ? '循环进行中…' : '已停止';
+    status.textContent = isLoopActive() ? '循环进行中…（后台运行中）' : '已停止';
     page.appendChild(status);
 
     stage.appendChild(page);
@@ -115,7 +118,11 @@
 
   function updateStatus() {
     var s = document.getElementById('notify-status');
-    if (s) s.textContent = (currentCfg && currentCfg.on) ? '循环进行中…' : '已停止';
+    if (s) s.textContent = isLoopActive() ? '循环进行中…（后台运行中）' : '已停止';
+  }
+
+  function isLoopActive() {
+    return timer != null;
   }
 
   function startLoop(cfg, api) {

@@ -58,7 +58,26 @@
      comp: { render(el,data,item), update(el,data,item), destroy(el,data) }
      ============================================================ */
   function registerComponent(type, comp) {
+    comp = comp || {};
+    comp.type = type;
     componentRegistry[type] = comp;
+  }
+
+  // 列出已注册的组件类型
+  function getComponents() {
+    return Object.keys(componentRegistry).map(function (t) {
+      var c = componentRegistry[t];
+      return { type: t, name: c.name || t, desc: c.desc || '' };
+    });
+  }
+
+  // 移除指定类型的所有桌面组件气泡
+  function removeComponent(type) {
+    core.elements.slice().forEach(function (item) {
+      if (item.type === 'component' && item.el && item.el.dataset.compType === type) {
+        core.removeElement(item.el);
+      }
+    });
   }
 
   function createComponent(type, config) {
@@ -74,6 +93,7 @@
       data: config.data || {}
     });
     data.el.classList.add('component-bubble');
+    data.el.dataset.compType = type;
     if (comp.render) comp.render(data.el, data.data, data);
     if (comp.update) {
       data._update = function () { comp.update(data.el, data.data, data); };
@@ -94,6 +114,8 @@
 
   /* ---------- 内置组件：时间 / 日历 ---------- */
   registerComponent('time', {
+    name: '时间',
+    desc: '实时时钟与日期',
     render: function (el, data, item) {
       el.classList.add('time-component');
       el.innerHTML = '<div class="time">--:--:--</div><div class="date">----年--月--日</div>';
@@ -111,6 +133,8 @@
   }
 
   registerComponent('calendar', {
+    name: '日历',
+    desc: '当前月份与日期',
     render: function (el, data, item) {
       el.classList.add('calendar-component');
       el.innerHTML = '<div class="month">一月</div><div class="day">1</div>';
@@ -311,6 +335,8 @@
     notify: notify,
     registerComponent: registerComponent,
     createComponent: createComponent,
+    getComponents: getComponents,
+    removeComponent: removeComponent,
     renderAppIcons: renderAppIcons,
     openTerminal: openTerminal,
     closeTerminal: closeTerminal,

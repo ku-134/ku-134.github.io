@@ -18,8 +18,16 @@
   }
 
   function defaultPos(type) {
+    var W = window.innerWidth;
     if (type === 'time') return { x: 30, y: 40, w: 170, h: 92 };
-    if (type === 'calendar') return { x: Math.max(30, window.innerWidth - 190), y: 40, w: 130, h: 108 };
+    if (type === 'calendar') {
+      var cx = Math.max(30, W - 190);
+      // 窄屏：与时间组件重叠时，放到时间下方
+      if (cx < 30 + 170 + 12) {
+        return { x: 30, y: 40 + 92 + 16, w: 130, h: 108 };
+      }
+      return { x: cx, y: 40, w: 130, h: 108 };
+    }
     return { x: 30, y: 200, w: 160, h: 100 };
   }
 

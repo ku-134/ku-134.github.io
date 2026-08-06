@@ -1,5 +1,6 @@
 /* ============================================================
-   VoidOS 桌面样式
+   VoidOS 桌面样式 v0.3
+   黑绿荧光主题 · 毛玻璃气泡 · 虚空之眼 · 前台应用 · 终端命令栏
    ============================================================ */
 * {
     margin: 0;
@@ -43,18 +44,20 @@ body {
     pointer-events: none;
 }
 
-/* 桌面元素（毛玻璃 + 浮动动画） */
+/* ============================================================
+   桌面元素（毛玻璃气泡 + 浮动动画）
+   ============================================================ */
 .desktop-element {
     position: absolute;
     pointer-events: auto;
     cursor: grab;
     touch-action: none;
     will-change: transform, left, top, width, height;
-    border-radius: 12px;
+    border-radius: 14px;
     background: rgba(143, 185, 145, 0.08);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(143, 185, 145, 0.12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(143, 185, 145, 0.14);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
@@ -67,18 +70,22 @@ body {
     text-shadow: 0 0 10px rgba(143, 185, 145, 0.2);
     overflow: hidden;
     animation: float 4s ease-in-out infinite;
-    transition: box-shadow 0.2s, border-color 0.2s;
+    transition: box-shadow 0.2s, border-color 0.2s, opacity 0.3s;
 }
 .desktop-element.dragging {
     animation: none !important;
     cursor: grabbing;
-    z-index: 100;
+    z-index: 9990 !important;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
     border-color: rgba(143, 185, 145, 0.4);
 }
 .desktop-element:not(.dragging):hover {
     border-color: rgba(143, 185, 145, 0.3);
     box-shadow: 0 6px 30px rgba(0, 0, 0, 0.4);
+}
+.desktop-element.bubble-exit {
+    opacity: 0;
+    transform: scale(0.85);
 }
 
 /* 浮动动画（每个元素独立随机偏移） */
@@ -90,6 +97,25 @@ body {
     100% { transform: translate(0, 0) rotate(0deg); }
 }
 
+/* 关闭按钮（通用） */
+.bubble-close {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 12px;
+    color: rgba(143, 185, 145, 0.5);
+    cursor: pointer;
+    z-index: 8;
+    transition: color 0.2s, transform 0.2s;
+    line-height: 1;
+    padding: 2px;
+}
+.bubble-close:hover {
+    color: #A7C0A6;
+    transform: scale(1.2);
+}
+
+/* 图标与标签 */
 .desktop-element .icon {
     font-size: 28px;
     margin-bottom: 4px;
@@ -104,14 +130,26 @@ body {
     opacity: 0.8;
 }
 
+/* 应用图标 */
+.desktop-element.app-icon {
+    background: rgba(143, 185, 145, 0.06);
+    border-color: rgba(143, 185, 145, 0.1);
+}
+.desktop-element.app-icon:hover .icon {
+    transform: scale(1.1);
+}
+.desktop-element.app-icon .icon {
+    transition: transform 0.2s;
+}
+
 /* 时间组件 */
 .desktop-element.time-component .time {
-    font-size: 32px;
+    font-size: 30px;
     font-weight: 200;
     letter-spacing: 0.06em;
 }
 .desktop-element.time-component .date {
-    font-size: 13px;
+    font-size: 12px;
     opacity: 0.6;
 }
 
@@ -126,54 +164,278 @@ body {
     line-height: 1;
 }
 
-/* 通知气泡 */
+/* ============================================================
+   通知气泡
+   ============================================================ */
 .desktop-element.notification-bubble {
-    background: rgba(49, 64, 21, 0.5);
+    background: rgba(49, 64, 21, 0.55);
     border-color: #58A25C;
-    min-width: 140px;
-    min-height: 70px;
-    padding: 12px 16px;
+    min-width: 180px;
+    min-height: 80px;
+    padding: 14px 16px;
     align-items: flex-start;
     justify-content: center;
     box-shadow: 0 0 30px rgba(88, 162, 92, 0.15);
-    animation: notifyPop 0.2s ease-out;
+    animation: notifyPop 0.25s ease-out;
+    flex-direction: row;
+    gap: 10px;
 }
 @keyframes notifyPop {
     0% { transform: scale(0.6); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
 }
+.notification-bubble .notify-icon {
+    font-size: 22px;
+    filter: drop-shadow(0 0 6px rgba(143, 185, 145, 0.4));
+    flex-shrink: 0;
+}
+.notification-bubble .notify-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
 .notification-bubble .notify-title {
     font-weight: 400;
     font-size: 14px;
     color: #A7C0A6;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 .notification-bubble .notify-body {
     font-size: 12px;
     opacity: 0.7;
     font-weight: 300;
-}
-.notification-bubble .notify-close {
-    position: absolute;
-    top: 4px;
-    right: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    opacity: 0.4;
-    transition: opacity 0.2s;
-    z-index: 5;
-}
-.notification-bubble .notify-close:hover {
-    opacity: 1;
+    line-height: 1.4;
+    word-break: break-all;
 }
 
-/* 虚空之眼 (Home键) */
+/* ============================================================
+   应用窗口（窗口模式气泡）
+   ============================================================ */
+.desktop-element.app-window {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+    background: rgba(15, 22, 15, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-color: rgba(88, 162, 92, 0.35);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+.app-window-bar {
+    flex-shrink: 0;
+    width: 100%;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    background: rgba(88, 162, 92, 0.12);
+    border-bottom: 1px solid rgba(88, 162, 92, 0.2);
+    cursor: grab;
+}
+.app-window-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #58A25C;
+    box-shadow: 0 0 8px rgba(88, 162, 92, 0.8);
+}
+.app-window-title {
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    color: #A7C0A6;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.app-window-body {
+    flex: 1;
+    width: 100%;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================================
+   前台应用（全屏模式）
+   ============================================================ */
+.app-foreground {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    background: rgba(10, 15, 10, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    flex-direction: column;
+    animation: fgIn 0.3s ease-out;
+}
+@keyframes fgIn {
+    0% { opacity: 0; transform: scale(1.02); }
+    100% { opacity: 1; transform: scale(1); }
+}
+.app-fg-bar {
+    flex-shrink: 0;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    background: rgba(88, 162, 92, 0.1);
+    border-bottom: 1px solid rgba(88, 162, 92, 0.25);
+}
+.app-fg-back {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    border: 1px solid rgba(143, 185, 145, 0.3);
+    background: rgba(143, 185, 145, 0.08);
+    color: #8FB991;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.app-fg-back:hover {
+    background: rgba(143, 185, 145, 0.2);
+    border-color: #58A25C;
+}
+.app-fg-title {
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 0.06em;
+    color: #A7C0A6;
+}
+.app-fg-stage {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+/* 前台应用页面样式 */
+.fg-page {
+    padding: 20px;
+    max-width: 640px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.fg-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: rgba(143, 185, 145, 0.06);
+    border: 1px solid rgba(143, 185, 145, 0.12);
+    color: #8FB991;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.2s, border-color 0.2s;
+}
+.fg-item:hover {
+    background: rgba(143, 185, 145, 0.12);
+    border-color: #58A25C;
+}
+.fg-item-label {
+    font-size: 15px;
+    color: #A7C0A6;
+}
+.fg-item-desc {
+    font-size: 12px;
+    opacity: 0.55;
+    font-weight: 300;
+}
+.fg-center {
+    align-items: center;
+    text-align: center;
+    padding-top: 60px;
+}
+.about-logo {
+    font-size: 56px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 20px rgba(143, 185, 145, 0.5));
+    animation: eyeFloat 4s ease-in-out infinite alternate;
+}
+@keyframes eyeFloat {
+    0% { transform: translateY(-4px); }
+    100% { transform: translateY(8px); }
+}
+.about-title {
+    font-size: 24px;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 20px rgba(143, 185, 145, 0.4);
+}
+.about-ver {
+    font-size: 13px;
+    opacity: 0.5;
+    margin: 6px 0 16px;
+    letter-spacing: 0.2em;
+}
+.about-desc {
+    font-size: 14px;
+    font-weight: 300;
+    opacity: 0.7;
+    line-height: 1.8;
+}
+
+/* 记事本 */
+.notepad-body {
+    padding: 10px;
+    gap: 10px;
+}
+.notepad-textarea {
+    flex: 1;
+    width: 100%;
+    min-height: 120px;
+    background: rgba(15, 22, 15, 0.6);
+    border: 1px solid rgba(143, 185, 145, 0.2);
+    border-radius: 10px;
+    color: #A7C0A6;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    padding: 10px;
+    outline: none;
+    resize: none;
+    line-height: 1.5;
+}
+.notepad-textarea:focus {
+    border-color: #58A25C;
+}
+.notepad-bar {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+.void-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(143, 185, 145, 0.3);
+    background: rgba(143, 185, 145, 0.08);
+    color: #8FB991;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.void-btn:hover {
+    background: rgba(143, 185, 145, 0.18);
+    border-color: #58A25C;
+}
+
+/* ============================================================
+   虚空之眼（Home 键）
+   ============================================================ */
 #home-eye {
     position: fixed;
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 10;
+    z-index: 9500;
     width: 56px;
     height: 56px;
     cursor: pointer;
@@ -188,13 +450,22 @@ body {
     height: 44px;
     bottom: 20px;
 }
+/* 返回模式：前台应用存在时显示为返回形态 */
+#home-eye.back-mode svg {
+    opacity: 0.75;
+    transform: rotate(180deg);
+}
+#home-eye.back-mode {
+    filter: drop-shadow(0 0 20px rgba(143, 185, 145, 0.6));
+}
 #home-eye svg {
     width: 100%;
     height: 100%;
     display: block;
+    transition: transform 0.4s;
 }
 
-/* 虚空之眼内部动画（与 index.html 一致） */
+/* 虚空之眼内部动画 */
 .eye-ring {
     animation: ringSpin 20s linear infinite;
     transform-origin: center;
@@ -220,38 +491,84 @@ body {
     100% { opacity: 1; r: 4.5; }
 }
 
-/* 底部终端输入框 */
+/* ============================================================
+   终端命令栏（输出区 + 输入行）
+   ============================================================ */
 #terminal-input-area {
     position: fixed;
-    bottom: -80px;
+    bottom: -260px;
     left: 0;
     right: 0;
-    z-index: 9;
-    height: 70px;
-    background: rgba(15, 22, 15, 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-top: 1px solid rgba(143, 185, 145, 0.2);
-    padding: 0 20px 0 70px;
+    z-index: 9400;
+    height: 250px;
+    max-height: 45vh;
+    background: rgba(10, 16, 10, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(143, 185, 145, 0.25);
+    padding: 10px 16px 8px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     pointer-events: none;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
 }
 #terminal-input-area.active {
     bottom: 0;
     pointer-events: auto;
 }
+#terminal-output {
+    flex: 1;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: rgba(143, 185, 145, 0.8);
+    margin-bottom: 6px;
+    padding-right: 4px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+#terminal-output::-webkit-scrollbar {
+    width: 4px;
+}
+#terminal-output::-webkit-scrollbar-thumb {
+    background: rgba(88, 162, 92, 0.4);
+    border-radius: 4px;
+}
+.term-cmd {
+    color: #A7C0A6;
+    margin-top: 6px;
+}
+.term-out {
+    color: rgba(143, 185, 145, 0.7);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+.terminal-row {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+#terminal-input-area .prompt {
+    color: #58A25C;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    opacity: 0.8;
+}
 #terminal-input-area input {
+    flex: 1;
     width: 100%;
     background: transparent;
     border: none;
     outline: none;
     color: #8FB991;
     font-family: 'Courier New', monospace;
-    font-size: 16px;
+    font-size: 15px;
     letter-spacing: 0.04em;
-    padding: 10px 0;
+    padding: 8px 0;
     border-bottom: 1px solid rgba(143, 185, 145, 0.2);
     transition: border-color 0.2s;
 }
@@ -260,22 +577,17 @@ body {
 }
 #terminal-input-area input::placeholder {
     color: rgba(143, 185, 145, 0.3);
-    font-size: 14px;
-}
-#terminal-input-area .prompt {
-    color: #58A25C;
-    font-family: 'Courier New', monospace;
-    font-size: 16px;
-    margin-right: 12px;
-    opacity: 0.7;
+    font-size: 13px;
 }
 
-/* 缩放指示器 */
+/* ============================================================
+   缩放指示器
+   ============================================================ */
 #zoom-indicator {
     position: fixed;
     bottom: 100px;
     right: 20px;
-    z-index: 20;
+    z-index: 9600;
     font-size: 12px;
     background: rgba(0, 0, 0, 0.4);
     padding: 4px 12px;
@@ -291,7 +603,9 @@ body {
     opacity: 1;
 }
 
-/* 响应式 */
+/* ============================================================
+   响应式
+   ============================================================ */
 @media (max-width: 480px) {
     .desktop-element .icon { font-size: 22px; }
     .desktop-element .label { font-size: 10px; }
@@ -299,8 +613,10 @@ body {
     .desktop-element.calendar-component .day { font-size: 28px; }
     #home-eye { width: 48px; height: 48px; bottom: 20px; }
     #home-eye.shifted { width: 38px; height: 38px; bottom: 16px; left: 12px; }
-    #terminal-input-area { height: 60px; padding: 0 12px 0 56px; }
-    #terminal-input-area input { font-size: 14px; }
+    #terminal-input-area { height: 200px; padding: 8px 12px 6px; }
+    #terminal-input-area input { font-size: 13px; }
+    #terminal-output { font-size: 11px; }
+    .fg-page { padding: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

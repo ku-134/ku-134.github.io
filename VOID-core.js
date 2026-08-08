@@ -131,7 +131,9 @@
             });
     }
 
-    // ========== 分类栏（双父级：公开 / 隐藏） ==========
+    // ========== 分类栏（父级切换 + 子分类） ==========
+    // 未解锁：不显示任何父级字眼，直接展示公开子分类
+    // 解锁后：在分类栏起始位置出现「公开/隐藏」切换按钮，不并列分组
     function getCatsByParent(parent) {
         const list = parent === 'hidden'
             ? allArticles.filter(a => a.hidden)
@@ -145,47 +147,52 @@
 
     function renderCategoryBar() {
         const tokenOk = getHiddenToken();
+        // 未解锁时强制公开父级
+        if (!tokenOk && currentParent === 'hidden') {
+            currentParent = 'public';
+            currentCat = 'all';
+        }
         let html = '';
 
-        // 公开组（始终显示）
-        html += '<div class="cat-group">';
-        html += '<span class="cat-group-label">公开</span>';
-        html += '<button class="cat-btn" data-parent="public" data-cat="all">全部</button>';
-        for (const c of getCatsByParent('public')) {
-            html += `<button class="cat-btn" data-parent="public" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`;
-        }
-        html += '</div>';
-
-        // 隐藏组（解锁后才显示，独立父级）
+        // 解锁后才出现父级切换按钮（位于原「公开」位置）
         if (tokenOk) {
-            html += '<div class="cat-group hidden-group">';
-            html += '<span class="cat-group-label">🔒 隐藏</span>';
-            html += '<button class="cat-btn" data-parent="hidden" data-cat="all">全部</button>';
-            for (const c of getCatsByParent('hidden')) {
-                html += `<button class="cat-btn" data-parent="hidden" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`;
-            }
-            html += '</div>';
+            html += `<button class="parent-btn${currentParent === 'public' ? ' active' : ''}" data-parent="public">公开</button>`;
+            html += `<button class="parent-btn${currentParent === 'hidden' ? ' active' : ''}" data-parent="hidden">隐藏</button>`;
+        }
+
+        // 当前父级下的子分类
+        html += '<button class="cat-btn" data-cat="all">全部</button>';
+        for (const c of getCatsByParent(currentParent)) {
+            html += `<button class="cat-btn" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`;
         }
 
         catBar.innerHTML = html;
 
         // 恢复选中态
-        const cur = catBar.querySelector(`.cat-btn[data-parent="${currentParent}"][data-cat="${CSS.escape(currentCat)}"]`);
+        const cur = catBar.querySelector(`.cat-btn[data-cat="${CSS.escape(currentCat)}"]`);
         if (cur) cur.classList.add('active');
         else {
-            // 当前父级/分类不可用时（如令牌过期），回退到 公开-全部
-            currentParent = 'public';
             currentCat = 'all';
-            const fallback = catBar.querySelector('.cat-btn[data-parent="public"][data-cat="all"]');
+            const fallback = catBar.querySelector('.cat-btn[data-cat="all"]');
             if (fallback) fallback.classList.add('active');
         }
 
+        // 子分类点击
         catBar.querySelectorAll('.cat-btn').forEach(btn => {
             btn.addEventListener('click', function() {
-                currentParent = this.dataset.parent;
                 currentCat = this.dataset.cat;
                 catBar.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
+                applyFilter();
+            });
+        });
+
+        // 父级切换点击（切换后子分类重渲染）
+        catBar.querySelectorAll('.parent-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                currentParent = this.dataset.parent;
+                currentCat = 'all';
+                renderCategoryBar();
                 applyFilter();
             });
         });

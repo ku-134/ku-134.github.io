@@ -1,6 +1,8 @@
 /**
  * VOID-core.js
- * 文章列表页：加载索引、搜索、跳转至独立阅读页
+ * 文章列表页：加载索引（分类）、搜索、分类筛选、跳转至独立阅读页
+ * 索引格式：文件名.md -文章名 +文章类型 | 简介
+ *          # 文件名.md -文章名 +文章类型 | 简介 （# 前缀 = 隐藏）
  */
 (function() {
     'use strict';
@@ -8,6 +10,7 @@
     const container = document.getElementById('articleContainer');
     const searchInput = document.getElementById('searchInput');
     const brandTitle = document.getElementById('brandTitle');
+    const catBar = document.getElementById('categoryBar');
     const pwOverlay = document.getElementById('pwOverlay');
     const pwInput = document.getElementById('pwInput');
     const pwConfirm = document.getElementById('pwConfirm');
@@ -15,10 +18,21 @@
 
     let allArticles = [];
     let filteredArticles = [];
+    let currentCategory = 'all';
+    let currentKeyword = '';
 
     const HIDDEN_PASSWORD = '纳西妲天下第一可爱';
     const TOKEN_KEY = 'voidHiddenToken';
     const TOKEN_EXPIRE_KEY = 'voidHiddenExpire';
+
+    function escapeHtml(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '"')
+            .replace(/'/g, '&#39;');
+    }
 
     function showToast(msg, duration) {
         if (window.showVoidToast) {
@@ -49,6 +63,44 @@
         } catch (e) { /* ignore */ }
     }
 
+    // ========== 解析单行索引 ==========
+    // 顺序：| 简介 → + 分类 → - 标题 → 文件名
+    function parseLine(raw) {
+        let hidden = false;
+        let line = raw.trim();
+        if (!line) return null;
+        if (line.startsWith('#')) {
+            hidden = true;
+            line = line.substring(1).trim();
+        }
+        if (!line) return null;
+        // 简介：最后一个 | 之后
+        let desc = '';
+        const barIdx = line.lastIndexOf('|');
+        if (barIdx !== -1) {
+            desc = line.substring(barIdx + 1).trim();
+            line = line.substring(0, barIdx).trim();
+        }
+        // 分类：最后一个 + 之后
+        let category = '';
+        const plusIdx = line.lastIndexOf('+');
+        if (plusIdx !== -1) {
+            category = line.substring(plusIdx + 1).trim();
+            line = line.substring(0, plusIdx).trim();
+        }
+        // 标题：' -' 之后
+        let title = '';
+        const dashIdx = line.indexOf(' -');
+        if (dashIdx !== -1) {
+            title = line.substring(dashIdx + 2).trim();
+            line = line.substring(0, dashIdx).trim();
+        }
+        const filename = line;
+        if (!filename) return null;
+        if (!title) title = filename.replace(/\.md$/i, '').trim();
+        return { filename: filename, title: title, desc: desc, category: category, hidden: hidden };
+    }
+
     // ========== 加载索引 ==========
     function loadIndex() {
         container.innerHTML = '<div class="void-empty">⏳ 加载索引...</div>';
@@ -61,55 +113,79 @@
             .then(text => {
                 const lines = text.split('\n');
                 const articles = [];
-                for (let raw of lines) {
-                    raw = raw.trim();
-                    if (!raw) continue;
-                    let hidden = false;
-                    let line = raw;
-                    if (line.startsWith('#')) {
-                        hidden = true;
-                        line = line.substring(1).trim();
-                    }
-                    if (!line) continue;
-                    // 解析简介：| 之后
-                    let desc = '';
-                    const barIdx = line.lastIndexOf('|');
-                    if (barIdx !== -1) {
-                        desc = line.substring(barIdx + 1).trim();
-                        line = line.substring(0, barIdx).trim();
-                    }
-                    // 解析自定义标题：' -' 之后
-                    let title = '';
-                    const dashIdx = line.indexOf(' -');
-                    if (dashIdx !== -1) {
-                        title = line.substring(dashIdx + 2).trim();
-                        line = line.substring(0, dashIdx).trim();
-                    }
-                    const filename = line;
-                    if (!filename) continue;
-                    if (!title) title = filename.replace(/\.md$/i, '').trim();
-                    if (!title) continue;
-                    articles.push({
-                        filename: filename,
-                        title: title,
-                        desc: desc,
-                        hidden: hidden,
-                    });
+                for (const raw of lines) {
+                    const art = parseLine(raw);
+                    if (art) articles.push(art);
                 }
                 allArticles = articles;
-
-                const tokenOk = getHiddenToken();
-                let visible = allArticles;
-                if (!tokenOk) {
-                    visible = allArticles.filter(a => !a.hidden);
-                }
-                filteredArticles = visible.slice();
-                renderArticles(filteredArticles);
+                renderCategoryBar();
+                applyFilter();
             })
             .catch(err => {
-                container.innerHTML = `<div class="void-empty">❌ 加载失败：${err.message}</div>`;
+                container.innerHTML = `<div class="void-empty">❌ 加载失败：${escapeHtml(err.message)}</div>`;
                 showToast('❌ 索引加载失败');
             });
+    }
+
+    // ========== 分类栏 ==========
+    function getVisibleCategories() {
+        const tokenOk = getHiddenToken();
+        const visible = tokenOk ? allArticles : allArticles.filter(a => !a.hidden);
+        const cats = [];
+        for (const a of visible) {
+            if (a.category && cats.indexOf(a.category) === -1) cats.push(a.category);
+        }
+        return cats;
+    }
+
+    function renderCategoryBar() {
+        const cats = getVisibleCategories();
+        let html = '<button class="cat-btn" data-cat="all">全部</button>';
+        for (const c of cats) {
+            html += `<button class="cat-btn" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`;
+        }
+        // 隐藏是独立分类板块：有令牌才显示，且不与普通分类合并
+        if (getHiddenToken()) {
+            html += '<button class="cat-btn hidden-cat" data-cat="hidden">🔒 隐藏</button>';
+        }
+        catBar.innerHTML = html;
+
+        // 当前选中态
+        const cur = catBar.querySelector(`.cat-btn[data-cat="${CSS.escape(currentCategory)}"]`);
+        if (cur) cur.classList.add('active');
+
+        catBar.querySelectorAll('.cat-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                currentCategory = this.dataset.cat;
+                catBar.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                applyFilter();
+            });
+        });
+    }
+
+    // ========== 过滤（分类 + 搜索） ==========
+    function applyFilter() {
+        const tokenOk = getHiddenToken();
+        let list = allArticles;
+        if (!tokenOk) list = list.filter(a => !a.hidden);
+        // 分类：隐藏为独立板块，不与普通分类合并
+        if (currentCategory === 'hidden') {
+            list = list.filter(a => a.hidden);
+        } else if (currentCategory !== 'all') {
+            list = list.filter(a => !a.hidden && a.category === currentCategory);
+        }
+        // 搜索（标题/简介/分类）
+        const kw = currentKeyword.trim().toLowerCase();
+        if (kw) {
+            list = list.filter(a =>
+                a.title.toLowerCase().includes(kw) ||
+                (a.desc && a.desc.toLowerCase().includes(kw)) ||
+                (a.category && a.category.toLowerCase().includes(kw))
+            );
+        }
+        filteredArticles = list;
+        renderArticles(list);
     }
 
     // ========== 渲染卡片 ==========
@@ -121,16 +197,19 @@
 
         let html = '';
         for (const art of articles) {
+            const catBadge = art.category
+                ? `<span class="badge cat-badge">${escapeHtml(art.category)}</span>` : '';
             const hiddenBadge = art.hidden ? '<span class="badge hidden-badge">🔒 隐藏</span>' : '';
-            const descHtml = art.desc ? `<div class="card-desc">${art.desc}</div>` : '';
+            const descHtml = art.desc ? `<div class="card-desc">${escapeHtml(art.desc)}</div>` : '';
             html += `
-                <div class="article-card" data-filename="${art.filename}">
+                <div class="article-card" data-filename="${escapeHtml(art.filename)}">
                     <div class="card-title">
-                        ${art.title}
+                        ${escapeHtml(art.title)}
+                        ${catBadge}
                         ${hiddenBadge}
                     </div>
                     ${descHtml}
-                    <div class="card-meta">${art.filename}</div>
+                    <div class="card-meta">${escapeHtml(art.filename)}</div>
                 </div>
             `;
         }
@@ -143,36 +222,9 @@
         if (!card) return;
         const filename = card.dataset.filename;
         if (filename) {
-            // 传完整路径（VOID/ 前缀），article.html 亦兼容纯文件名
             window.location.href = 'article.html?file=' + encodeURIComponent('VOID/' + filename);
         }
     });
-
-    // ========== 搜索过滤 ==========
-    function filterArticles(keyword) {
-        keyword = keyword.trim().toLowerCase();
-        if (!keyword) {
-            const tokenOk = getHiddenToken();
-            let visible = allArticles;
-            if (!tokenOk) {
-                visible = allArticles.filter(a => !a.hidden);
-            }
-            filteredArticles = visible.slice();
-            renderArticles(filteredArticles);
-            return;
-        }
-        const tokenOk = getHiddenToken();
-        let candidates = allArticles;
-        if (!tokenOk) {
-            candidates = allArticles.filter(a => !a.hidden);
-        }
-        const matched = candidates.filter(a =>
-            a.title.toLowerCase().includes(keyword) ||
-            (a.desc && a.desc.toLowerCase().includes(keyword))
-        );
-        filteredArticles = matched;
-        renderArticles(filteredArticles);
-    }
 
     // ========== 密码弹窗 ==========
     let clickCount = 0;
@@ -191,16 +243,16 @@
     function handlePasswordConfirm() {
         const input = pwInput.value.trim();
         if (!input) {
-            showToast('请输入密码');
+            showToast('🗝️ 请留下真名');
             return;
         }
         if (input === HIDDEN_PASSWORD) {
             setHiddenToken();
             closePasswordDialog();
-            showToast('✅ 解锁成功！刷新页面显示隐藏文章', 3000);
+            showToast('✨ 帷幕缓缓拉开……', 3000);
             loadIndex();
         } else {
-            showToast('❌ 密码错误');
+            showToast('❌ 这个名字，门扉不予回应');
             pwInput.value = '';
             pwInput.focus();
         }
@@ -216,7 +268,7 @@
             clickCount = 0;
             clearTimeout(clickTimer);
             if (getHiddenToken()) {
-                showToast('🔓 隐藏文章已解锁，无需重复操作');
+                showToast('🔓 帷幕之后的光景，您早已见证');
             } else {
                 openPasswordDialog();
             }
@@ -241,9 +293,9 @@
     let searchTimer = null;
     searchInput.addEventListener('input', function() {
         clearTimeout(searchTimer);
-        const keyword = this.value;
+        currentKeyword = this.value;
         searchTimer = setTimeout(() => {
-            filterArticles(keyword);
+            applyFilter();
         }, 300);
     });
 

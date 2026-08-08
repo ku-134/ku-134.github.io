@@ -154,10 +154,11 @@
         }
         let html = '';
 
-        // 解锁后才出现父级切换按钮（位于原「公开」位置）
+        // 解锁后才出现父级切换按钮（单个，单击切换公开/隐藏）
         if (tokenOk) {
-            html += `<button class="parent-btn${currentParent === 'public' ? ' active' : ''}" data-parent="public">公开</button>`;
-            html += `<button class="parent-btn${currentParent === 'hidden' ? ' active' : ''}" data-parent="hidden">隐藏</button>`;
+            const label = currentParent === 'public' ? '公开' : '隐藏';
+            const next = currentParent === 'public' ? 'hidden' : 'public';
+            html += `<button class="parent-btn active" data-parent="${next}" data-cur="${currentParent}" title="单击切换父级分类">⇄ ${label}</button>`;
         }
 
         // 当前父级下的子分类

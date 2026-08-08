@@ -391,11 +391,10 @@
         <div class="article-card">
             <header class="article-header">
                 <div class="brand" id="brandTitle">
-                    <span class="typing-title">📖 文章阅读</span>
+                    <span class="typing-title">📖 详细全文</span>
                 </div>
                 <div class="nav-links">
-                    <a href="index.html">🏠 首页</a>
-                    <a href="VOID.html">📝 文章列表</a>
+                    <a href="VOID.html">📝 返回列表</a>
                 </div>
             </header>
             <div id="articleBody" class="article-body">
@@ -552,11 +551,45 @@
             }
             // 兼容纯文件名（自动补 VOID/ 前缀）与完整路径
             if (!file.includes('/')) file = 'VOID/' + file;
-            fetch(file)
-                .then(function(res) {
+
+            // ===== 文章拉取：缓存 + 哈希更新策略 =====
+            // 每次先走网络验证最新版（no-cache），内容哈希变化则刷新缓存；
+            // 网络失败时回退到 Cache Storage 中的旧版缓存。
+            async function sha256(text) {
+                try {
+                    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+                    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+                } catch (e) {
+                    return String(text.length); // 不支持 crypto.subtle 时的兜底
+                }
+            }
+
+            async function loadArticleText(url) {
+                const cache = await caches.open('void-articles');
+                try {
+                    const res = await fetch(url, { cache: 'no-cache' });
                     if (!res.ok) throw new Error('HTTP ' + res.status);
-                    return res.text();
-                })
+                    const text = await res.text();
+                    const hash = await sha256(text);
+                    const hashKey = 'voidArticleHash:' + url;
+                    let oldHash = null;
+                    try { oldHash = localStorage.getItem(hashKey); } catch (e) {}
+                    if (oldHash !== hash) {
+                        try {
+                            localStorage.setItem(hashKey, hash);
+                            await cache.put(url, new Response(text, { headers: { 'Content-Type': 'text/markdown; charset=utf-8' } }));
+                        } catch (e) { /* 存储失败不影响阅读 */ }
+                    }
+                    return text;
+                } catch (e) {
+                    // 网络失败 → 使用本地缓存旧版
+                    const cached = await cache.match(url);
+                    if (cached) return cached.text();
+                    throw e;
+                }
+            }
+
+            loadArticleText(file)
                 .then(function(text) {
                     articleBody.innerHTML = marked.parse(text);
                     // 段落依次浮现：从上到下逐个出现，避免生硬

@@ -93,6 +93,41 @@
         .void-toolbar input:focus { border-color: #66bb6a; }
         .void-toolbar input::placeholder { opacity: 0.4; }
 
+        /* ===== 分类栏 ===== */
+        .void-cats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .void-cats .cat-btn {
+            padding: 0.3rem 1.1rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(128, 128, 128, 0.15);
+            background: transparent;
+            color: inherit;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            opacity: 0.55;
+        }
+        .void-cats .cat-btn:hover {
+            opacity: 0.85;
+            background: rgba(128, 128, 128, 0.05);
+        }
+        .void-cats .cat-btn.active {
+            opacity: 1;
+            border-color: #66bb6a;
+            color: #66bb6a;
+            background: rgba(102, 187, 106, 0.1);
+        }
+        .void-cats .cat-btn.hidden-cat.active {
+            border-color: #e74c3c;
+            color: #e74c3c;
+            background: rgba(231, 76, 60, 0.1);
+        }
+
         /* ===== 文章卡片列表 ===== */
         .article-list {
             display: flex !important;
@@ -140,6 +175,12 @@
             background: rgba(231, 76, 60, 0.15);
             border-color: rgba(231, 76, 60, 0.2);
             color: #e74c3c;
+        }
+        .article-card .card-title .badge.cat-badge {
+            background: rgba(102, 187, 106, 0.1);
+            border-color: rgba(102, 187, 106, 0.15);
+            color: #66bb6a;
+            opacity: 0.85;
         }
         .article-card .card-meta {
             font-size: 0.8rem;
@@ -422,7 +463,7 @@
         <div class="void-card">
             <header class="void-header">
                 <div class="brand" id="brandTitle">
-                    <span class="typing-title">📗 文章</span>
+                    <span class="typing-title">📗 文章列表</span>
                 </div>
                 <div class="nav-links">
                     <a href="index.html">🏠 首页</a>
@@ -431,6 +472,9 @@
             </header>
             <div class="void-toolbar">
                 <input type="text" id="searchInput" placeholder="🔍 搜索文章标题..." />
+            </div>
+            <div class="void-cats" id="categoryBar">
+                <button class="cat-btn" data-cat="all">全部</button>
             </div>
             <div id="articleContainer" class="article-list">
                 <div class="void-empty">⏳ 加载中...</div>
@@ -442,14 +486,14 @@
 
     <div class="void-pw-overlay" id="pwOverlay">
         <div class="void-pw-panel">
-            <div class="panel-title">🔐 解锁隐藏文章</div>
-            <div class="panel-sub">请输入密码</div>
-            <input type="text" id="pwInput" placeholder="密码" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+            <div class="panel-title">🗝️ 虚实之门</div>
+            <div class="panel-sub">唯有知晓真名者，方可窥见帷幕之后的光景。</div>
+            <input type="text" id="pwInput" placeholder="真名" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
             <div class="panel-actions">
-                <button class="btn btn-secondary" id="pwCancel">取消</button>
-                <button class="btn btn-primary" id="pwConfirm">确认</button>
+                <button class="btn btn-secondary" id="pwCancel">退去</button>
+                <button class="btn btn-primary" id="pwConfirm">叩门</button>
             </div>
-            <div class="hint">连续点击标题 5 次触发</div>
+            <div class="hint">五次叩问门扉，虚影自会应声而来。</div>
         </div>
     </div>
 

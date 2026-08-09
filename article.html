@@ -828,6 +828,12 @@
             // ---- 暴露给渲染完成后的刷新钩子 ----
             window.ArtSettings = { refresh: applyArticle, rebuildToc: buildToc };
 
+            // ---- 显示底部控制栏（👁️ 纯净浏览 / ⚙️ 设置） ----
+            setTimeout(function () {
+                var bc = document.getElementById('bottomControls');
+                if (bc) bc.classList.add('show');
+            }, 800);
+
             // ---- 初始化 ----
             applyArticle();
             updateProgress();

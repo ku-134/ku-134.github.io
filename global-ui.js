@@ -1,11 +1,13 @@
 /* ============================================================
  * global-ui.js — 全局样式设置 & UI 隐藏功能（自包含）
  * 注入悬浮控制按钮 + 设置面板 + 所需样式，任何页面引用即生效
- * 覆盖：index / about / contact / RP / VOID / MT / GG
+ * 覆盖：index / about / contact / RP / VOID / MT / GG / article(仅API)
  * 存储：siteSettings(主题/背景，兼容旧版) + gui_fontSize + gui_navHidden
+ * 暴露：window.GlobalUI（供自建入口的页面同步调用）
  * ============================================================ */
 (function () {
     'use strict';
+    var hasOwnSettings = !!document.getElementById('settingsToggle');
 
     /* ---------- 注入样式 ---------- */
     var css = [
@@ -38,6 +40,51 @@
     style.textContent = css;
     document.head.appendChild(style);
 
+    var root = document.documentElement;
+    var body = document.body;
+
+    /* ---------- 核心 API ---------- */
+    function loadSettings() {
+        try {
+            var s = JSON.parse(localStorage.getItem('siteSettings') || '{}');
+            return { theme: s.theme || 'default', bg: s.bg || 'default' };
+        } catch (e) { return { theme: 'default', bg: 'default' }; }
+    }
+    function saveSettings(s) {
+        try { localStorage.setItem('siteSettings', JSON.stringify(s)); } catch (e) {}
+    }
+    function setOpts(id, val) {
+        var box = document.getElementById(id);
+        if (!box) return;
+        box.querySelectorAll('button').forEach(function (b) {
+            b.classList.toggle('active', b.getAttribute('data-v') === val);
+        });
+    }
+    function applyAll() {
+        var s = loadSettings();
+        root.removeAttribute('data-theme');
+        if (s.theme !== 'default') root.setAttribute('data-theme', s.theme);
+        setOpts('guiTheme', s.theme);
+        root.removeAttribute('data-bg');
+        if (s.bg !== 'default') root.setAttribute('data-bg', s.bg);
+        setOpts('guiBg', s.bg);
+        var fs = localStorage.getItem('gui_fontSize') || '1';
+        root.style.fontSize = (parseFloat(fs) * 16) + 'px';
+        setOpts('guiFont', fs);
+        var nav = localStorage.getItem('gui_navHidden') === '1';
+        body.classList.toggle('gui-nav-hidden', nav);
+        setOpts('guiNav', nav ? 'nav' : '');
+    }
+    window.GlobalUI = {
+        loadSettings: loadSettings,
+        saveSettings: saveSettings,
+        setOpts: setOpts,
+        applyAll: applyAll
+    };
+
+    /* ---------- 自建入口页面（如 article）不注入 UI ---------- */
+    if (hasOwnSettings) { applyAll(); return; }
+
     /* ---------- 注入悬浮按钮（👁️ 眼睛在左，⚙️ 齿轮在右） ---------- */
     var fab = document.createElement('div');
     fab.className = 'gui-fab';
@@ -66,44 +113,6 @@
     ].join('');
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
-
-    var root = document.documentElement;
-    var body = document.body;
-
-    /* ---------- 设置读写 ---------- */
-    function loadSettings() {
-        try {
-            var s = JSON.parse(localStorage.getItem('siteSettings') || '{}');
-            return { theme: s.theme || 'default', bg: s.bg || 'default' };
-        } catch (e) { return { theme: 'default', bg: 'default' }; }
-    }
-    function saveSettings(s) {
-        try { localStorage.setItem('siteSettings', JSON.stringify(s)); } catch (e) {}
-    }
-    function setOpts(id, val) {
-        var box = document.getElementById(id);
-        if (!box) return;
-        box.querySelectorAll('button').forEach(function (b) {
-            b.classList.toggle('active', b.getAttribute('data-v') === val);
-        });
-    }
-
-    /* ---------- 应用设置 ---------- */
-    function applyAll() {
-        var s = loadSettings();
-        root.removeAttribute('data-theme');
-        if (s.theme !== 'default') root.setAttribute('data-theme', s.theme);
-        setOpts('guiTheme', s.theme);
-        root.removeAttribute('data-bg');
-        if (s.bg !== 'default') root.setAttribute('data-bg', s.bg);
-        setOpts('guiBg', s.bg);
-        var fs = localStorage.getItem('gui_fontSize') || '1';
-        root.style.fontSize = (parseFloat(fs) * 16) + 'px';
-        setOpts('guiFont', fs);
-        var nav = localStorage.getItem('gui_navHidden') === '1';
-        body.classList.toggle('gui-nav-hidden', nav);
-        setOpts('guiNav', nav ? 'nav' : '');
-    }
 
     /* ---------- 弹窗开关 ---------- */
     var settingsBtn = document.getElementById('guiSettings');

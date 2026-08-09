@@ -9,7 +9,7 @@
 
     /* ---------- 注入样式 ---------- */
     var css = [
-        '.gui-fab{position:fixed;left:1rem;bottom:1rem;display:flex;flex-direction:row;gap:.5rem;z-index:9999}',
+        '.gui-fab{position:fixed;right:1rem;bottom:1rem;display:flex;flex-direction:row;gap:.5rem;z-index:9999}',
         '.gui-fab button{width:44px;height:44px;border-radius:50%;border:1px solid rgba(128,128,128,.3);background:rgba(12,22,12,.75);color:inherit;font-size:1.05rem;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(0,0,0,.35);transition:transform .2s,opacity .2s}',
         '.gui-fab button:hover{transform:scale(1.1)}',
         '.gui-fab button.active{border-color:#e74c3c;background:rgba(231,76,60,.25)}',

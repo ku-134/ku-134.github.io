@@ -222,151 +222,150 @@
             opacity: 0.8;
         }
 
-        /* ===== 样式设置弹窗（完整内联样式） ===== */
+        /* ===== 样式设置弹窗（双视图：站点 / 文章） ===== */
         .settings-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 1600;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            animation: overlayIn 0.25s ease-out;
+            position: fixed; inset: 0; z-index: 1600; display: none;
+            align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
         .settings-overlay.active { display: flex; }
         .settings-panel {
-            max-width: 420px;
-            width: 90%;
-            padding: 2rem 2rem 1.8rem;
-            border-radius: 1.8rem;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            max-height: 90vh;
-            overflow-y: auto;
-            text-align: center;
-            background: var(--settings-panel-bg, var(--card-bg));
-            color: var(--text-color);
+            width: 92%; max-width: 440px; max-height: 88vh; overflow-y: auto;
+            padding: 1.6rem 1.8rem 1.3rem; border-radius: 1.4rem;
+            background: var(--settings-panel-bg, rgba(12,22,12,0.95));
+            border: 1px solid var(--settings-panel-border, rgba(255,255,255,0.08));
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
         }
-        .settings-panel .panel-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 0.2rem;
+        .panel-title {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 0.8rem; flex-wrap: wrap;
+            font-size: 1.15rem; font-weight: 700; margin-bottom: 0.2rem;
         }
-        .settings-panel .panel-sub {
-            font-size: 0.85rem;
-            opacity: 0.4;
-            margin-bottom: 1.2rem;
+        .panel-sub { font-size: 0.8rem; opacity: 0.5; margin-bottom: 1rem; }
+        .view-switch { display: flex; gap: 0.35rem; }
+        .view-switch .opt-btn {
+            padding: 0.25rem 0.8rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.25); background: transparent;
+            color: inherit; opacity: 0.55; cursor: pointer; font-size: 0.75rem; font-family: inherit;
         }
-        .settings-group {
-            margin-bottom: 1.2rem;
-            text-align: left;
-        }
-        .settings-group label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            opacity: 0.6;
-            display: block;
-            margin-bottom: 0.4rem;
-        }
-        .settings-group .options {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
+        .view-switch .opt-btn.active { opacity: 1; border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .settings-group { margin-bottom: 0.9rem; }
+        .settings-group label { font-size: 0.8rem; font-weight: 600; opacity: 0.6; display: block; margin-bottom: 0.4rem; }
+        .settings-group .options { display: flex; gap: 0.4rem; flex-wrap: wrap; }
         .settings-group .options .opt-btn {
-            padding: 0.3rem 1.2rem;
-            border-radius: 2rem;
-            border: 1px solid rgba(128, 128, 128, 0.15);
-            background: transparent;
-            font-family: inherit;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            opacity: 0.5;
-            color: inherit;
+            padding: 0.3rem 0.9rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.25); background: transparent;
+            color: inherit; opacity: 0.5; cursor: pointer; font-size: 0.8rem; font-family: inherit;
         }
-        .settings-group .options .opt-btn:hover {
-            opacity: 0.8;
-            background: rgba(128, 128, 128, 0.05);
+        .settings-group .options .opt-btn:hover { opacity: 0.85; }
+        .settings-group .options .opt-btn.active { opacity: 1; border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .pure-colors { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+        .pure-colors .pure-c { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; opacity: 0.75; }
+        .pure-colors input[type=color] {
+            width: 34px; height: 26px; border: 1px solid rgba(128,128,128,0.3);
+            border-radius: 0.5rem; background: transparent; padding: 2px; cursor: pointer;
         }
-        .settings-group .options .opt-btn.active {
-            opacity: 1;
-            border-color: currentColor;
-            background: rgba(128, 128, 128, 0.08);
+        .panel-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+        .panel-actions .btn {
+            padding: 0.4rem 1.2rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.25); background: transparent;
+            color: inherit; cursor: pointer; font-size: 0.8rem; font-family: inherit;
         }
-        .settings-panel .panel-actions {
-            display: flex;
-            gap: 0.6rem;
-            justify-content: flex-end;
-            margin-top: 0.8rem;
-        }
-        .settings-panel .panel-actions .btn {
-            padding: 0.4rem 1.4rem;
-            border-radius: 2rem;
-            border: none;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            font-family: inherit;
-        }
-        .settings-panel .panel-actions .btn-secondary {
-            background: transparent;
-            border: 1px solid rgba(128, 128, 128, 0.15);
-            color: inherit;
-        }
-        .settings-panel .panel-actions .btn-secondary:hover {
-            background: rgba(128, 128, 128, 0.06);
+        .panel-actions .btn:hover { opacity: 0.85; }
+
+        /* ===== 阅读进度条 ===== */
+        #artProgressBar {
+            position: fixed; top: 0; left: 0; height: 3px; width: 0;
+            background: linear-gradient(90deg, #66bb6a, #4db6ac);
+            z-index: 9998; transition: width 0.1s linear;
         }
 
-        /* ===== Toast ===== */
-        #voidToast {
-            position: fixed;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            bottom: 30px;
-            z-index: 2000;
-            padding: 12px 28px;
-            border-radius: 2rem;
-            font-size: 1rem;
-            font-weight: 500;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
-            opacity: 0;
-            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-            pointer-events: none;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: var(--toast-bg, rgba(0, 0, 0, 0.8));
-            color: var(--toast-color, #fff);
+        /* ===== 文章目录 ===== */
+        #artTocBox {
+            position: fixed; right: 1.2rem; top: 50%; transform: translateY(-50%);
+            max-width: 220px; max-height: 70vh; overflow-y: auto;
+            padding: 0.9rem 1rem; border-radius: 1rem;
+            background: var(--settings-panel-bg, rgba(12,22,12,0.85));
+            border: 1px solid rgba(128,128,128,0.15);
+            backdrop-filter: blur(10px);
+            font-size: 0.78rem; z-index: 500;
         }
-        #voidToast.show {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
+        #artTocBox .art-toc-title { font-weight: 700; opacity: 0.7; margin-bottom: 0.5rem; }
+        #artTocBox ul { list-style: none; margin: 0; padding: 0; }
+        #artTocBox li { margin: 0.3rem 0; }
+        #artTocBox li.toc-lv2 { padding-left: 0.8rem; }
+        #artTocBox li.toc-lv3 { padding-left: 1.6rem; }
+        #artTocBox a { text-decoration: none; opacity: 0.65; transition: opacity 0.2s; }
+        #artTocBox a:hover { opacity: 1; }
+        body.art-toc-off #artTocBox { display: none !important; }
+        @media (max-width: 1100px) { #artTocBox { display: none; } }
 
-        /* ===== 隐藏 UI 适配 ===== */
-        body.ui-hidden .article-container,
-        body.ui-hidden .article-card,
-        body.ui-hidden .article-header,
-        body.ui-hidden .article-body,
-        body.ui-hidden #voidToast {
-            opacity: 0 !important;
-            pointer-events: none !important;
-            transition: opacity 0.3s ease;
-        }
-        body.ui-hidden .settings-overlay.active {
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
-        body.ui-hidden .bottom-controls {
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
+        /* ===== 文章阅读专属设置 ===== */
+        .article-body { font-size: var(--art-size, 1rem); line-height: var(--art-lh, 1.8); font-family: var(--art-font, inherit); }
+        .article-container { max-width: var(--art-width, 720px); }
+        body.art-reveal-off .article-body > * { opacity: 1 !important; transform: none !important; animation: none !important; }
 
+        /* 阅读底色 */
+        body.art-paper-cream .article-card { background: rgba(250, 244, 228, 0.94); }
+        body.art-paper-cream .article-body { color: #3a332b; }
+        body.art-paper-cream .article-body h1, body.art-paper-cream .article-body h2, body.art-paper-cream .article-body h3 { color: #2c261f; }
+        body.art-paper-cream .article-body a { color: #6a5238; }
+        body.art-paper-cream .article-body blockquote { border-left-color: rgba(106, 82, 56, 0.5); }
+        body.art-paper-cream .article-body code { background: rgba(100, 80, 50, 0.12); }
+        body.art-paper-cream .article-body pre { background: rgba(100, 80, 50, 0.08); border-color: rgba(100, 80, 50, 0.2); }
+        body.art-paper-green .article-card { background: rgba(226, 240, 226, 0.94); }
+        body.art-paper-green .article-body { color: #2c3a2c; }
+        body.art-paper-green .article-body h1, body.art-paper-green .article-body h2, body.art-paper-green .article-body h3 { color: #1f2d1f; }
+        body.art-paper-green .article-body a { color: #3f5e3f; }
+        body.art-paper-green .article-body blockquote { border-left-color: rgba(63, 94, 63, 0.5); }
+        body.art-paper-green .article-body code { background: rgba(60, 100, 60, 0.12); }
+        body.art-paper-green .article-body pre { background: rgba(60, 100, 60, 0.08); border-color: rgba(60, 100, 60, 0.2); }
+        body.art-paper-black .article-card { background: rgba(8, 8, 8, 0.94); }
+        body.art-paper-black .article-body { color: #c8c8c8; }
+        body.art-paper-black .article-body h1, body.art-paper-black .article-body h2, body.art-paper-black .article-body h3 { color: #e8e8e8; }
+        body.art-paper-black .article-body a { color: #9ab89a; }
+        body.art-paper-black .article-body blockquote { border-left-color: rgba(160, 160, 160, 0.5); }
+        body.art-paper-black .article-body code { background: rgba(160, 160, 160, 0.14); }
+        body.art-paper-black .article-body pre { background: rgba(160, 160, 160, 0.08); border-color: rgba(160, 160, 160, 0.2); }
+
+        /* ===== 纯净浏览（黑白系 · 全屏） ===== */
+        body.art-pure { background: var(--pure-bg, #111) !important; }
+        body.art-pure .article-container { max-width: 100%; margin: 0; padding: 0; }
+        body.art-pure .article-card {
+            max-width: 100%; width: 100%; min-height: 100vh;
+            border: none; border-radius: 0; box-shadow: none;
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+            background: var(--pure-bg, #111) !important;
+            color: var(--pure-fg, #e8e8e8);
+            padding: 2.5rem max(1.2rem, calc((100vw - var(--art-width, 720px)) / 2));
+        }
+        body.art-pure .article-header { border-bottom-color: var(--pure-border, rgba(255,255,255,0.15)); }
+        body.art-pure .article-header .brand,
+        body.art-pure .article-header .nav-links a { color: var(--pure-muted, rgba(255,255,255,0.6)); }
+        body.art-pure .article-body { color: var(--pure-fg, #e8e8e8); }
+        body.art-pure .article-body h1, body.art-pure .article-body h2, body.art-pure .article-body h3,
+        body.art-pure .article-body h4, body.art-pure .article-body h5, body.art-pure .article-body h6,
+        body.art-pure .article-body strong { color: var(--pure-heading, var(--pure-fg, #e8e8e8)); }
+        body.art-pure .article-body a { color: var(--pure-link, #c8c8c8); }
+        body.art-pure .article-body blockquote {
+            border-left-color: var(--pure-border, rgba(255,255,255,0.2));
+            background: var(--pure-quote-bg, rgba(255,255,255,0.04));
+            color: var(--pure-muted, rgba(255,255,255,0.65));
+        }
+        body.art-pure .article-body code { background: var(--pure-code-bg, rgba(255,255,255,0.08)); color: var(--pure-code-fg, #e8e8e8); }
+        body.art-pure .article-body pre { background: var(--pure-code-bg, rgba(255,255,255,0.08)); border-color: var(--pure-border, rgba(255,255,255,0.2)); }
+        body.art-pure .article-body pre code { background: transparent; }
+        body.art-pure .article-body table, body.art-pure .article-body th, body.art-pure .article-body td { border-color: var(--pure-border, rgba(255,255,255,0.2)); }
+        body.art-pure .article-body th { background: var(--pure-th-bg, rgba(255,255,255,0.08)); }
+        body.art-pure .article-body hr { border-color: var(--pure-border, rgba(255,255,255,0.2)); }
+        body.art-pure .article-body .article-empty { color: var(--pure-muted, rgba(255,255,255,0.6)); }
+        body.art-pure #artTocBox {
+            background: var(--pure-code-bg, rgba(255,255,255,0.08));
+            border-color: var(--pure-border, rgba(255,255,255,0.2));
+        }
+        body.art-pure #artTocBox a { color: var(--pure-muted, rgba(255,255,255,0.6)); }
+        body.art-pure .ctrl-btn { background: rgba(128,128,128,0.18); border-color: var(--pure-border, rgba(255,255,255,0.2)); }
         @media (max-width: 600px) {
             .article-card { padding: 1.5rem 1rem; }
             .article-header { flex-direction: column; align-items: stretch; }
@@ -406,129 +405,432 @@
     <!-- ===== Toast ===== -->
     <div id="voidToast"></div>
 
-    <!-- ===== 底部控制栏 ===== -->
+    <!-- ===== 阅读进度条 ===== -->
+    <div id="artProgressBar"></div>
+    <!-- ===== 文章目录 ===== -->
+    <nav id="artTocBox"></nav>
+    <!-- ===== 底部控制栏（纯净浏览 + 样式设置） ===== -->
     <div class="bottom-controls" id="bottomControls">
-        <button class="ctrl-btn hide-btn" id="hideToggle" title="隐藏所有UI，只看背景">👁️</button>
-        <button class="ctrl-btn settings-btn" id="settingsToggle" title="全局样式设置">⚙️</button>
+        <button class="ctrl-btn hide-btn" id="pureToggle" title="纯净浏览">👁️</button>
+        <button class="ctrl-btn settings-btn" id="settingsToggle" title="样式设置">⚙️</button>
     </div>
-
-    <!-- ===== 设置面板（样式完整 + 功能完整） ===== -->
+    <!-- ===== 设置面板（双视图：站点 / 文章） ===== -->
     <div class="settings-overlay" id="settingsOverlay">
         <div class="settings-panel">
-            <div class="panel-title">⚙️ 样式设置</div>
+            <div class="panel-title">
+                ⚙️ 样式设置
+                <span class="view-switch" id="viewSwitch">
+                    <button class="opt-btn active" data-view="site">🌐 站点</button>
+                    <button class="opt-btn" data-view="article">📖 文章</button>
+                </span>
+            </div>
             <div class="panel-sub">自定义你的浏览体验</div>
-            <div class="settings-group">
-                <label>🎨 主题模式</label>
-                <div class="options" id="themeOptions">
-                    <button class="opt-btn" data-theme="default">默认</button>
-                    <button class="opt-btn" data-theme="light">亮色</button>
-                    <button class="opt-btn" data-theme="dark">暗色</button>
+
+            <!-- 站点样式视图（与 global-ui 同步） -->
+            <div id="viewSite">
+                <div class="settings-group">
+                    <label>🎨 主题模式</label>
+                    <div class="options" id="siteTheme">
+                        <button class="opt-btn" data-v="default">默认</button>
+                        <button class="opt-btn" data-v="light">亮色</button>
+                        <button class="opt-btn" data-v="dark">暗色</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>🖼️ 背景图片</label>
+                    <div class="options" id="siteBg">
+                        <button class="opt-btn" data-v="default">默认</button>
+                        <button class="opt-btn" data-v="food">海边</button>
+                        <button class="opt-btn" data-v="trip">旅途</button>
+                        <button class="opt-btn" data-v="electric1">！？电电？！(1)</button>
+                        <button class="opt-btn" data-v="electric2">！？电电？！(2)</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>🔤 全局字号</label>
+                    <div class="options" id="siteFont">
+                        <button class="opt-btn" data-v="0.9">小</button>
+                        <button class="opt-btn" data-v="1">中</button>
+                        <button class="opt-btn" data-v="1.1">大</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>🧭 界面元素</label>
+                    <div class="options" id="siteNav">
+                        <button class="opt-btn" data-v="nav">隐藏导航</button>
+                    </div>
                 </div>
             </div>
-            <div class="settings-group">
-                <label>🖼️ 背景图片</label>
-                <div class="options" id="bgOptions">
-                    <button class="opt-btn" data-bg="default">默认</button>
-                    <button class="opt-btn" data-bg="food">海边</button>
-                    <button class="opt-btn" data-bg="trip">旅途</button>
-                    <button class="opt-btn" data-bg="electric1">！？电电？！（1）</button>
-                    <button class="opt-btn" data-bg="electric2">！？电电？！（2）</button>
+
+            <!-- 文章样式视图（专属设置） -->
+            <div id="viewArticle" style="display:none">
+                <div class="settings-group">
+                    <label>📐 正文字号</label>
+                    <div class="options" id="artSize">
+                        <button class="opt-btn" data-v="16">小</button>
+                        <button class="opt-btn" data-v="18">中</button>
+                        <button class="opt-btn" data-v="20">大</button>
+                        <button class="opt-btn" data-v="22">特大</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>📐 行距</label>
+                    <div class="options" id="artLine">
+                        <button class="opt-btn" data-v="1.6">紧凑</button>
+                        <button class="opt-btn" data-v="1.9">舒适</button>
+                        <button class="opt-btn" data-v="2.2">宽松</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>📐 正文字体</label>
+                    <div class="options" id="artFont">
+                        <button class="opt-btn" data-v="default">默认</button>
+                        <button class="opt-btn" data-v="serif">衬线</button>
+                        <button class="opt-btn" data-v="sans">无衬线</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>📐 正文宽度</label>
+                    <div class="options" id="artWidth">
+                        <button class="opt-btn" data-v="620">窄</button>
+                        <button class="opt-btn" data-v="720">标准</button>
+                        <button class="opt-btn" data-v="840">宽</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>🎨 阅读底色</label>
+                    <div class="options" id="artPaper">
+                        <button class="opt-btn" data-v="default">默认</button>
+                        <button class="opt-btn" data-v="cream">米黄纸</button>
+                        <button class="opt-btn" data-v="green">护眼绿</button>
+                        <button class="opt-btn" data-v="black">纯黑</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>🎨 段落浮现特效</label>
+                    <div class="options" id="artReveal">
+                        <button class="opt-btn" data-v="on">开</button>
+                        <button class="opt-btn" data-v="off">关</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>📊 阅读进度条</label>
+                    <div class="options" id="artProgress">
+                        <button class="opt-btn" data-v="on">开</button>
+                        <button class="opt-btn" data-v="off">关</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>📑 文章目录</label>
+                    <div class="options" id="artToc">
+                        <button class="opt-btn" data-v="on">开</button>
+                        <button class="opt-btn" data-v="off">关</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>🧼 纯净浏览</label>
+                    <div class="options" id="artPure">
+                        <button class="opt-btn" data-v="off">关</button>
+                        <button class="opt-btn" data-v="on">开</button>
+                    </div>
+                </div>
+                <div class="settings-group">
+                    <label>🎨 纯净自定义颜色</label>
+                    <div class="pure-colors">
+                        <label class="pure-c">字体 <input type="color" id="pureFg" value="#e8e8e8"></label>
+                        <label class="pure-c">背景 <input type="color" id="pureBg" value="#111111"></label>
+                        <button class="opt-btn" id="pureResetColor">恢复默认</button>
+                    </div>
                 </div>
             </div>
+
             <div class="panel-actions">
+                <button class="btn btn-secondary" id="settingsReset">重置</button>
                 <button class="btn btn-secondary" id="settingsClose">关闭</button>
             </div>
         </div>
     </div>
-
     <!-- ===== 全局脚本 ===== -->
     <script src="script.js"></script>
+    <script src="global-ui.js"></script>
     <script>
         (function() {
-            // ===== 全局样式设置（完整功能） =====
-            const htmlRoot = document.getElementById('htmlRoot') || document.documentElement;
-            const settingsToggle = document.getElementById('settingsToggle');
-            const settingsOverlay = document.getElementById('settingsOverlay');
-            const settingsClose = document.getElementById('settingsClose');
-            const themeOptions = document.getElementById('themeOptions');
-            const bgOptions = document.getElementById('bgOptions');
+            // ===== 样式设置：双视图（站点 / 文章） =====
+            var GU = window.GlobalUI;
+            var overlayEl = document.getElementById('settingsOverlay');
+            var viewSite = document.getElementById('viewSite');
+            var viewArticle = document.getElementById('viewArticle');
 
-            function loadSettings() {
-                try {
-                    const saved = localStorage.getItem('siteSettings');
-                    if (saved) return JSON.parse(saved);
-                } catch (e) {}
-                return { theme: 'default', bg: 'default' };
-            }
-            function saveSettings(settings) {
-                try { localStorage.setItem('siteSettings', JSON.stringify(settings)); } catch (e) {}
-            }
-            function applySettings(settings) {
-                const theme = settings.theme || 'default';
-                htmlRoot.removeAttribute('data-theme');
-                if (theme !== 'default') htmlRoot.setAttribute('data-theme', theme);
-                document.querySelectorAll('#themeOptions .opt-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.theme === theme);
+            // ---- 视图切换 ----
+            document.getElementById('viewSwitch').addEventListener('click', function (ev) {
+                var btn = ev.target.closest('button');
+                if (!btn) return;
+                var v = btn.getAttribute('data-view');
+                document.querySelectorAll('#viewSwitch .opt-btn').forEach(function (b) {
+                    b.classList.toggle('active', b === btn);
                 });
-                const bg = settings.bg || 'default';
-                htmlRoot.removeAttribute('data-bg');
-                if (bg !== 'default') htmlRoot.setAttribute('data-bg', bg);
-                document.querySelectorAll('#bgOptions .opt-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.bg === bg);
-                });
-            }
+                viewSite.style.display = v === 'site' ? '' : 'none';
+                viewArticle.style.display = v === 'article' ? '' : 'none';
+            });
+
+            // ---- 弹窗开关 ----
             function openSettings() {
-                applySettings(loadSettings());
-                settingsOverlay.classList.add('active');
-                document.body.classList.add('modal-open');
+                syncSiteView();
+                syncArticleView();
+                overlayEl.classList.add('active');
             }
-            function closeSettings() {
-                settingsOverlay.classList.remove('active');
-                document.body.classList.remove('modal-open');
+            function closeSettings() { overlayEl.classList.remove('active'); }
+            document.getElementById('settingsToggle').addEventListener('click', openSettings);
+            document.getElementById('settingsClose').addEventListener('click', closeSettings);
+            overlayEl.addEventListener('click', function (ev) {
+                if (ev.target === overlayEl) closeSettings();
+            });
+            document.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Escape') closeSettings();
+            });
+
+            // ---- 站点视图（与 global-ui 同步） ----
+            function setGroup(id, val, def) {
+                var box = document.getElementById(id);
+                if (!box) return;
+                box.querySelectorAll('.opt-btn').forEach(function (b) {
+                    b.classList.toggle('active', b.getAttribute('data-v') === (val || def));
+                });
             }
-            settingsToggle.addEventListener('click', openSettings);
-            settingsClose.addEventListener('click', closeSettings);
-            settingsOverlay.addEventListener('click', function(e) {
-                if (e.target === settingsOverlay) closeSettings();
+            function syncSiteView() {
+                if (!GU) return;
+                var s = GU.loadSettings();
+                setGroup('siteTheme', s.theme, 'default');
+                setGroup('siteBg', s.bg, 'default');
+                setGroup('siteFont', localStorage.getItem('gui_fontSize') || '1', '1');
+                setGroup('siteNav', localStorage.getItem('gui_navHidden') === '1' ? 'nav' : '', '');
+            }
+            document.getElementById('siteTheme').addEventListener('click', function (ev) {
+                if (!GU) return;
+                var b = ev.target.closest('.opt-btn');
+                if (!b) return;
+                var s = GU.loadSettings();
+                s.theme = b.getAttribute('data-v');
+                GU.saveSettings(s);
+                GU.applyAll();
+                syncSiteView();
             });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && settingsOverlay.classList.contains('active')) closeSettings();
+            document.getElementById('siteBg').addEventListener('click', function (ev) {
+                if (!GU) return;
+                var b = ev.target.closest('.opt-btn');
+                if (!b) return;
+                var s = GU.loadSettings();
+                s.bg = b.getAttribute('data-v');
+                GU.saveSettings(s);
+                GU.applyAll();
+                syncSiteView();
             });
-            themeOptions.addEventListener('click', function(e) {
-                const btn = e.target.closest('.opt-btn');
-                if (!btn) return;
-                const settings = loadSettings();
-                settings.theme = btn.dataset.theme;
-                saveSettings(settings);
-                applySettings(settings);
+            document.getElementById('siteFont').addEventListener('click', function (ev) {
+                if (!GU) return;
+                var b = ev.target.closest('.opt-btn');
+                if (!b) return;
+                localStorage.setItem('gui_fontSize', b.getAttribute('data-v'));
+                GU.applyAll();
+                syncSiteView();
             });
-            bgOptions.addEventListener('click', function(e) {
-                const btn = e.target.closest('.opt-btn');
-                if (!btn) return;
-                const settings = loadSettings();
-                settings.bg = btn.dataset.bg;
-                saveSettings(settings);
-                applySettings(settings);
+            document.getElementById('siteNav').addEventListener('click', function (ev) {
+                if (!GU) return;
+                var b = ev.target.closest('.opt-btn');
+                if (!b) return;
+                var nav = document.body.classList.contains('gui-nav-hidden');
+                localStorage.setItem('gui_navHidden', nav ? '0' : '1');
+                GU.applyAll();
+                syncSiteView();
             });
-            applySettings(loadSettings());
 
-            // ===== 隐藏 UI =====
-            const hideToggle = document.getElementById('hideToggle');
-            let isHidden = false;
-            hideToggle.addEventListener('click', function() {
-                isHidden = !isHidden;
-                document.body.classList.toggle('ui-hidden', isHidden);
-                this.textContent = isHidden ? '👁️‍🗨️' : '👁️';
-                this.classList.toggle('active', isHidden);
-                this.title = isHidden ? '显示所有UI' : '隐藏所有UI，只看背景';
+            // ---- 文章视图（专属设置） ----
+            var ART_KEYS = {
+                size: 'art_size', line: 'art_line', font: 'art_font', width: 'art_width',
+                paper: 'art_paper', reveal: 'art_reveal', progress: 'art_progress',
+                toc: 'art_toc', pure: 'art_pure', fg: 'art_fg', bg: 'art_bg'
+            };
+            function artGet(k) { try { return localStorage.getItem(ART_KEYS[k]); } catch (e) { return null; } }
+            function artSet(k, v) { try { localStorage.setItem(ART_KEYS[k], v); } catch (e) {} }
+            function syncArticleView() {
+                setGroup('artSize', artGet('size'), '18');
+                setGroup('artLine', artGet('line'), '1.9');
+                setGroup('artFont', artGet('font'), 'default');
+                setGroup('artWidth', artGet('width'), '720');
+                setGroup('artPaper', artGet('paper'), 'default');
+                setGroup('artReveal', artGet('reveal'), 'on');
+                setGroup('artProgress', artGet('progress'), 'on');
+                setGroup('artToc', artGet('toc'), 'on');
+                setGroup('artPure', artGet('pure'), 'off');
+                var fg = artGet('fg'), bg = artGet('bg');
+                if (fg) document.getElementById('pureFg').value = fg;
+                if (bg) document.getElementById('pureBg').value = bg;
+            }
+            function applyArticle() {
+                var bd = document.body;
+                bd.style.setProperty('--art-size', (artGet('size') || '18') + 'px');
+                bd.style.setProperty('--art-lh', artGet('line') || '1.9');
+                var f = artGet('font') || 'default';
+                bd.style.setProperty('--art-font', f === 'serif'
+                    ? "Georgia, 'Noto Serif SC', 'Songti SC', SimSun, serif"
+                    : (f === 'sans' ? "'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif" : 'inherit'));
+                bd.style.setProperty('--art-width', (artGet('width') || '720') + 'px');
+                var paper = artGet('paper') || 'default';
+                bd.classList.toggle('art-paper-cream', paper === 'cream');
+                bd.classList.toggle('art-paper-green', paper === 'green');
+                bd.classList.toggle('art-paper-black', paper === 'black');
+                bd.classList.toggle('art-reveal-off', (artGet('reveal') || 'on') === 'off');
+                var pb = document.getElementById('artProgressBar');
+                if (pb) pb.style.display = (artGet('progress') || 'on') === 'on' ? '' : 'none';
+                buildToc();
+                bd.classList.toggle('art-toc-off', (artGet('toc') || 'on') === 'off');
+                var pure = (artGet('pure') || 'off') === 'on';
+                bd.classList.toggle('art-pure', pure);
+                var pt = document.getElementById('pureToggle');
+                pt.classList.toggle('active', pure);
+                pt.title = pure ? '退出纯净浏览' : '纯净浏览';
+                if (pure) applyPureColors();
+            }
+            function bindArtGroup(id, key, def) {
+                document.getElementById(id).addEventListener('click', function (ev) {
+                    var b = ev.target.closest('.opt-btn');
+                    if (!b) return;
+                    artSet(key, b.getAttribute('data-v'));
+                    applyArticle();
+                    syncArticleView();
+                });
+            }
+            bindArtGroup('artSize', 'size', '18');
+            bindArtGroup('artLine', 'line', '1.9');
+            bindArtGroup('artFont', 'font', 'default');
+            bindArtGroup('artWidth', 'width', '720');
+            bindArtGroup('artPaper', 'paper', 'default');
+            bindArtGroup('artReveal', 'reveal', 'on');
+            bindArtGroup('artProgress', 'progress', 'on');
+            bindArtGroup('artToc', 'toc', 'on');
+            bindArtGroup('artPure', 'pure', 'off');
+
+            // ---- 纯净浏览颜色（黑白系自动衍生） ----
+            function hexToRgb(hex) {
+                var s = String(hex || '').replace('#', '');
+                if (s.length === 3) s = s.split('').map(function (c) { return c + c; }).join('');
+                if (s.length !== 6) return [128, 128, 128];
+                return [parseInt(s.substr(0, 2), 16), parseInt(s.substr(2, 2), 16), parseInt(s.substr(4, 2), 16)];
+            }
+            function rgbToHex(r, g, b) {
+                function p(v) {
+                    var x = Math.round(Math.max(0, Math.min(255, v))).toString(16);
+                    return x.length < 2 ? '0' + x : x;
+                }
+                return '#' + p(r) + p(g) + p(b);
+            }
+            function mix(c1, c2, t) {
+                var a = hexToRgb(c1), b2 = hexToRgb(c2);
+                return rgbToHex(a[0] + (b2[0] - a[0]) * t, a[1] + (b2[1] - a[1]) * t, a[2] + (b2[2] - a[2]) * t);
+            }
+            function defaultPureColors() {
+                var dark = true;
+                try { dark = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; } catch (e) {}
+                var th = document.documentElement.getAttribute('data-theme');
+                if (th === 'light') dark = false;
+                if (th === 'dark') dark = true;
+                return dark ? { bg: '#111111', fg: '#e8e8e8' } : { bg: '#f7f7f5', fg: '#1c1c1c' };
+            }
+            function applyPureColors() {
+                var fg = artGet('fg'), bg = artGet('bg');
+                if (!fg || !bg) {
+                    var d = defaultPureColors();
+                    if (!fg) fg = d.fg;
+                    if (!bg) bg = d.bg;
+                }
+                var root = document.documentElement;
+                root.style.setProperty('--pure-bg', bg);
+                root.style.setProperty('--pure-fg', fg);
+                root.style.setProperty('--pure-muted', mix(bg, fg, 0.62));
+                root.style.setProperty('--pure-code-bg', mix(bg, fg, 0.08));
+                root.style.setProperty('--pure-code-fg', fg);
+                root.style.setProperty('--pure-border', mix(bg, fg, 0.24));
+                root.style.setProperty('--pure-link', mix(bg, fg, 0.78));
+                root.style.setProperty('--pure-quote-bg', mix(bg, fg, 0.045));
+                root.style.setProperty('--pure-th-bg', mix(bg, fg, 0.09));
+                root.style.setProperty('--pure-heading', mix(bg, fg, 0.92));
+            }
+            document.getElementById('pureFg').addEventListener('input', function () {
+                artSet('fg', this.value);
+                applyPureColors();
+            });
+            document.getElementById('pureBg').addEventListener('input', function () {
+                artSet('bg', this.value);
+                applyPureColors();
+            });
+            document.getElementById('pureResetColor').addEventListener('click', function () {
+                try {
+                    localStorage.removeItem(ART_KEYS.fg);
+                    localStorage.removeItem(ART_KEYS.bg);
+                } catch (e) {}
+                var d = defaultPureColors();
+                document.getElementById('pureFg').value = d.fg;
+                document.getElementById('pureBg').value = d.bg;
+                applyPureColors();
             });
 
-            // ===== 显示控制栏 =====
-            const bottomControls = document.getElementById('bottomControls');
-            setTimeout(function() {
-                bottomControls.classList.add('show');
-            }, 800);
+            // ---- 纯净浏览开关（原隐藏 UI 按钮） ----
+            document.getElementById('pureToggle').addEventListener('click', function () {
+                var on = !document.body.classList.contains('art-pure');
+                artSet('pure', on ? 'on' : 'off');
+                applyArticle();
+            });
 
+            // ---- 阅读进度条 ----
+            var pbar = document.getElementById('artProgressBar');
+            function updateProgress() {
+                var doc = document.documentElement;
+                var total = doc.scrollHeight - doc.clientHeight;
+                var pct = total > 0 ? (window.pageYOffset || doc.scrollTop || 0) / total * 100 : 0;
+                if (pbar) pbar.style.width = pct + '%';
+            }
+            document.addEventListener('scroll', updateProgress, { passive: true });
+            window.addEventListener('resize', updateProgress);
+
+            // ---- 文章目录 ----
+            var tocBox = document.getElementById('artTocBox');
+            function buildToc() {
+                if (!tocBox) return;
+                var heads = document.querySelectorAll('.article-body h1, .article-body h2, .article-body h3');
+                if (!heads.length) { tocBox.innerHTML = ''; return; }
+                var html = '<div class="art-toc-title">📑 目录</div><ul>';
+                heads.forEach(function (hd, i) {
+                    if (!hd.id) hd.id = 'art-h-' + i;
+                    var lv = parseInt(hd.tagName.charAt(1), 10);
+                    html += '<li class="toc-lv' + lv + '"><a href="#' + hd.id + '">' + hd.textContent + '</a></li>';
+                });
+                html += '</ul>';
+                tocBox.innerHTML = html;
+                tocBox.querySelectorAll('a').forEach(function (a) {
+                    a.addEventListener('click', function (ev) {
+                        ev.preventDefault();
+                        var t = document.getElementById(a.getAttribute('href').slice(1));
+                        if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                });
+            }
+
+            // ---- 重置 ----
+            document.getElementById('settingsReset').addEventListener('click', function () {
+                Object.keys(ART_KEYS).forEach(function (k) {
+                    try { localStorage.removeItem(ART_KEYS[k]); } catch (e) {}
+                });
+                if (GU) { GU.applyAll(); }
+                applyArticle();
+                syncArticleView();
+                syncSiteView();
+            });
+
+            // ---- 暴露给渲染完成后的刷新钩子 ----
+            window.ArtSettings = { refresh: applyArticle, rebuildToc: buildToc };
+
+            // ---- 初始化 ----
+            applyArticle();
+            updateProgress();
             // ===== Toast =====
             window.showVoidToast = function(msg, duration) {
                 duration = duration || 4000;
@@ -592,6 +894,7 @@
             loadArticleText(file)
                 .then(function(text) {
                     articleBody.innerHTML = marked.parse(text);
+                if (window.ArtSettings) window.ArtSettings.refresh();
                     // 段落依次浮现：从上到下逐个出现，避免生硬
                     const kids = articleBody.children;
                     for (let i = 0; i < kids.length; i++) {

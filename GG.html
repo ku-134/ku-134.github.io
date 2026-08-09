@@ -16,7 +16,7 @@
         /* ===== 游戏页专属样式 ===== */
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); /* 🆕 修复：窄屏列宽自适应，防出框 */
             gap: 2rem 1.8rem;
             margin: 1.5rem 0 1.2rem;
             min-height: 200px;

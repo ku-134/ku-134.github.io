@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工具 · 虚空终端</title>
+    <link rel="preload" as="image" href="background.webp">
+    <link rel="preload" as="image" href="background1.webp">
+    <link rel="preload" as="image" href="background2.webp">
+    <link rel="preload" as="image" href="background3.webp">
+    <link rel="preload" as="image" href="background4.webp">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ===== 工具页专属样式 ===== */
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card {
+            padding: 2.2rem 2.2rem 2rem;
+            border-radius: 2rem;
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+        }
+        .tool-header {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem;
+            padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1);
+        }
+        .tool-header .brand { font-size: 2rem; font-weight: 700; cursor: pointer; user-select: none; letter-spacing: 0.02em; -webkit-tap-highlight-color: transparent; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-header .nav-links a.active { opacity: 1; font-weight: 600; }
+        /* ===== 工具栏 ===== */
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+        .tool-toolbar input {
+            flex: 1; padding: 0.55rem 1rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.2); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; outline: none;
+        }
+        .tool-toolbar input:focus { border-color: #66bb6a; }
+        .ctrl-btn {
+            width: 40px; height: 40px; border-radius: 50%; flex: none;
+            border: 1px solid rgba(128,128,128,0.2); background: rgba(128,128,128,0.06);
+            color: inherit; cursor: pointer; font-size: 1rem; transition: all 0.25s;
+        }
+        .ctrl-btn:hover { transform: scale(1.08); }
+        .ctrl-btn.hide-btn.active { background: rgba(231,76,60,0.25); border-color: #e74c3c; }
+        /* ===== 分类栏 ===== */
+        .tool-cats { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; }
+        .tool-cats button {
+            padding: 0.3rem 1rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.2); background: transparent;
+            color: inherit; opacity: 0.55; cursor: pointer; font-family: inherit; font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .tool-cats button:hover { opacity: 0.85; }
+        .tool-cats button.active { opacity: 1; border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); font-weight: 600; }
+        .tool-cats button.parent-btn { font-weight: 600; }
+        .tool-cats button.parent-btn[data-cur="hidden"] { border-color: #e74c3c; color: #e74c3c; background: rgba(231,76,60,0.1); }
+        /* ===== 工具卡片列表 ===== */
+        .tool-list { display: flex; flex-direction: column; gap: 1.2rem; width: 100%; }
+        .tool-item {
+            padding: 1.1rem 1.3rem; border-radius: 1.2rem;
+            border: 1px solid rgba(128,128,128,0.12); background: rgba(128,128,128,0.04);
+            transition: all 0.25s; cursor: pointer;
+        }
+        .tool-item:hover { transform: translateY(-2px); border-color: rgba(102,187,106,0.45); background: rgba(102,187,106,0.06); }
+        .tool-item .t-name { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .tool-item .t-desc { margin-top: 0.35rem; font-size: 0.9rem; opacity: 0.7; }
+        .cat-badge { font-size: 0.72rem; padding: 0.12rem 0.6rem; border-radius: 2rem; border: 1px solid #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .hidden-badge { border-color: #e74c3c; color: #e74c3c; background: rgba(231,76,60,0.1); }
+        .tool-empty { text-align: center; opacity: 0.6; padding: 2.5rem 0; }
+        /* ===== 设置面板 ===== */
+        .settings-panel {
+            position: fixed; right: 1.2rem; bottom: 1.2rem; width: 280px;
+            padding: 1.2rem 1.3rem; border-radius: 1.2rem;
+            background: rgba(18,28,18,0.92); border: 1px solid rgba(128,128,128,0.2);
+            backdrop-filter: blur(12px); display: none; z-index: 99;
+        }
+        .settings-panel.show { display: block; }
+        .settings-panel h4 { margin: 0 0 0.8rem; font-size: 0.95rem; }
+        .settings-group { margin-bottom: 0.8rem; }
+        .settings-group .label { font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.4rem; }
+        .settings-group .options { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .settings-group .options .opt-btn {
+            padding: 0.3rem 0.9rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.2); background: transparent;
+            color: inherit; opacity: 0.5; cursor: pointer; font-size: 0.8rem; font-family: inherit;
+        }
+        .settings-group .options .opt-btn.active { opacity: 1; border-color: currentColor; }
+        .panel-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.8rem; }
+        .panel-actions .btn {
+            padding: 0.35rem 1rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.2); background: transparent;
+            color: inherit; cursor: pointer; font-size: 0.8rem; font-family: inherit;
+        }
+        /* ===== 解锁弹窗（谜语化） ===== */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+            display: none; align-items: center; justify-content: center; z-index: 100;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            width: 92%; max-width: 400px; padding: 2rem 1.8rem; border-radius: 1.5rem;
+            background: rgba(18,28,18,0.95); border: 1px solid rgba(102,187,106,0.3); text-align: center;
+        }
+        .modal-box h3 { margin: 0 0 0.4rem; font-size: 1.3rem; }
+        .modal-box .sub { font-size: 0.85rem; opacity: 0.65; margin-bottom: 1.2rem; }
+        .modal-box input {
+            width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.08);
+            color: inherit; text-align: center; outline: none; margin-bottom: 1rem;
+        }
+        .modal-box .hint { font-size: 0.75rem; opacity: 0.45; margin-top: 0.8rem; }
+        .modal-actions { display: flex; justify-content: center; gap: 0.8rem; }
+        .modal-actions button {
+            padding: 0.45rem 1.6rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.25); background: transparent;
+            color: inherit; cursor: pointer; font-family: inherit;
+        }
+        .modal-actions .primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        /* ===== 纯净模式（隐藏 UI） ===== */
+        body.pure-mode .tool-header .nav-links,
+        body.pure-mode .tool-toolbar,
+        body.pure-mode .tool-cats { display: none !important; }
+        @media (max-width: 640px) { .tool-header { flex-direction: column; align-items: flex-start; } }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand" id="brandTitle"><span class="typing-title">🛠️ 工具</span></div>
+                <div class="nav-links">
+                    <a href="index.html">🏠 首页</a>
+                    <a href="#" class="active">🛠️ 工具</a>
+                </div>
+            </header>
+            <div class="tool-toolbar">
+                <input type="text" id="searchInput" placeholder="🔍 搜索工具..." />
+                <button class="ctrl-btn settings-btn" id="settingsBtn" title="设置">⚙️</button>
+                <button class="ctrl-btn hide-btn" id="hideBtn" title="隐藏界面">🙈</button>
+            </div>
+            <div class="tool-cats" id="categoryBar"></div>
+            <div id="toolContainer" class="tool-list">
+                <div class="tool-empty">⏳ 加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置面板 -->
+    <div class="settings-panel" id="settingsPanel">
+        <h4>⚙️ 设置</h4>
+        <div class="settings-group">
+            <div class="label">字号</div>
+            <div class="options" id="fontSizeOpts">
+                <button class="opt-btn" data-size="0.9">小</button>
+                <button class="opt-btn active" data-size="1">中</button>
+                <button class="opt-btn" data-size="1.1">大</button>
+            </div>
+        </div>
+        <div class="settings-group">
+            <div class="label">界面元素</div>
+            <div class="options">
+                <button class="opt-btn" id="toggleNavBtn">隐藏导航</button>
+            </div>
+        </div>
+        <div class="panel-actions">
+            <button class="btn" id="resetSettings">重置</button>
+            <button class="btn" id="closeSettings">关闭</button>
+        </div>
+    </div>
+
+    <!-- 解锁弹窗（谜语化） -->
+    <div class="modal-overlay" id="unlockModal">
+        <div class="modal-box">
+            <h3>🗝️ 虚实之门</h3>
+            <div class="sub">唯有知晓真名者，方可窥见帷幕之后的光景</div>
+            <input type="password" id="unlockInput" placeholder="……" autocomplete="off" />
+            <div class="modal-actions">
+                <button id="modalCancel">退去</button>
+                <button class="primary" id="modalConfirm">叩门</button>
+            </div>
+            <div class="hint" id="modalHint">五次叩问门扉，虚影自会应声而来</div>
+        </div>
+    </div>
+
+    <script src="MTbox.js"></script>
+    <script>
+    /* ===== MT 工具页逻辑（详细工具内容待 MTbox.js 扩展） ===== */
+    (function () {
+        'use strict';
+        var INDEX = 'tool/index.txt';
+        var SECRET = '纳西妲天下第一可爱';
+        var TOKEN_KEY = 'mtUnlockToken';
+        var TT_KEY = 'mtTokenTime';
+        var CLICK_KEY = 'mtSecretClicks';
+        var TTL = 24 * 60 * 60 * 1000;
+
+        var tools = [], catSet = [], currentParent = 'public', currentCat = 'all', unlocked = tokenOk();
+
+        function tokenOk() {
+            var t = localStorage.getItem(TOKEN_KEY);
+            var time = parseInt(localStorage.getItem(TT_KEY) || '0', 10);
+            return t === SECRET && (Date.now() - time) < TTL;
+        }
+
+        function parseIndex(text) {
+            tools = []; catSet = [];
+            text.split('
+').forEach(function (line) {
+                line = line.trim();
+                if (!line) return;
+                var hidden = line.charAt(0) === '#';
+                if (hidden) line = line.slice(1).trim();
+                var name = line, desc = '', cat = '其他', brief = '';
+                var m = line.match(/^(.*?)\s*-\s*(.*?)\s*\+\s*([^\s|]+)\s*\|\s*(.*)$/);
+                if (m) { name = m[1].trim(); desc = m[2].trim(); cat = m[3].trim(); brief = m[4].trim(); }
+                else { var parts = line.split('|'); name = parts[0].trim(); brief = (parts[1] || '').trim(); }
+                tools.push({ name: name, desc: desc, cat: cat, brief: brief, hidden: hidden });
+                if (catSet.indexOf(cat) < 0) catSet.push(cat);
+            });
+        }
+
+        function visibleTools() {
+            return tools.filter(function (t) { return currentParent === 'hidden' ? t.hidden : !t.hidden; });
+        }
+
+        function renderCats() {
+            var bar = document.getElementById('categoryBar');
+            var html = '';
+            if (unlocked) {
+                var label = currentParent === 'public' ? '公开' : '隐藏';
+                var next = currentParent === 'public' ? 'hidden' : 'public';
+                html += '<button class="parent-btn active" id="parentToggle" data-parent="' + next + '" data-cur="' + currentParent + '" title="单击切换">⇄ ' + label + '</button>';
+            }
+            var list = visibleTools();
+            var set = ['all'];
+            list.forEach(function (t) { if (set.indexOf(t.cat) < 0) set.push(t.cat); });
+            set.forEach(function (c) {
+                html += '<button class="cat-btn' + (currentCat === c ? ' active' : '') + '" data-cat="' + c + '">' + (c === 'all' ? '全部' : c) + '</button>';
+            });
+            bar.innerHTML = html;
+
+            var p = document.getElementById('parentToggle');
+            if (p) p.addEventListener('click', function () {
+                currentParent = this.getAttribute('data-parent');
+                currentCat = 'all';
+                renderCats();
+                renderList();
+            });
+            bar.querySelectorAll('.cat-btn').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    currentCat = this.getAttribute('data-cat');
+                    renderCats();
+                    renderList();
+                });
+            });
+        }
+
+        function renderList() {
+            var box = document.getElementById('toolContainer');
+            var kw = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+            var list = visibleTools().filter(function (t) {
+                if (currentCat !== 'all' && t.cat !== currentCat) return false;
+                if (!kw) return true;
+                return (t.name + t.desc + t.brief + t.cat).toLowerCase().indexOf(kw) >= 0;
+            });
+            if (!list.length) {
+                box.innerHTML = '<div class="tool-empty">🌫️ 此处空空如也</div>';
+                return;
+            }
+            box.innerHTML = list.map(function (t) {
+                var badge = t.hidden ? '<span class="cat-badge hidden-badge">🔒 ' + t.cat + '</span>' : '<span class="cat-badge">' + t.cat + '</span>';
+                return '<div class="tool-item"><div class="t-name">' + t.name + ' ' + badge + '</div>' +
+                    (t.desc ? '<div class="t-desc">' + t.desc + '</div>' : '') +
+                    (t.brief ? '<div class="t-desc">' + t.brief + '</div>' : '') + '</div>';
+            }).join('');
+        }
+
+        /* 加载引索 */
+        fetch(INDEX, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (text) {
+            parseIndex(text);
+            renderCats();
+            renderList();
+        }).catch(function () {
+            document.getElementById('toolContainer').innerHTML = '<div class="tool-empty">⚠️ 引索加载失败</div>';
+        });
+
+        document.getElementById('searchInput').addEventListener('input', renderList);
+
+        /* 五次叩门触发解锁弹窗 */
+        var clicks = parseInt(localStorage.getItem(CLICK_KEY) || '0', 10);
+        document.getElementById('brandTitle').addEventListener('click', function () {
+            if (unlocked) return;
+            clicks++;
+            localStorage.setItem(CLICK_KEY, clicks);
+            if (clicks >= 5) {
+                localStorage.setItem(CLICK_KEY, '0');
+                openModal();
+            }
+        });
+
+        function openModal() {
+            document.getElementById('unlockModal').classList.add('show');
+            document.getElementById('unlockInput').value = '';
+            document.getElementById('unlockInput').focus();
+        }
+        function closeModal() { document.getElementById('unlockModal').classList.remove('show'); }
+
+        document.getElementById('modalCancel').addEventListener('click', closeModal);
+        document.getElementById('modalConfirm').addEventListener('click', function () {
+            var v = document.getElementById('unlockInput').value.trim();
+            if (v === SECRET) {
+                localStorage.setItem(TOKEN_KEY, SECRET);
+                localStorage.setItem(TT_KEY, String(Date.now()));
+                unlocked = true;
+                closeModal();
+                currentParent = 'public';
+                currentCat = 'all';
+                renderCats();
+                renderList();
+            } else {
+                var hint = document.getElementById('modalHint');
+                hint.textContent = '门扉静默，唯有真名可入……';
+            }
+        });
+        document.getElementById('unlockInput').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') document.getElementById('modalConfirm').click();
+        });
+
+        /* 设置面板 */
+        var panel = document.getElementById('settingsPanel');
+        document.getElementById('settingsBtn').addEventListener('click', function () {
+            panel.classList.toggle('show');
+        });
+        document.getElementById('closeSettings').addEventListener('click', function () {
+            panel.classList.remove('show');
+        });
+        document.getElementById('resetSettings').addEventListener('click', function () {
+            localStorage.removeItem('mtFontSize');
+            localStorage.removeItem('mtHideNav');
+            document.documentElement.style.fontSize = '';
+            document.body.classList.remove('pure-mode');
+            document.getElementById('toggleNavBtn').textContent = '隐藏导航';
+            document.querySelectorAll('#fontSizeOpts .opt-btn').forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-size') === '1');
+            });
+        });
+        document.querySelectorAll('#fontSizeOpts .opt-btn').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var s = this.getAttribute('data-size');
+                document.documentElement.style.fontSize = (parseFloat(s) * 16) + 'px';
+                localStorage.setItem('mtFontSize', s);
+                document.querySelectorAll('#fontSizeOpts .opt-btn').forEach(function (x) { x.classList.remove('active'); });
+                this.classList.add('active');
+            });
+        });
+        var fs = localStorage.getItem('mtFontSize');
+        if (fs) {
+            document.documentElement.style.fontSize = (parseFloat(fs) * 16) + 'px';
+            document.querySelectorAll('#fontSizeOpts .opt-btn').forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-size') === fs);
+            });
+        }
+        document.getElementById('toggleNavBtn').addEventListener('click', function () {
+            var on = document.body.classList.toggle('pure-mode');
+            this.textContent = on ? '显示导航' : '隐藏导航';
+            localStorage.setItem('mtHideNav', on ? '1' : '0');
+        });
+        if (localStorage.getItem('mtHideNav') === '1') {
+            document.body.classList.add('pure-mode');
+            document.getElementById('toggleNavBtn').textContent = '显示导航';
+        }
+
+        /* 隐藏按钮（🙈）一键纯净模式 */
+        var hideBtn = document.getElementById('hideBtn');
+        hideBtn.addEventListener('click', function () {
+            var on = document.body.classList.toggle('pure-mode');
+            hideBtn.classList.toggle('active', on);
+            hideBtn.title = on ? '显示界面' : '隐藏界面';
+            localStorage.setItem('mtHideNav', on ? '1' : '0');
+            document.getElementById('toggleNavBtn').textContent = on ? '显示导航' : '隐藏导航';
+        });
+        if (document.body.classList.contains('pure-mode')) hideBtn.classList.add('active');
+    })();
+    </script>
+</body>
+</html>

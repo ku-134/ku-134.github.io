@@ -37,13 +37,6 @@
             color: inherit; font-family: inherit; outline: none;
         }
         .tool-toolbar input:focus { border-color: #66bb6a; }
-        .ctrl-btn {
-            width: 40px; height: 40px; border-radius: 50%; flex: none;
-            border: 1px solid rgba(128,128,128,0.2); background: rgba(128,128,128,0.06);
-            color: inherit; cursor: pointer; font-size: 1rem; transition: all 0.25s;
-        }
-        .ctrl-btn:hover { transform: scale(1.08); }
-        .ctrl-btn.hide-btn.active { background: rgba(231,76,60,0.25); border-color: #e74c3c; }
         /* ===== 分类栏 ===== */
         .tool-cats { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; }
         .tool-cats button {
@@ -69,30 +62,6 @@
         .cat-badge { font-size: 0.72rem; padding: 0.12rem 0.6rem; border-radius: 2rem; border: 1px solid #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
         .hidden-badge { border-color: #e74c3c; color: #e74c3c; background: rgba(231,76,60,0.1); }
         .tool-empty { text-align: center; opacity: 0.6; padding: 2.5rem 0; }
-        /* ===== 设置面板 ===== */
-        .settings-panel {
-            position: fixed; right: 1.2rem; bottom: 1.2rem; width: 280px;
-            padding: 1.2rem 1.3rem; border-radius: 1.2rem;
-            background: rgba(18,28,18,0.92); border: 1px solid rgba(128,128,128,0.2);
-            backdrop-filter: blur(12px); display: none; z-index: 99;
-        }
-        .settings-panel.show { display: block; }
-        .settings-panel h4 { margin: 0 0 0.8rem; font-size: 0.95rem; }
-        .settings-group { margin-bottom: 0.8rem; }
-        .settings-group .label { font-size: 0.8rem; opacity: 0.6; margin-bottom: 0.4rem; }
-        .settings-group .options { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-        .settings-group .options .opt-btn {
-            padding: 0.3rem 0.9rem; border-radius: 2rem;
-            border: 1px solid rgba(128,128,128,0.2); background: transparent;
-            color: inherit; opacity: 0.5; cursor: pointer; font-size: 0.8rem; font-family: inherit;
-        }
-        .settings-group .options .opt-btn.active { opacity: 1; border-color: currentColor; }
-        .panel-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.8rem; }
-        .panel-actions .btn {
-            padding: 0.35rem 1rem; border-radius: 2rem;
-            border: 1px solid rgba(128,128,128,0.2); background: transparent;
-            color: inherit; cursor: pointer; font-size: 0.8rem; font-family: inherit;
-        }
         /* ===== 解锁弹窗（谜语化） ===== */
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
@@ -118,10 +87,6 @@
             color: inherit; cursor: pointer; font-family: inherit;
         }
         .modal-actions .primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
-        /* ===== 纯净模式（隐藏 UI） ===== */
-        body.pure-mode .tool-header .nav-links,
-        body.pure-mode .tool-toolbar,
-        body.pure-mode .tool-cats { display: none !important; }
         @media (max-width: 640px) { .tool-header { flex-direction: column; align-items: flex-start; } }
     </style>
 </head>
@@ -137,36 +102,11 @@
             </header>
             <div class="tool-toolbar">
                 <input type="text" id="searchInput" placeholder="🔍 搜索工具..." />
-                <button class="ctrl-btn settings-btn" id="settingsBtn" title="设置">⚙️</button>
-                <button class="ctrl-btn hide-btn" id="hideBtn" title="隐藏界面">🙈</button>
             </div>
             <div class="tool-cats" id="categoryBar"></div>
             <div id="toolContainer" class="tool-list">
                 <div class="tool-empty">⏳ 加载中...</div>
             </div>
-        </div>
-    </div>
-
-    <!-- 设置面板 -->
-    <div class="settings-panel" id="settingsPanel">
-        <h4>⚙️ 设置</h4>
-        <div class="settings-group">
-            <div class="label">字号</div>
-            <div class="options" id="fontSizeOpts">
-                <button class="opt-btn" data-size="0.9">小</button>
-                <button class="opt-btn active" data-size="1">中</button>
-                <button class="opt-btn" data-size="1.1">大</button>
-            </div>
-        </div>
-        <div class="settings-group">
-            <div class="label">界面元素</div>
-            <div class="options">
-                <button class="opt-btn" id="toggleNavBtn">隐藏导航</button>
-            </div>
-        </div>
-        <div class="panel-actions">
-            <button class="btn" id="resetSettings">重置</button>
-            <button class="btn" id="closeSettings">关闭</button>
         </div>
     </div>
 
@@ -206,8 +146,7 @@
 
         function parseIndex(text) {
             tools = []; catSet = [];
-            text.split('
-').forEach(function (line) {
+            text.split(String.fromCharCode(10)).forEach(function (line) {
                 line = line.trim();
                 if (!line) return;
                 var hidden = line.charAt(0) === '#';
@@ -328,61 +267,8 @@
             if (e.key === 'Enter') document.getElementById('modalConfirm').click();
         });
 
-        /* 设置面板 */
-        var panel = document.getElementById('settingsPanel');
-        document.getElementById('settingsBtn').addEventListener('click', function () {
-            panel.classList.toggle('show');
-        });
-        document.getElementById('closeSettings').addEventListener('click', function () {
-            panel.classList.remove('show');
-        });
-        document.getElementById('resetSettings').addEventListener('click', function () {
-            localStorage.removeItem('mtFontSize');
-            localStorage.removeItem('mtHideNav');
-            document.documentElement.style.fontSize = '';
-            document.body.classList.remove('pure-mode');
-            document.getElementById('toggleNavBtn').textContent = '隐藏导航';
-            document.querySelectorAll('#fontSizeOpts .opt-btn').forEach(function (b) {
-                b.classList.toggle('active', b.getAttribute('data-size') === '1');
-            });
-        });
-        document.querySelectorAll('#fontSizeOpts .opt-btn').forEach(function (b) {
-            b.addEventListener('click', function () {
-                var s = this.getAttribute('data-size');
-                document.documentElement.style.fontSize = (parseFloat(s) * 16) + 'px';
-                localStorage.setItem('mtFontSize', s);
-                document.querySelectorAll('#fontSizeOpts .opt-btn').forEach(function (x) { x.classList.remove('active'); });
-                this.classList.add('active');
-            });
-        });
-        var fs = localStorage.getItem('mtFontSize');
-        if (fs) {
-            document.documentElement.style.fontSize = (parseFloat(fs) * 16) + 'px';
-            document.querySelectorAll('#fontSizeOpts .opt-btn').forEach(function (b) {
-                b.classList.toggle('active', b.getAttribute('data-size') === fs);
-            });
-        }
-        document.getElementById('toggleNavBtn').addEventListener('click', function () {
-            var on = document.body.classList.toggle('pure-mode');
-            this.textContent = on ? '显示导航' : '隐藏导航';
-            localStorage.setItem('mtHideNav', on ? '1' : '0');
-        });
-        if (localStorage.getItem('mtHideNav') === '1') {
-            document.body.classList.add('pure-mode');
-            document.getElementById('toggleNavBtn').textContent = '显示导航';
-        }
-
-        /* 隐藏按钮（🙈）一键纯净模式 */
-        var hideBtn = document.getElementById('hideBtn');
-        hideBtn.addEventListener('click', function () {
-            var on = document.body.classList.toggle('pure-mode');
-            hideBtn.classList.toggle('active', on);
-            hideBtn.title = on ? '显示界面' : '隐藏界面';
-            localStorage.setItem('mtHideNav', on ? '1' : '0');
-            document.getElementById('toggleNavBtn').textContent = on ? '显示导航' : '隐藏导航';
-        });
-        if (document.body.classList.contains('pure-mode')) hideBtn.classList.add('active');
     })();
     </script>
+    <script src="global-ui.js"></script>
 </body>
 </html>

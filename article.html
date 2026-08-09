@@ -260,12 +260,26 @@
         }
         .settings-group .options .opt-btn:hover { opacity: 0.85; }
         .settings-group .options .opt-btn.active { opacity: 1; border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .pure-colors {
+            overflow: hidden; max-height: 0; opacity: 0;
+            transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.3s ease;
+        }
+        .pure-colors.open {
+            max-height: 220px; opacity: 1; margin-top: 0.5rem;
+        }
         .pure-colors { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
         .pure-colors .pure-c { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; opacity: 0.75; }
         .pure-colors input[type=color] {
             width: 34px; height: 26px; border: 1px solid rgba(128,128,128,0.3);
             border-radius: 0.5rem; background: transparent; padding: 2px; cursor: pointer;
         }
+        .pure-colors .pure-hex {
+            width: 76px; padding: 0.25rem 0.5rem; border-radius: 0.5rem;
+            border: 1px solid rgba(128,128,128,0.3); background: rgba(128,128,128,0.08);
+            color: inherit; font-size: 0.75rem; font-family: monospace; outline: none;
+        }
+        .pure-colors .pure-hex:focus { border-color: #66bb6a; }
+        .pure-colors .pure-hex.invalid { border-color: #e74c3c; }
         .panel-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
         .panel-actions .btn {
             padding: 0.4rem 1.2rem; border-radius: 2rem;
@@ -536,9 +550,19 @@
                 </div>
                 <div class="settings-group">
                     <label>🎨 纯净自定义颜色</label>
-                    <div class="pure-colors">
-                        <label class="pure-c">字体 <input type="color" id="pureFg" value="#e8e8e8"></label>
-                        <label class="pure-c">背景 <input type="color" id="pureBg" value="#111111"></label>
+                    <div class="options" id="artColorMode">
+                        <button class="opt-btn" data-v="auto">跟随系统</button>
+                        <button class="opt-btn" data-v="custom">自定义</button>
+                    </div>
+                    <div class="pure-colors" id="pureColorsWrap">
+                        <label class="pure-c">字体
+                            <input type="color" id="pureFg" value="#e8e8e8">
+                            <input type="text" class="pure-hex" id="pureFgHex" maxlength="7" placeholder="#e8e8e8" spellcheck="false">
+                        </label>
+                        <label class="pure-c">背景
+                            <input type="color" id="pureBg" value="#111111">
+                            <input type="text" class="pure-hex" id="pureBgHex" maxlength="7" placeholder="#111111" spellcheck="false">
+                        </label>
                         <button class="opt-btn" id="pureResetColor">恢复默认</button>
                     </div>
                 </div>
@@ -647,7 +671,7 @@
             var ART_KEYS = {
                 size: 'art_size', line: 'art_line', font: 'art_font', width: 'art_width',
                 paper: 'art_paper', reveal: 'art_reveal', progress: 'art_progress',
-                toc: 'art_toc', pure: 'art_pure', fg: 'art_fg', bg: 'art_bg'
+                toc: 'art_toc', pure: 'art_pure', colorMode: 'art_color_mode', fg: 'art_fg', bg: 'art_bg'
             };
             function artGet(k) { try { return localStorage.getItem(ART_KEYS[k]); } catch (e) { return null; } }
             function artSet(k, v) { try { localStorage.setItem(ART_KEYS[k], v); } catch (e) {} }
@@ -661,6 +685,7 @@
                 setGroup('artProgress', artGet('progress'), 'on');
                 setGroup('artToc', artGet('toc'), 'on');
                 setGroup('artPure', artGet('pure'), 'off');
+                setGroup('artColorMode', artGet('colorMode'), 'auto');
                 var fg = artGet('fg'), bg = artGet('bg');
                 if (fg) document.getElementById('pureFg').value = fg;
                 if (bg) document.getElementById('pureBg').value = bg;
@@ -683,6 +708,8 @@
                 if (pb) pb.style.display = (artGet('progress') || 'on') === 'on' ? '' : 'none';
                 buildToc();
                 bd.classList.toggle('art-toc-off', (artGet('toc') || 'on') === 'off');
+                var pw = document.getElementById('pureColorsWrap');
+                if (pw) pw.classList.toggle('open', (artGet('colorMode') || 'auto') === 'custom');
                 var pure = (artGet('pure') || 'off') === 'on';
                 bd.classList.toggle('art-pure', pure);
                 var pt = document.getElementById('pureToggle');
@@ -708,6 +735,7 @@
             bindArtGroup('artProgress', 'progress', 'on');
             bindArtGroup('artToc', 'toc', 'on');
             bindArtGroup('artPure', 'pure', 'off');
+            bindArtGroup('artColorMode', 'colorMode', 'auto');
 
             // ---- 纯净浏览颜色（黑白系自动衍生） ----
             function hexToRgb(hex) {
@@ -736,7 +764,12 @@
                 return dark ? { bg: '#111111', fg: '#e8e8e8' } : { bg: '#f7f7f5', fg: '#1c1c1c' };
             }
             function applyPureColors() {
-                var fg = artGet('fg'), bg = artGet('bg');
+                var mode = artGet('colorMode') || 'auto';
+                var fg = null, bg = null;
+                if (mode === 'custom') {
+                    fg = artGet('fg');
+                    bg = artGet('bg');
+                }
                 if (!fg || !bg) {
                     var d = defaultPureColors();
                     if (!fg) fg = d.fg;
@@ -754,23 +787,55 @@
                 root.style.setProperty('--pure-th-bg', mix(bg, fg, 0.09));
                 root.style.setProperty('--pure-heading', mix(bg, fg, 0.92));
             }
-            document.getElementById('pureFg').addEventListener('input', function () {
-                artSet('fg', this.value);
-                applyPureColors();
-            });
-            document.getElementById('pureBg').addEventListener('input', function () {
-                artSet('bg', this.value);
-                applyPureColors();
-            });
+            function validHex(v) { return /^#[0-9a-fA-F]{6}$/.test(v); }
+            function bindColorPair(colorId, hexId, key) {
+                var cEl = document.getElementById(colorId);
+                var hEl = document.getElementById(hexId);
+                cEl.addEventListener('input', function () {
+                    hEl.value = this.value;
+                    hEl.classList.remove('invalid');
+                    artSet(key, this.value);
+                    applyPureColors();
+                });
+                hEl.addEventListener('change', function () {
+                    var v = this.value.trim();
+                    if (v.charAt(0) !== '#') v = '#' + v;
+                    if (validHex(v)) {
+                        this.value = v.toLowerCase();
+                        this.classList.remove('invalid');
+                        cEl.value = v;
+                        artSet(key, v);
+                        applyPureColors();
+                    } else {
+                        this.classList.add('invalid');
+                        this.value = cEl.value;
+                        setTimeout(function () { hEl.classList.remove('invalid'); }, 600);
+                    }
+                });
+                hEl.addEventListener('input', function () {
+                    var v = this.value.trim();
+                    var t = v.charAt(0) === '#' ? v : '#' + v;
+                    this.classList.toggle('invalid', v.length > 0 && !validHex(t));
+                });
+            }
+            bindColorPair('pureFg', 'pureFgHex', 'fg');
+            bindColorPair('pureBg', 'pureBgHex', 'bg');
+            document.getElementById('pureFgHex').value = document.getElementById('pureFg').value;
+            document.getElementById('pureBgHex').value = document.getElementById('pureBg').value;
             document.getElementById('pureResetColor').addEventListener('click', function () {
                 try {
                     localStorage.removeItem(ART_KEYS.fg);
                     localStorage.removeItem(ART_KEYS.bg);
+                    localStorage.removeItem(ART_KEYS.colorMode);
                 } catch (e) {}
                 var d = defaultPureColors();
                 document.getElementById('pureFg').value = d.fg;
                 document.getElementById('pureBg').value = d.bg;
+                document.getElementById('pureFgHex').value = d.fg;
+                document.getElementById('pureBgHex').value = d.bg;
                 applyPureColors();
+                applyArticle();
+                syncArticleView();
             });
 
             // ---- 纯净浏览开关（原隐藏 UI 按钮） ----

@@ -746,48 +746,6 @@
 
     </div>
 
-    <!-- ============================================================
-         底部控制栏（设置 + 隐藏按钮）
-         ============================================================ -->
-    <div class="bottom-controls" id="bottomControls">
-        <!-- 隐藏按钮 -->
-        <button class="ctrl-btn hide-btn" id="hideToggle" title="隐藏所有UI，只看背景">👁️</button>
-        <!-- 设置按钮 -->
-        <button class="ctrl-btn settings-btn" id="settingsToggle" title="全局样式设置">⚙️</button>
-    </div>
-
-    <!-- ===== 设置面板 ===== -->
-    <div class="settings-overlay" id="settingsOverlay">
-        <div class="settings-panel">
-            <div class="panel-title">⚙️ 样式设置</div>
-            <div class="panel-sub">自定义你的浏览体验</div>
-
-            <div class="settings-group">
-                <label>🎨 主题模式</label>
-                <div class="options" id="themeOptions">
-                    <button class="opt-btn" data-theme="default">默认</button>
-                    <button class="opt-btn" data-theme="light">亮色</button>
-                    <button class="opt-btn" data-theme="dark">暗色</button>
-                </div>
-            </div>
-
-            <div class="settings-group">
-                <label>🖼️ 背景图片</label>
-                <div class="options" id="bgOptions">
-                    <button class="opt-btn" data-bg="default">默认</button>
-                    <button class="opt-btn" data-bg="food">海边</button>
-                    <button class="opt-btn" data-bg="trip">旅途</button>
-                    <button class="opt-btn" data-bg="electric1">！？电电？！（1）</button>
-                    <button class="opt-btn" data-bg="electric2">！？电电？！（2）</button>
-                </div>
-            </div>
-
-            <div class="panel-actions">
-                <button class="btn btn-secondary" id="settingsClose">关闭</button>
-            </div>
-        </div>
-    </div>
-
     <!-- ===== 不蒜子统计脚本 ===== -->
     <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
@@ -836,12 +794,10 @@
 
             const mainCard = document.getElementById('mainCard');
             const statsCard = document.getElementById('statsCard');
-            const bottomControls = document.getElementById('bottomControls');
 
             function showAll() {
                 mainCard.classList.add('show');
                 statsCard.classList.add('show');
-                bottomControls.classList.add('show');
             }
 
             function onBackgroundLoaded() {
@@ -1022,112 +978,9 @@
                 }
             });
 
-            // ============================================================
-            // 全局样式设置
-            // ============================================================
-            const htmlRoot = document.getElementById('htmlRoot') || document.documentElement;
-            const settingsToggle = document.getElementById('settingsToggle');
-            const settingsOverlay = document.getElementById('settingsOverlay');
-            const settingsClose = document.getElementById('settingsClose');
-            const themeOptions = document.getElementById('themeOptions');
-            const bgOptions = document.getElementById('bgOptions');
-
-            function loadSettings() {
-                try {
-                    const saved = localStorage.getItem('siteSettings');
-                    if (saved) return JSON.parse(saved);
-                } catch (e) {}
-                return { theme: 'default', bg: 'default' };
-            }
-
-            function saveSettings(settings) {
-                try { localStorage.setItem('siteSettings', JSON.stringify(settings)); } catch (e) {}
-            }
-
-            function applySettings(settings) {
-                const theme = settings.theme || 'default';
-                htmlRoot.removeAttribute('data-theme');
-                if (theme !== 'default') {
-                    htmlRoot.setAttribute('data-theme', theme);
-                }
-                document.querySelectorAll('#themeOptions .opt-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.theme === theme);
-                });
-
-                const bg = settings.bg || 'default';
-                htmlRoot.removeAttribute('data-bg');
-                if (bg !== 'default') {
-                    htmlRoot.setAttribute('data-bg', bg);
-                }
-                document.querySelectorAll('#bgOptions .opt-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.bg === bg);
-                });
-            }
-
-            function openSettings() {
-                applySettings(loadSettings());
-                settingsOverlay.classList.add('active');
-                document.body.classList.add('modal-open');
-            }
-
-            function closeSettings() {
-                settingsOverlay.classList.remove('active');
-                document.body.classList.remove('modal-open');
-            }
-
-            settingsToggle.addEventListener('click', openSettings);
-            settingsClose.addEventListener('click', closeSettings);
-            settingsOverlay.addEventListener('click', function(e) {
-                if (e.target === settingsOverlay) closeSettings();
-            });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && settingsOverlay.classList.contains('active')) {
-                    closeSettings();
-                }
-            });
-
-            themeOptions.addEventListener('click', function(e) {
-                const btn = e.target.closest('.opt-btn');
-                if (!btn) return;
-                const settings = loadSettings();
-                settings.theme = btn.dataset.theme;
-                saveSettings(settings);
-                applySettings(settings);
-            });
-
-            bgOptions.addEventListener('click', function(e) {
-                const btn = e.target.closest('.opt-btn');
-                if (!btn) return;
-                const settings = loadSettings();
-                settings.bg = btn.dataset.bg;
-                saveSettings(settings);
-                applySettings(settings);
-            });
-
-            applySettings(loadSettings());
-
-            // ============================================================
-            // 隐藏/显示所有 UI（只看背景）
-            // ============================================================
-            const hideToggle = document.getElementById('hideToggle');
-            let isHidden = false;
-
-            hideToggle.addEventListener('click', function() {
-                isHidden = !isHidden;
-                document.body.classList.toggle('ui-hidden', isHidden);
-                if (isHidden) {
-                    this.textContent = '👁️‍🗨️';
-                    this.classList.add('active');
-                    this.title = '显示所有UI';
-                } else {
-                    this.textContent = '👁️';
-                    this.classList.remove('active');
-                    this.title = '隐藏所有UI，只看背景';
-                }
-            });
-
         })();
     </script>
 
+    <script src="global-ui.js"></script>
 </body>
 </html>

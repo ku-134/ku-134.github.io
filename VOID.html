@@ -479,6 +479,19 @@
             0% { transform: scale(0.92) translateY(16px); opacity: 0; }
             100% { transform: scale(1) translateY(0); opacity: 1; }
         }
+        /* ===== 不蒜子统计 ===== */
+        .void-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem 1.4rem;
+            justify-content: center;
+            margin-top: 1.2rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(128,128,128,0.1);
+            font-size: 0.85rem;
+            opacity: 0.75;
+        }
+        .void-stats b { color: #66bb6a; }
     </style>
 </head>
 <body>
@@ -502,6 +515,11 @@
             </div>
         </div>
     </div>
+            <div class="void-stats">
+                <span>👥 访客 <b id="busuanzi_value_site_uv">0</b></span>
+                <span>👀 访问 <b id="busuanzi_value_site_pv">0</b></span>
+                <span>📄 本页 <b id="busuanzi_value_page_pv">0</b></span>
+            </div>
 
     <div id="voidToast"></div>
 
@@ -551,7 +569,8 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+        <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<script src="script.js"></script>
     <script src="VOID-core.js"></script>
     <script>
         (function() {
@@ -648,5 +667,6 @@
             };
         })();
     </script>
+    <script src="global-ui.js"></script>
 </body>
 </html>

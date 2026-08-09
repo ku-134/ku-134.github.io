@@ -314,108 +314,6 @@
             margin-top: 0.4rem;
         }
 
-        /* ===== 样式设置弹窗 ===== */
-        .settings-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 1600;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            animation: overlayIn 0.25s ease-out;
-        }
-        .settings-overlay.active { display: flex; }
-        .settings-panel {
-            max-width: 420px;
-            width: 90%;
-            padding: 2rem 2rem 1.8rem;
-            border-radius: 1.8rem;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
-            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            max-height: 90vh;
-            overflow-y: auto;
-            text-align: center;
-            background: var(--settings-panel-bg, var(--card-bg));
-            color: var(--text-color);
-        }
-        .settings-panel .panel-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin-bottom: 0.2rem;
-        }
-        .settings-panel .panel-sub {
-            font-size: 0.85rem;
-            opacity: 0.4;
-            margin-bottom: 1.2rem;
-        }
-        .settings-group {
-            margin-bottom: 1.2rem;
-            text-align: left;
-        }
-        .settings-group label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            opacity: 0.6;
-            display: block;
-            margin-bottom: 0.4rem;
-        }
-        .settings-group .options {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-        .settings-group .options .opt-btn {
-            padding: 0.3rem 1.2rem;
-            border-radius: 2rem;
-            border: 1px solid rgba(128, 128, 128, 0.15);
-            background: transparent;
-            font-family: inherit;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            opacity: 0.5;
-            color: inherit;
-        }
-        .settings-group .options .opt-btn:hover {
-            opacity: 0.8;
-            background: rgba(128, 128, 128, 0.05);
-        }
-        .settings-group .options .opt-btn.active {
-            opacity: 1;
-            border-color: currentColor;
-            background: rgba(128, 128, 128, 0.08);
-        }
-        .settings-panel .panel-actions {
-            display: flex;
-            gap: 0.6rem;
-            justify-content: flex-end;
-            margin-top: 0.8rem;
-        }
-        .settings-panel .panel-actions .btn {
-            padding: 0.4rem 1.4rem;
-            border-radius: 2rem;
-            border: none;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            font-family: inherit;
-        }
-        .settings-panel .panel-actions .btn-secondary {
-            background: transparent;
-            border: 1px solid rgba(128, 128, 128, 0.15);
-            color: inherit;
-        }
-        .settings-panel .panel-actions .btn-secondary:hover {
-            background: rgba(128, 128, 128, 0.06);
-        }
-
         /* Toast */
         #voidToast {
             position: fixed;
@@ -441,26 +339,7 @@
         }
 
         /* ===== 隐藏 UI 适配 ===== */
-        body.ui-hidden .void-container,
-        body.ui-hidden .void-card,
-        body.ui-hidden .void-header,
-        body.ui-hidden .void-toolbar,
-        body.ui-hidden .article-list,
-        body.ui-hidden .article-card,
-        body.ui-hidden .void-pw-overlay,
-        body.ui-hidden #voidToast {
-            opacity: 0 !important;
-            pointer-events: none !important;
-            transition: opacity 0.3s ease;
-        }
-        body.ui-hidden .settings-overlay.active {
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
-        body.ui-hidden .bottom-controls {
-            opacity: 1 !important;
-            pointer-events: auto !important;
-        }
+
 
         @media (max-width: 600px) {
             .void-card { padding: 1.5rem 1rem; }
@@ -471,27 +350,8 @@
         @media (max-width: 400px) {
             .void-card { padding: 1rem 0.8rem; }
         }
-        @keyframes overlayIn {
-            0% { opacity: 0; backdrop-filter: blur(0px); }
-            100% { opacity: 1; backdrop-filter: blur(6px); }
-        }
-        @keyframes modalPop {
-            0% { transform: scale(0.92) translateY(16px); opacity: 0; }
             100% { transform: scale(1) translateY(0); opacity: 1; }
         }
-        /* ===== 不蒜子统计 ===== */
-        .void-stats {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.6rem 1.4rem;
-            justify-content: center;
-            margin-top: 1.2rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(128,128,128,0.1);
-            font-size: 0.85rem;
-            opacity: 0.75;
-        }
-        .void-stats b { color: #66bb6a; }
     </style>
 </head>
 <body>
@@ -515,13 +375,6 @@
             </div>
         </div>
     </div>
-            <div class="void-stats">
-                <span>👥 访客 <b id="busuanzi_value_site_uv">0</b></span>
-                <span>👀 访问 <b id="busuanzi_value_site_pv">0</b></span>
-                <span>📄 本页 <b id="busuanzi_value_page_pv">0</b></span>
-            </div>
-
-    <div id="voidToast"></div>
 
     <div class="void-pw-overlay" id="pwOverlay">
         <div class="void-pw-panel">
@@ -536,38 +389,7 @@
         </div>
     </div>
 
-    <div class="bottom-controls" id="bottomControls">
-        <button class="ctrl-btn hide-btn" id="hideToggle" title="隐藏所有UI，只看背景">👁️</button>
-        <button class="ctrl-btn settings-btn" id="settingsToggle" title="全局样式设置">⚙️</button>
-    </div>
 
-    <div class="settings-overlay" id="settingsOverlay">
-        <div class="settings-panel">
-            <div class="panel-title">⚙️ 样式设置</div>
-            <div class="panel-sub">自定义你的浏览体验</div>
-            <div class="settings-group">
-                <label>🎨 主题模式</label>
-                <div class="options" id="themeOptions">
-                    <button class="opt-btn" data-theme="default">默认</button>
-                    <button class="opt-btn" data-theme="light">亮色</button>
-                    <button class="opt-btn" data-theme="dark">暗色</button>
-                </div>
-            </div>
-            <div class="settings-group">
-                <label>🖼️ 背景图片</label>
-                <div class="options" id="bgOptions">
-                    <button class="opt-btn" data-bg="default">默认</button>
-                    <button class="opt-btn" data-bg="food">海边</button>
-                    <button class="opt-btn" data-bg="trip">旅途</button>
-                    <button class="opt-btn" data-bg="electric1">！？电电？！（1）</button>
-                    <button class="opt-btn" data-bg="electric2">！？电电？！（2）</button>
-                </div>
-            </div>
-            <div class="panel-actions">
-                <button class="btn btn-secondary" id="settingsClose">关闭</button>
-            </div>
-        </div>
-    </div>
 
         <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 <script src="script.js"></script>
@@ -575,86 +397,7 @@
     <script>
         (function() {
             const htmlRoot = document.getElementById('htmlRoot') || document.documentElement;
-            const settingsToggle = document.getElementById('settingsToggle');
-            const settingsOverlay = document.getElementById('settingsOverlay');
-            const settingsClose = document.getElementById('settingsClose');
-            const themeOptions = document.getElementById('themeOptions');
-            const bgOptions = document.getElementById('bgOptions');
-
-            function loadSettings() {
-                try {
-                    const saved = localStorage.getItem('siteSettings');
-                    if (saved) return JSON.parse(saved);
-                } catch (e) {}
-                return { theme: 'default', bg: 'default' };
-            }
-            function saveSettings(settings) {
-                try { localStorage.setItem('siteSettings', JSON.stringify(settings)); } catch (e) {}
-            }
-            function applySettings(settings) {
-                const theme = settings.theme || 'default';
-                htmlRoot.removeAttribute('data-theme');
-                if (theme !== 'default') htmlRoot.setAttribute('data-theme', theme);
-                document.querySelectorAll('#themeOptions .opt-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.theme === theme);
-                });
-                const bg = settings.bg || 'default';
-                htmlRoot.removeAttribute('data-bg');
-                if (bg !== 'default') htmlRoot.setAttribute('data-bg', bg);
-                document.querySelectorAll('#bgOptions .opt-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.bg === bg);
-                });
-            }
-            function openSettings() {
-                applySettings(loadSettings());
-                settingsOverlay.classList.add('active');
-                document.body.classList.add('modal-open');
-            }
-            function closeSettings() {
-                settingsOverlay.classList.remove('active');
-                document.body.classList.remove('modal-open');
-            }
-            settingsToggle.addEventListener('click', openSettings);
-            settingsClose.addEventListener('click', closeSettings);
-            settingsOverlay.addEventListener('click', function(e) {
-                if (e.target === settingsOverlay) closeSettings();
-            });
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && settingsOverlay.classList.contains('active')) closeSettings();
-            });
-            themeOptions.addEventListener('click', function(e) {
-                const btn = e.target.closest('.opt-btn');
-                if (!btn) return;
-                const settings = loadSettings();
-                settings.theme = btn.dataset.theme;
-                saveSettings(settings);
-                applySettings(settings);
-            });
-            bgOptions.addEventListener('click', function(e) {
-                const btn = e.target.closest('.opt-btn');
-                if (!btn) return;
-                const settings = loadSettings();
-                settings.bg = btn.dataset.bg;
-                saveSettings(settings);
-                applySettings(settings);
-            });
-            applySettings(loadSettings());
-
-            const hideToggle = document.getElementById('hideToggle');
-            let isHidden = false;
-            hideToggle.addEventListener('click', function() {
-                isHidden = !isHidden;
-                document.body.classList.toggle('ui-hidden', isHidden);
-                this.textContent = isHidden ? '👁️‍🗨️' : '👁️';
-                this.classList.toggle('active', isHidden);
-                this.title = isHidden ? '显示所有UI' : '隐藏所有UI，只看背景';
-            });
-
-            const bottomControls = document.getElementById('bottomControls');
-            setTimeout(function() {
-                bottomControls.classList.add('show');
-            }, 800);
-
+            
             window.showVoidToast = function(msg, duration) {
                 duration = duration || 4000;
                 const el = document.getElementById('voidToast');

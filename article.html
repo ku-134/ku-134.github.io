@@ -289,6 +289,28 @@
         }
         .panel-actions .btn:hover { opacity: 0.85; }
 
+        /* ===== Toast 提示（文章不存在等） ===== */
+        #voidToast {
+            position: fixed; top: 1.2rem; left: 50%;
+            transform: translateX(-50%) translateY(-14px);
+            padding: 0.6rem 1.4rem; border-radius: 2rem;
+            background: rgba(10, 20, 10, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #fff; font-size: 0.88rem;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 9999; max-width: 88vw; text-align: center;
+        }
+        #voidToast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        body.art-pure #voidToast {
+            background: var(--pure-code-bg, rgba(255,255,255,0.1));
+            border-color: var(--pure-border, rgba(255,255,255,0.2));
+            color: var(--pure-fg, #e8e8e8);
+        }
+
         /* ===== 阅读进度条 ===== */
         #artProgressBar {
             position: fixed; top: 0; left: 0; height: 3px; width: 0;
@@ -933,8 +955,10 @@
                 if (!bc) return;
                 var pagerVisible = document.getElementById('seriesPager').style.display !== 'none';
                 var doc = document.documentElement;
-                var canScroll = doc.scrollHeight > window.innerHeight + 200;
-                var nearBottom = canScroll && (window.innerHeight + window.pageYOffset) >= (doc.scrollHeight - 180);
+                var scrollable = doc.scrollHeight - window.innerHeight;
+                // 浏览进度 >= 95% 即视为抵达底部（短篇也能触发）
+                var progress = scrollable > 0 ? (window.pageYOffset || doc.scrollTop || 0) / scrollable : 1;
+                var nearBottom = progress >= 0.95;
                 var narrow = window.innerWidth <= 900;
                 bc.classList.toggle('lift', narrow && nearBottom && pagerVisible);
             }

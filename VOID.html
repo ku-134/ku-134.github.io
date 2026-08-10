@@ -92,6 +92,18 @@
         }
         .void-toolbar input:focus { border-color: #66bb6a; }
         .void-toolbar input::placeholder { opacity: 0.4; }
+        .void-toolbar .sort-btn {
+            padding: 0.5rem 0.9rem;
+            border-radius: 2rem;
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            background: transparent;
+            color: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: border-color 0.2s, opacity 0.2s;
+        }
+        .void-toolbar .sort-btn:hover { border-color: #66bb6a; opacity: 0.85; }
 
         /* ===== 分类栏（父级切换 + 子分类） ===== */
         .void-cats {
@@ -373,6 +385,7 @@
             </header>
             <div class="void-toolbar">
                 <input type="text" id="searchInput" placeholder="🔍 搜索文章标题..." />
+                <button id="sortToggle" class="sort-btn" title="点击切换排序方式">🔤 字母</button>
             </div>
             <div class="void-cats" id="categoryBar"></div>
             <div id="articleContainer" class="article-list">

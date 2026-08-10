@@ -380,6 +380,36 @@
         }
         body.art-pure #artTocBox a { color: var(--pure-muted, rgba(255,255,255,0.6)); }
         body.art-pure .ctrl-btn { background: rgba(128,128,128,0.18); border-color: var(--pure-border, rgba(255,255,255,0.2)); }
+
+        /* ===== 系列导航 ===== */
+        .series-nav { display: inline-flex; align-items: center; gap: 0.3rem; }
+        .series-nav input, .series-pager input {
+            width: 52px; padding: 0.2rem 0.4rem; border-radius: 0.6rem;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.08);
+            color: inherit; font-size: 0.8rem; text-align: center; outline: none;
+        }
+        .series-nav input:focus, .series-pager input:focus { border-color: #66bb6a; }
+        .series-nav button, .series-pager button {
+            padding: 0.22rem 0.7rem; border-radius: 0.8rem;
+            border: 1px solid rgba(128,128,128,0.25); background: transparent;
+            color: inherit; cursor: pointer; font-size: 0.78rem; font-family: inherit;
+        }
+        .series-nav button:hover, .series-pager button:hover { opacity: 0.8; border-color: #66bb6a; }
+        .series-nav button:disabled, .series-pager button:disabled { opacity: 0.35; cursor: not-allowed; }
+        .series-pager {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.9rem; margin-top: 1.6rem; padding-top: 1.1rem;
+            border-top: 1px solid rgba(128,128,128,0.12);
+            font-size: 0.85rem;
+        }
+        .series-page { display: inline-flex; align-items: center; gap: 0.3rem; opacity: 0.75; }
+        .series-page input { width: 42px; }
+        body.art-pure .series-pager { border-top-color: var(--pure-border, rgba(255,255,255,0.2)); }
+        body.art-pure .series-nav input, body.art-pure .series-pager input,
+        body.art-pure .series-nav button, body.art-pure .series-pager button {
+            border-color: var(--pure-border, rgba(255,255,255,0.2));
+            color: var(--pure-fg, #e8e8e8);
+        }
         @media (max-width: 600px) {
             .article-card { padding: 1.5rem 1rem; }
             .article-header { flex-direction: column; align-items: stretch; }
@@ -408,10 +438,19 @@
                 </div>
                 <div class="nav-links">
                     <a href="VOID.html">📝 返回列表</a>
+                    <span class="series-nav" id="seriesNav" style="display:none">
+                        <input type="number" id="seriesJumpInput" min="1" placeholder="章节" />
+                        <button id="seriesJumpBtn">跳转</button>
+                    </span>
                 </div>
             </header>
             <div id="articleBody" class="article-body">
                 <div class="article-empty">⏳ 加载中...</div>
+            </div>
+            <div class="series-pager" id="seriesPager" style="display:none">
+                <button id="seriesPrev">← 上一页</button>
+                <span class="series-page">[ <input type="number" id="seriesPageInput" min="1" /> / <span id="seriesTotal">1</span> ]</span>
+                <button id="seriesNext">下一页 →</button>
             </div>
         </div>
     </div>
@@ -855,6 +894,75 @@
             }
             document.addEventListener('scroll', updateProgress, { passive: true });
             window.addEventListener('resize', updateProgress);
+
+            // ---- 系列文章检索与跳转 ----
+            var seriesList = [];
+            var seriesIdx = -1;
+            var voidFiles = new Set();
+            var seriesNav = document.getElementById('seriesNav');
+            var seriesPager = document.getElementById('seriesPager');
+            function stripNumName(name) {
+                return name.replace(/(\d+)\.md$/i, '.md');
+            }
+            function buildSeries(currentFile) {
+                var base = stripNumName(currentFile);
+                seriesList = [];
+                // 从原文件（无数字）开始 +1 搜索，遇到缺失即停（防无上限搜索）
+                for (var i = 0; i < 100; i++) {
+                    var cand = i === 0 ? base : base.replace(/\.md$/i, i + '.md');
+                    if (voidFiles.has(cand)) seriesList.push(cand);
+                    else break;
+                }
+                seriesIdx = seriesList.indexOf(currentFile);
+                var hasSeries = seriesList.length > 1 && seriesIdx >= 0;
+                seriesNav.style.display = hasSeries ? 'inline-flex' : 'none';
+                seriesPager.style.display = hasSeries ? 'flex' : 'none';
+                if (!hasSeries) return;
+                document.getElementById('seriesTotal').textContent = seriesList.length;
+                document.getElementById('seriesPageInput').value = seriesIdx + 1;
+                document.getElementById('seriesPrev').disabled = seriesIdx === 0;
+                document.getElementById('seriesNext').disabled = seriesIdx === seriesList.length - 1;
+            }
+            function jumpSeries(n) {
+                if (!seriesList.length || n < 1 || n > seriesList.length) {
+                    if (window.showVoidToast) showVoidToast('⚠️ 章节不存在（1 ~ ' + seriesList.length + '）');
+                    return;
+                }
+                location.href = 'article.html?file=' + encodeURIComponent('VOID/' + seriesList[n - 1]);
+            }
+            document.getElementById('seriesJumpBtn').addEventListener('click', function () {
+                var v = parseInt(document.getElementById('seriesJumpInput').value, 10);
+                if (v) jumpSeries(v);
+            });
+            document.getElementById('seriesJumpInput').addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); document.getElementById('seriesJumpBtn').click(); }
+            });
+            document.getElementById('seriesPrev').addEventListener('click', function () {
+                if (seriesIdx > 0) jumpSeries(seriesIdx);
+            });
+            document.getElementById('seriesNext').addEventListener('click', function () {
+                if (seriesIdx >= 0 && seriesIdx < seriesList.length - 1) jumpSeries(seriesIdx + 2);
+            });
+            document.getElementById('seriesPageInput').addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); var v = parseInt(this.value, 10); if (v) jumpSeries(v); }
+            });
+            document.getElementById('seriesPageInput').addEventListener('change', function () {
+                var v = parseInt(this.value, 10);
+                if (v && v !== seriesIdx + 1) jumpSeries(v);
+            });
+            // 拉取 VOID/ 目录，判定当前文章的系列
+            (function loadSeriesFiles() {
+                var fp = new URLSearchParams(location.search).get('file');
+                fetch('https://api.github.com/repos/ku-134/ku-134.github.io/contents/VOID', {
+                    headers: { 'Accept': 'application/vnd.github+json' }
+                })
+                    .then(function (r) { return r.ok ? r.json() : []; })
+                    .then(function (arr) {
+                        voidFiles = new Set((arr || []).map(function (f) { return f.name; }));
+                        if (fp) buildSeries(fp.replace(/^VOID\//, ''));
+                    })
+                    .catch(function () {});
+            })();
 
             // ---- 文章目录 ----
             var tocBox = document.getElementById('artTocBox');

@@ -176,7 +176,8 @@
             opacity: 0;
             transform: translateY(20px);
             transition: opacity 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
-                        transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+                        transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                        bottom 0.35s ease;
             pointer-events: none;
         }
         .bottom-controls.show {
@@ -406,7 +407,7 @@
         .series-page input { width: 42px; }
         body.art-pure .series-pager { border-top-color: var(--pure-border, rgba(255,255,255,0.2)); }
         /* 竖屏滚到底部时，控制栏上移避开翻页条 */
-        .bottom-controls.lift { bottom: 50px; }
+        .bottom-controls.lift { bottom: 90px; }
         body.art-pure .series-nav input, body.art-pure .series-pager input,
         body.art-pure .series-nav button, body.art-pure .series-pager button {
             border-color: var(--pure-border, rgba(255,255,255,0.2));
@@ -757,6 +758,7 @@
                 pt.classList.toggle('active', pure);
                 pt.title = pure ? '退出纯净浏览' : '纯净浏览';
                 if (pure) applyPureColors();
+                updateControlsLift();
             }
             function bindArtGroup(id, key, def) {
                 document.getElementById(id).addEventListener('click', function (ev) {
@@ -930,7 +932,9 @@
                 var bc = document.getElementById('bottomControls');
                 if (!bc) return;
                 var pagerVisible = document.getElementById('seriesPager').style.display !== 'none';
-                var nearBottom = (window.innerHeight + window.pageYOffset) >= (document.documentElement.scrollHeight - 180);
+                var doc = document.documentElement;
+                var canScroll = doc.scrollHeight > window.innerHeight + 200;
+                var nearBottom = canScroll && (window.innerHeight + window.pageYOffset) >= (doc.scrollHeight - 180);
                 var narrow = window.innerWidth <= 900;
                 bc.classList.toggle('lift', narrow && nearBottom && pagerVisible);
             }

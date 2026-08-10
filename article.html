@@ -958,7 +958,7 @@
                 var scrollable = doc.scrollHeight - window.innerHeight;
                 // 浏览进度 >= 95% 即视为抵达底部（短篇也能触发）
                 var progress = scrollable > 0 ? (window.pageYOffset || doc.scrollTop || 0) / scrollable : 1;
-                var nearBottom = progress >= 0.95;
+                var nearBottom = progress >= 0.995;
                 var narrow = window.innerWidth <= 900;
                 bc.classList.toggle('lift', narrow && nearBottom && pagerVisible);
             }

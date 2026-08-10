@@ -11,6 +11,13 @@
 
     const container = document.getElementById('articleContainer');
     const searchInput = document.getElementById('searchInput');
+    const sortToggle = document.getElementById('sortToggle');
+    let sortMode = 'alpha'; // alpha=按字母 | cat=按标签
+    function getFavSet() {
+        try { return new Set(JSON.parse(localStorage.getItem('voidFavs') || '[]')); }
+        catch (e) { return new Set(); }
+    }
+    let favSet = getFavSet();
     const brandTitle = document.getElementById('brandTitle');
     const catBar = document.getElementById('categoryBar');
     const pwOverlay = document.getElementById('pwOverlay');
@@ -228,6 +235,18 @@
                 (a.category && a.category.toLowerCase().includes(kw))
             );
         }
+        // 排序：收藏置顶 → 按标签 / 按字母
+        list = list.slice().sort(function(a, b) {
+            const sa = favSet.has(a.filename) ? 1 : 0;
+            const sb = favSet.has(b.filename) ? 1 : 0;
+            if (sa !== sb) return sb - sa;
+            if (sortMode === 'cat') {
+                const ca = a.category || '';
+                const cb = b.category || '';
+                if (ca !== cb) return ca.localeCompare(cb, 'zh');
+            }
+            return a.title.localeCompare(b.title, 'zh');
+        });
         filteredArticles = list;
         renderArticles(list);
     }
@@ -246,6 +265,8 @@
             const hiddenBadge = art.hidden ? '<span class="badge hidden-badge">🔒 隐藏</span>' : '';
             const seriesBadge = voidFilesLoaded && voidFiles.has(art.filename.replace(/\.md$/i, '') + '1.md')
                 ? '<span class="badge series-badge">📚 系列</span>' : '';
+            const starBadge = favSet.has(art.filename)
+                ? '<span class="badge star-badge">⭐ 收藏</span>' : '';
             const descHtml = art.desc ? `<div class="card-desc">${escapeHtml(art.desc)}</div>` : '';
             html += `
                 <div class="article-card" data-filename="${escapeHtml(art.filename)}">
@@ -254,6 +275,7 @@
                         ${catBadge}
                         ${hiddenBadge}
                         ${seriesBadge}
+                        ${starBadge}
                     </div>
                     ${descHtml}
                     <div class="card-meta">${escapeHtml(art.filename)}</div>
@@ -334,6 +356,20 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && pwOverlay.classList.contains('active')) {
             closePasswordDialog();
+        }
+    });
+
+    sortToggle.addEventListener('click', function() {
+        sortMode = sortMode === 'alpha' ? 'cat' : 'alpha';
+        sortToggle.textContent = sortMode === 'alpha' ? '🔤 字母' : '🏷️ 标签';
+        if (allArticles.length) applyFilter();
+    });
+
+    // 跨标签页同步收藏状态
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'voidFavs') {
+            favSet = getFavSet();
+            if (allArticles.length) applyFilter();
         }
     });
 

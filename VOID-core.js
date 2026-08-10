@@ -19,6 +19,8 @@
     const pwCancel = document.getElementById('pwCancel');
 
     let allArticles = [];
+        let voidFiles = new Set();
+        let voidFilesLoaded = false;
     let filteredArticles = [];
     // 父级：public（公开）/ hidden（隐藏）
     let currentParent = 'public';
@@ -119,7 +121,8 @@
                 const articles = [];
                 for (const raw of lines) {
                     const art = parseLine(raw);
-                    if (art) articles.push(art);
+                    // 系列数字文件（如 名1.md）不展示在列表，只从详情页进入
+                    if (art && !/\d+\.md$/i.test(art.filename)) articles.push(art);
                 }
                 allArticles = articles;
                 renderCategoryBar();
@@ -241,6 +244,8 @@
             const catBadge = art.category
                 ? `<span class="badge cat-badge">${escapeHtml(art.category)}</span>` : '';
             const hiddenBadge = art.hidden ? '<span class="badge hidden-badge">🔒 隐藏</span>' : '';
+            const seriesBadge = voidFilesLoaded && voidFiles.has(art.filename.replace(/\.md$/i, '') + '1.md')
+                ? '<span class="badge series-badge">📚 系列</span>' : '';
             const descHtml = art.desc ? `<div class="card-desc">${escapeHtml(art.desc)}</div>` : '';
             html += `
                 <div class="article-card" data-filename="${escapeHtml(art.filename)}">
@@ -248,6 +253,7 @@
                         ${escapeHtml(art.title)}
                         ${catBadge}
                         ${hiddenBadge}
+                        ${seriesBadge}
                     </div>
                     ${descHtml}
                     <div class="card-meta">${escapeHtml(art.filename)}</div>
@@ -340,7 +346,21 @@
         }, 300);
     });
 
+    // ========== 加载 VOID/ 目录（用于系列判断） ==========
+    function loadVoidFiles() {
+        return fetch('https://api.github.com/repos/ku-134/ku-134.github.io/contents/VOID', {
+            headers: { 'Accept': 'application/vnd.github+json' }
+        })
+            .then(function (r) { return r.ok ? r.json() : []; })
+            .then(function (arr) {
+                voidFiles = new Set((arr || []).map(function (f) { return f.name; }));
+                voidFilesLoaded = true;
+                if (allArticles.length) applyFilter();
+            })
+            .catch(function () { voidFilesLoaded = true; });
+    }
     function init() {
+        loadVoidFiles();
         loadIndex();
     }
 

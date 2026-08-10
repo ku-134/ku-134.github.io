@@ -405,6 +405,8 @@
         .series-page { display: inline-flex; align-items: center; gap: 0.3rem; opacity: 0.75; }
         .series-page input { width: 42px; }
         body.art-pure .series-pager { border-top-color: var(--pure-border, rgba(255,255,255,0.2)); }
+        /* 竖屏滚到底部时，控制栏上移避开翻页条 */
+        .bottom-controls.lift { bottom: 120px; }
         body.art-pure .series-nav input, body.art-pure .series-pager input,
         body.art-pure .series-nav button, body.art-pure .series-pager button {
             border-color: var(--pure-border, rgba(255,255,255,0.2));
@@ -922,7 +924,18 @@
                 document.getElementById('seriesPageInput').value = seriesIdx + 1;
                 document.getElementById('seriesPrev').disabled = seriesIdx === 0;
                 document.getElementById('seriesNext').disabled = seriesIdx === seriesList.length - 1;
+                updateControlsLift();
             }
+            function updateControlsLift() {
+                var bc = document.getElementById('bottomControls');
+                if (!bc) return;
+                var pagerVisible = document.getElementById('seriesPager').style.display !== 'none';
+                var nearBottom = (window.innerHeight + window.pageYOffset) >= (document.documentElement.scrollHeight - 180);
+                var narrow = window.innerWidth <= 900;
+                bc.classList.toggle('lift', narrow && nearBottom && pagerVisible);
+            }
+            document.addEventListener('scroll', updateControlsLift, { passive: true });
+            window.addEventListener('resize', updateControlsLift);
             function jumpSeries(n) {
                 if (!seriesList.length || n < 1 || n > seriesList.length) {
                     if (window.showVoidToast) showVoidToast('⚠️ 章节不存在（1 ~ ' + seriesList.length + '）');
@@ -1028,6 +1041,7 @@
             let file = params.get('file');
             if (!file) {
                 articleBody.innerHTML = '<div class="article-empty">📭 未指定文章<br>请在链接后添加 <code>?file=VOID/测试文本.md</code></div>';
+                if (window.showVoidToast) showVoidToast('📭 文章不存在', 2000);
                 return;
             }
             // 兼容纯文件名（自动补 VOID/ 前缀）与完整路径
@@ -1082,7 +1096,8 @@
                     document.title = file.split('/').pop() + ' · 虚空终端';
                 })
                 .catch(function(err) {
-                    articleBody.innerHTML = '<div class="article-empty">❌ 文章加载失败：' + err.message + '</div>';
+                    articleBody.innerHTML = '<div class="article-empty">❌ 文章不存在或加载失败</div>';
+                    if (window.showVoidToast) showVoidToast('❌ 文章不存在', 2000);
                 });
         })();
     </script>

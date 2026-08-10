@@ -428,6 +428,16 @@
         .series-page { display: inline-flex; align-items: center; gap: 0.3rem; opacity: 0.75; }
         .series-page input { width: 42px; }
         body.art-pure .series-pager { border-top-color: var(--pure-border, rgba(255,255,255,0.2)); }
+        .ctrl-btn.fav-btn.on {
+            border-color: rgba(245, 166, 35, 0.7);
+            color: #f5a623;
+            box-shadow: 0 0 14px rgba(245, 166, 35, 0.35);
+        }
+        body.art-pure .ctrl-btn.fav-btn.on {
+            border-color: var(--pure-fg, #e8e8e8);
+            color: var(--pure-fg, #e8e8e8);
+            box-shadow: 0 0 14px rgba(255, 255, 255, 0.25);
+        }
         /* 竖屏滚到底部时，控制栏上移避开翻页条 */
         .bottom-controls.lift { bottom: 90px; }
         body.art-pure .series-nav input, body.art-pure .series-pager input,
@@ -489,6 +499,7 @@
     <nav id="artTocBox"></nav>
     <!-- ===== 底部控制栏（纯净浏览 + 样式设置） ===== -->
     <div class="bottom-controls" id="bottomControls">
+        <button class="ctrl-btn fav-btn" id="favToggle" title="收藏文章">☆</button>
         <button class="ctrl-btn hide-btn" id="pureToggle" title="纯净浏览">👁️</button>
         <button class="ctrl-btn settings-btn" id="settingsToggle" title="样式设置">⚙️</button>
     </div>
@@ -1005,6 +1016,37 @@
                     .catch(function () {});
             })();
 
+            // ===== 收藏（加星） + 阅读计数 =====
+            var curName = file.replace(/^VOID\//, '');
+            var favBtn = document.getElementById('favToggle');
+            function getFavs() {
+                try { return JSON.parse(localStorage.getItem('voidFavs') || '[]'); }
+                catch (e) { return []; }
+            }
+            function updateFavBtn() {
+                if (!favBtn) return;
+                var on = getFavs().indexOf(curName) >= 0;
+                favBtn.textContent = on ? '⭐' : '☆';
+                favBtn.classList.toggle('on', on);
+                favBtn.title = on ? '取消收藏' : '收藏文章';
+            }
+            if (favBtn) {
+                favBtn.addEventListener('click', function () {
+                    var favs = getFavs();
+                    var i = favs.indexOf(curName);
+                    if (i >= 0) {
+                        favs.splice(i, 1);
+                        if (window.showVoidToast) showVoidToast('☆ 已取消收藏', 1500);
+                    } else {
+                        favs.push(curName);
+                        if (window.showVoidToast) showVoidToast('⭐ 已收藏，列表页置顶展示', 1800);
+                    }
+                    try { localStorage.setItem('voidFavs', JSON.stringify(favs)); } catch (e) {}
+                    updateFavBtn();
+                });
+                updateFavBtn();
+            }
+
             // ---- 文章目录 ----
             var tocBox = document.getElementById('artTocBox');
             function buildToc() {
@@ -1115,6 +1157,11 @@
             loadArticleText(file)
                 .then(function(text) {
                     articleBody.innerHTML = marked.parse(text);
+                    // 阅读次数 +1
+                    try {
+                        var rc = parseInt(localStorage.getItem('voidReadCount') || '0', 10);
+                        localStorage.setItem('voidReadCount', String(rc + 1));
+                    } catch (e) {}
                 if (window.ArtSettings) window.ArtSettings.refresh();
                     // 段落依次浮现：从上到下逐个出现，避免生硬
                     const kids = articleBody.children;

@@ -497,6 +497,22 @@
                     </div>
                     <div class="sub">你收藏了</div>
                 </div>
+                <div class="stats-item local">
+                    <div class="label">📚 文章收藏</div>
+                    <div class="number-wrap">
+                        <span class="number" id="localArtFavs">0</span>
+                        <span class="delta hidden" id="artFavsDelta"></span>
+                    </div>
+                    <div class="sub">你加星了文章</div>
+                </div>
+                <div class="stats-item local">
+                    <div class="label">📖 阅读次数</div>
+                    <div class="number-wrap">
+                        <span class="number" id="localArtReads">0</span>
+                        <span class="delta hidden" id="artReadsDelta"></span>
+                    </div>
+                    <div class="sub">你读了文章</div>
+                </div>
             </div>
 
             <div class="stats-grid fade-in-up delay-5">
@@ -511,7 +527,7 @@
             </div>
 
             <div class="stats-grid fade-in-up delay-6">
-                <div class="stats-item local full-width highlight" id="recommendItem">
+                <div class="stats-item local full-width" id="recommendItem">
                     <div class="label">📤 资源推荐</div>
                     <div class="number-wrap">
                         <span class="number" id="localRecommend">0</span>
@@ -674,6 +690,8 @@
                 const currentFavs = getNumberFromEl('localFavs');
                 const currentRecommend = getNumberFromEl('localRecommend');
                 const currentGameEntry = getNumberFromEl('localGameEntry');
+                const currentArtFavs = getNumberFromEl('localArtFavs');
+                const currentArtReads = getNumberFromEl('localArtReads');
                 const cache = getCache();
 
                 updateDelta('uvDelta', currentUV, cache.uv);
@@ -682,6 +700,8 @@
                 updateDelta('favsDelta', currentFavs, cache.favs);
                 updateDelta('recommendDelta', currentRecommend, cache.recommend);
                 updateDelta('gameEntryDelta', currentGameEntry, cache.gameEntry);
+                updateDelta('artFavsDelta', currentArtFavs, cache.artFavs);
+                updateDelta('artReadsDelta', currentArtReads, cache.artReads);
 
                 cache.uv = currentUV;
                 cache.pv = currentPV;
@@ -689,6 +709,8 @@
                 cache.favs = currentFavs;
                 cache.recommend = currentRecommend;
                 cache.gameEntry = currentGameEntry;
+                cache.artFavs = currentArtFavs;
+                cache.artReads = currentArtReads;
                 saveCache(cache);
             }
 
@@ -722,6 +744,10 @@
                     document.getElementById('localRecommend').textContent = recommends;
                     const gameEntry = parseInt(localStorage.getItem('gameEntryCount') || '0');
                     document.getElementById('localGameEntry').textContent = gameEntry;
+                    const artFavs = JSON.parse(localStorage.getItem('voidFavs') || '[]');
+                    document.getElementById('localArtFavs').textContent = artFavs.length;
+                    const artReads = parseInt(localStorage.getItem('voidReadCount') || '0');
+                    document.getElementById('localArtReads').textContent = artReads;
                 } catch (e) { /* 静默降级 */ }
             }
 
@@ -729,7 +755,7 @@
             setTimeout(waitForBusuanzi, 1000);
 
             window.addEventListener('storage', function(e) {
-                if (e.key === 'resourceClicks' || e.key === 'favorites' || e.key === 'recommendSubmitCount' || e.key === 'gameEntryCount') {
+                if (e.key === 'resourceClicks' || e.key === 'favorites' || e.key === 'recommendSubmitCount' || e.key === 'gameEntryCount' || e.key === 'voidFavs' || e.key === 'voidReadCount') {
                     updateLocalStats();
                     setTimeout(function() {
                         const cache = getCache();
@@ -739,12 +765,16 @@
                         updateDelta('favsDelta', getNumberFromEl('localFavs'), cache.favs);
                         updateDelta('recommendDelta', getNumberFromEl('localRecommend'), cache.recommend);
                         updateDelta('gameEntryDelta', getNumberFromEl('localGameEntry'), cache.gameEntry);
+                        updateDelta('artFavsDelta', getNumberFromEl('localArtFavs'), cache.artFavs);
+                        updateDelta('artReadsDelta', getNumberFromEl('localArtReads'), cache.artReads);
                         cache.uv = getNumberFromEl('busuanzi_value_site_uv');
                         cache.pv = getNumberFromEl('busuanzi_value_site_pv');
                         cache.clicks = getNumberFromEl('localClicks');
                         cache.favs = getNumberFromEl('localFavs');
                         cache.recommend = getNumberFromEl('localRecommend');
                         cache.gameEntry = getNumberFromEl('localGameEntry');
+                        cache.artFavs = getNumberFromEl('localArtFavs');
+                        cache.artReads = getNumberFromEl('localArtReads');
                         saveCache(cache);
                     }, 500);
                 }

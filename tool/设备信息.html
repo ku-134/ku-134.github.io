@@ -36,6 +36,8 @@
         .info-label { font-weight: 500; opacity: 0.7; flex-shrink: 0; }
         .info-value { word-break: break-all; text-align: right; max-width: 62%; }
         .info-value.placeholder { opacity: 0.4; font-style: italic; }
+        .info-value.live { color: #66bb6a; opacity: 0.9; }
+        .live-badge { font-size: 0.6rem; background: rgba(102,187,106,0.18); color: #66bb6a; padding: 0.05rem 0.45rem; border-radius: 10px; margin-left: 0.4rem; vertical-align: 1px; white-space: nowrap; }
         .loading { display: none; text-align: center; padding: 2rem; opacity: 0.6; }
         .loading.show { display: block; }
         .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,128,128,0.3); border-top-color: #66bb6a; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -3px; margin-right: 0.5rem; }
@@ -58,7 +60,7 @@
             </div>
             <div id="infoGrid" class="info-grid"></div>
             <div class="loading" id="infoLoading"><span class="spinner"></span>加载中...</div>
-            <div class="tool-foot">大部分 API 需在安全上下文（HTTPS 或 localhost）中运行。</div>
+            <div class="tool-foot">大部分 API 需在安全上下文（HTTPS 或 localhost）中运行。标注 <span class="live-badge">实时</span> 的字段会自动更新。</div>
         </div>
     </div>
 
@@ -68,8 +70,61 @@
         var infoGrid = document.getElementById('infoGrid');
         var infoLoading = document.getElementById('infoLoading');
 
+        // ========== 浏览器 / 系统 / 设备检测 ==========
+        function detectBrowser() {
+            var ua = navigator.userAgent;
+            var name = '未知浏览器';
+            if (/edg\//i.test(ua)) name = 'Edge';
+            else if (/opr\//i.test(ua)) name = 'Opera';
+            else if (/chrome|chromium|crios/i.test(ua)) name = 'Chrome';
+            else if (/firefox|fxios/i.test(ua)) name = 'Firefox';
+            else if (/safari/i.test(ua)) name = 'Safari';
+            else if (/trident/i.test(ua)) name = 'Internet Explorer';
+            var m = ua.match(/(edg|opr|chrome|chromium|firefox|safari|trident)(?:\/| )([0-9]+)/i);
+            return m && m[2] ? name + ' ' + m[2] : name;
+        }
+
+        function detectOS() {
+            var ua = navigator.userAgent;
+            if (/windows nt/i.test(ua)) {
+                var v = ua.match(/windows nt (\d+\.\d+)/i);
+                var map = { '10.0': 'Windows 10/11', '6.3': 'Windows 8.1', '6.2': 'Windows 8', '6.1': 'Windows 7', '6.0': 'Windows Vista', '5.1': 'Windows XP' };
+                return v ? (map[v[1]] || 'Windows (NT ' + v[1] + ')') : 'Windows';
+            }
+            if (/macintosh|mac os x/i.test(ua)) return 'macOS';
+            if (/iphone|ipad|ipod/i.test(ua)) return 'iOS';
+            if (/android/i.test(ua)) return 'Android';
+            if (/linux/i.test(ua)) return 'Linux';
+            return '未知';
+        }
+
+        function detectDeviceType() {
+            var ua = navigator.userAgent;
+            if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return '平板';
+            if (/mobile|iphone|ipod|android|blackberry|opera mini|iemobile/i.test(ua)) return '手机';
+            return '桌面设备';
+        }
+
+        function getPlugins() {
+            if (!navigator.plugins || navigator.plugins.length === 0) return '无';
+            var names = [];
+            for (var i = 0; i < navigator.plugins.length; i++) names.push(navigator.plugins[i].name);
+            return names.join('、');
+        }
+
+        function updateLiveValue(label, value) {
+            var item = infoGrid.querySelector('.info-item[data-key="' + label + '"]');
+            if (!item) return;
+            var span = item.querySelector('.info-value');
+            if (span) span.textContent = value;
+        }
+
         async function collectAllInfo() {
             var info = {};
+            // ---- 浏览器 & 系统 ----
+            info['浏览器'] = detectBrowser();
+            info['操作系统'] = detectOS();
+            info['设备类型'] = detectDeviceType();
             // ---- 屏幕 ----
             info['屏幕宽度'] = window.screen.width + 'px';
             info['屏幕高度'] = window.screen.height + 'px';
@@ -80,12 +135,15 @@
             // ---- 浏览器 & 系统 ----
             info['用户代理'] = navigator.userAgent;
             info['语言'] = navigator.language;
+            info['全部语言'] = navigator.languages ? navigator.languages.join(', ') : navigator.language;
             info['平台'] = navigator.platform || '未知';
             info['CPU 核心数'] = navigator.hardwareConcurrency || '未知';
             info['设备内存'] = navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '未知';
             info['Cookie 启用'] = navigator.cookieEnabled ? '是' : '否';
             info['是否触摸设备'] = ('ontouchstart' in window || navigator.maxTouchPoints > 0) ? '是' : '否';
             info['时区'] = Intl.DateTimeFormat().resolvedOptions().timeZone || '未知';
+            info['插件数量'] = (navigator.plugins ? navigator.plugins.length : 0) + ' 个';
+            info['插件列表'] = getPlugins();
             // ---- 网络 ----
             info['网络在线'] = navigator.onLine ? '在线' : '离线';
             if (navigator.connection) {
@@ -100,15 +158,41 @@
                 info['RTT'] = '不支持';
                 info['节省数据模式'] = '不支持';
             }
-            // ---- IP (异步) ----
-            try {
-                var ipRes = await fetch('https://api.ipify.org?format=json', { cache: 'no-cache' });
-                var ipData = await ipRes.json();
-                info['公网 IP'] = ipData.ip || '获取失败';
-            } catch (_) {
-                info['公网 IP'] = '获取失败 (CORS/网络)';
+            // ---- 实时监听：在线状态 & 网络变化 ----
+            window.addEventListener('online', function () { updateLiveValue('网络在线', '在线'); });
+            window.addEventListener('offline', function () { updateLiveValue('网络在线', '离线'); });
+            if (navigator.connection && navigator.connection.addEventListener) {
+                navigator.connection.addEventListener('change', function () {
+                    var c = navigator.connection;
+                    updateLiveValue('网络类型', c.effectiveType || '未知');
+                    updateLiveValue('下行速度', c.downlink ? c.downlink + ' Mbps' : '未知');
+                    updateLiveValue('RTT', c.rtt ? c.rtt + ' ms' : '未知');
+                    updateLiveValue('节省数据模式', c.saveData ? '开启' : '关闭');
+                });
             }
-            // ---- 电池 (异步) ----
+            // ---- IP 与地理位置 (异步) ----
+            try {
+                var geoRes = await fetch('https://ipapi.co/json/', { cache: 'no-cache' });
+                if (!geoRes.ok) throw new Error('bad status');
+                var geo = await geoRes.json();
+                if (!geo || !geo.ip) throw new Error('no ip');
+                info['公网 IP'] = geo.ip;
+                info['IP 版本'] = geo.version || '未知';
+                info['地理位置'] = [geo.city, geo.region, geo.country_name].filter(function (x) { return x; }).join(', ') || '未知';
+                info['邮政编码'] = geo.postal || '未知';
+                info['经纬度'] = (geo.latitude !== undefined && geo.longitude !== undefined) ? geo.latitude + ', ' + geo.longitude : '未知';
+                info['运营商'] = geo.org || '未知';
+                info['ASN'] = geo.asn || '未知';
+            } catch (_) {
+                try {
+                    var ipRes = await fetch('https://api.ipify.org?format=json', { cache: 'no-cache' });
+                    var ipData = await ipRes.json();
+                    info['公网 IP'] = ipData.ip || '获取失败';
+                } catch (__) {
+                    info['公网 IP'] = '获取失败 (CORS/网络)';
+                }
+            }
+            // ---- 电池 (异步, 实时) ----
             if (navigator.getBattery) {
                 try {
                     var battery = await navigator.getBattery();
@@ -116,6 +200,16 @@
                     info['电池充电中'] = battery.charging ? '是' : '否';
                     info['剩余时间 (放电)'] = battery.dischargingTime < Infinity ? Math.round(battery.dischargingTime / 60) + ' 分钟' : '未知';
                     info['充满时间'] = battery.chargingTime < Infinity ? Math.round(battery.chargingTime / 60) + ' 分钟' : '未知';
+                    function bindBattery() {
+                        updateLiveValue('电池电量', Math.round(battery.level * 100) + '%');
+                        updateLiveValue('电池充电中', battery.charging ? '是' : '否');
+                        updateLiveValue('剩余时间 (放电)', battery.dischargingTime < Infinity ? Math.round(battery.dischargingTime / 60) + ' 分钟' : '未知');
+                        updateLiveValue('充满时间', battery.chargingTime < Infinity ? Math.round(battery.chargingTime / 60) + ' 分钟' : '未知');
+                    }
+                    battery.addEventListener('levelchange', bindBattery);
+                    battery.addEventListener('chargingchange', bindBattery);
+                    battery.addEventListener('dischargingtimechange', bindBattery);
+                    battery.addEventListener('chargingtimechange', bindBattery);
                 } catch (_) { info['电池电量'] = '无法获取'; }
             } else { info['电池电量'] = '不支持'; }
             // ---- GPU (通过 WebGL) ----
@@ -139,22 +233,29 @@
                 info['GPU 供应商'] = '获取失败';
                 info['GPU 渲染器'] = '获取失败';
             }
-            // ---- 视口 ----
+            // ---- 视口 & 页面 ----
             info['视口宽度'] = window.innerWidth + 'px';
             info['视口高度'] = window.innerHeight + 'px';
+            info['来源页面'] = document.referrer || '直接访问';
+            info['当前网址'] = window.location.href;
+            info['本地时间'] = new Date().toLocaleString();
+            setInterval(function () { updateLiveValue('本地时间', new Date().toLocaleString()); }, 1000);
             return info;
         }
 
-        function addInfoItem(label, value) {
+        function addInfoItem(label, value, live) {
             var div = document.createElement('div');
             div.className = 'info-item';
+            div.setAttribute('data-key', label);
             var labelSpan = document.createElement('span');
             labelSpan.className = 'info-label';
-            labelSpan.textContent = label + '：';
+            if (live) labelSpan.innerHTML = label + '：<span class="live-badge">实时</span>';
+            else labelSpan.textContent = label + '：';
             var valueSpan = document.createElement('span');
             valueSpan.className = 'info-value';
             valueSpan.textContent = (value !== undefined && value !== null && value !== '') ? value : '未获取';
             if (value === undefined || value === null || value === '') valueSpan.classList.add('placeholder');
+            if (live) valueSpan.classList.add('live');
             div.appendChild(labelSpan);
             div.appendChild(valueSpan);
             infoGrid.appendChild(div);
@@ -163,18 +264,21 @@
         function renderInfo(info) {
             infoGrid.innerHTML = '';
             var order = [
+                '浏览器', '操作系统', '设备类型',
                 '屏幕宽度', '屏幕高度', '可用宽度', '可用高度', '色彩深度', '像素比',
                 '视口宽度', '视口高度',
-                '用户代理', '语言', '平台', 'CPU 核心数', '设备内存', 'Cookie 启用', '是否触摸设备', '时区',
+                '用户代理', '语言', '全部语言', '平台', 'CPU 核心数', '设备内存', 'Cookie 启用', '是否触摸设备', '时区', '插件数量', '插件列表',
                 '网络在线', '网络类型', '下行速度', 'RTT', '节省数据模式',
-                '公网 IP',
+                '公网 IP', 'IP 版本', '地理位置', '邮政编码', '经纬度', '运营商', 'ASN',
                 '电池电量', '电池充电中', '剩余时间 (放电)', '充满时间',
-                'GPU 供应商', 'GPU 渲染器'
+                'GPU 供应商', 'GPU 渲染器',
+                '来源页面', '当前网址', '本地时间'
             ];
+            var liveKeys = ['网络在线', '网络类型', '下行速度', 'RTT', '节省数据模式', '电池电量', '电池充电中', '剩余时间 (放电)', '充满时间', '本地时间'];
             var used = {};
             for (var i = 0; i < order.length; i++) {
                 var key = order[i];
-                if (info[key] !== undefined) { used[key] = true; addInfoItem(key, info[key]); }
+                if (info[key] !== undefined) { used[key] = true; addInfoItem(key, info[key], liveKeys.indexOf(key) >= 0); }
             }
             for (var k in info) {
                 if (!used[k]) addInfoItem(k, info[k]);

@@ -19,14 +19,14 @@ body {
    ============================================================ */
 
 html {
-    background: var(--bg-image, url('background.webp')) no-repeat center center / cover;
+    background: var(--bg-image, url('/background.webp')) no-repeat center center / cover;
     background-attachment: fixed;
     background-color: #1a2e1a;
 }
 
 /* ----- 默认主题（跟随系统） ----- */
 :root {
-    --bg-image: url('background.webp');
+    --bg-image: url('/background.webp');
     --card-bg-light: rgba(255, 255, 255, 0.68);
     --card-bg-dark: rgba(10, 20, 10, 0.72);
     --text-light: #1a3b1a;
@@ -284,10 +284,10 @@ html[data-theme="dark"] {
 /* ============================================================
    🆕 背景图映射（全局统一）
    ============================================================ */
-html[data-bg="food"] { --bg-image: url('background1.webp'); }
-html[data-bg="trip"] { --bg-image: url('background2.webp'); }
-html[data-bg="electric1"] { --bg-image: url('background3.webp'); }
-html[data-bg="electric2"] { --bg-image: url('background4.webp'); }
+html[data-bg="food"] { --bg-image: url('/background1.webp'); }
+html[data-bg="trip"] { --bg-image: url('/background2.webp'); }
+html[data-bg="electric1"] { --bg-image: url('/background3.webp'); }
+html[data-bg="electric2"] { --bg-image: url('/background4.webp'); }
 
 /* ============================================================
    全局样式应用

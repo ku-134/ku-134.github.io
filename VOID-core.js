@@ -278,7 +278,10 @@
                         ${starBadge}
                     </div>
                     ${descHtml}
-                    <div class="card-meta">${escapeHtml(art.filename)}</div>
+                    <div class="card-meta">
+                        <span>${escapeHtml(art.filename)}</span>
+                        <button class="card-star${favSet.has(art.filename) ? ' on' : ''}" data-star="${escapeHtml(art.filename)}" title="${favSet.has(art.filename) ? '取消收藏' : '收藏文章'}">${favSet.has(art.filename) ? '⭐' : '☆'}</button>
+                    </div>
                 </div>
             `;
         }
@@ -287,6 +290,13 @@
 
     // ========== 卡片点击 → 跳转独立页 ==========
     container.addEventListener('click', function(e) {
+        const star = e.target.closest('.card-star');
+        if (star) {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleFav(star.dataset.star);
+            return;
+        }
         const card = e.target.closest('.article-card');
         if (!card) return;
         const filename = card.dataset.filename;
@@ -294,6 +304,18 @@
             window.location.href = 'article.html?file=' + encodeURIComponent('VOID/' + filename);
         }
     });
+
+    function toggleFav(filename) {
+        let favs = [];
+        try { favs = JSON.parse(localStorage.getItem('voidFavs') || '[]'); } catch (e) {}
+        const i = favs.indexOf(filename);
+        if (i >= 0) favs.splice(i, 1);
+        else favs.push(filename);
+        try { localStorage.setItem('voidFavs', JSON.stringify(favs)); } catch (e) {}
+        favSet = getFavSet();
+        showToast(i >= 0 ? '☆ 已取消收藏' : '⭐ 已收藏，将置顶展示');
+        if (allArticles.length) applyFilter();
+    }
 
     // ========== 密码弹窗 ==========
     let clickCount = 0;

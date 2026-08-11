@@ -119,6 +119,15 @@
             if (span) span.textContent = value;
         }
 
+        // 带超时的 fetch，防止网络异常导致页面卡死
+        function fetchWithTimeout(url, ms) {
+            var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+            var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms || 6000) : null;
+            return fetch(url, { cache: 'no-cache', signal: ctrl ? ctrl.signal : undefined })
+                .then(function (res) { if (timer) clearTimeout(timer); return res; })
+                .catch(function (err) { if (timer) clearTimeout(timer); throw err; });
+        }
+
         async function collectAllInfo() {
             var info = {};
             // ---- 浏览器 & 系统 ----
@@ -149,8 +158,8 @@
             if (navigator.connection) {
                 var conn = navigator.connection;
                 info['网络类型'] = conn.effectiveType || '未知';
-                info['下行速度'] = conn.downlink ? conn.downlink + ' Mbps' : '未知';
-                info['RTT'] = conn.rtt ? conn.rtt + ' ms' : '未知';
+                info['下行速度'] = (conn.downlink !== undefined && conn.downlink !== null) ? conn.downlink + ' Mbps' : '未知';
+                info['RTT'] = (conn.rtt !== undefined && conn.rtt !== null) ? conn.rtt + ' ms' : '未知';
                 info['节省数据模式'] = conn.saveData ? '开启' : '关闭';
             } else {
                 info['网络类型'] = '不支持';
@@ -165,14 +174,14 @@
                 navigator.connection.addEventListener('change', function () {
                     var c = navigator.connection;
                     updateLiveValue('网络类型', c.effectiveType || '未知');
-                    updateLiveValue('下行速度', c.downlink ? c.downlink + ' Mbps' : '未知');
-                    updateLiveValue('RTT', c.rtt ? c.rtt + ' ms' : '未知');
+                    updateLiveValue('下行速度', (c.downlink !== undefined && c.downlink !== null) ? c.downlink + ' Mbps' : '未知');
+                    updateLiveValue('RTT', (c.rtt !== undefined && c.rtt !== null) ? c.rtt + ' ms' : '未知');
                     updateLiveValue('节省数据模式', c.saveData ? '开启' : '关闭');
                 });
             }
-            // ---- IP 与地理位置 (异步) ----
+            // ---- IP 与地理位置 (异步, 带超时) ----
             try {
-                var geoRes = await fetch('https://ipapi.co/json/', { cache: 'no-cache' });
+                var geoRes = await fetchWithTimeout('https://ipapi.co/json/', 6000);
                 if (!geoRes.ok) throw new Error('bad status');
                 var geo = await geoRes.json();
                 if (!geo || !geo.ip) throw new Error('no ip');
@@ -185,7 +194,7 @@
                 info['ASN'] = geo.asn || '未知';
             } catch (_) {
                 try {
-                    var ipRes = await fetch('https://api.ipify.org?format=json', { cache: 'no-cache' });
+                    var ipRes = await fetchWithTimeout('https://api.ipify.org?format=json', 5000);
                     var ipData = await ipRes.json();
                     info['公网 IP'] = ipData.ip || '获取失败';
                 } catch (__) {

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片压缩 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-header .nav-links a.active { opacity: 1; font-weight: 600; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn-sm { padding: 0.3rem 0.9rem; font-size: 0.78rem; }
+        .btn.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .select-input { padding: 0.45rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; font-size: 0.85rem; outline: none; transition: border-color 0.2s; }
+        .select-input:focus { border-color: #66bb6a; }
+        .drop-zone { border: 2px dashed rgba(128,128,128,0.3); border-radius: 1.2rem; padding: 2.5rem 1.5rem; text-align: center; cursor: pointer; transition: all 0.25s; background: rgba(128,128,128,0.03); }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #66bb6a; background: rgba(102,187,106,0.06); }
+        .drop-zone .dz-icon { font-size: 2.6rem; display: block; margin-bottom: 0.6rem; }
+        .drop-zone .dz-text { opacity: 0.7; font-size: 0.92rem; }
+        .drop-zone .dz-sub { opacity: 0.45; font-size: 0.78rem; margin-top: 0.4rem; }
+        .loading { display: none; text-align: center; padding: 1.6rem; opacity: 0.6; }
+        .loading.show { display: block; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,128,128,0.3); border-top-color: #66bb6a; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -3px; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.2rem; }
+        @media (max-width: 640px) { .compare-grid { grid-template-columns: 1fr; } }
+        .img-card { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 1rem; padding: 0.8rem; }
+        .img-card .img-title { font-size: 0.82rem; font-weight: 600; opacity: 0.75; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .img-preview { width: 100%; height: 220px; object-fit: contain; background: repeating-conic-gradient(rgba(128,128,128,0.08) 0% 25%, transparent 0% 50%) 50% / 20px 20px; border-radius: 0.6rem; }
+        .img-meta { font-size: 0.78rem; opacity: 0.6; margin-top: 0.5rem; display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .save-badge { display: inline-block; padding: 0.15rem 0.7rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; background: rgba(102,187,106,0.18); color: #66bb6a; }
+        .save-badge.warn { background: rgba(245,166,35,0.18); color: #f5a623; }
+        .result-foot { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.2rem; flex-wrap: wrap; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🖼️ 图片压缩</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">选择文件、压缩、下载，简单三步轻松搞定图片压缩。无需改变尺寸、几乎不损失视觉质量；图片全程在浏览器本地处理，不会上传云端。</div>
+            <div class="tool-toolbar">
+                <button class="btn btn-primary" id="pickBtn">📁 选择图片</button>
+                <input type="file" id="fileInput" accept="image/*" hidden>
+                <button class="btn btn-sm level-btn active" data-level="0.92">✨ 极佳</button>
+                <button class="btn btn-sm level-btn" data-level="0.75">⚖️ 均衡</button>
+                <button class="btn btn-sm level-btn" data-level="0.55">📦 小体积</button>
+                <button class="btn btn-sm level-btn" data-level="0.35">🗜️ 极限</button>
+                <select class="select-input" id="formatSelect">
+                    <option value="auto">格式：自动</option>
+                    <option value="jpeg">格式：JPEG</option>
+                    <option value="webp">格式：WebP</option>
+                    <option value="png">格式：PNG（无损）</option>
+                </select>
+            </div>
+            <div class="drop-zone" id="dropZone">
+                <span class="dz-icon">🖼️</span>
+                <div class="dz-text">拖拽图片到这里，或点击选择文件</div>
+                <div class="dz-sub">支持 JPEG / PNG / WebP / GIF 等常见格式，单文件 ≤ 20MB</div>
+            </div>
+            <div class="loading" id="compressLoading"><span class="spinner"></span>压缩中，请稍候...</div>
+            <div id="resultArea" style="display:none;">
+                <div class="compare-grid">
+                    <div class="img-card">
+                        <div class="img-title"><span>📄 原图</span><span id="origName"></span></div>
+                        <img class="img-preview" id="origPreview" alt="原图预览">
+                        <div class="img-meta"><span id="origSize"></span><span id="origDim"></span></div>
+                    </div>
+                    <div class="img-card">
+                        <div class="img-title"><span>🗜️ 压缩后</span><span id="saveBadge"></span></div>
+                        <img class="img-preview" id="newPreview" alt="压缩后预览">
+                        <div class="img-meta"><span id="newSize"></span><span id="newFormat"></span><span id="newDim"></span></div>
+                    </div>
+                </div>
+                <div class="result-foot">
+                    <button class="btn btn-primary" id="downloadBtn">💾 下载压缩图片</button>
+                    <button class="btn" id="rePickBtn">🔄 换一张</button>
+                </div>
+            </div>
+            <div class="tool-foot">所有压缩均在本地浏览器完成，图片不会上传。选择 PNG 无损或 WebP 可保留透明通道；照片类图片推荐 JPEG。</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var fileInput = document.getElementById('fileInput');
+        var dropZone = document.getElementById('dropZone');
+        var formatSelect = document.getElementById('formatSelect');
+        var compressLoading = document.getElementById('compressLoading');
+        var resultArea = document.getElementById('resultArea');
+        var origPreview = document.getElementById('origPreview');
+        var newPreview = document.getElementById('newPreview');
+        var origName = document.getElementById('origName');
+        var origSize = document.getElementById('origSize');
+        var origDim = document.getElementById('origDim');
+        var newSize = document.getElementById('newSize');
+        var newFormat = document.getElementById('newFormat');
+        var newDim = document.getElementById('newDim');
+        var saveBadge = document.getElementById('saveBadge');
+        var downloadBtn = document.getElementById('downloadBtn');
+        var rePickBtn = document.getElementById('rePickBtn');
+
+        var currentFile = null;
+        var currentQuality = 0.92;
+        var currentResultBlob = null;
+        var currentResultMime = '';
+        var origUrl = null;
+        var newUrl = null;
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+        }
+
+        function resolveMime(file, fmt) {
+            if (fmt === 'jpeg') return 'image/jpeg';
+            if (fmt === 'webp') return 'image/webp';
+            if (fmt === 'png') return 'image/png';
+            var t = (file.type || '').toLowerCase();
+            if (t === 'image/png') return 'image/png';
+            if (t === 'image/webp') return 'image/webp';
+            return 'image/jpeg';
+        }
+
+        function dataUrlToBlob(dataUrl) {
+            var arr = dataUrl.split(',');
+            var mime = arr[0].match(/:(.*?);/)[1];
+            var bstr = atob(arr[1]);
+            var n = bstr.length;
+            var u8 = new Uint8Array(n);
+            for (var i = 0; i < n; i++) u8[i] = bstr.charCodeAt(i);
+            return new Blob([u8], { type: mime });
+        }
+
+        function canvasToBlob(canvas, mime, quality, cb) {
+            if (canvas.toBlob) {
+                canvas.toBlob(function (b) {
+                    if (b) cb(b);
+                    else cb(dataUrlToBlob(canvas.toDataURL(mime, quality)));
+                }, mime, quality);
+            } else {
+                cb(dataUrlToBlob(canvas.toDataURL(mime, quality)));
+            }
+        }
+
+        function handleFile(file) {
+            if (!file || !file.type || file.type.indexOf('image/') !== 0) {
+                alert('请选择图片文件（JPEG / PNG / WebP 等）');
+                return;
+            }
+            if (file.size > 20 * 1024 * 1024) {
+                alert('图片超过 20MB，请选择较小的文件');
+                return;
+            }
+            currentFile = file;
+            if (origUrl) URL.revokeObjectURL(origUrl);
+            if (newUrl) URL.revokeObjectURL(newUrl);
+            origUrl = URL.createObjectURL(file);
+            origPreview.src = origUrl;
+            origName.textContent = file.name;
+            origSize.textContent = '大小 ' + formatSize(file.size);
+            origPreview.onload = function () {
+                origDim.textContent = origPreview.naturalWidth + '×' + origPreview.naturalHeight + 'px';
+            };
+            compressFile(file);
+        }
+
+        function compressFile(file) {
+            if (!file) return;
+            compressLoading.classList.add('show');
+            resultArea.style.display = 'none';
+            downloadBtn.disabled = true;
+
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var img = new Image();
+                img.onload = function () {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = img.naturalWidth;
+                    canvas.height = img.naturalHeight;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    var mime = resolveMime(file, formatSelect.value);
+                    var quality = mime === 'image/png' ? undefined : currentQuality;
+                    canvasToBlob(canvas, mime, quality, function (blob) {
+                        currentResultBlob = blob;
+                        currentResultMime = mime;
+                        showResult(blob, mime, img.naturalWidth, img.naturalHeight);
+                    });
+                };
+                img.onerror = function () {
+                    compressLoading.classList.remove('show');
+                    alert('图片解析失败，请换一张试试');
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = function () {
+                compressLoading.classList.remove('show');
+                alert('文件读取失败');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function showResult(blob, mime, width, height) {
+            compressLoading.classList.remove('show');
+            resultArea.style.display = 'block';
+            if (newUrl) URL.revokeObjectURL(newUrl);
+            newUrl = URL.createObjectURL(blob);
+            newPreview.src = newUrl;
+            newSize.textContent = '大小 ' + formatSize(blob.size);
+            newDim.textContent = width + '×' + height + 'px';
+            var fmtName = mime === 'image/jpeg' ? 'JPEG' : mime === 'image/webp' ? 'WebP' : 'PNG';
+            newFormat.textContent = '格式 ' + fmtName;
+
+            var ratio = blob.size / (currentFile.size || 1);
+            var saved = Math.round((1 - ratio) * 100);
+            if (saved > 0) {
+                saveBadge.textContent = '↓ ' + saved + '%';
+                saveBadge.className = 'save-badge';
+            } else {
+                saveBadge.textContent = '体积未减小 (+' + Math.abs(saved) + '%)';
+                saveBadge.className = 'save-badge warn';
+            }
+            downloadBtn.disabled = false;
+        }
+
+        function download() {
+            if (!currentResultBlob) return;
+            var ext = currentResultMime === 'image/png' ? 'png' : currentResultMime === 'image/webp' ? 'webp' : 'jpg';
+            var base = (currentFile.name || 'image').replace(/\.[^.]+$/, '');
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(currentResultBlob);
+            a.download = base + '_compressed.' + ext;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+        }
+
+        dropZone.addEventListener('click', function () { fileInput.click(); });
+        dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            var f = e.dataTransfer.files[0];
+            if (f) handleFile(f);
+        });
+        fileInput.addEventListener('change', function () {
+            var f = fileInput.files[0];
+            if (f) handleFile(f);
+            fileInput.value = '';
+        });
+        document.getElementById('pickBtn').addEventListener('click', function () { fileInput.click(); });
+        rePickBtn.addEventListener('click', function () { fileInput.click(); });
+        downloadBtn.addEventListener('click', download);
+        formatSelect.addEventListener('change', function () { if (currentFile) compressFile(currentFile); });
+
+        document.querySelectorAll('.level-btn').forEach(function (b) {
+            b.addEventListener('click', function () {
+                document.querySelectorAll('.level-btn').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                currentQuality = parseFloat(b.getAttribute('data-level'));
+                if (currentFile) compressFile(currentFile);
+            });
+        });
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>浏览器权限请求测试 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-header .nav-links a.active { opacity: 1; font-weight: 600; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn-sm { padding: 0.25rem 0.9rem; font-size: 0.78rem; }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .table-wrap { overflow-x: auto; border-radius: 1rem; border: 1px solid rgba(128,128,128,0.12); background: rgba(128,128,128,0.04); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th { text-align: left; padding: 0.7rem 0.8rem; font-weight: 600; border-bottom: 2px solid rgba(128,128,128,0.12); opacity: 0.7; white-space: nowrap; }
+        td { padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(128,128,128,0.08); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        .perm-name { font-weight: 500; white-space: nowrap; }
+        .status { display: inline-block; padding: 0.15rem 0.7rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500; white-space: nowrap; }
+        .status-granted { background: rgba(102,187,106,0.18); color: #66bb6a; }
+        .status-denied { background: rgba(231,76,60,0.15); color: #e74c3c; }
+        .status-prompt { background: rgba(245,166,35,0.18); color: #f5a623; }
+        .status-unsupported { background: rgba(128,128,128,0.14); color: inherit; opacity: 0.6; }
+        .status-error { background: rgba(245,166,35,0.18); color: #f5a623; }
+        .badge { font-size: 0.65rem; background: rgba(128,128,128,0.12); padding: 0.1rem 0.5rem; border-radius: 12px; opacity: 0.65; white-space: nowrap; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🔐 浏览器权限请求测试</span></div>
+                <div class="nav-links">
+                    <a href="../index.html">🏠 首页</a>
+                    <a href="../MT.html">🛠️ 工具</a>
+                    <a href="#" class="active">🔐 本页</a>
+                </div>
+            </header>
+            <div class="tool-sub">枚举浏览器可请求的权限（Permissions API）并逐一测试。所有权限请求均需用户手势触发，且受浏览器安全策略限制。</div>
+            <div class="tool-toolbar">
+                <button class="btn btn-primary" id="refreshPermsBtn">🔄 刷新状态</button>
+                <button class="btn" id="requestAllPermsBtn">📨 请求全部权限</button>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:28%;">权限</th>
+                            <th style="width:28%;">状态</th>
+                            <th style="width:44%;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="permTableBody"></tbody>
+                </table>
+            </div>
+            <div class="tool-foot">部分权限（如推送、后台同步）需 Service Worker，仅支持状态查询。大部分 API 需在 HTTPS 安全上下文中运行。</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        // ========== 权限定义 ==========
+        var permDefs = [
+            { name: '地理位置', query: 'geolocation', request: function () { return new Promise(function (resolve, reject) { navigator.geolocation.getCurrentPosition(resolve, reject); }); } },
+            { name: '通知', query: 'notifications', request: function () { return Notification.requestPermission(); } },
+            { name: '摄像头', query: 'camera', request: function () { return navigator.mediaDevices.getUserMedia({ video: true }).then(function (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }); } },
+            { name: '麦克风', query: 'microphone', request: function () { return navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }); } },
+            { name: '加速度计', query: 'accelerometer', request: function () { if (!window.Accelerometer) return Promise.reject('Accelerometer API 不可用'); var s = new Accelerometer(); return new Promise(function (res, rej) { s.onreading = function () { s.stop(); res(); }; s.onerror = function (e) { s.stop(); rej(e); }; s.start(); }); } },
+            { name: '陀螺仪', query: 'gyroscope', request: function () { if (!window.Gyroscope) return Promise.reject('Gyroscope API 不可用'); var s = new Gyroscope(); return new Promise(function (res, rej) { s.onreading = function () { s.stop(); res(); }; s.onerror = function (e) { s.stop(); rej(e); }; s.start(); }); } },
+            { name: '磁力计', query: 'magnetometer', request: function () { if (!window.Magnetometer) return Promise.reject('Magnetometer API 不可用'); var s = new Magnetometer(); return new Promise(function (res, rej) { s.onreading = function () { s.stop(); res(); }; s.onerror = function (e) { s.stop(); rej(e); }; s.start(); }); } },
+            { name: '环境光传感器', query: 'ambient-light-sensor', request: function () { if (!window.AmbientLightSensor) return Promise.reject('AmbientLightSensor API 不可用'); var s = new AmbientLightSensor(); return new Promise(function (res, rej) { s.onreading = function () { s.stop(); res(); }; s.onerror = function (e) { s.stop(); rej(e); }; s.start(); }); } },
+            { name: '蓝牙', query: 'bluetooth', request: function () { return navigator.bluetooth.requestDevice({ acceptAllDevices: true }).then(function (d) { d.gatt.disconnect(); }); } },
+            { name: 'NFC', query: 'nfc', request: function () { if (!navigator.nfc) return Promise.reject('NFC API 不可用'); return navigator.nfc.watch(function () {}).then(function () { return navigator.nfc.cancelWatch(); }); } },
+            { name: '持久存储', query: 'persistent-storage', request: function () { return navigator.storage.persist(); } },
+            { name: '剪贴板读取', query: 'clipboard-read', request: function () { return navigator.clipboard.readText(); } },
+            { name: '剪贴板写入', query: 'clipboard-write', request: function () { return navigator.clipboard.writeText('权限测试 ' + new Date().toLocaleTimeString()); } },
+            { name: '屏幕捕获', query: 'display-capture', request: function () { return navigator.mediaDevices.getDisplayMedia().then(function (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }); } },
+            { name: '屏幕唤醒锁', query: 'screen-wake-lock', request: function () { return navigator.wakeLock.request('screen').then(function (lock) { lock.release(); }); } },
+            { name: 'MIDI 设备', query: 'midi', request: function () { return navigator.requestMIDIAccess(); } },
+            { name: '推送通知', query: 'push', request: null },
+            { name: '后台同步', query: 'background-sync', request: null }
+        ];
+
+        var tbody = document.getElementById('permTableBody');
+
+        function queryPermission(queryName) {
+            if (!navigator.permissions || !navigator.permissions.query) return Promise.resolve('unsupported');
+            return navigator.permissions.query({ name: queryName })
+                .then(function (result) { return result.state; })
+                .catch(function () { return 'unsupported'; });
+        }
+
+        function updatePermRow(queryName, status, extra) {
+            var row = tbody.querySelector('tr[data-query="' + queryName + '"]');
+            if (!row) return;
+            var span = row.querySelector('.status');
+            span.className = 'status';
+            var label = '';
+            if (status === 'granted') { span.classList.add('status-granted'); label = '✅ 已授予'; }
+            else if (status === 'denied') { span.classList.add('status-denied'); label = '❌ 已拒绝'; }
+            else if (status === 'prompt') { span.classList.add('status-prompt'); label = '⏳ 询问'; }
+            else if (status === 'unsupported') { span.classList.add('status-unsupported'); label = '🚫 不支持'; }
+            else if (status === 'error') { span.classList.add('status-error'); label = '⚠️ 错误'; }
+            else { label = status || '未知'; }
+            if (extra) label += ' ' + extra;
+            span.textContent = label;
+        }
+
+        function refreshAllPermissions() {
+            var btn = document.getElementById('refreshPermsBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ 刷新...';
+            var chain = Promise.resolve();
+            permDefs.forEach(function (def) {
+                chain = chain.then(function () {
+                    return queryPermission(def.query).then(function (status) { updatePermRow(def.query, status); });
+                });
+            });
+            chain.then(function () {
+                btn.disabled = false;
+                btn.textContent = '🔄 刷新状态';
+            });
+        }
+
+        function requestSinglePermission(queryName) {
+            var def = null;
+            for (var i = 0; i < permDefs.length; i++) if (permDefs[i].query === queryName) { def = permDefs[i]; break; }
+            if (!def || !def.request) { alert('该权限不支持主动请求（如推送、后台同步）'); return; }
+            var row = tbody.querySelector('tr[data-query="' + queryName + '"]');
+            var btn = row ? row.querySelector('.request-btn') : null;
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ 请求中...'; }
+            def.request().then(function (result) {
+                var status;
+                if (typeof result === 'string') status = result;
+                else if (result === true) status = 'granted';
+                else if (result === false) status = 'denied';
+                else status = 'granted';
+                return queryPermission(queryName).then(function (real) { updatePermRow(queryName, real); });
+            }).catch(function () {
+                return queryPermission(queryName).then(function (real) {
+                    if (real === 'granted') updatePermRow(queryName, 'granted');
+                    else updatePermRow(queryName, real, '(请求失败)');
+                });
+            }).then(function () {
+                if (btn) { btn.disabled = false; btn.textContent = '📩 请求'; }
+            });
+        }
+
+        function requestAllPermissions() {
+            var btn = document.getElementById('requestAllPermsBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ 请求中...';
+            var chain = Promise.resolve();
+            permDefs.forEach(function (def) {
+                if (!def.request) return;
+                chain = chain.then(function () { return new Promise(function (resolve) { requestSinglePermission(def.query); setTimeout(resolve, 400); }); });
+            });
+            chain.then(function () {
+                btn.disabled = false;
+                btn.textContent = '📨 请求全部权限';
+            });
+        }
+
+        function renderPermTable() {
+            var html = '';
+            permDefs.forEach(function (def) {
+                var hasRequest = !!def.request;
+                html += '<tr data-query="' + def.query + '">' +
+                    '<td class="perm-name">' + def.name + '</td>' +
+                    '<td><span class="status status-unsupported">⏳ 查询中</span></td>' +
+                    '<td><div style="display:flex;gap:0.4rem;flex-wrap:wrap;">' +
+                    (hasRequest ? '<button class="btn btn-primary btn-sm request-btn" data-query="' + def.query + '">📩 请求</button>' : '') +
+                    '<span class="badge">' + def.query + '</span></div></td></tr>';
+            });
+            tbody.innerHTML = html;
+            tbody.querySelectorAll('.request-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () { requestSinglePermission(btn.getAttribute('data-query')); });
+            });
+        }
+
+        renderPermTable();
+        document.getElementById('refreshPermsBtn').addEventListener('click', refreshAllPermissions);
+        document.getElementById('requestAllPermsBtn').addEventListener('click', requestAllPermissions);
+        refreshAllPermissions();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

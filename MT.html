@@ -11,7 +11,7 @@
     <link rel="preload" as="image" href="background4.webp">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ===== 工具页专属样式 ===== */
+        /* ===== 工具页：公开工具合集 ===== */
         .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
         .tool-card {
             padding: 2.2rem 2.2rem 2rem;
@@ -24,77 +24,57 @@
             flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem;
             padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1);
         }
-        .tool-header .brand { font-size: 2rem; font-weight: 700; cursor: pointer; user-select: none; letter-spacing: 0.02em; -webkit-tap-highlight-color: transparent; }
+        .tool-header .brand { font-size: 2rem; font-weight: 700; letter-spacing: 0.02em; }
         .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
         .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
         .tool-header .nav-links a:hover { opacity: 1; }
         .tool-header .nav-links a.active { opacity: 1; font-weight: 600; }
-        /* ===== 工具栏 ===== */
-        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+        /* ===== 工具栏：搜索 + 计数 ===== */
+        .tool-toolbar { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; }
         .tool-toolbar input {
             flex: 1; padding: 0.55rem 1rem; border-radius: 2rem;
             border: 1px solid rgba(128,128,128,0.2); background: rgba(128,128,128,0.06);
             color: inherit; font-family: inherit; outline: none;
         }
         .tool-toolbar input:focus { border-color: #66bb6a; }
-        /* ===== 分类栏 ===== */
-        .tool-cats { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.2rem; }
-        .tool-cats button {
-            padding: 0.3rem 1rem; border-radius: 2rem;
-            border: 1px solid rgba(128,128,128,0.2); background: transparent;
-            color: inherit; opacity: 0.55; cursor: pointer; font-family: inherit; font-size: 0.85rem;
-            transition: all 0.2s;
+        .tool-count { font-size: 0.85rem; opacity: 0.5; white-space: nowrap; }
+        /* ===== 工具卡片网格 ===== */
+        .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 640px) {
+            .tool-grid { grid-template-columns: 1fr; }
+            .tool-header { flex-direction: column; align-items: flex-start; }
         }
-        .tool-cats button:hover { opacity: 0.85; }
-        .tool-cats button.active { opacity: 1; border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); font-weight: 600; }
-        .tool-cats button.parent-btn { font-weight: 600; }
-        .tool-cats button.parent-btn[data-cur="hidden"] { border-color: #e74c3c; color: #e74c3c; background: rgba(231,76,60,0.1); }
-        /* ===== 工具卡片列表 ===== */
-        .tool-list { display: flex; flex-direction: column; gap: 1.2rem; width: 100%; }
         .tool-item {
-            padding: 1.1rem 1.3rem; border-radius: 1.2rem;
-            border: 1px solid rgba(128,128,128,0.12); background: rgba(128,128,128,0.04);
-            transition: all 0.25s; cursor: pointer;
+            display: flex; gap: 1rem; align-items: center; padding: 1.2rem 1.3rem;
+            border-radius: 1.4rem; border: 1px solid rgba(128,128,128,0.12);
+            background: rgba(128,128,128,0.04); cursor: pointer;
+            transition: all 0.25s;
         }
-        .tool-item:hover { transform: translateY(-2px); border-color: rgba(102,187,106,0.45); background: rgba(102,187,106,0.06); }
-        .tool-item .t-name { font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-        .tool-item .t-desc { margin-top: 0.35rem; font-size: 0.9rem; opacity: 0.7; }
-        .cat-badge { font-size: 0.72rem; padding: 0.12rem 0.6rem; border-radius: 2rem; border: 1px solid #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
-        .hidden-badge { border-color: #e74c3c; color: #e74c3c; background: rgba(231,76,60,0.1); }
-        .tool-empty { text-align: center; opacity: 0.6; padding: 2.5rem 0; }
-        /* ===== 解锁弹窗（谜语化） ===== */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
-            display: none; align-items: center; justify-content: center; z-index: 100;
+        .tool-item:hover {
+            transform: translateY(-3px);
+            border-color: rgba(102,187,106,0.45);
+            background: rgba(102,187,106,0.07);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
-        .modal-overlay.show { display: flex; }
-        .modal-box {
-            width: 92%; max-width: 400px; padding: 2rem 1.8rem; border-radius: 1.5rem;
-            background: rgba(18,28,18,0.95); border: 1px solid rgba(102,187,106,0.3); text-align: center;
+        .t-icon {
+            font-size: 1.8rem; width: 3.4rem; height: 3.4rem; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 1rem; background: rgba(102,187,106,0.12);
+            border: 1px solid rgba(102,187,106,0.2);
         }
-        .modal-box h3 { margin: 0 0 0.4rem; font-size: 1.3rem; }
-        .modal-box .sub { font-size: 0.85rem; opacity: 0.65; margin-bottom: 1.2rem; }
-        .modal-box input {
-            width: 100%; box-sizing: border-box; padding: 0.6rem 0.9rem; border-radius: 2rem;
-            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.08);
-            color: inherit; text-align: center; outline: none; margin-bottom: 1rem;
-        }
-        .modal-box .hint { font-size: 0.75rem; opacity: 0.45; margin-top: 0.8rem; }
-        .modal-actions { display: flex; justify-content: center; gap: 0.8rem; }
-        .modal-actions button {
-            padding: 0.45rem 1.6rem; border-radius: 2rem;
-            border: 1px solid rgba(128,128,128,0.25); background: transparent;
-            color: inherit; cursor: pointer; font-family: inherit;
-        }
-        .modal-actions .primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
-        @media (max-width: 640px) { .tool-header { flex-direction: column; align-items: flex-start; } }
+        .t-main { flex: 1; min-width: 0; }
+        .t-name { font-size: 1.1rem; font-weight: 700; }
+        .t-desc { margin-top: 0.3rem; font-size: 0.85rem; opacity: 0.65; line-height: 1.5; }
+        .t-go { font-size: 1.2rem; opacity: 0.35; transition: transform 0.25s, opacity 0.25s; }
+        .tool-item:hover .t-go { transform: translateX(4px); opacity: 0.9; }
+        .tool-empty { grid-column: 1 / -1; text-align: center; opacity: 0.6; padding: 2.5rem 0; }
     </style>
 </head>
 <body>
     <div class="tool-container">
         <div class="tool-card">
             <header class="tool-header">
-                <div class="brand" id="brandTitle"><span class="typing-title">🛠️ 工具</span></div>
+                <div class="brand"><span class="typing-title">🛠️ 工具</span></div>
                 <div class="nav-links">
                     <a href="index.html">🏠 首页</a>
                     <a href="#" class="active">🛠️ 工具</a>
@@ -102,171 +82,72 @@
             </header>
             <div class="tool-toolbar">
                 <input type="text" id="searchInput" placeholder="🔍 搜索工具..." />
+                <span class="tool-count" id="toolCount"></span>
             </div>
-            <div class="tool-cats" id="categoryBar"></div>
-            <div id="toolContainer" class="tool-list">
+            <div id="toolGrid" class="tool-grid">
                 <div class="tool-empty">⏳ 加载中...</div>
             </div>
         </div>
     </div>
 
-    <!-- 解锁弹窗（谜语化） -->
-    <div class="modal-overlay" id="unlockModal">
-        <div class="modal-box">
-            <h3>🗝️ 虚实之门</h3>
-            <div class="sub">唯有知晓真名者，方可窥见帷幕之后的光景</div>
-            <input type="password" id="unlockInput" placeholder="……" autocomplete="off" />
-            <div class="modal-actions">
-                <button id="modalCancel">退去</button>
-                <button class="primary" id="modalConfirm">叩门</button>
-            </div>
-            <div class="hint" id="modalHint">五次叩问门扉，虚影自会应声而来</div>
-        </div>
-    </div>
-
-    <script src="MTbox.js"></script>
     <script>
-    /* ===== MT 工具页逻辑（详细工具内容待 MTbox.js 扩展） ===== */
     (function () {
         'use strict';
-        var INDEX = 'tool/index.txt';
-        var SECRET = '纳西妲天下第一可爱';
-        var TOKEN_KEY = 'mtUnlockToken';
-        var TT_KEY = 'mtTokenTime';
-        var CLICK_KEY = 'mtSecretClicks';
-        var TTL = 24 * 60 * 60 * 1000;
-
-        var tools = [], catSet = [], currentParent = 'public', currentCat = 'all', unlocked = tokenOk();
-
-        function tokenOk() {
-            var t = localStorage.getItem(TOKEN_KEY);
-            var time = parseInt(localStorage.getItem(TT_KEY) || '0', 10);
-            return t === SECRET && (Date.now() - time) < TTL;
-        }
+        var grid = document.getElementById('toolGrid');
+        var countEl = document.getElementById('toolCount');
+        // 文件名 → 图标（未命中默认 📦）
+        var ICONS = { 'mt.html': '🛠️', '设备信息.html': '📊', '权限请求.html': '🔐' };
+        var tools = [];
 
         function parseIndex(text) {
-            tools = []; catSet = [];
-            text.split(String.fromCharCode(10)).forEach(function (line) {
+            tools = [];
+            text.split('\n').forEach(function (line) {
                 line = line.trim();
                 if (!line) return;
-                var hidden = line.charAt(0) === '#';
-                if (hidden) line = line.slice(1).trim();
-                var name = line, desc = '', cat = '其他', brief = '';
-                var m = line.match(/^(.*?)\s*-\s*(.*?)\s*\+\s*([^\s|]+)\s*\|\s*(.*)$/);
-                if (m) { name = m[1].trim(); desc = m[2].trim(); cat = m[3].trim(); brief = m[4].trim(); }
-                else { var parts = line.split('|'); name = parts[0].trim(); brief = (parts[1] || '').trim(); }
-                tools.push({ name: name, desc: desc, cat: cat, brief: brief, hidden: hidden });
-                if (catSet.indexOf(cat) < 0) catSet.push(cat);
+                // 格式：文件名 -工具名 | 工具简介
+                var m = line.match(/^(.*?)\s*-\s*(.*?)\s*\|\s*(.*)$/);
+                if (!m) return;
+                tools.push({ file: m[1].trim(), name: m[2].trim(), brief: (m[3] || '').trim() });
             });
         }
 
-        function visibleTools() {
-            return tools.filter(function (t) { return currentParent === 'hidden' ? t.hidden : !t.hidden; });
+        function iconOf(file) {
+            return ICONS[file.toLowerCase()] || ICONS[file] || '📦';
         }
 
-        function renderCats() {
-            var bar = document.getElementById('categoryBar');
-            var html = '';
-            if (unlocked) {
-                var label = currentParent === 'public' ? '公开' : '隐藏';
-                var next = currentParent === 'public' ? 'hidden' : 'public';
-                html += '<button class="parent-btn active" id="parentToggle" data-parent="' + next + '" data-cur="' + currentParent + '" title="单击切换">⇄ ' + label + '</button>';
-            }
-            var list = visibleTools();
-            var set = ['all'];
-            list.forEach(function (t) { if (set.indexOf(t.cat) < 0) set.push(t.cat); });
-            set.forEach(function (c) {
-                html += '<button class="cat-btn' + (currentCat === c ? ' active' : '') + '" data-cat="' + c + '">' + (c === 'all' ? '全部' : c) + '</button>';
-            });
-            bar.innerHTML = html;
-
-            var p = document.getElementById('parentToggle');
-            if (p) p.addEventListener('click', function () {
-                currentParent = this.getAttribute('data-parent');
-                currentCat = 'all';
-                renderCats();
-                renderList();
-            });
-            bar.querySelectorAll('.cat-btn').forEach(function (b) {
-                b.addEventListener('click', function () {
-                    currentCat = this.getAttribute('data-cat');
-                    renderCats();
-                    renderList();
-                });
-            });
-        }
-
-        function renderList() {
-            var box = document.getElementById('toolContainer');
+        function render() {
             var kw = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-            var list = visibleTools().filter(function (t) {
-                if (currentCat !== 'all' && t.cat !== currentCat) return false;
+            var list = tools.filter(function (t) {
                 if (!kw) return true;
-                return (t.name + t.desc + t.brief + t.cat).toLowerCase().indexOf(kw) >= 0;
+                return (t.name + t.file + t.brief).toLowerCase().indexOf(kw) >= 0;
             });
+            countEl.textContent = list.length ? '共 ' + list.length + ' 个工具' : '';
             if (!list.length) {
-                box.innerHTML = '<div class="tool-empty">🌫️ 此处空空如也</div>';
+                grid.innerHTML = '<div class="tool-empty">🌫️ 没有找到相关工具</div>';
                 return;
             }
-            box.innerHTML = list.map(function (t) {
-                var badge = t.hidden ? '<span class="cat-badge hidden-badge">🔒 ' + t.cat + '</span>' : '<span class="cat-badge">' + t.cat + '</span>';
-                return '<div class="tool-item"><div class="t-name">' + t.name + ' ' + badge + '</div>' +
-                    (t.desc ? '<div class="t-desc">' + t.desc + '</div>' : '') +
-                    (t.brief ? '<div class="t-desc">' + t.brief + '</div>' : '') + '</div>';
+            grid.innerHTML = list.map(function (t) {
+                return '<div class="tool-item" data-file="' + t.file.replace(/"/g, '"') + '">' +
+                    '<div class="t-icon">' + iconOf(t.file) + '</div>' +
+                    '<div class="t-main"><div class="t-name">' + t.name + '</div>' +
+                    (t.brief ? '<div class="t-desc">' + t.brief + '</div>' : '') + '</div>' +
+                    '<div class="t-go">→</div></div>';
             }).join('');
         }
 
-        /* 加载引索 */
-        fetch(INDEX, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (text) {
-            parseIndex(text);
-            renderCats();
-            renderList();
-        }).catch(function () {
-            document.getElementById('toolContainer').innerHTML = '<div class="tool-empty">⚠️ 引索加载失败</div>';
-        });
-
-        document.getElementById('searchInput').addEventListener('input', renderList);
-
-        /* 五次叩门触发解锁弹窗 */
-        var clicks = parseInt(localStorage.getItem(CLICK_KEY) || '0', 10);
-        document.getElementById('brandTitle').addEventListener('click', function () {
-            if (unlocked) return;
-            clicks++;
-            localStorage.setItem(CLICK_KEY, clicks);
-            if (clicks >= 5) {
-                localStorage.setItem(CLICK_KEY, '0');
-                openModal();
+        grid.addEventListener('click', function (e) {
+            var item = e.target.closest('.tool-item');
+            if (item && item.dataset.file) {
+                location.href = 'tool/' + encodeURIComponent(item.dataset.file);
             }
         });
 
-        function openModal() {
-            document.getElementById('unlockModal').classList.add('show');
-            document.getElementById('unlockInput').value = '';
-            document.getElementById('unlockInput').focus();
-        }
-        function closeModal() { document.getElementById('unlockModal').classList.remove('show'); }
+        document.getElementById('searchInput').addEventListener('input', render);
 
-        document.getElementById('modalCancel').addEventListener('click', closeModal);
-        document.getElementById('modalConfirm').addEventListener('click', function () {
-            var v = document.getElementById('unlockInput').value.trim();
-            if (v === SECRET) {
-                localStorage.setItem(TOKEN_KEY, SECRET);
-                localStorage.setItem(TT_KEY, String(Date.now()));
-                unlocked = true;
-                closeModal();
-                currentParent = 'public';
-                currentCat = 'all';
-                renderCats();
-                renderList();
-            } else {
-                var hint = document.getElementById('modalHint');
-                hint.textContent = '门扉静默，唯有真名可入……';
-            }
-        });
-        document.getElementById('unlockInput').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') document.getElementById('modalConfirm').click();
-        });
-
+        fetch('tool/index.txt?t=' + Date.now(), { cache: 'no-cache' })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+            .then(function (text) { parseIndex(text); render(); })
+            .catch(function () { grid.innerHTML = '<div class="tool-empty">⚠️ 索引加载失败</div>'; });
     })();
     </script>
     <script src="global-ui.js"></script>

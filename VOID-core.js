@@ -134,6 +134,7 @@
                 allArticles = articles;
                 renderCategoryBar();
                 applyFilter();
+                loadVoidFiles();
             })
             .catch(err => {
                 container.innerHTML = `<div class="void-empty">❌ 加载失败：${escapeHtml(err.message)}</div>`;
@@ -405,18 +406,21 @@
         }, 300);
     });
 
-    // ========== 加载 VOID/ 目录（用于系列判断） ==========
+    // ========== 系列探测：逐文件 HEAD 探测「名1.md」是否存在 ==========
+    // 用静态文件探测代替 GitHub API（API 未认证有速率限制，静态请求无限制，
+    // 且不依赖 localStorage，清空后依旧可用）
     function loadVoidFiles() {
-        return fetch('https://api.github.com/repos/ku-134/ku-134.github.io/contents/VOID', {
-            headers: { 'Accept': 'application/vnd.github+json' }
-        })
-            .then(function (r) { return r.ok ? r.json() : []; })
-            .then(function (arr) {
-                voidFiles = new Set((arr || []).map(function (f) { return f.name; }));
-                voidFilesLoaded = true;
-                if (allArticles.length) applyFilter();
-            })
-            .catch(function () { voidFilesLoaded = true; });
+        if (!allArticles.length) return Promise.resolve();
+        voidFiles = new Set();
+        return Promise.all(allArticles.map(function (a) {
+            const base = a.filename.replace(/\.md$/i, '');
+            return fetch('VOID/' + encodeURIComponent(base + '1.md'), { method: 'HEAD' })
+                .then(function (r) { if (r.ok) voidFiles.add(base + '1.md'); })
+                .catch(function () {});
+        })).then(function () {
+            voidFilesLoaded = true;
+            if (allArticles.length) applyFilter();
+        });
     }
     function init() {
         loadVoidFiles();

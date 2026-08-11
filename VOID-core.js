@@ -313,8 +313,9 @@
         else favs.push(filename);
         try { localStorage.setItem('voidFavs', JSON.stringify(favs)); } catch (e) {}
         favSet = getFavSet();
-        showToast(i >= 0 ? '☆ 已取消收藏' : '⭐ 已收藏，将置顶展示');
+        // 先重渲染（即时反馈核心），再弹提示（即使 Toast 异常也不影响）
         if (allArticles.length) applyFilter();
+        try { showToast(i >= 0 ? '☆ 已取消收藏' : '⭐ 已收藏，将置顶展示'); } catch (e) {}
     }
 
     // ========== 密码弹窗 ==========

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设备信息读取 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-header .nav-links a.active { opacity: 1; font-weight: 600; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1.5rem; }
+        @media (max-width: 640px) { .info-grid { grid-template-columns: 1fr; } }
+        .info-item { display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px dashed rgba(128,128,128,0.15); font-size: 0.9rem; gap: 1rem; }
+        .info-label { font-weight: 500; opacity: 0.7; flex-shrink: 0; }
+        .info-value { word-break: break-all; text-align: right; max-width: 62%; }
+        .info-value.placeholder { opacity: 0.4; font-style: italic; }
+        .loading { display: none; text-align: center; padding: 2rem; opacity: 0.6; }
+        .loading.show { display: block; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,128,128,0.3); border-top-color: #66bb6a; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -3px; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">📊 设备信息读取</span></div>
+                <div class="nav-links">
+                    <a href="../index.html">🏠 首页</a>
+                    <a href="../MT.html">🛠️ 工具</a>
+                    <a href="#" class="active">📊 本页</a>
+                </div>
+            </header>
+            <div class="tool-sub">读取当前设备与浏览器的公开信息：屏幕、系统、网络、电池、GPU 等。仅供演示，实际网站不应滥用用户数据。</div>
+            <div class="tool-toolbar">
+                <button class="btn btn-primary" id="refreshInfoBtn">🔄 刷新信息</button>
+            </div>
+            <div id="infoGrid" class="info-grid"></div>
+            <div class="loading" id="infoLoading"><span class="spinner"></span>加载中...</div>
+            <div class="tool-foot">大部分 API 需在安全上下文（HTTPS 或 localhost）中运行。</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var infoGrid = document.getElementById('infoGrid');
+        var infoLoading = document.getElementById('infoLoading');
+
+        async function collectAllInfo() {
+            var info = {};
+            // ---- 屏幕 ----
+            info['屏幕宽度'] = window.screen.width + 'px';
+            info['屏幕高度'] = window.screen.height + 'px';
+            info['可用宽度'] = window.screen.availWidth + 'px';
+            info['可用高度'] = window.screen.availHeight + 'px';
+            info['色彩深度'] = window.screen.colorDepth + ' bit';
+            info['像素比'] = window.devicePixelRatio || 1;
+            // ---- 浏览器 & 系统 ----
+            info['用户代理'] = navigator.userAgent;
+            info['语言'] = navigator.language;
+            info['平台'] = navigator.platform || '未知';
+            info['CPU 核心数'] = navigator.hardwareConcurrency || '未知';
+            info['设备内存'] = navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '未知';
+            info['Cookie 启用'] = navigator.cookieEnabled ? '是' : '否';
+            info['是否触摸设备'] = ('ontouchstart' in window || navigator.maxTouchPoints > 0) ? '是' : '否';
+            info['时区'] = Intl.DateTimeFormat().resolvedOptions().timeZone || '未知';
+            // ---- 网络 ----
+            info['网络在线'] = navigator.onLine ? '在线' : '离线';
+            if (navigator.connection) {
+                var conn = navigator.connection;
+                info['网络类型'] = conn.effectiveType || '未知';
+                info['下行速度'] = conn.downlink ? conn.downlink + ' Mbps' : '未知';
+                info['RTT'] = conn.rtt ? conn.rtt + ' ms' : '未知';
+                info['节省数据模式'] = conn.saveData ? '开启' : '关闭';
+            } else {
+                info['网络类型'] = '不支持';
+                info['下行速度'] = '不支持';
+                info['RTT'] = '不支持';
+                info['节省数据模式'] = '不支持';
+            }
+            // ---- IP (异步) ----
+            try {
+                var ipRes = await fetch('https://api.ipify.org?format=json', { cache: 'no-cache' });
+                var ipData = await ipRes.json();
+                info['公网 IP'] = ipData.ip || '获取失败';
+            } catch (_) {
+                info['公网 IP'] = '获取失败 (CORS/网络)';
+            }
+            // ---- 电池 (异步) ----
+            if (navigator.getBattery) {
+                try {
+                    var battery = await navigator.getBattery();
+                    info['电池电量'] = Math.round(battery.level * 100) + '%';
+                    info['电池充电中'] = battery.charging ? '是' : '否';
+                    info['剩余时间 (放电)'] = battery.dischargingTime < Infinity ? Math.round(battery.dischargingTime / 60) + ' 分钟' : '未知';
+                    info['充满时间'] = battery.chargingTime < Infinity ? Math.round(battery.chargingTime / 60) + ' 分钟' : '未知';
+                } catch (_) { info['电池电量'] = '无法获取'; }
+            } else { info['电池电量'] = '不支持'; }
+            // ---- GPU (通过 WebGL) ----
+            try {
+                var canvas = document.createElement('canvas');
+                var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    var debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        info['GPU 供应商'] = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) || '未知';
+                        info['GPU 渲染器'] = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '未知';
+                    } else {
+                        info['GPU 供应商'] = '不支持 (需扩展)';
+                        info['GPU 渲染器'] = '不支持 (需扩展)';
+                    }
+                } else {
+                    info['GPU 供应商'] = 'WebGL 不可用';
+                    info['GPU 渲染器'] = 'WebGL 不可用';
+                }
+            } catch (_) {
+                info['GPU 供应商'] = '获取失败';
+                info['GPU 渲染器'] = '获取失败';
+            }
+            // ---- 视口 ----
+            info['视口宽度'] = window.innerWidth + 'px';
+            info['视口高度'] = window.innerHeight + 'px';
+            return info;
+        }
+
+        function addInfoItem(label, value) {
+            var div = document.createElement('div');
+            div.className = 'info-item';
+            var labelSpan = document.createElement('span');
+            labelSpan.className = 'info-label';
+            labelSpan.textContent = label + '：';
+            var valueSpan = document.createElement('span');
+            valueSpan.className = 'info-value';
+            valueSpan.textContent = (value !== undefined && value !== null && value !== '') ? value : '未获取';
+            if (value === undefined || value === null || value === '') valueSpan.classList.add('placeholder');
+            div.appendChild(labelSpan);
+            div.appendChild(valueSpan);
+            infoGrid.appendChild(div);
+        }
+
+        function renderInfo(info) {
+            infoGrid.innerHTML = '';
+            var order = [
+                '屏幕宽度', '屏幕高度', '可用宽度', '可用高度', '色彩深度', '像素比',
+                '视口宽度', '视口高度',
+                '用户代理', '语言', '平台', 'CPU 核心数', '设备内存', 'Cookie 启用', '是否触摸设备', '时区',
+                '网络在线', '网络类型', '下行速度', 'RTT', '节省数据模式',
+                '公网 IP',
+                '电池电量', '电池充电中', '剩余时间 (放电)', '充满时间',
+                'GPU 供应商', 'GPU 渲染器'
+            ];
+            var used = {};
+            for (var i = 0; i < order.length; i++) {
+                var key = order[i];
+                if (info[key] !== undefined) { used[key] = true; addInfoItem(key, info[key]); }
+            }
+            for (var k in info) {
+                if (!used[k]) addInfoItem(k, info[k]);
+            }
+        }
+
+        async function refreshInfo() {
+            var btn = document.getElementById('refreshInfoBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ 加载中...';
+            infoLoading.classList.add('show');
+            infoGrid.innerHTML = '';
+            try {
+                renderInfo(await collectAllInfo());
+            } catch (e) {
+                infoGrid.innerHTML = '<div class="info-item"><span class="info-label">⚠️ 收集失败：</span><span class="info-value">请重试或查看控制台</span></div>';
+            } finally {
+                infoLoading.classList.remove('show');
+                btn.disabled = false;
+                btn.textContent = '🔄 刷新信息';
+            }
+        }
+
+        document.getElementById('refreshInfoBtn').addEventListener('click', refreshInfo);
+        refreshInfo();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

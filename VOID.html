@@ -211,6 +211,26 @@
             border-color: rgba(231, 76, 60, 0.2);
             color: #e74c3c;
         }
+        .article-card .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card-star {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.05rem;
+            line-height: 1;
+            opacity: 0.45;
+            padding: 2px 6px;
+            border-radius: 0.5rem;
+            transition: opacity 0.2s, transform 0.2s, color 0.2s;
+            color: inherit;
+        }
+        .card-star:hover { opacity: 1; transform: scale(1.2); }
+        .card-star.on { opacity: 1; color: #f5a623; }
         .article-card .card-title .badge.series-badge {
             background: rgba(77, 182, 172, 0.12);
             border-color: rgba(77, 182, 172, 0.25);

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>追踪者检查 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-header .nav-links a.active { opacity: 1; font-weight: 600; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn-sm { padding: 0.3rem 0.9rem; font-size: 0.78rem; }
+        .btn.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .stat-bar { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin-bottom: 0.9rem; font-size: 0.82rem; opacity: 0.85; }
+        .stat-item { display: inline-flex; align-items: center; gap: 0.3rem; }
+        .stat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .stat-dot.high { background: #e74c3c; }
+        .stat-dot.medium { background: #f5a623; }
+        .stat-dot.low { background: #3498db; }
+        .stat-dot.info { background: rgba(128,128,128,0.5); }
+        .trace-list { display: flex; flex-direction: column; gap: 0.8rem; }
+        .trace-item { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 1rem; padding: 0.9rem 1rem; transition: opacity 0.2s; }
+        .trace-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+        .level-badge { display: inline-block; padding: 0.15rem 0.7rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+        .level-high { background: rgba(231,76,60,0.16); color: #e74c3c; }
+        .level-medium { background: rgba(245,166,35,0.16); color: #f5a623; }
+        .level-low { background: rgba(52,152,219,0.16); color: #3498db; }
+        .level-info { background: rgba(128,128,128,0.14); color: inherit; opacity: 0.7; }
+        .trace-name { font-weight: 600; font-size: 0.95rem; }
+        .badge { font-size: 0.65rem; background: rgba(128,128,128,0.12); padding: 0.1rem 0.5rem; border-radius: 12px; opacity: 0.65; white-space: nowrap; }
+        .trace-desc { font-size: 0.82rem; opacity: 0.65; line-height: 1.6; margin: 0.4rem 0 0.5rem; }
+        .trace-result { display: flex; gap: 0.6rem; align-items: baseline; font-size: 0.85rem; background: rgba(0,0,0,0.14); border-radius: 0.6rem; padding: 0.4rem 0.7rem; }
+        .result-label { opacity: 0.5; flex-shrink: 0; font-size: 0.75rem; }
+        .result-value { word-break: break-all; }
+        .result-value.loading { opacity: 0.5; }
+        .result-value.protected { color: #66bb6a; }
+        .result-value.leak { color: #f5a623; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🔍 追踪者检查</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">按泄露优先级列出浏览器无需授权即可暴露的隐私信息，并实时检测当前环境。仅供隐私科普演示，请勿用于恶意追踪。</div>
+            <div class="tool-toolbar">
+                <button class="btn btn-primary" id="refreshBtn">🔄 重新检测</button>
+                <button class="btn btn-sm active" data-filter="all">全部</button>
+                <button class="btn btn-sm" data-filter="high">🔴 高危</button>
+                <button class="btn btn-sm" data-filter="medium">🟠 中危</button>
+                <button class="btn btn-sm" data-filter="low">🟡 低危</button>
+                <button class="btn btn-sm" data-filter="info">🔵 提示</button>
+                <button class="btn btn-sm" id="copyBtn">📋 复制报告</button>
+            </div>
+            <div class="stat-bar" id="statBar"></div>
+            <div class="trace-list" id="traceList"></div>
+            <div class="tool-foot">所有检测均在本地浏览器完成，数据不会上传。部分 API 需在 HTTPS 安全上下文中运行。</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var levelLabels = { high: '🔴 高危', medium: '🟠 中危', low: '🟡 低危', info: '🔵 提示' };
+        var levelOrder = ['high', 'medium', 'low', 'info'];
+        var currentFilter = 'all';
+
+        function fetchWithTimeout(url, ms) {
+            var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+            var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms || 6000) : null;
+            return fetch(url, { cache: 'no-cache', signal: ctrl ? ctrl.signal : undefined })
+                .then(function (res) { if (timer) clearTimeout(timer); return res; })
+                .catch(function (err) { if (timer) clearTimeout(timer); throw err; });
+        }
+
+        function probeWebGL() {
+            return new Promise(function (resolve) {
+                try {
+                    var c = document.createElement('canvas');
+                    var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+                    if (!gl) return resolve('WebGL 不可用，指纹源较少');
+                    var d = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (!d) return resolve('GPU 信息受保护（扩展不可用）');
+                    resolve(gl.getParameter(d.UNMASKED_VENDOR_WEBGL) + ' / ' + gl.getParameter(d.UNMASKED_RENDERER_WEBGL));
+                } catch (e) { resolve('获取失败'); }
+            });
+        }
+
+        function probeIP() {
+            return fetchWithTimeout('https://ipapi.co/json/', 6000)
+                .then(function (res) { return res.ok ? res.json() : Promise.reject(); })
+                .then(function (geo) {
+                    if (!geo || !geo.ip) return Promise.reject();
+                    var loc = [geo.city, geo.region, geo.country_name].filter(function (x) { return x; }).join(', ');
+                    return 'IP ' + geo.ip + ' ｜ ' + (loc || '位置未知') + ' ｜ ' + (geo.org || '');
+                })
+                .catch(function () {
+                    return fetchWithTimeout('https://api.ipify.org?format=json', 5000)
+                        .then(function (res) { return res.json(); })
+                        .then(function (d) { return 'IP ' + (d.ip || '获取失败') + '（位置信息不可用）'; })
+                        .catch(function () { return '获取失败（网络受限）'; });
+                });
+        }
+
+        function probeBattery() {
+            if (!navigator.getBattery) return Promise.resolve('API 不可用，无法读取');
+            return navigator.getBattery().then(function (b) {
+                return '电量 ' + Math.round(b.level * 100) + '% ｜ ' + (b.charging ? '充电中' : '未充电');
+            }).catch(function () { return '获取失败'; });
+        }
+
+        function probeSensors() {
+            var names = [];
+            if (window.Accelerometer) names.push('加速度计');
+            if (window.Gyroscope) names.push('陀螺仪');
+            if (window.Magnetometer) names.push('磁力计');
+            if (window.AmbientLightSensor) names.push('环境光');
+            return Promise.resolve(names.length ? names.join('、') + '（可被网页探测存在性）' : '均不可用，无法探测');
+        }
+
+        function probeFonts() {
+            if (window.queryLocalFonts) return Promise.resolve('可用（授权后可枚举已安装字体，强指纹源）');
+            return Promise.resolve('不可枚举（浏览器未开放 Local Fonts API）');
+        }
+
+        function probeTiming() {
+            var min = Infinity;
+            for (var i = 0; i < 6; i++) {
+                var t1 = performance.now();
+                var t2 = performance.now();
+                var d = t2 - t1;
+                if (d > 0 && d < min) min = d;
+            }
+            if (min === Infinity) return Promise.resolve('无法采样');
+            return Promise.resolve(min < 1 ? '高精度可用（约 ' + min.toFixed(3) + ' ms）' : '精度已降低至约 ' + Math.round(min) + ' ms');
+        }
+
+        function probeMedia() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return Promise.resolve('API 不可用');
+            return navigator.mediaDevices.enumerateDevices().then(function (ds) {
+                var audioIn = 0, audioOut = 0, video = 0;
+                ds.forEach(function (d) {
+                    if (d.kind === 'audioinput') audioIn++;
+                    else if (d.kind === 'audiooutput') audioOut++;
+                    else if (d.kind === 'videoinput') video++;
+                });
+                return '麦克风 ' + audioIn + ' ｜ 扬声器 ' + audioOut + ' ｜ 摄像头 ' + video + '（仅数量，不含名称）';
+            }).catch(function () { return '获取失败'; });
+        }
+
+        var items = [
+            { name: 'Canvas / WebGL 指纹', key: 'webgl', level: 'high', desc: '通过 WebGL 可读取 GPU 供应商与渲染器，同一设备会生成近乎唯一的指纹，是跨站追踪的最强信号之一。', probe: probeWebGL },
+            { name: '公网 IP 与地理定位', key: 'ip', level: 'high', desc: 'IP 地址无需任何授权即可获取，能大致定位城市、经纬度与运营商，是追踪的起点。', probe: probeIP },
+            { name: '用户代理 (User-Agent)', key: 'ua', level: 'high', desc: 'UA 字符串直接暴露浏览器、系统版本与设备型号，是所有指纹计算的原料。', probe: function () { return Promise.resolve(navigator.userAgent); } },
+            { name: '电池状态', key: 'battery', level: 'medium', desc: '电量与充电状态的组合可构成短期追踪指纹，Battery API 曾被广告商用于跨站识别。', probe: probeBattery },
+            { name: '屏幕与视口', key: 'screen', level: 'medium', desc: '分辨率、像素比与视口尺寸参与指纹计算，可辅助确认设备型号。', probe: function () { return Promise.resolve(window.screen.width + '×' + window.screen.height + ' ｜ DPR ' + (window.devicePixelRatio || 1) + ' ｜ 视口 ' + window.innerWidth + '×' + window.innerHeight); } },
+            { name: '时区与本地时间', key: 'timezone', level: 'medium', desc: '时区信息可将用户缩小到特定地理区域，与 IP 定位互相印证。', probe: function () { return Promise.resolve((Intl.DateTimeFormat().resolvedOptions().timeZone || '未知') + ' ｜ ' + new Date().toLocaleString()); } },
+            { name: '语言偏好', key: 'languages', level: 'medium', desc: '浏览器语言列表是稳定且难以改变的指纹特征。', probe: function () { return Promise.resolve(navigator.languages ? navigator.languages.join(', ') : navigator.language); } },
+            { name: '硬件规格', key: 'hardware', level: 'medium', desc: 'CPU 核心数、设备内存与平台信息暴露设备性能档次，参与指纹拼接。', probe: function () { return Promise.resolve('CPU ' + (navigator.hardwareConcurrency || '?') + ' 核 ｜ 内存 ' + (navigator.deviceMemory ? navigator.deviceMemory + ' GB' : '未知') + ' ｜ ' + (navigator.platform || '未知平台')); } },
+            { name: '字体枚举', key: 'fonts', level: 'medium', desc: '已安装字体列表是极强的指纹信号，Chrome 通过 Local Fonts API 暴露（需授权）。', probe: probeFonts },
+            { name: '传感器', key: 'sensors', level: 'medium', desc: '加速度计、陀螺仪、磁力计等传感器的存在性可被网页探测。', probe: probeSensors },
+            { name: '网络信息', key: 'network', level: 'low', desc: 'Network Information API 暴露网络类型、RTT 与下行速度，可判断连接环境。', probe: function () { if (!navigator.connection) return Promise.resolve('API 不可用'); var c = navigator.connection; return Promise.resolve('类型 ' + (c.effectiveType || '未知') + ' ｜ RTT ' + (c.rtt !== undefined && c.rtt !== null ? c.rtt + ' ms' : '未知') + ' ｜ ' + (c.downlink !== undefined && c.downlink !== null ? c.downlink + ' Mbps' : '未知')); } },
+            { name: 'Cookie 与本地存储', key: 'storage', level: 'low', desc: 'Cookie 与 LocalStorage 是跨站长期追踪的常用载体。', probe: function () { var s = 'Cookie ' + (navigator.cookieEnabled ? '启用' : '禁用'); try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); s += ' ｜ LocalStorage 可用'; } catch (e) { s += ' ｜ LocalStorage 不可用'; } return Promise.resolve(s); } },
+            { name: '剪贴板', key: 'clipboard', level: 'low', desc: '剪贴板 API 的存在性可被探测，读取内容需要用户授权。', probe: function () { return Promise.resolve(navigator.clipboard ? 'API 可用（读取需授权）' : 'API 不可用'); } },
+            { name: '已安装插件', key: 'plugins', level: 'low', desc: '插件列表曾是经典指纹来源，现代浏览器已基本移除插件支持。', probe: function () { return Promise.resolve(navigator.plugins && navigator.plugins.length ? navigator.plugins.length + ' 个' : '无（现代浏览器通常为空）'); } },
+            { name: '触摸与指针', key: 'touch', level: 'low', desc: '最大触摸点数与指针类型辅助判断设备形态（手机 / 平板 / 桌面）。', probe: function () { return Promise.resolve('触摸点 ' + (navigator.maxTouchPoints || 0) + ' ｜ ' + (('ontouchstart' in window || navigator.maxTouchPoints > 0) ? '触屏设备' : '非触屏')); } },
+            { name: '页面来源 (Referrer)', key: 'referrer', level: 'low', desc: '来源页 URL 会随请求头发送给目标站点，泄露访问路径。', probe: function () { return Promise.resolve(document.referrer || '直接访问（无来源泄露）'); } },
+            { name: '在线状态', key: 'online', level: 'low', desc: '网络在线状态可被网页实时监听。', probe: function () { return Promise.resolve(navigator.onLine ? '在线' : '离线'); } },
+            { name: '高精度计时器', key: 'timing', level: 'info', desc: 'performance.now() 的高精度可用于时序侧信道攻击，部分浏览器会主动降低精度。', probe: probeTiming },
+            { name: '媒体设备', key: 'media', level: 'info', desc: 'enumerateDevices 可枚举摄像头与麦克风的数量（不含名称与画面）。', probe: probeMedia },
+            { name: 'Do Not Track', key: 'dnt', level: 'info', desc: 'DNT 请求头已基本被业界废弃，多数浏览器不再发送。', probe: function () { var dnt = navigator.doNotTrack || window.doNotTrack; if (dnt === undefined || dnt === null || dnt === '') return Promise.resolve('未发送（DNT 已基本废弃）'); return Promise.resolve(dnt === '1' ? '已声明不追踪' : '未开启'); } }
+        ];
+
+        var traceList = document.getElementById('traceList');
+        var statBar = document.getElementById('statBar');
+
+        function levelClass(level) { return 'level-' + level; }
+
+        function renderList() {
+            var html = '';
+            levelOrder.forEach(function (lv) {
+                items.forEach(function (it) {
+                    if (it.level !== lv) return;
+                    html += '<div class="trace-item" data-level="' + it.level + '" data-key="' + it.key + '">' +
+                        '<div class="trace-head">' +
+                        '<span class="level-badge ' + levelClass(it.level) + '">' + levelLabels[it.level] + '</span>' +
+                        '<span class="trace-name">' + it.name + '</span>' +
+                        '<span class="badge">' + it.key + '</span>' +
+                        '</div>' +
+                        '<div class="trace-desc">' + it.desc + '</div>' +
+                        '<div class="trace-result"><span class="result-label">检测结果</span><span class="result-value loading" data-value="">⏳ 检测中...</span></div>' +
+                        '</div>';
+                });
+            });
+            traceList.innerHTML = html;
+            updateStats();
+            applyFilter();
+        }
+
+        function updateStats() {
+            var counts = { high: 0, medium: 0, low: 0, info: 0 };
+            items.forEach(function (it) { counts[it.level]++; });
+            statBar.innerHTML =
+                '<span class="stat-item"><span class="stat-dot high"></span>高危 ' + counts.high + '</span>' +
+                '<span class="stat-item"><span class="stat-dot medium"></span>中危 ' + counts.medium + '</span>' +
+                '<span class="stat-item"><span class="stat-dot low"></span>低危 ' + counts.low + '</span>' +
+                '<span class="stat-item"><span class="stat-dot info"></span>提示 ' + counts.info + '</span>' +
+                '<span class="stat-item">共 ' + items.length + ' 项</span>';
+        }
+
+        function applyFilter() {
+            traceList.querySelectorAll('.trace-item').forEach(function (el) {
+                el.style.display = (currentFilter === 'all' || el.getAttribute('data-level') === currentFilter) ? '' : 'none';
+            });
+        }
+
+        function setResult(key, text, kind) {
+            var el = traceList.querySelector('.trace-item[data-key="' + key + '"] .result-value');
+            if (!el) return;
+            el.textContent = text;
+            el.classList.remove('loading');
+            el.classList.remove('protected');
+            el.classList.remove('leak');
+            if (kind) el.classList.add(kind);
+        }
+
+        function runAll() {
+            var btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ 检测中...';
+            traceList.querySelectorAll('.result-value').forEach(function (el) {
+                el.textContent = '⏳ 检测中...';
+                el.className = 'result-value loading';
+            });
+            var chain = Promise.resolve();
+            items.forEach(function (it) {
+                chain = chain.then(function () {
+                    return Promise.resolve().then(it.probe).then(function (text) {
+                        var s = String(text || '');
+                        var kind = '';
+                        if (it.level === 'high') kind = 'leak';
+                        else if (s.indexOf('不可用') >= 0 || s.indexOf('受保护') >= 0 || s.indexOf('禁用') >= 0 || s.indexOf('无来源') >= 0 || s.indexOf('均不可用') >= 0) kind = 'protected';
+                        setResult(it.key, s, kind);
+                    }).catch(function () { setResult(it.key, '检测失败', 'leak'); });
+                });
+            });
+            chain.then(function () {
+                btn.disabled = false;
+                btn.textContent = '🔄 重新检测';
+            });
+        }
+
+        function copyReport() {
+            var lines = ['🔍 追踪者检查报告', '生成时间：' + new Date().toLocaleString(), ''];
+            items.forEach(function (it) {
+                var el = traceList.querySelector('.trace-item[data-key="' + it.key + '"] .result-value');
+                var val = el ? el.textContent : '未知';
+                lines.push('[' + levelLabels[it.level] + '] ' + it.name + '（' + it.key + '）');
+                lines.push('  说明：' + it.desc);
+                lines.push('  检测：' + val);
+                lines.push('');
+            });
+            var text = lines.join('\n');
+            var btn = document.getElementById('copyBtn');
+            function done(ok) {
+                btn.textContent = ok ? '✅ 已复制' : '📋 复制报告';
+                setTimeout(function () { btn.textContent = '📋 复制报告'; }, 2000);
+            }
+            function fallback() {
+                try {
+                    var ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    var ok = document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    done(ok);
+                } catch (e) { done(false); alert('复制失败，请手动复制'); }
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+            } else { fallback(); }
+        }
+
+        document.getElementById('refreshBtn').addEventListener('click', runAll);
+        document.getElementById('copyBtn').addEventListener('click', copyReport);
+        document.querySelectorAll('[data-filter]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                document.querySelectorAll('[data-filter]').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                currentFilter = b.getAttribute('data-filter');
+                applyFilter();
+            });
+        });
+
+        renderList();
+        runAll();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

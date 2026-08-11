@@ -41,13 +41,24 @@
         .stat-dot.denied { background: #e74c3c; }
         .stat-dot.prompt { background: #f5a623; }
         .stat-dot.unsupported { background: rgba(128,128,128,0.5); }
-        .table-wrap { overflow-x: auto; border-radius: 1rem; border: 1px solid rgba(128,128,128,0.12); background: rgba(128,128,128,0.04); }
-        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        th { text-align: left; padding: 0.7rem 0.8rem; font-weight: 600; border-bottom: 2px solid rgba(128,128,128,0.12); opacity: 0.7; white-space: nowrap; }
-        td { padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(128,128,128,0.08); vertical-align: middle; }
-        tr:last-child td { border-bottom: none; }
-        .group-title td { padding: 1.1rem 0.8rem 0.35rem; font-size: 0.82rem; font-weight: 600; opacity: 0.55; letter-spacing: 0.06em; border-bottom: none; }
-        .perm-name { font-weight: 500; white-space: nowrap; }
+        .perm-list { display: flex; flex-direction: column; }
+        .perm-group { margin-top: 1.2rem; }
+        .perm-group:first-child { margin-top: 0; }
+        .perm-group-title { font-size: 0.82rem; font-weight: 600; opacity: 0.55; letter-spacing: 0.06em; padding: 0 0.2rem 0.4rem; }
+        .perm-row {
+            display: flex; align-items: center; gap: 0.7rem;
+            padding: 0.7rem 0.2rem;
+            border-bottom: 1px dashed rgba(128,128,128,0.12);
+        }
+        .perm-row:last-child { border-bottom: none; }
+        .perm-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .perm-name { font-weight: 600; font-size: 0.95rem; }
+        @media (max-width: 600px) {
+            .perm-row { flex-wrap: wrap; padding: 0.6rem 0; gap: 0.4rem 0.6rem; }
+            .perm-info { flex-basis: 100%; }
+            .perm-row .status { order: 2; }
+            .perm-row .request-btn { order: 3; }
+        }
         .status { display: inline-block; padding: 0.15rem 0.7rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500; white-space: nowrap; }
         .status-granted { background: rgba(102,187,106,0.18); color: #66bb6a; }
         .status-denied { background: rgba(231,76,60,0.15); color: #e74c3c; }
@@ -75,19 +86,8 @@
                 <button class="btn" id="copyPermsBtn">📋 复制结果</button>
             </div>
             <div class="stat-bar" id="statBar"></div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width:28%;">权限</th>
-                            <th style="width:28%;">状态</th>
-                            <th style="width:44%;">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="permTableBody"></tbody>
-                </table>
-            </div>
-            <div class="tool-foot">部分权限（如推送、后台同步）需 Service Worker，仅支持状态查询。大部分 API 需在 HTTPS 安全上下文中运行。</div>
+            <div id="permList" class="perm-list"></div>
+            <div class="tool-foot">部分权限（如推送、后台同步）需 Service Worker，仅支持状态查询。大部分 API 需在 HTTPS 安全上下文中运行。<br><br>注：由于 via 等“小浏览器”使用的是系统自带的 WebView API，所以请求权限的工具基本会报错/不兼容。</div>
         </div>
     </div>
 
@@ -136,7 +136,7 @@
             { name: '指针锁定', query: 'pointer-lock', group: 'other', request: function () { if (!document.documentElement.requestPointerLock) return Promise.reject('Pointer Lock API 不可用'); document.documentElement.requestPointerLock(); return Promise.resolve('已请求'); } }
         ];
 
-        var tbody = document.getElementById('permTableBody');
+        var listEl = document.getElementById('permList');
         var statBar = document.getElementById('statBar');
 
         function queryPermission(queryName) {
@@ -150,7 +150,7 @@
         }
 
         function updatePermRow(queryName, status, extra) {
-            var row = tbody.querySelector('tr[data-query="' + queryName + '"]');
+            var row = listEl.querySelector('.perm-row[data-query="' + queryName + '"]');
             if (!row) return;
             var span = row.querySelector('.status');
             span.className = 'status';
@@ -168,7 +168,7 @@
 
         function updateStats() {
             var counts = { granted: 0, denied: 0, prompt: 0, unsupported: 0, error: 0, unknown: 0 };
-            tbody.querySelectorAll('tr[data-query]').forEach(function (tr) {
+            listEl.querySelectorAll('.perm-row[data-query]').forEach(function (tr) {
                 var span = tr.querySelector('.status');
                 if (!span) return;
                 var cls = span.className;
@@ -209,7 +209,7 @@
             var def = null;
             for (var i = 0; i < permDefs.length; i++) if (permDefs[i].query === queryName) { def = permDefs[i]; break; }
             if (!def || !def.request) { alert('该权限不支持主动请求（如推送、后台同步）'); return; }
-            var row = tbody.querySelector('tr[data-query="' + queryName + '"]');
+            var row = listEl.querySelector('.perm-row[data-query="' + queryName + '"]');
             var btn = row ? row.querySelector('.request-btn') : null;
             if (btn) { btn.disabled = true; btn.textContent = '⏳ 请求中...'; }
             def.request().then(function (result) {
@@ -244,35 +244,29 @@
             });
         }
 
+        function rowHtml(def) {
+            var hasRequest = !!def.request;
+            return '<div class="perm-row" data-group="' + (def.group || 'other') + '" data-query="' + def.query + '">' +
+                '<div class="perm-info"><span class="perm-name">' + def.name + '</span><span class="badge">' + def.query + '</span></div>' +
+                '<span class="status status-unsupported">⏳ 查询中</span>' +
+                (hasRequest ? '<button class="btn btn-primary btn-sm request-btn" data-query="' + def.query + '">📩 请求</button>' : '') +
+                '</div>';
+        }
         function renderPermTable() {
             var html = '';
             groupOrder.forEach(function (g) {
                 var items = permDefs.filter(function (d) { return d.group === g; });
                 if (!items.length) return;
-                html += '<tr class="group-title" data-group="' + g + '"><td colspan="3">' + groupLabels[g] + '</td></tr>';
-                items.forEach(function (def) {
-                    var hasRequest = !!def.request;
-                    html += '<tr data-group="' + g + '" data-query="' + def.query + '">' +
-                        '<td class="perm-name">' + def.name + '</td>' +
-                        '<td><span class="status status-unsupported">⏳ 查询中</span></td>' +
-                        '<td><div style="display:flex;gap:0.4rem;flex-wrap:wrap;">' +
-                        (hasRequest ? '<button class="btn btn-primary btn-sm request-btn" data-query="' + def.query + '">📩 请求</button>' : '') +
-                        '<span class="badge">' + def.query + '</span></div></td></tr>';
-                });
+                html += '<div class="perm-group" data-group="' + g + '">';
+                html += '<div class="perm-group-title">' + groupLabels[g] + '</div>';
+                items.forEach(function (def) { html += rowHtml(def); });
+                html += '</div>';
             });
             permDefs.forEach(function (def) {
-                if (groupOrder.indexOf(def.group) < 0) {
-                    var hasRequest = !!def.request;
-                    html += '<tr data-group="other" data-query="' + def.query + '">' +
-                        '<td class="perm-name">' + def.name + '</td>' +
-                        '<td><span class="status status-unsupported">⏳ 查询中</span></td>' +
-                        '<td><div style="display:flex;gap:0.4rem;flex-wrap:wrap;">' +
-                        (hasRequest ? '<button class="btn btn-primary btn-sm request-btn" data-query="' + def.query + '">📩 请求</button>' : '') +
-                        '<span class="badge">' + def.query + '</span></div></td></tr>';
-                }
+                if (groupOrder.indexOf(def.group) < 0) html += rowHtml(def);
             });
-            tbody.innerHTML = html;
-            tbody.querySelectorAll('.request-btn').forEach(function (btn) {
+            listEl.innerHTML = html;
+            listEl.querySelectorAll('.request-btn').forEach(function (btn) {
                 btn.addEventListener('click', function () { requestSinglePermission(btn.getAttribute('data-query')); });
             });
             updateStats();
@@ -281,7 +275,7 @@
         function copyPerms() {
             var lines = ['权限\t查询名\t状态'];
             permDefs.forEach(function (def) {
-                var row = tbody.querySelector('tr[data-query="' + def.query + '"]');
+                var row = listEl.querySelector('.perm-row[data-query="' + def.query + '"]');
                 var span = row ? row.querySelector('.status') : null;
                 lines.push(def.name + '\t' + def.query + '\t' + (span ? span.textContent : '未知'));
             });
@@ -315,18 +309,18 @@
         document.getElementById('copyPermsBtn').addEventListener('click', copyPerms);
         document.getElementById('permSearch').addEventListener('input', function () {
             var q = this.value.trim().toLowerCase();
-            tbody.querySelectorAll('tr[data-query]').forEach(function (tr) {
-                var name = tr.querySelector('.perm-name').textContent.toLowerCase();
-                var query = tr.getAttribute('data-query').toLowerCase();
-                tr.style.display = (!q || name.indexOf(q) >= 0 || query.indexOf(q) >= 0) ? '' : 'none';
+            listEl.querySelectorAll('.perm-row[data-query]').forEach(function (row) {
+                var name = row.querySelector('.perm-name').textContent.toLowerCase();
+                var query = row.getAttribute('data-query').toLowerCase();
+                row.style.display = (!q || name.indexOf(q) >= 0 || query.indexOf(q) >= 0) ? '' : 'none';
             });
-            document.querySelectorAll('.group-title').forEach(function (gt) {
-                var g = gt.getAttribute('data-group');
+            listEl.querySelectorAll('.perm-group').forEach(function (grp) {
+                var g = grp.getAttribute('data-group');
                 var any = false;
-                tbody.querySelectorAll('tr[data-group="' + g + '"][data-query]').forEach(function (tr) {
-                    if (tr.style.display !== 'none') any = true;
+                listEl.querySelectorAll('.perm-row[data-group="' + g + '"][data-query]').forEach(function (row) {
+                    if (row.style.display !== 'none') any = true;
                 });
-                gt.style.display = any ? '' : 'none';
+                grp.style.display = any ? '' : 'none';
             });
         });
         refreshAllPermissions();

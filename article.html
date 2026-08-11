@@ -991,18 +991,29 @@
                 var v = parseInt(this.value, 10);
                 if (v && v !== seriesIdx + 1) jumpSeries(v);
             });
-            // 拉取 VOID/ 目录，判定当前文章的系列
+            // 系列探测：从基础名开始逐篇 HEAD 探测（遇到缺失即停），
+            // 用静态文件探测代替 GitHub API（无速率限制、不依赖 localStorage）
             (function loadSeriesFiles() {
                 var fp = new URLSearchParams(location.search).get('file');
-                fetch('https://api.github.com/repos/ku-134/ku-134.github.io/contents/VOID', {
-                    headers: { 'Accept': 'application/vnd.github+json' }
-                })
-                    .then(function (r) { return r.ok ? r.json() : []; })
-                    .then(function (arr) {
-                        voidFiles = new Set((arr || []).map(function (f) { return f.name; }));
-                        if (fp) buildSeries(fp.replace(/^VOID\//, ''));
-                    })
-                    .catch(function () {});
+                if (!fp) return;
+                var curName = fp.replace(/^VOID\//, '');
+                var base = stripNumName(curName);
+                var found = [];
+                function probe(i) {
+                    if (i >= 100) { finish(); return; }
+                    var cand = i === 0 ? base : base.replace(/\.md$/i, i + '.md');
+                    fetch('VOID/' + encodeURIComponent(cand), { method: 'HEAD' })
+                        .then(function (r) {
+                            if (r.ok) { found.push(cand); probe(i + 1); }
+                            else finish();
+                        })
+                        .catch(finish);
+                }
+                function finish() {
+                    voidFiles = new Set(found);
+                    buildSeries(curName);
+                }
+                probe(0);
             })();
 
             // ---- 文章目录 ----

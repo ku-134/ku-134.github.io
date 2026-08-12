@@ -70,6 +70,15 @@
         .t-name { font-size: 1.1rem; font-weight: 700; }
         .t-desc { margin-top: 0.3rem; font-size: 0.85rem; opacity: 0.65; line-height: 1.5; }
         .t-go { font-size: 1.2rem; opacity: 0.35; transition: transform 0.25s, opacity 0.25s; }
+        .t-fav {
+            background: none; border: none; cursor: pointer;
+            font-size: 1.1rem; opacity: 0.45; color: inherit;
+            padding: 2px 6px; border-radius: 0.5rem; line-height: 1;
+            transition: opacity 0.2s, transform 0.2s, color 0.2s;
+            flex-shrink: 0;
+        }
+        .t-fav:hover { opacity: 1; transform: scale(1.2); }
+        .t-fav.on { opacity: 1; color: #f5a623; }
         .tool-item:hover .t-go { transform: translateX(4px); opacity: 0.9; }
         .tool-empty { grid-column: 1 / -1; text-align: center; opacity: 0.6; padding: 2.5rem 0; }
     </style>
@@ -102,6 +111,12 @@
         // 文件名 → 图标（未命中默认 📦）
         var ICONS = { 'mt.html': '🛠️', '设备信息.html': '📊', '权限请求.html': '🔐' };
         var tools = [];
+        // 收藏（toolFavs：文件名数组）
+        function getToolFavSet() {
+            try { return new Set(JSON.parse(localStorage.getItem('toolFavs') || '[]')); }
+            catch (e) { return new Set(); }
+        }
+        var favSet = getToolFavSet();
 
         function parseIndex(text) {
             tools = [];
@@ -132,6 +147,11 @@
             var list = tools.filter(function (t) {
                 if (!kw) return true;
                 return (t.name + t.file + t.brief).toLowerCase().indexOf(kw) >= 0;
+            }).sort(function (a, b) {
+                // 收藏优先排版
+                var sa = favSet.has(a.file) ? 1 : 0;
+                var sb = favSet.has(b.file) ? 1 : 0;
+                return sb - sa;
             });
             countEl.textContent = list.length ? '共 ' + list.length + ' 个工具' : '';
             if (!list.length) {
@@ -139,15 +159,35 @@
                 return;
             }
             grid.innerHTML = list.map(function (t) {
+                var isFav = favSet.has(t.file);
                 return '<div class="tool-item" data-file="' + t.file.replace(/"/g, '"') + '">' +
                     '<div class="t-icon">' + iconOf(t) + '</div>' +
                     '<div class="t-main"><div class="t-name">' + t.name + '</div>' +
                     (t.brief ? '<div class="t-desc">' + t.brief + '</div>' : '') + '</div>' +
+                    '<button class="t-fav' + (isFav ? ' on' : '') + '" data-fav="' + t.file.replace(/"/g, '"') + '" title="' + (isFav ? '取消收藏' : '收藏工具') + '">' + (isFav ? '⭐' : '☆') + '</button>' +
                     '<div class="t-go">→</div></div>';
             }).join('');
         }
 
+        function toggleToolFav(file) {
+            var favs = [];
+            try { favs = JSON.parse(localStorage.getItem('toolFavs') || '[]'); } catch (e) {}
+            var i = favs.indexOf(file);
+            if (i >= 0) favs.splice(i, 1);
+            else favs.push(file);
+            try { localStorage.setItem('toolFavs', JSON.stringify(favs)); } catch (e) {}
+            favSet = getToolFavSet();
+            render();
+        }
+
         grid.addEventListener('click', function (e) {
+            var fav = e.target.closest('.t-fav');
+            if (fav) {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleToolFav(fav.getAttribute('data-fav'));
+                return;
+            }
             var item = e.target.closest('.tool-item');
             if (item && item.dataset.file) {
                 location.href = 'tool/' + encodeURIComponent(item.dataset.file);

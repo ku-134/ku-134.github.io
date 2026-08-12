@@ -49,8 +49,9 @@
             .tool-header { flex-direction: column; align-items: flex-start; }
         }
         .tool-item {
-            display: flex; gap: 1rem; align-items: center; padding: 1.2rem 1.3rem;
-            border-radius: 1.4rem; border: 1px solid rgba(128,128,128,0.12);
+            display: flex; flex-direction: column; gap: 0.7rem;
+            padding: 1.1rem 1.2rem 0.95rem;
+            border-radius: 1.2rem; border: 1px solid rgba(128,128,128,0.12);
             background: rgba(128,128,128,0.04); cursor: pointer;
             transition: all 0.25s;
         }
@@ -60,26 +61,38 @@
             background: rgba(102,187,106,0.07);
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
+        /* 顶行：图标 + 标题 */
+        .t-head { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
         .t-icon {
-            font-size: 1.8rem; width: 3.4rem; height: 3.4rem; flex-shrink: 0;
+            font-size: 1.4rem; width: 2.8rem; height: 2.8rem; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
-            border-radius: 1rem; background: rgba(102,187,106,0.12);
+            border-radius: 0.9rem; background: rgba(102,187,106,0.12);
             border: 1px solid rgba(102,187,106,0.2);
         }
-        .t-main { flex: 1; min-width: 0; }
-        .t-name { font-size: 1.1rem; font-weight: 700; }
-        .t-desc { margin-top: 0.3rem; font-size: 0.85rem; opacity: 0.65; line-height: 1.5; }
-        .t-go { font-size: 1.2rem; opacity: 0.35; transition: transform 0.25s, opacity 0.25s; }
-        .t-fav {
-            background: none; border: none; cursor: pointer;
-            font-size: 1.1rem; opacity: 0.45; color: inherit;
-            padding: 2px 6px; border-radius: 0.5rem; line-height: 1;
-            transition: opacity 0.2s, transform 0.2s, color 0.2s;
-            flex-shrink: 0;
+        .t-name {
+            font-size: 1.05rem; font-weight: 700; flex: 1; min-width: 0;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-        .t-fav:hover { opacity: 1; transform: scale(1.2); }
-        .t-fav.on { opacity: 1; color: #f5a623; }
-        .tool-item:hover .t-go { transform: translateX(4px); opacity: 0.9; }
+        /* 中间：简介（随长度撑高） */
+        .t-desc { font-size: 0.85rem; opacity: 0.65; line-height: 1.55; }
+        /* 底行：收藏（左下） + 使用（右下） */
+        .t-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 0.15rem; gap: 0.5rem; }
+        .t-fav {
+            background: rgba(128,128,128,0.06); border: 1px solid rgba(128,128,128,0.2);
+            color: inherit; cursor: pointer; font-family: inherit;
+            border-radius: 2rem; padding: 0.3rem 0.9rem; font-size: 0.8rem;
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .t-fav:hover { border-color: #f5a623; opacity: 0.9; }
+        .t-fav.on { border-color: #f5a623; color: #f5a623; background: rgba(245,166,35,0.1); }
+        .t-go {
+            background: rgba(102,187,106,0.1); border: 1px solid #66bb6a; color: #66bb6a;
+            border-radius: 2rem; padding: 0.3rem 1rem; font-size: 0.8rem;
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .tool-item:hover .t-go { background: rgba(102,187,106,0.2); }
         .tool-empty { grid-column: 1 / -1; text-align: center; opacity: 0.6; padding: 2.5rem 0; }
     </style>
 </head>
@@ -161,11 +174,16 @@
             grid.innerHTML = list.map(function (t) {
                 var isFav = favSet.has(t.file);
                 return '<div class="tool-item" data-file="' + t.file.replace(/"/g, '"') + '">' +
-                    '<div class="t-icon">' + iconOf(t) + '</div>' +
-                    '<div class="t-main"><div class="t-name">' + t.name + '</div>' +
-                    (t.brief ? '<div class="t-desc">' + t.brief + '</div>' : '') + '</div>' +
-                    '<button class="t-fav' + (isFav ? ' on' : '') + '" data-fav="' + t.file.replace(/"/g, '"') + '" title="' + (isFav ? '取消收藏' : '收藏工具') + '">' + (isFav ? '⭐' : '☆') + '</button>' +
-                    '<div class="t-go">→</div></div>';
+                    '<div class="t-head">' +
+                        '<div class="t-icon">' + iconOf(t) + '</div>' +
+                        '<div class="t-name">' + t.name + '</div>' +
+                    '</div>' +
+                    (t.brief ? '<div class="t-desc">' + t.brief + '</div>' : '<div class="t-desc"></div>') +
+                    '<div class="t-foot">' +
+                        '<button class="t-fav' + (isFav ? ' on' : '') + '" data-fav="' + t.file.replace(/"/g, '"') + '" title="' + (isFav ? '取消收藏' : '收藏工具') + '">' + (isFav ? '⭐ 已收藏' : '☆ 收藏') + '</button>' +
+                        '<span class="t-go">使用 →</span>' +
+                    '</div>' +
+                '</div>';
             }).join('');
         }
 

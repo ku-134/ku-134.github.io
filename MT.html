@@ -108,15 +108,23 @@
             text.split('\n').forEach(function (line) {
                 line = line.trim();
                 if (!line) return;
-                // 格式：文件名 -工具名 | 工具简介
+                // 格式：[emoji ]文件名 -工具名 | 工具简介
                 var m = line.match(/^(.*?)\s*-\s*(.*?)\s*\|\s*(.*)$/);
                 if (!m) return;
-                tools.push({ file: m[1].trim(), name: m[2].trim(), brief: (m[3] || '').trim() });
+                var filePart = m[1].trim();
+                var icon = '';
+                // 提取行首 emoji（如 "📊 设备信息.html"），兼容多字符 emoji 与变体选择符
+                try {
+                    var em = filePart.match(/^(\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s+/u);
+                    if (em) { icon = em[1]; filePart = filePart.slice(em[0].length).trim(); }
+                } catch (e) { /* 老内核不支持 Unicode 属性转义时跳过 */ }
+                tools.push({ file: filePart, name: m[2].trim(), brief: (m[3] || '').trim(), icon: icon });
             });
         }
 
-        function iconOf(file) {
-            return ICONS[file.toLowerCase()] || ICONS[file] || '📦';
+        function iconOf(t) {
+            // 优先 index.txt 自带 emoji，其次内置映射，最后默认 📦
+            return t.icon || ICONS[t.file.toLowerCase()] || ICONS[t.file] || '📦';
         }
 
         function render() {
@@ -132,7 +140,7 @@
             }
             grid.innerHTML = list.map(function (t) {
                 return '<div class="tool-item" data-file="' + t.file.replace(/"/g, '"') + '">' +
-                    '<div class="t-icon">' + iconOf(t.file) + '</div>' +
+                    '<div class="t-icon">' + iconOf(t) + '</div>' +
                     '<div class="t-main"><div class="t-name">' + t.name + '</div>' +
                     (t.brief ? '<div class="t-desc">' + t.brief + '</div>' : '') + '</div>' +
                     '<div class="t-go">→</div></div>';

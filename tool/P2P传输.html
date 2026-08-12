@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>局域网 P2P 传输 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-header .nav-links a.active { opacity: 1; font-weight: 600; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn-sm { padding: 0.25rem 0.9rem; font-size: 0.78rem; }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .p2p-sections { display: flex; flex-direction: column; gap: 1.2rem; }
+        .p2p-section { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 1.2rem; padding: 1.1rem 1.2rem; }
+        .section-head { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1.05rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+        .section-tag { font-size: 0.75rem; font-weight: 400; opacity: 0.5; }
+        .num-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.7rem; }
+        .num-input { width: 150px; text-align: center; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.35em; padding: 0.45rem 0.8rem; border-radius: 0.9rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; outline: none; }
+        .num-input:focus { border-color: #66bb6a; }
+        .number-display { display: inline-flex; gap: 0.45rem; }
+        .num-cell { width: 2.4rem; height: 3rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.7rem; font-weight: 800; border-radius: 0.8rem; background: rgba(102,187,106,0.12); border: 1px solid rgba(102,187,106,0.35); color: #66bb6a; }
+        .num-placeholder { color: inherit; opacity: 0.35; font-size: 1.1rem; font-weight: 400; padding: 0 0.6rem; }
+        .status-line { font-size: 0.82rem; opacity: 0.75; margin-bottom: 0.7rem; min-height: 1.2em; }
+        .status-line.ok { color: #66bb6a; opacity: 1; }
+        .status-line.err { color: #f5a623; opacity: 1; }
+        .file-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .file-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; background: rgba(128,128,128,0.05); border: 1px solid rgba(128,128,128,0.1); border-radius: 0.8rem; padding: 0.55rem 0.8rem; }
+        .file-info { flex: 1; min-width: 120px; }
+        .file-name { font-size: 0.88rem; font-weight: 600; word-break: break-all; }
+        .file-meta { font-size: 0.72rem; opacity: 0.55; margin-top: 0.15rem; }
+        .file-actions { display: flex; gap: 0.4rem; }
+        .file-progress { flex-basis: 100%; height: 6px; background: rgba(128,128,128,0.15); border-radius: 3px; overflow: hidden; }
+        .file-progress .fill { height: 100%; width: 0%; background: linear-gradient(90deg, #66bb6a, #43a047); transition: width 0.2s; }
+        .file-empty { font-size: 0.82rem; opacity: 0.4; padding: 0.8rem 0; text-align: center; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">📡 局域网 P2P 传输</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">创建 4 位号码即可互相连接，文件经 WebRTC 点对点直传。分享方创建号码并选择文件，接收方输入号码后实时收到分享清单，可自由挑选下载。</div>
+
+            <div class="p2p-sections">
+                <section class="p2p-section">
+                    <div class="section-head">📥 接收文件<span class="section-tag">输入分享方的 4 位号码即可连接</span></div>
+                    <div class="num-row">
+                        <input class="num-input" id="joinNumber" maxlength="4" inputmode="numeric" placeholder="4 位号码">
+                        <button class="btn btn-primary" id="joinBtn">🔗 连接</button>
+                        <button class="btn" id="leaveBtn" style="display:none;">✖ 断开</button>
+                    </div>
+                    <div class="status-line" id="receiveStatus">尚未连接</div>
+                    <div class="file-list" id="receiveList"><div class="file-empty">连接后这里会显示分享方的文件清单</div></div>
+                </section>
+
+                <section class="p2p-section">
+                    <div class="section-head">📤 发送文件<span class="section-tag">创建号码并选择文件，等待对方连接（顺序任意）</span></div>
+                    <div class="num-row">
+                        <button class="btn btn-primary" id="createBtn">🎫 创建号码</button>
+                        <div class="number-display" id="numberDisplay"><span class="num-placeholder">----</span></div>
+                        <button class="btn" id="cancelBtn" style="display:none;">✖ 注销号码</button>
+                    </div>
+                    <div class="num-row">
+                        <button class="btn" id="pickFilesBtn">📁 选择文件</button>
+                        <input type="file" id="fileInput" multiple hidden>
+                    </div>
+                    <div class="status-line" id="sendStatus">尚未创建号码</div>
+                    <div class="file-list" id="sendList"><div class="file-empty">尚未选择文件</div></div>
+                </section>
+            </div>
+
+            <div class="tool-foot">文件数据经 WebRTC 点对点直传，信令服务器仅交换连接信息、不接触文件内容。4 位号码公开可见，请勿传输敏感文件，建议局域网内使用。</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+    <script>
+    (function () {
+        'use strict';
+
+        var joinInput = document.getElementById('joinNumber');
+        var joinBtn = document.getElementById('joinBtn');
+        var leaveBtn = document.getElementById('leaveBtn');
+        var receiveStatus = document.getElementById('receiveStatus');
+        var receiveList = document.getElementById('receiveList');
+        var createBtn = document.getElementById('createBtn');
+        var cancelBtn = document.getElementById('cancelBtn');
+        var numberDisplay = document.getElementById('numberDisplay');
+        var pickFilesBtn = document.getElementById('pickFilesBtn');
+        var fileInput = document.getElementById('fileInput');
+        var sendStatus = document.getElementById('sendStatus');
+        var sendList = document.getElementById('sendList');
+
+        var senderPeer = null;
+        var receiverPeer = null;
+        var senderConn = null;
+        var receiverConn = null;
+        var currentNumber = '';
+        var sharedFiles = [];
+        var receiveFiles = {};
+        var fileSeq = 0;
+        var sendQueue = [];
+        var sending = false;
+
+        function esc(s) {
+            return String(s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '"', "'": '&#39;' }[c];
+            });
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1073741824) return (bytes / 1048576).toFixed(2) + ' MB';
+            return (bytes / 1073741824).toFixed(2) + ' GB';
+        }
+
+        function randomNumber() {
+            return String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+        }
+
+        function setStatus(el, text, cls) {
+            el.textContent = text;
+            el.className = 'status-line' + (cls ? ' ' + cls : '');
+        }
+
+        function showNumber(num) {
+            var html = '';
+            for (var i = 0; i < 4; i++) html += '<span class="num-cell">' + num.charAt(i) + '</span>';
+            numberDisplay.innerHTML = html;
+        }
+
+        // ========== 分享方（发送） ==========
+        var createAttempts = 0;
+
+        function tryCreatePeer() {
+            if (createAttempts >= 30) {
+                setStatus(sendStatus, '号码创建失败，请重试', 'err');
+                senderPeer = null;
+                createBtn.disabled = false;
+                return;
+            }
+            createAttempts++;
+            var num = randomNumber();
+            var p = new Peer(num, { debug: 0 });
+            senderPeer = p;
+            p.on('open', function () {
+                currentNumber = num;
+                showNumber(num);
+                createBtn.disabled = true;
+                cancelBtn.style.display = '';
+                setStatus(sendStatus, '号码 ' + num + ' 已创建，等待对方输入号码连接...', 'ok');
+            });
+            p.on('connection', function (conn) { setupSenderConn(conn); });
+            p.on('error', function (err) {
+                if (err.type === 'unavailable-id') {
+                    p.destroy();
+                    tryCreatePeer();
+                } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error' || err.type === 'socket-closed') {
+                    setStatus(sendStatus, '信令服务器连接失败，请检查网络', 'err');
+                    senderPeer = null;
+                    createBtn.disabled = false;
+                }
+            });
+            p.on('disconnected', function () {
+                if (senderPeer === p) {
+                    setStatus(sendStatus, '信令连接中断，正在重连...', 'err');
+                    try { p.reconnect(); } catch (e) {}
+                }
+            });
+        }
+
+        function setupSenderConn(conn) {
+            senderConn = conn;
+            conn.on('open', function () {
+                setStatus(sendStatus, '✅ 接收方已连接，等待对方挑选文件', 'ok');
+                pushFileList();
+            });
+            conn.on('data', function (msg) {
+                if (msg && msg.type === 'request') enqueueSend(msg.id);
+            });
+            conn.on('close', function () {
+                senderConn = null;
+                sendQueue = [];
+                setStatus(sendStatus, '接收方已断开，号码仍有效，可等待新连接', '');
+            });
+        }
+
+        function pushFileList() {
+            if (!senderConn || !senderConn.open) return;
+            var list = sharedFiles.map(function (f) { return { id: f.id, name: f.name, size: f.size, mime: f.mime }; });
+            senderConn.send({ type: 'list', files: list });
+        }
+
+        function renderSendList() {
+            if (!sharedFiles.length) {
+                sendList.innerHTML = '<div class="file-empty">尚未选择文件</div>';
+                return;
+            }
+            var html = '';
+            sharedFiles.forEach(function (f) {
+                html += '<div class="file-row" data-id="' + f.id + '">' +
+                    '<div class="file-info"><div class="file-name">' + esc(f.name) + '</div><div class="file-meta">' + formatSize(f.size) + '</div></div>' +
+                    '<div class="file-actions"><button class="btn btn-sm remove-btn" data-id="' + f.id + '">✖ 移除</button></div>' +
+                    '<div class="file-progress" style="display:none;"><div class="fill"></div></div>' +
+                    '</div>';
+            });
+            sendList.innerHTML = html;
+            sendList.querySelectorAll('.remove-btn').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var id = b.getAttribute('data-id');
+                    sharedFiles = sharedFiles.filter(function (x) { return x.id !== id; });
+                    renderSendList();
+                    pushFileList();
+                });
+            });
+            pushFileList();
+        }
+
+        function updateSendProgress(id, pct) {
+            var row = sendList.querySelector('.file-row[data-id="' + id + '"]');
+            if (!row) return;
+            var prog = row.querySelector('.file-progress');
+            var fill = row.querySelector('.fill');
+            if (prog) prog.style.display = '';
+            if (fill) fill.style.width = pct + '%';
+        }
+
+        function enqueueSend(id) {
+            var f = null;
+            for (var i = 0; i < sharedFiles.length; i++) if (sharedFiles[i].id === id) { f = sharedFiles[i]; break; }
+            if (!f || !senderConn) return;
+            sendQueue.push(f);
+            pumpSend();
+        }
+
+        function pumpSend() {
+            if (sending || !sendQueue.length || !senderConn || !senderConn.open) return;
+            sending = true;
+            var f = sendQueue.shift();
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var buf = e.target.result;
+                var chunkSize = 65536;
+                var total = Math.max(1, Math.ceil(buf.byteLength / chunkSize));
+                var idx = 0;
+                senderConn.send({ type: 'start', id: f.id, total: total, name: f.name, size: f.size, mime: f.mime });
+                function next() {
+                    if (!senderConn || !senderConn.open) { sending = false; return; }
+                    if (idx >= total) {
+                        senderConn.send({ type: 'end', id: f.id });
+                        updateSendProgress(f.id, 100);
+                        sending = false;
+                        pumpSend();
+                        return;
+                    }
+                    var ch = senderConn.dataChannel;
+                    if (ch && ch.bufferedAmount > 4194304) { setTimeout(next, 50); return; }
+                    var slice = buf.slice(idx * chunkSize, Math.min((idx + 1) * chunkSize, buf.byteLength));
+                    senderConn.send({ type: 'chunk', id: f.id, index: idx, data: slice });
+                    idx++;
+                    if (idx % 16 === 0) updateSendProgress(f.id, Math.round(idx / total * 100));
+                    setTimeout(next, 0);
+                }
+                next();
+            };
+            reader.onerror = function () { sending = false; pumpSend(); };
+            reader.readAsArrayBuffer(f.file);
+        }
+
+        // ========== 接收方（接收） ==========
+        function joinByNumber(num) {
+            if (receiverPeer) { try { receiverPeer.destroy(); } catch (e) {} receiverPeer = null; }
+            receiveFiles = {};
+            renderReceiveList();
+            setStatus(receiveStatus, '正在连接 ' + num + ' ...', '');
+            var p = new Peer({ debug: 0 });
+            receiverPeer = p;
+            p.on('open', function () {
+                var conn = p.connect(num, { reliable: true });
+                receiverConn = conn;
+                conn.on('open', function () {
+                    setStatus(receiveStatus, '✅ 已连接分享方 ' + num + '，等待文件清单', 'ok');
+                    joinBtn.disabled = true;
+                    leaveBtn.style.display = '';
+                });
+                conn.on('data', handleReceiverData);
+                conn.on('close', function () { handleReceiverGone('连接已断开'); });
+                conn.on('error', function () { handleReceiverGone('连接出错'); });
+            });
+            p.on('error', function (err) {
+                if (err.type === 'peer-unavailable') {
+                    setStatus(receiveStatus, '❌ 未找到号码 ' + num + '，请确认分享方已创建', 'err');
+                } else if (err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error') {
+                    setStatus(receiveStatus, '信令服务器连接失败，请检查网络', 'err');
+                }
+                receiverPeer = null;
+                joinBtn.disabled = false;
+            });
+        }
+
+        function handleReceiverGone(text) {
+            receiverConn = null;
+            setStatus(receiveStatus, text, 'err');
+            joinBtn.disabled = false;
+            leaveBtn.style.display = 'none';
+        }
+
+        function handleReceiverData(msg) {
+            if (!msg) return;
+            if (msg.type === 'list') {
+                receiveFiles = {};
+                (msg.files || []).forEach(function (f) {
+                    receiveFiles[f.id] = { name: f.name, size: f.size, mime: f.mime, progress: 0, done: false, chunks: null };
+                });
+                renderReceiveList();
+                setStatus(receiveStatus, '✅ 已收到分享文件清单，点击下载挑选文件', 'ok');
+            } else if (msg.type === 'start') {
+                var rec = receiveFiles[msg.id];
+                if (!rec) return;
+                rec.total = msg.total;
+                rec.chunks = new Array(msg.total);
+                rec.received = 0;
+                rec.progress = 0;
+                renderReceiveList();
+            } else if (msg.type === 'chunk') {
+                var r = receiveFiles[msg.id];
+                if (!r || !r.chunks) return;
+                if (r.chunks[msg.index]) return;
+                r.chunks[msg.index] = msg.data;
+                r.received++;
+                var pct = Math.round(r.received / r.total * 100);
+                r.progress = pct;
+                updateReceiveProgress(msg.id, pct);
+                if (r.received === r.total) assembleFile(msg.id, r);
+            } else if (msg.type === 'end') {
+                var rr = receiveFiles[msg.id];
+                if (rr && rr.chunks && rr.received === rr.total) assembleFile(msg.id, rr);
+            }
+        }
+
+        function updateReceiveProgress(id, pct) {
+            var row = receiveList.querySelector('.file-row[data-id="' + id + '"]');
+            if (!row) return;
+            var prog = row.querySelector('.file-progress');
+            var fill = row.querySelector('.fill');
+            if (prog) prog.style.display = '';
+            if (fill) fill.style.width = pct + '%';
+        }
+
+        function assembleFile(id, rec) {
+            if (rec.done) return;
+            rec.done = true;
+            try {
+                var blob = new Blob(rec.chunks, { type: rec.mime || 'application/octet-stream' });
+                rec.blobUrl = URL.createObjectURL(blob);
+                rec.progress = 100;
+                renderReceiveList();
+                var a = document.createElement('a');
+                a.href = rec.blobUrl;
+                a.download = rec.name;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } catch (e) {}
+        }
+
+        function renderReceiveList() {
+            var ids = Object.keys(receiveFiles);
+            if (!ids.length) {
+                receiveList.innerHTML = '<div class="file-empty">连接后这里会显示分享方的文件清单</div>';
+                return;
+            }
+            var html = '';
+            ids.forEach(function (id) {
+                var f = receiveFiles[id];
+                html += '<div class="file-row" data-id="' + id + '">' +
+                    '<div class="file-info"><div class="file-name">' + esc(f.name) + '</div><div class="file-meta">' + formatSize(f.size) + '</div></div>' +
+                    '<div class="file-actions">' +
+                    (f.done && f.blobUrl ? '<button class="btn btn-sm btn-primary save-btn" data-id="' + id + '">💾 保存</button>' : '<button class="btn btn-sm btn-primary download-btn" data-id="' + id + '">⬇️ 下载</button>') +
+                    '</div>' +
+                    '<div class="file-progress" style="' + (f.progress ? '' : 'display:none;') + '"><div class="fill" style="width:' + (f.progress || 0) + '%"></div></div>' +
+                    '</div>';
+            });
+            receiveList.innerHTML = html;
+            receiveList.querySelectorAll('.download-btn').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var id = b.getAttribute('data-id');
+                    if (receiverConn && receiverConn.open) {
+                        receiverConn.send({ type: 'request', id: id });
+                        setStatus(receiveStatus, '已请求文件，等待传输...', '');
+                    } else {
+                        alert('尚未连接分享方');
+                    }
+                });
+            });
+            receiveList.querySelectorAll('.save-btn').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var f = receiveFiles[b.getAttribute('data-id')];
+                    if (f && f.blobUrl) {
+                        var a = document.createElement('a');
+                        a.href = f.blobUrl;
+                        a.download = f.name;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }
+                });
+            });
+        }
+
+        function leaveReceive() {
+            if (receiverConn) { try { receiverConn.close(); } catch (e) {} receiverConn = null; }
+            if (receiverPeer) { try { receiverPeer.destroy(); } catch (e) {} receiverPeer = null; }
+            receiveFiles = {};
+            renderReceiveList();
+            setStatus(receiveStatus, '尚未连接', '');
+            joinBtn.disabled = false;
+            leaveBtn.style.display = 'none';
+            joinInput.value = '';
+        }
+
+        // ========== 事件绑定 ==========
+        createBtn.addEventListener('click', function () {
+            if (senderPeer) return;
+            createBtn.disabled = true;
+            setStatus(sendStatus, '正在创建号码...', '');
+            createAttempts = 0;
+            tryCreatePeer();
+        });
+
+        cancelBtn.addEventListener('click', function () {
+            if (senderPeer) { try { senderPeer.destroy(); } catch (e) {} senderPeer = null; }
+            senderConn = null;
+            sendQueue = [];
+            currentNumber = '';
+            numberDisplay.innerHTML = '<span class="num-placeholder">----</span>';
+            createBtn.disabled = false;
+            cancelBtn.style.display = 'none';
+            setStatus(sendStatus, '号码已注销', '');
+        });
+
+        joinBtn.addEventListener('click', function () {
+            var num = joinInput.value.trim();
+            if (!/^\d{4}$/.test(num)) { alert('请输入 4 位数字号码'); return; }
+            joinByNumber(num);
+        });
+        joinInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') joinBtn.click(); });
+        leaveBtn.addEventListener('click', leaveReceive);
+
+        pickFilesBtn.addEventListener('click', function () { fileInput.click(); });
+        fileInput.addEventListener('change', function () {
+            Array.prototype.forEach.call(fileInput.files, function (f) {
+                fileSeq++;
+                sharedFiles.push({ id: 'f' + fileSeq, name: f.name, size: f.size, mime: f.type, file: f });
+            });
+            fileInput.value = '';
+            renderSendList();
+        });
+
+        setTimeout(function () {
+            if (typeof Peer === 'undefined') {
+                setStatus(sendStatus, '❌ PeerJS 库加载失败，请检查网络后刷新', 'err');
+                setStatus(receiveStatus, '❌ PeerJS 库加载失败，请检查网络后刷新', 'err');
+                createBtn.disabled = true;
+                joinBtn.disabled = true;
+            }
+        }, 3000);
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

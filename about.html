@@ -128,6 +128,13 @@
             margin: 1rem 0;
         }
 
+        .about-content code {
+            background: rgba(128, 128, 128, 0.1);
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.3rem;
+            font-size: 0.9em;
+        }
+
         .about-content .closing {
             text-align: center;
             font-size: 1.1rem;
@@ -179,6 +186,8 @@
             <!-- 导航栏（保留在第一个卡片） -->
             <div class="nav-menu fade-in-up delay-4">
                 <a href="index.html" class="nav-link">🏠 首页</a>
+                <a href="VOID.html" class="nav-link">📝 文章</a>
+                <a href="MT.html" class="nav-link">🛠️ 工具</a>
                 <a href="#" class="nav-link active">📖 关于</a>
             </div>
 
@@ -208,8 +217,13 @@
                 </div>
 
                 <div class="sub-section">
-                    <p><strong>三、文章板块</strong><span class="text-muted">（筹备中）</span><br>
-                    3.0.0 的更新目标……</p>
+                    <p><strong>三、文章板块</strong><br>
+                    基于 Markdown 的轻量文章系统，正文存放于 <code>VOID/</code> 目录，由 <code>index.txt</code> 索引驱动。支持自定义标题与简介、标签分类、<strong>系列连载</strong>（自动识别「名1.md」编号并生成翻页条）、<strong>收藏置顶</strong>、阅读计数与隐藏文章（<code>#</code> 前缀 + 口令解锁）。</p>
+                </div>
+
+                <div class="sub-section">
+                    <p><strong>四、工具板块</strong><br>
+                    公开的网页小工具合集（<a href="MT.html" class="inline-link">MT.html</a>），当前收录：📊 设备信息读取、🔐 浏览器权限请求测试、🕵️ 追踪者检查、🗜️ 图片压缩、📡 文件 P2P 传输。支持关键词搜索、emoji 图标索引与收藏置顶，全部本地处理，无需注册。</p>
                 </div>
 
                 <hr class="divider-light">

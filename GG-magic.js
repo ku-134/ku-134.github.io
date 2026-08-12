@@ -27,6 +27,12 @@
     var currentImages = [];
     var currentIndex = 0;
     var searchQuery = '';
+    // 收藏（gameFavs：游戏名数组）
+    function getGameFavSet() {
+        try { return new Set(JSON.parse(localStorage.getItem('gameFavs') || '[]')); }
+        catch (e) { return new Set(); }
+    }
+    var favSet = getGameFavSet();
 
     // ---------- 解析 Hexenzirkel.txt ----------
     function parseHexenzirkel(text) {
@@ -118,9 +124,16 @@
 
         allGames = games;
 
+        // 收藏优先排版
+        var sorted = allGames.slice().sort(function(a, b) {
+            var sa = favSet.has(a.name) ? 1 : 0;
+            var sb = favSet.has(b.name) ? 1 : 0;
+            return sb - sa;
+        });
+
         var html = '';
-        for (var i = 0; i < games.length; i++) {
-            var game = games[i];
+        for (var i = 0; i < sorted.length; i++) {
+            var game = sorted[i];
             html += buildGameCard(game, i);
         }
 
@@ -130,7 +143,7 @@
         var cards = gameGrid.querySelectorAll('.game-card');
         for (var ci = 0; ci < cards.length; ci++) {
             (function(card, idx) {
-                var game = games[idx];
+                var game = sorted[idx];
                 if (game && game.fileName) {
                     loadGameImages(card, game.fileName);
                 }
@@ -162,9 +175,12 @@
 
         var btnHtml = '<a href="' + btnLink + '" target="_blank" class="game-play-btn" data-game="' + escapeHtml(game.name) + '" data-link="' + escapeHtml(btnLink) + '">🎮 ' + btnLabel + '</a>';
 
+        var isFav = favSet.has(game.name);
+        var favBtn = '<button class="game-fav' + (isFav ? ' on' : '') + '" data-fav="' + escapeHtml(game.name) + '" title="' + (isFav ? '取消收藏' : '收藏游戏') + '">' + (isFav ? '⭐' : '☆') + '</button>';
+
         return (
             '<div class="game-card" data-index="' + index + '" data-search="' + escapeHtml(game._searchText || '') + '">' +
-                '<div class="game-name">' + escapeHtml(game.name) + '</div>' +
+                '<div class="game-name">' + escapeHtml(game.name) + favBtn + '</div>' +
                 tagsHtml +
                 (game.desc ? '<div class="game-desc">' + escapeHtml(game.desc) + '</div>' : '') +
                 imagesHtml +
@@ -294,6 +310,25 @@
     }
 
     // ---------- 绑定游戏跳转计数 ----------
+    function toggleGameFav(name) {
+        var favs = [];
+        try { favs = JSON.parse(localStorage.getItem('gameFavs') || '[]'); } catch (e) {}
+        var i = favs.indexOf(name);
+        if (i >= 0) favs.splice(i, 1);
+        else favs.push(name);
+        try { localStorage.setItem('gameFavs', JSON.stringify(favs)); } catch (e) {}
+        favSet = getGameFavSet();
+        if (allGames.length) renderGames(allGames);
+    }
+    gameGrid.addEventListener('click', function(e) {
+        var fav = e.target.closest('.game-fav');
+        if (fav) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleGameFav(fav.getAttribute('data-fav'));
+        }
+    });
+
     function bindGameEntryClicks() {
         var btns = document.querySelectorAll('.game-play-btn');
         btns.forEach(function(btn) {

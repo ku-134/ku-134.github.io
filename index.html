@@ -513,6 +513,22 @@
                     </div>
                     <div class="sub">你读了文章</div>
                 </div>
+                <div class="stats-item local">
+                    <div class="label">🎮 游戏收藏</div>
+                    <div class="number-wrap">
+                        <span class="number" id="localGameFavs">0</span>
+                        <span class="delta hidden" id="gameFavsDelta"></span>
+                    </div>
+                    <div class="sub">你收藏了游戏</div>
+                </div>
+                <div class="stats-item local">
+                    <div class="label">🛠️ 工具收藏</div>
+                    <div class="number-wrap">
+                        <span class="number" id="localToolFavs">0</span>
+                        <span class="delta hidden" id="toolFavsDelta"></span>
+                    </div>
+                    <div class="sub">你收藏了工具</div>
+                </div>
                 <div class="stats-item local" id="gameEntryItem">
                     <div class="label">🎮 游戏进入</div>
                     <div class="number-wrap">
@@ -686,6 +702,8 @@
                 const currentGameEntry = getNumberFromEl('localGameEntry');
                 const currentArtFavs = getNumberFromEl('localArtFavs');
                 const currentArtReads = getNumberFromEl('localArtReads');
+                const currentGameFavs = getNumberFromEl('localGameFavs');
+                const currentToolFavs = getNumberFromEl('localToolFavs');
                 const cache = getCache();
 
                 updateDelta('uvDelta', currentUV, cache.uv);
@@ -696,6 +714,8 @@
                 updateDelta('gameEntryDelta', currentGameEntry, cache.gameEntry);
                 updateDelta('artFavsDelta', currentArtFavs, cache.artFavs);
                 updateDelta('artReadsDelta', currentArtReads, cache.artReads);
+                updateDelta('gameFavsDelta', currentGameFavs, cache.gameFavs);
+                updateDelta('toolFavsDelta', currentToolFavs, cache.toolFavs);
 
                 cache.uv = currentUV;
                 cache.pv = currentPV;
@@ -705,6 +725,8 @@
                 cache.gameEntry = currentGameEntry;
                 cache.artFavs = currentArtFavs;
                 cache.artReads = currentArtReads;
+                cache.gameFavs = currentGameFavs;
+                cache.toolFavs = currentToolFavs;
                 saveCache(cache);
             }
 
@@ -742,6 +764,10 @@
                     document.getElementById('localArtFavs').textContent = artFavs.length;
                     const artReads = parseInt(localStorage.getItem('voidReadCount') || '0');
                     document.getElementById('localArtReads').textContent = artReads;
+                    const gameFavs = JSON.parse(localStorage.getItem('gameFavs') || '[]');
+                    document.getElementById('localGameFavs').textContent = gameFavs.length;
+                    const toolFavs = JSON.parse(localStorage.getItem('toolFavs') || '[]');
+                    document.getElementById('localToolFavs').textContent = toolFavs.length;
                 } catch (e) { /* 静默降级 */ }
             }
 
@@ -749,7 +775,7 @@
             setTimeout(waitForBusuanzi, 1000);
 
             window.addEventListener('storage', function(e) {
-                if (e.key === 'resourceClicks' || e.key === 'favorites' || e.key === 'recommendSubmitCount' || e.key === 'gameEntryCount' || e.key === 'voidFavs' || e.key === 'voidReadCount') {
+                if (e.key === 'resourceClicks' || e.key === 'favorites' || e.key === 'recommendSubmitCount' || e.key === 'gameEntryCount' || e.key === 'voidFavs' || e.key === 'voidReadCount' || e.key === 'gameFavs' || e.key === 'toolFavs') {
                     updateLocalStats();
                     setTimeout(function() {
                         const cache = getCache();
@@ -761,6 +787,8 @@
                         updateDelta('gameEntryDelta', getNumberFromEl('localGameEntry'), cache.gameEntry);
                         updateDelta('artFavsDelta', getNumberFromEl('localArtFavs'), cache.artFavs);
                         updateDelta('artReadsDelta', getNumberFromEl('localArtReads'), cache.artReads);
+                        updateDelta('gameFavsDelta', getNumberFromEl('localGameFavs'), cache.gameFavs);
+                        updateDelta('toolFavsDelta', getNumberFromEl('localToolFavs'), cache.toolFavs);
                         cache.uv = getNumberFromEl('busuanzi_value_site_uv');
                         cache.pv = getNumberFromEl('busuanzi_value_site_pv');
                         cache.clicks = getNumberFromEl('localClicks');
@@ -769,6 +797,8 @@
                         cache.gameEntry = getNumberFromEl('localGameEntry');
                         cache.artFavs = getNumberFromEl('localArtFavs');
                         cache.artReads = getNumberFromEl('localArtReads');
+                        cache.gameFavs = getNumberFromEl('localGameFavs');
+                        cache.toolFavs = getNumberFromEl('localToolFavs');
                         saveCache(cache);
                     }, 500);
                 }

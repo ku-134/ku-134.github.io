@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>密码强度检测 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-header .nav-links a.active { opacity: 1; font-weight: 600; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn-sm { padding: 0.25rem 0.9rem; font-size: 0.78rem; }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .pwd-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+        .pwd-input { flex: 1; min-width: 220px; padding: 0.7rem 1rem; font-size: 1.05rem; letter-spacing: 0.06em; background: rgba(128,128,128,0.06); border: 1px solid rgba(128,128,128,0.25); border-radius: 0.9rem; color: inherit; font-family: monospace; outline: none; transition: border-color 0.2s; }
+        .pwd-input:focus { border-color: #66bb6a; }
+        .meter-wrap { margin: 1rem 0 0.4rem; }
+        .meter-bar { height: 12px; background: rgba(128,128,128,0.15); border-radius: 6px; overflow: hidden; }
+        .meter-fill { height: 100%; width: 0%; border-radius: 6px; transition: width 0.3s, background 0.3s; }
+        .meter-labels { display: flex; justify-content: space-between; font-size: 0.7rem; opacity: 0.5; margin-top: 0.3rem; }
+        .level-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        .level-badge { display: inline-block; padding: 0.25rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
+        .score-num { font-size: 1.3rem; font-weight: 800; font-family: monospace; }
+        .dim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-top: 1.1rem; }
+        @media (max-width: 640px) { .dim-grid { grid-template-columns: 1fr; } }
+        .dim-card { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 1rem; padding: 0.8rem 0.95rem; }
+        .dim-head { display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .dim-score { font-family: monospace; font-size: 0.9rem; font-weight: 700; }
+        .bar { height: 6px; background: rgba(128,128,128,0.15); border-radius: 3px; overflow: hidden; margin-bottom: 0.5rem; }
+        .bar .fill { height: 100%; transition: width 0.3s; }
+        .dim-detail { font-size: 0.78rem; opacity: 0.65; line-height: 1.55; }
+        .dim-detail .ok { color: #66bb6a; }
+        .dim-detail .warn { color: #f5a623; }
+        .pat-item { display: flex; align-items: center; gap: 0.45rem; font-size: 0.8rem; padding: 0.2rem 0; }
+        .pat-item .tag { font-size: 0.68rem; opacity: 0.55; margin-left: auto; }
+        .suggest-box { margin-top: 1.1rem; background: rgba(102,187,106,0.06); border: 1px solid rgba(102,187,106,0.25); border-radius: 1rem; padding: 0.9rem 1rem; }
+        .suggest-box .s-head { font-size: 0.85rem; font-weight: 700; color: #66bb6a; margin-bottom: 0.5rem; }
+        .suggest-box ul { margin: 0; padding-left: 1.1rem; font-size: 0.82rem; opacity: 0.85; line-height: 1.7; }
+        .suggest-box li { margin-bottom: 0.15rem; }
+        .suggest-box li.good { color: #66bb6a; }
+        .suggest-box li.bad { color: #f5a623; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🔑 密码强度检测</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">从长度、字符种类、可预测性（模式检测）、信息熵四个维度评估密码易破译程度，并在最后给出改进建议。检测全程在本地完成，密码不会离开浏览器。</div>
+
+            <div class="pwd-row">
+                <input type="password" class="pwd-input" id="pwdInput" placeholder="输入密码开始检测..." autocomplete="off">
+                <button class="btn btn-sm" id="toggleBtn">👁️ 显示</button>
+                <button class="btn btn-sm" id="clearBtn">🗑️ 清空</button>
+            </div>
+
+            <div class="meter-wrap">
+                <div class="meter-bar"><div class="meter-fill" id="meterFill"></div></div>
+                <div class="meter-labels"><span>极弱</span><span>弱</span><span>中等</span><span>强</span><span>极强</span></div>
+            </div>
+
+            <div class="level-row">
+                <span class="score-num" id="scoreNum">0</span>
+                <span class="level-badge" id="levelBadge">未检测</span>
+                <span style="font-size:0.75rem;opacity:0.5;" id="levelHint">输入密码后开始评估</span>
+            </div>
+
+            <div class="dim-grid">
+                <div class="dim-card">
+                    <div class="dim-head"><span>📏 长度</span><span class="dim-score" id="lenScore">0/25</span></div>
+                    <div class="bar"><div class="fill" id="lenBar" style="width:0%;background:#888;"></div></div>
+                    <div class="dim-detail" id="lenDetail">长度 0 位</div>
+                </div>
+                <div class="dim-card">
+                    <div class="dim-head"><span>🔤 字符种类</span><span class="dim-score" id="kindScore">0/25</span></div>
+                    <div class="bar"><div class="fill" id="kindBar" style="width:0%;background:#888;"></div></div>
+                    <div class="dim-detail" id="kindDetail">未检测</div>
+                </div>
+                <div class="dim-card">
+                    <div class="dim-head"><span>🌀 可预测性（模式检测）</span><span class="dim-score" id="patScore">-0</span></div>
+                    <div class="bar"><div class="fill" id="patBar" style="width:0%;background:#888;"></div></div>
+                    <div class="dim-detail" id="patDetail"></div>
+                </div>
+                <div class="dim-card">
+                    <div class="dim-head"><span>🧮 信息熵</span><span class="dim-score" id="entScore">0/50</span></div>
+                    <div class="bar"><div class="fill" id="entBar" style="width:0%;background:#888;"></div></div>
+                    <div class="dim-detail" id="entDetail">熵 = log₂(字符集大小 ^ 密码长度)</div>
+                </div>
+            </div>
+
+            <div class="suggest-box" id="suggestBox" style="display:none;">
+                <div class="s-head">💡 密码建议</div>
+                <ul id="suggestList"></ul>
+            </div>
+
+            <div class="tool-foot">评分仅供参考：长度 25 分、字符种类 25 分、信息熵 50 分，模式检测为扣分项（发现明显规律直接降级）。熵值 &gt; 60 bit 视为强密码，如 correct-horse-battery 约 80 bit。</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var pwdInput = document.getElementById('pwdInput');
+        var toggleBtn = document.getElementById('toggleBtn');
+        var clearBtn = document.getElementById('clearBtn');
+        var meterFill = document.getElementById('meterFill');
+        var scoreNum = document.getElementById('scoreNum');
+        var levelBadge = document.getElementById('levelBadge');
+        var levelHint = document.getElementById('levelHint');
+        var lenScore = document.getElementById('lenScore');
+        var lenBar = document.getElementById('lenBar');
+        var lenDetail = document.getElementById('lenDetail');
+        var kindScore = document.getElementById('kindScore');
+        var kindBar = document.getElementById('kindBar');
+        var kindDetail = document.getElementById('kindDetail');
+        var patScore = document.getElementById('patScore');
+        var patBar = document.getElementById('patBar');
+        var patDetail = document.getElementById('patDetail');
+        var entScore = document.getElementById('entScore');
+        var entBar = document.getElementById('entBar');
+        var entDetail = document.getElementById('entDetail');
+        var suggestBox = document.getElementById('suggestBox');
+        var suggestList = document.getElementById('suggestList');
+
+        var WEAK_PASSWORDS = ['123456','password','12345678','qwerty','123456789','12345','1234','111111','1234567','dragon','123123','baseball','abc123','football','monkey','letmein','shadow','master','666666','qwertyuiop','123321','mustang','1234567890','michael','654321','superman','1qaz2wsx','7777777','121212','000000','qazwsx','123qwe','killer','trustno1','jordan','jennifer','zxcvbnm','asdfgh','hunter','buster','soccer','harley','batman','andrew','tigger','sunshine','iloveyou','charlie','robert','thomas','hockey','ranger','daniel','starwars','112233','george','computer','michelle','jessica','pepper','1111','zxcvbn','555555','11111111','131313','freedom','777777','pass','maggie','159753','aaaaaa','ginger','princess','joshua','cheese','amanda','summer','love','ashley','6969','nicole','chelsea','biteme','matthew','access','yankees','987654321','dallas','austin','thunder','taylor','matrix','william','corvette','hello','martin','heather','secret','merlin','diamond','1234qwer','gfhjkm','hammer','silver','222222','88888888','anthony','justin','test','bailey','q1w2e3r4t5','patrick','internet','scooter','orange','11111','golfer','cookie','richard','samantha','bigdog','guitar','jackson','whatever','mickey','chicken','sparky','snoopy','maverick','phoenix','camaro','sexy','peanut','morgan','welcome','falcon','cowboy','ferrari','samsung','andrea','smokey','steelers','joseph','mercedes','dakota','arsenal','eagles','melissa','boomer','booboo','spider','nascar','monster','tigers','yellow','xxxxxx','123123123','gateway','marina','diablo','bulldog','qwer1234','compaq','purple','hardcore','banana','junior','hannah','123654','porsche','lakers','iceman','money','cowboys','987654','london','tennis','999999','ncc1701','coffee','scooby','0000','miller','boston','q1w2e3r4','brandon','yamaha','chester','mother','forever','johnny','edward','333333','oliver','redsox','player','nikita','knight','fender','barney','midnight','please','brandy','chicago','badboy','slayer','rangers','charles','angel','flower','bigdaddy','rabbit','wizard','jasper','enter','rachel','chris','steven','winner','adidas','victoria','natasha','1q2w3e4r','jasmine','winter','prince','marine','ghbdtn','fishing','cocacola','casper','james','232323','raiders','888888','marlboro','gandalf','asdfasdf','crystal','87654321','12344321','golden','madison','pakistan','mexico','hogwarts','viking','qwerty12','barbie','girls','titanic','hacker','hello123','qwe123','zaq12wsx'];
+        var DICT_WORDS = ['password','admin','qwerty','letmein','welcome','iloveyou','monkey','dragon','master','sunshine','football','baseball','superman','batman','starwars','princess','shadow','secret','hello','love','computer','whatever','chicken','pepper','flower','hunter','summer','winter','autumn','spring','purple','orange','yellow','yankees','cowboy','falcon','phoenix','matrix','google','facebook','twitter','root','toor','test','guest','info','access','login','passwd','nimda'];
+        var KB_ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm', '1234567890'];
+        var SET_SIZES = { lower: 26, upper: 26, digit: 10, symbol: 33 };
+        var KIND_NAMES = ['小写字母', '大写字母', '数字', '符号'];
+
+        function findKeyboard(pwd) {
+            var s = pwd.toLowerCase();
+            for (var r = 0; r < KB_ROWS.length; r++) {
+                var row = KB_ROWS[r];
+                for (var len = 4; len <= 6; len++) {
+                    for (var i = 0; i + len <= row.length; i++) {
+                        var seq = row.substr(i, len);
+                        if (s.indexOf(seq) >= 0) return seq;
+                        var rev = seq.split('').reverse().join('');
+                        if (s.indexOf(rev) >= 0) return rev;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findRepeat(pwd) {
+            var m = pwd.match(/(.)\1{2,}/g);
+            if (!m) return null;
+            var longest = m[0];
+            for (var i = 1; i < m.length; i++) if (m[i].length > longest.length) longest = m[i];
+            return longest;
+        }
+
+        function isArith(sub) {
+            var d = parseInt(sub.charAt(1), 10) - parseInt(sub.charAt(0), 10);
+            if (d === 0) return false;
+            for (var i = 2; i < sub.length; i++) {
+                if (parseInt(sub.charAt(i), 10) - parseInt(sub.charAt(i - 1), 10) !== d) return false;
+            }
+            return true;
+        }
+
+        function findSequence(pwd) {
+            var runs = pwd.match(/\d{4,}/g);
+            if (!runs) return null;
+            for (var r = 0; r < runs.length; r++) {
+                var s = runs[r];
+                for (var len = Math.min(6, s.length); len >= 4; len--) {
+                    for (var i = 0; i + len <= s.length; i++) {
+                        var sub = s.substr(i, len);
+                        if (isArith(sub)) return sub;
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findDict(pwd) {
+            var s = pwd.toLowerCase();
+            for (var i = 0; i < WEAK_PASSWORDS.length; i++) {
+                if (s === WEAK_PASSWORDS[i]) return { whole: true, word: WEAK_PASSWORDS[i] };
+            }
+            for (var j = 0; j < DICT_WORDS.length; j++) {
+                var w = DICT_WORDS[j];
+                if (w.length >= 4 && s.indexOf(w) >= 0) return { whole: false, word: w };
+            }
+            return null;
+        }
+
+        function barColor(ratio) {
+            if (ratio >= 0.85) return '#66bb6a';
+            if (ratio >= 0.65) return '#a5d65a';
+            if (ratio >= 0.45) return '#f5a623';
+            if (ratio >= 0.25) return '#e67e22';
+            return '#e74c3c';
+        }
+
+        function analyze(pwd) {
+            if (!pwd) {
+                meterFill.style.width = '0%';
+                meterFill.style.background = '#888';
+                scoreNum.textContent = '0';
+                levelBadge.textContent = '未检测';
+                levelBadge.style.background = 'rgba(128,128,128,0.15)';
+                levelBadge.style.color = 'inherit';
+                levelHint.textContent = '输入密码后开始评估';
+                lenScore.textContent = '0/25';
+                lenBar.style.width = '0%';
+                lenBar.style.background = '#888';
+                lenDetail.textContent = '长度 0 位';
+                kindScore.textContent = '0/25';
+                kindBar.style.width = '0%';
+                kindBar.style.background = '#888';
+                kindDetail.textContent = '未检测';
+                patScore.textContent = '-0';
+                patBar.style.width = '0%';
+                patBar.style.background = '#888';
+                patDetail.innerHTML = '';
+                entScore.textContent = '0/50';
+                entBar.style.width = '0%';
+                entBar.style.background = '#888';
+                entDetail.textContent = '熵 = log₂(字符集大小 ^ 密码长度)';
+                suggestBox.style.display = 'none';
+                return;
+            }
+
+            var L = pwd.length;
+
+            // ---- 1. 长度 ----
+            var lenScoreVal = Math.min(25, Math.round(L * 2.5));
+            var lenRatio = lenScoreVal / 25;
+
+            // ---- 2. 字符种类 ----
+            var hasLower = /[a-z]/.test(pwd);
+            var hasUpper = /[A-Z]/.test(pwd);
+            var hasDigit = /\d/.test(pwd);
+            var hasSymbol = /[^A-Za-z0-9]/.test(pwd);
+            var kinds = [hasLower, hasUpper, hasDigit, hasSymbol];
+            var kindCount = 0;
+            var usedNames = [];
+            for (var i = 0; i < 4; i++) {
+                if (kinds[i]) { kindCount++; usedNames.push(KIND_NAMES[i]); }
+            }
+            var kindScoreVal = Math.round(kindCount / 4 * 25);
+            var kindRatio = kindScoreVal / 25;
+
+            // ---- 3. 模式检测 ----
+            var patterns = [];
+            var kb = findKeyboard(pwd);
+            if (kb) patterns.push({ name: '键盘序列', detail: '发现键盘行序列「' + kb + '」', pen: 15 });
+            var rep = findRepeat(pwd);
+            if (rep) patterns.push({ name: '重复字符', detail: '发现连续重复「' + rep + '」', pen: 15 });
+            var seq = findSequence(pwd);
+            if (seq) patterns.push({ name: '递增/递减数字', detail: '发现顺序数字「' + seq + '」', pen: 15 });
+            var dict = findDict(pwd);
+            if (dict) {
+                if (dict.whole) patterns.push({ name: '常见弱密码', detail: '密码与常见弱密码「' + dict.word + '」完全相同', pen: 50 });
+                else patterns.push({ name: '字典单词', detail: '包含常见单词「' + dict.word + '」', pen: 25 });
+            }
+            var penalty = 0;
+            patterns.forEach(function (p) { penalty += p.pen; });
+
+            // ---- 4. 熵 ----
+            var setSize = 0;
+            if (hasLower) setSize += SET_SIZES.lower;
+            if (hasUpper) setSize += SET_SIZES.upper;
+            if (hasDigit) setSize += SET_SIZES.digit;
+            if (hasSymbol) setSize += SET_SIZES.symbol;
+            if (setSize < 1) setSize = 1;
+            var entropy = L * Math.log2(setSize);
+            var effective = entropy;
+            if (patterns.length) effective = entropy * Math.max(0.3, 1 - patterns.length * 0.18);
+            var entScoreVal = Math.min(50, Math.round(entropy / 60 * 50));
+            var entRatio = entScoreVal / 50;
+
+            // ---- 总分与等级 ----
+            var score = Math.max(0, Math.round(lenScoreVal + kindScoreVal + entScoreVal - penalty));
+            var level = '极弱';
+            var color = '#e74c3c';
+            if (score >= 90) { level = '极强'; color = '#2e7d32'; }
+            else if (score >= 75) { level = '强'; color = '#66bb6a'; }
+            else if (score >= 60) { level = '中等'; color = '#a5d65a'; }
+            else if (score >= 40) { level = '弱'; color = '#f5a623'; }
+
+            // 降级：存在明显模式
+            if (patterns.length >= 2 && (level === '中等' || level === '强' || level === '极强')) {
+                level = '弱';
+                color = '#f5a623';
+            }
+            if (dict && dict.whole && level !== '极弱') {
+                level = '极弱';
+                color = '#e74c3c';
+            }
+            if ((kb || rep || seq) && entropy > 60 && (level === '强' || level === '极强')) {
+                level = '中等';
+                color = '#a5d65a';
+            }
+
+            // ---- 渲染 ----
+            var ratio = score / 100;
+            meterFill.style.width = score + '%';
+            meterFill.style.background = barColor(ratio);
+            scoreNum.textContent = score;
+            levelBadge.textContent = level;
+            levelBadge.style.background = color;
+            levelBadge.style.color = '#fff';
+            levelHint.textContent = '总分 100 = 长度 25 + 种类 25 + 熵 50 - 模式扣分 ' + penalty;
+
+            lenScore.textContent = lenScoreVal + '/25';
+            lenBar.style.width = lenRatio * 100 + '%';
+            lenBar.style.background = barColor(lenRatio);
+            lenDetail.textContent = '长度 ' + L + ' 位' + (L >= 12 ? '（推荐 ≥ 12）' : '（推荐 ≥ 12）');
+
+            kindScore.textContent = kindScoreVal + '/25';
+            kindBar.style.width = kindRatio * 100 + '%';
+            kindBar.style.background = barColor(kindRatio);
+            kindDetail.innerHTML = usedNames.length ? '包含：' + usedNames.join('、') + '（' + kindCount + '/4 类）' : '未包含任何常见字符类别';
+
+            patScore.textContent = '-' + penalty;
+            patBar.style.width = Math.min(100, penalty) + '%';
+            patBar.style.background = penalty > 0 ? '#e74c3c' : '#66bb6a';
+            if (!patterns.length) {
+                patDetail.innerHTML = '<div class="pat-item"><span>✅ 未发现明显模式</span></div>';
+            } else {
+                var ph = '';
+                patterns.forEach(function (p) {
+                    ph += '<div class="pat-item"><span class="warn">⚠️ ' + p.detail + '</span><span class="tag">-' + p.pen + ' 分</span></div>';
+                });
+                patDetail.innerHTML = ph;
+            }
+
+            entScore.textContent = entScoreVal + '/50';
+            entBar.style.width = entRatio * 100 + '%';
+            entBar.style.background = barColor(entRatio);
+            var effText = patterns.length ? '（模式调整后约 ' + effective.toFixed(1) + ' bit）' : '';
+            entDetail.innerHTML = '理论熵 <b>' + entropy.toFixed(1) + ' bit</b> ' + effText + '<br>' +
+                (entropy > 60 ? '<span class="ok">✅ 熵值 &gt; 60 bit，达到强密码标准</span>' : '<span class="warn">⚠️ 熵值 ≤ 60 bit，建议增强</span>') +
+                '<br><span style="opacity:0.5;">字符集 ' + setSize + ' 种字符 × ' + L + ' 位</span>';
+
+            // ---- 建议 ----
+            var sug = [];
+            if (L < 12) sug.push({ t: 'bad', text: '密码长度仅 ' + L + ' 位，建议至少 12 位（长度每多一位，破解难度翻倍）' });
+            if (kindCount < 4) sug.push({ t: 'bad', text: '仅使用 ' + kindCount + ' 类字符，建议混合大小写字母、数字与符号' });
+            if (kb) sug.push({ t: 'bad', text: '检测到键盘序列「' + kb + '」，键盘行顺序极易被猜测，请移除' });
+            if (rep) sug.push({ t: 'bad', text: '检测到连续重复「' + rep + '」，重复字符会大幅降低实际强度' });
+            if (seq) sug.push({ t: 'bad', text: '检测到顺序数字「' + seq + '」，递增/递减序列是最常见的猜测模式' });
+            if (dict) {
+                if (dict.whole) sug.push({ t: 'bad', text: '该密码与常见弱密码完全一致，应立即更换' });
+                else sug.push({ t: 'bad', text: '包含常见单词「' + dict.word + '」，字典攻击可轻松命中' });
+            }
+            if (entropy < 60) sug.push({ t: 'bad', text: '信息熵仅 ' + entropy.toFixed(1) + ' bit（&lt; 60），建议使用随机组合或 4 个随机单词组成的短语（如 correct-horse-battery-staple）' });
+            if (!sug.length) {
+                sug.push({ t: 'good', text: '恭喜！密码在长度、种类、模式与熵值上表现优秀' });
+                sug.push({ t: 'good', text: '请继续做到：不同平台使用不同密码、定期更换、开启双重验证' });
+            } else {
+                sug.push({ t: 'good', text: '参考示例：H3llo!@#（约 50 bit）、correct-horse-battery-staple（约 80+ bit）' });
+            }
+            suggestBox.style.display = 'block';
+            suggestList.innerHTML = '';
+            sug.forEach(function (s) {
+                var li = document.createElement('li');
+                li.className = s.t;
+                li.textContent = s.text;
+                suggestList.appendChild(li);
+            });
+        }
+
+        pwdInput.addEventListener('input', function () { analyze(pwdInput.value); });
+        toggleBtn.addEventListener('click', function () {
+            if (pwdInput.type === 'password') {
+                pwdInput.type = 'text';
+                toggleBtn.textContent = '🙈 隐藏';
+            } else {
+                pwdInput.type = 'password';
+                toggleBtn.textContent = '👁️ 显示';
+            }
+        });
+        clearBtn.addEventListener('click', function () {
+            pwdInput.value = '';
+            analyze('');
+            pwdInput.focus();
+        });
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

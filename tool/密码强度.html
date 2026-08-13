@@ -52,10 +52,6 @@
         .dim-detail .warn { color: #f5a623; }
         .pat-item { display: flex; align-items: center; gap: 0.45rem; font-size: 0.8rem; padding: 0.2rem 0; }
         .pat-item .tag { font-size: 0.68rem; opacity: 0.55; margin-left: auto; }
-        .personal-row { display: flex; gap: 0.6rem; margin-top: 0.7rem; flex-wrap: wrap; }
-        .personal-row input { flex: 1; min-width: 130px; padding: 0.4rem 0.7rem; background: rgba(128,128,128,0.06); border: 1px solid rgba(128,128,128,0.22); border-radius: 0.6rem; color: inherit; font-family: inherit; font-size: 0.8rem; outline: none; transition: border-color 0.2s; }
-        .personal-row input:focus { border-color: #66bb6a; }
-        .personal-tip { font-size: 0.7rem; opacity: 0.5; margin-top: 0.35rem; line-height: 1.5; }
         .suggest-box { margin-top: 1.1rem; background: rgba(102,187,106,0.06); border: 1px solid rgba(102,187,106,0.25); border-radius: 1rem; padding: 0.9rem 1rem; }
         .suggest-box .s-head { font-size: 0.85rem; font-weight: 700; color: #66bb6a; margin-bottom: 0.5rem; }
         .suggest-box ul { margin: 0; padding-left: 1.1rem; font-size: 0.82rem; opacity: 0.85; line-height: 1.7; }
@@ -108,11 +104,6 @@
                     <div class="dim-head"><span>🌀 可预测性（模式检测）</span><span class="dim-score" id="patScore">-0</span></div>
                     <div class="bar"><div class="fill" id="patBar" style="width:0%;background:#888;"></div></div>
                     <div class="dim-detail" id="patDetail"></div>
-                    <div class="personal-row">
-                        <input type="text" id="nameInput" placeholder="姓名（中文/拼音，如 张三 / zhangsan）" autocomplete="off">
-                        <input type="date" id="birthInput">
-                    </div>
-                    <div class="personal-tip">填写后检测密码是否包含姓名缩写、拼音或出生日期——个人信息是最常见的猜测来源</div>
                 </div>
                 <div class="dim-card">
                     <div class="dim-head"><span>🧮 信息熵</span><span class="dim-score" id="entScore">0/50</span></div>
@@ -126,7 +117,7 @@
                 <ul id="suggestList"></ul>
             </div>
 
-            <div class="tool-foot">评分仅供参考：长度 25 分、字符种类 25 分、信息熵 50 分，模式检测为扣分项（发现明显规律直接降级）。熵值 &gt; 60 bit 视为强密码，如 correct-horse-battery 约 80 bit。</div>
+            <div class="tool-foot">评分仅供参考：长度 25 分、字符种类 25 分、信息熵 50 分，模式检测为扣分项（发现明显规律直接降级）。检测器会自动识别密码中的常见姓名拼音与疑似出生日期。熵值 &gt; 60 bit 视为强密码，如 correct-horse-battery 约 80 bit。</div>
         </div>
     </div>
 
@@ -155,8 +146,6 @@
         var entDetail = document.getElementById('entDetail');
         var suggestBox = document.getElementById('suggestBox');
         var suggestList = document.getElementById('suggestList');
-        var nameInput = document.getElementById('nameInput');
-        var birthInput = document.getElementById('birthInput');
 
         var WEAK_PASSWORDS = ['123456','password','12345678','qwerty','123456789','12345','1234','111111','1234567','dragon','123123','baseball','abc123','football','monkey','letmein','shadow','master','666666','qwertyuiop','123321','mustang','1234567890','michael','654321','superman','1qaz2wsx','7777777','121212','000000','qazwsx','123qwe','killer','trustno1','jordan','jennifer','zxcvbnm','asdfgh','hunter','buster','soccer','harley','batman','andrew','tigger','sunshine','iloveyou','charlie','robert','thomas','hockey','ranger','daniel','starwars','112233','george','computer','michelle','jessica','pepper','1111','zxcvbn','555555','11111111','131313','freedom','777777','pass','maggie','159753','aaaaaa','ginger','princess','joshua','cheese','amanda','summer','love','ashley','6969','nicole','chelsea','biteme','matthew','access','yankees','987654321','dallas','austin','thunder','taylor','matrix','william','corvette','hello','martin','heather','secret','merlin','diamond','1234qwer','gfhjkm','hammer','silver','222222','88888888','anthony','justin','test','bailey','q1w2e3r4t5','patrick','internet','scooter','orange','11111','golfer','cookie','richard','samantha','bigdog','guitar','jackson','whatever','mickey','chicken','sparky','snoopy','maverick','phoenix','camaro','sexy','peanut','morgan','welcome','falcon','cowboy','ferrari','samsung','andrea','smokey','steelers','joseph','mercedes','dakota','arsenal','eagles','melissa','boomer','booboo','spider','nascar','monster','tigers','yellow','xxxxxx','123123123','gateway','marina','diablo','bulldog','qwer1234','compaq','purple','hardcore','banana','junior','hannah','123654','porsche','lakers','iceman','money','cowboys','987654','london','tennis','999999','ncc1701','coffee','scooby','0000','miller','boston','q1w2e3r4','brandon','yamaha','chester','mother','forever','johnny','edward','333333','oliver','redsox','player','nikita','knight','fender','barney','midnight','please','brandy','chicago','badboy','slayer','rangers','charles','angel','flower','bigdaddy','rabbit','wizard','jasper','enter','rachel','chris','steven','winner','adidas','victoria','natasha','1q2w3e4r','jasmine','winter','prince','marine','ghbdtn','fishing','cocacola','casper','james','232323','raiders','888888','marlboro','gandalf','asdfasdf','crystal','87654321','12344321','golden','madison','pakistan','mexico','hogwarts','viking','qwerty12','barbie','girls','titanic','hacker','hello123','qwe123','zaq12wsx'];
         var DICT_WORDS = ['password','admin','qwerty','letmein','welcome','iloveyou','monkey','dragon','master','sunshine','football','baseball','superman','batman','starwars','princess','shadow','secret','hello','love','computer','whatever','chicken','pepper','flower','hunter','summer','winter','autumn','spring','purple','orange','yellow','yankees','cowboy','falcon','phoenix','matrix','google','facebook','twitter','root','toor','test','guest','info','access','login','passwd','nimda'];
@@ -164,37 +153,9 @@
         var SET_SIZES = { lower: 26, upper: 26, digit: 10, symbol: 33 };
         var KIND_NAMES = ['小写字母', '大写字母', '数字', '符号'];
 
-        // 常见姓氏与名字用字的拼音映射（用于姓名缩写/拼音检测）
-        var PINYIN = {
-            '李':'li','王':'wang','张':'zhang','刘':'liu','陈':'chen','杨':'yang','赵':'zhao','黄':'huang','周':'zhou','吴':'wu',
-            '徐':'xu','孙':'sun','胡':'hu','朱':'zhu','高':'gao','林':'lin','何':'he','郭':'guo','马':'ma','罗':'luo',
-            '梁':'liang','宋':'song','郑':'zheng','谢':'xie','韩':'han','唐':'tang','冯':'feng','于':'yu','董':'dong','萧':'xiao',
-            '程':'cheng','曹':'cao','袁':'yuan','邓':'deng','许':'xu','傅':'fu','沈':'shen','曾':'zeng','彭':'peng','吕':'lv',
-            '苏':'su','卢':'lu','蒋':'jiang','蔡':'cai','贾':'jia','丁':'ding','魏':'wei','薛':'xue','叶':'ye','阎':'yan',
-            '余':'yu','潘':'pan','杜':'du','戴':'dai','夏':'xia','钟':'zhong','汪':'wang','田':'tian','任':'ren','姜':'jiang',
-            '范':'fan','方':'fang','石':'shi','姚':'yao','谭':'tan','廖':'liao','邹':'zou','熊':'xiong','金':'jin','陆':'lu',
-            '郝':'hao','孔':'kong','白':'bai','崔':'cui','康':'kang','毛':'mao','邱':'qiu','秦':'qin','江':'jiang','史':'shi',
-            '顾':'gu','侯':'hou','邵':'shao','孟':'meng','龙':'long','万':'wan','段':'duan','雷':'lei','钱':'qian','汤':'tang',
-            '尹':'yin','黎':'li','易':'yi','常':'chang','武':'wu','乔':'qiao','贺':'he','赖':'lai','龚':'gong','文':'wen',
-            '洪':'hong','倪':'ni','关':'guan','庄':'zhuang','童':'tong','颜':'yan','柳':'liu','翁':'weng','卓':'zhuo','池':'chi',
-            '伟':'wei','芳':'fang','娜':'na','敏':'min','静':'jing','丽':'li','强':'qiang','磊':'lei','军':'jun','洋':'yang',
-            '勇':'yong','艳':'yan','杰':'jie','娟':'juan','涛':'tao','明':'ming','超':'chao','秀':'xiu','霞':'xia','平':'ping',
-            '刚':'gang','英':'ying','华':'hua','慧':'hui','巧':'qiao','美':'mei','萍':'ping','红':'hong','玲':'ling','建':'jian',
-            '国':'guo','海':'hai','波':'bo','峰':'feng','宇':'yu','浩':'hao','晨':'chen','琪':'qi','琳':'lin','瑶':'yao',
-            '婷':'ting','倩':'qian','悦':'yue','颖':'ying','嘉':'jia','欣':'xin','怡':'yi','佳':'jia','丹':'dan','洁':'jie',
-            '蕾':'lei','萌':'meng','博':'bo','睿':'rui','昊':'hao','天':'tian','毅':'yi','凯':'kai','翔':'xiang','飞':'fei',
-            '鹏':'peng','志':'zhi','乐':'le','楠':'nan','哲':'zhe','思':'si','雨':'yu','泽':'ze','凡':'fan','宸':'chen',
-            '梓':'zi','轩':'xuan','涵':'han','依':'yi','桐':'tong','玥':'yue','熙':'xi','然':'ran','慕':'mu','诺':'nuo',
-            '萱':'xuan','曦':'xi','煜':'yu','楷':'kai','铭':'ming','辉':'hui','灿':'can','雅':'ya','淑':'shu','婉':'wan',
-            '蓉':'rong','薇':'wei','露':'lu','霜':'shuang','梅':'mei','兰':'lan','竹':'zhu','菊':'ju','荷':'he','莲':'lian',
-            '梦':'meng','云':'yun','月':'yue','星':'xing','光':'guang','雪':'xue','冰':'bing','彬':'bin','迪':'di','俊':'jun',
-            '子':'zi','燕':'yan','凤':'feng','花':'hua','玉':'yu','香':'xiang','春':'chun','秋':'qiu','冬':'dong','山':'shan',
-            '水':'shui','风':'feng','雷':'lei','电':'dian','森':'sen','树':'shu','草':'cao','沙':'sha',
-            '一':'yi','二':'er','三':'san','四':'si','五':'wu','六':'liu','七':'qi','八':'ba','九':'jiu','十':'shi',
-            '百':'bai','千':'qian','万':'wan','小':'xiao','大':'da','芬':'fen','珍':'zhen','桂':'gui','琴':'qin','彤':'tong',
-            '瑞':'rui','晶':'jing','珊':'shan','莹':'ying','青':'qing','曼':'man','军':'jun','丽':'li','刚':'gang','平':'ping',
-            '秀':'xiu','香':'xiang','玉':'yu','德':'de','永':'yong','朝':'zhao','阳':'yang','庆':'qing','金':'jin','银':'yin'
-        };
+        // 常见姓氏与名字用字的拼音列表（自动检测疑似姓名拼音，无需用户输入）
+        var COMMON_SURNAMES = ['zhang','li','wang','liu','chen','yang','zhao','huang','zhou','wu','xu','sun','hu','zhu','gao','lin','he','guo','ma','luo','liang','song','zheng','xie','han','tang','feng','yu','dong','xiao','cheng','cao','yuan','deng','shen','zeng','peng','jiang','su','lu','cai','jia','ding','wei','xue','ye','pan','du','dai','xia','zhong','tian','ren','fan','fang','shi','yao','tan','zou','xiong','jin','hao','kong','bai','cui','kang','mao','qiu','qin','gu','hou','shao','meng','long','wan','duan','lei','qian','tang','yin','yi','chang','wu','qiao','he','lai','gong','wen','hong','ni','guan','zhuang','tong','yan','weng','zhuo','chi'];
+        var COMMON_GIVEN = ['wei','fang','na','min','jing','li','qiang','lei','jun','yang','yong','yan','jie','juan','tao','ming','chao','xiu','xia','ping','gang','ying','hua','hui','qiao','mei','hong','ling','jian','guo','hai','bo','feng','yu','hao','chen','qi','lin','yao','ting','qian','yue','ying','jia','xin','yi','dan','le','meng','rui','tian','kai','xiang','fei','peng','zhi','nan','zhe','si','ze','fan','zi','xuan','han','tong','xi','ran','mu','nuo','shu','wan','rong','lu','shuang','mei','lan','zhu','ju','he','lian','yun','xing','guang','xue','bing','bin','di','jun','yan','hua','yu','xiang','chun','qiu','dong','shan','shui','sen','sha','xiao'];
 
         function findKeyboard(pwd) {
             var s = pwd.toLowerCase();
@@ -256,83 +217,65 @@
             return null;
         }
 
-        // ========== 姓名与出生日期检测 ==========
-        function buildNameCandidates(name) {
-            var cands = [];
-            var s = (name || '').trim().toLowerCase();
-            if (!s) return cands;
-            cands.push(s);
-            cands.push(s.replace(/\s+/g, ''));
-            cands.push(s.replace(/\s+/g, '-'));
-            cands.push(s.replace(/\s+/g, '_'));
-            var initials = s.split(/[\s\-_.]+/).map(function (w) { return w.charAt(0); }).join('');
-            if (initials.length >= 2) cands.push(initials);
-            var chars = (name || '').replace(/[^\u4e00-\u9fa5]/g, '');
-            if (chars) {
-                cands.push(chars);
-                var pyList = [];
-                var ok = true;
-                for (var i = 0; i < chars.length; i++) {
-                    var p = PINYIN[chars.charAt(i)];
-                    if (!p) { ok = false; break; }
-                    pyList.push(p);
-                }
-                if (ok) {
-                    cands.push(pyList.join(''));
-                    cands.push(pyList.join(' '));
-                    cands.push(pyList.join('-'));
-                    pyList.forEach(function (p) { cands.push(p); });
-                    var ini = pyList.map(function (p) { return p.charAt(0); }).join('');
-                    if (ini.length >= 2) cands.push(ini);
+        // ========== 自动检测疑似姓名拼音与出生日期 ==========
+        function findNamePattern(pwd) {
+            var s = pwd.toLowerCase();
+            var i, j, idx, sur, gv, after;
+            for (i = 0; i < COMMON_SURNAMES.length; i++) {
+                sur = COMMON_SURNAMES[i];
+                idx = s.indexOf(sur);
+                while (idx >= 0) {
+                    after = s.substring(idx + sur.length);
+                    for (j = 0; j < COMMON_GIVEN.length; j++) {
+                        gv = COMMON_GIVEN[j];
+                        if (gv.length >= 2 && after.indexOf(gv) === 0) return sur + gv;
+                    }
+                    idx = s.indexOf(sur, idx + 1);
                 }
             }
-            return cands;
+            for (i = 0; i < COMMON_SURNAMES.length; i++) {
+                sur = COMMON_SURNAMES[i];
+                if (sur.length >= 4 && s.indexOf(sur) >= 0) return sur;
+            }
+            return null;
         }
 
-        function buildDateCandidates(dateStr) {
-            var cands = [];
-            if (!dateStr) return cands;
-            var d = new Date(dateStr);
-            if (isNaN(d.getTime())) return cands;
-            var y = d.getFullYear();
-            var yy = String(y).slice(2);
-            var m = d.getMonth() + 1;
-            var day = d.getDate();
-            var mm = String(m).padStart(2, '0');
-            var dd = String(day).padStart(2, '0');
-            cands.push(String(y) + mm + dd);
-            cands.push(yy + mm + dd);
-            cands.push(String(y) + '-' + mm + '-' + dd);
-            cands.push(String(y) + '/' + mm + '/' + dd);
-            cands.push(String(y));
-            cands.push(mm + dd);
-            cands.push(String(m) + String(day));
-            cands.push(mm + '-' + dd);
-            cands.push(mm + '/' + dd);
-            cands.push(String(y) + mm);
-            cands.push(yy + mm);
-            cands.push(dd + mm);
-            return cands;
+        function isLeap(y) { return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; }
+
+        function validDate(y, m, d) {
+            if (m < 1 || m > 12 || d < 1 || d > 31) return false;
+            var md = [31, isLeap(y) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            return d <= md[m - 1];
         }
 
-        function findPersonal(pwd, name, birth) {
-            var s = pwd.toLowerCase();
-            var res = { name: null, birth: null };
-            var best = null;
-            buildNameCandidates(name).forEach(function (c) {
-                if (c.length >= 2 && s.indexOf(c) >= 0) {
-                    if (!best || c.length > best.length) best = c;
+        function findBirthPattern(pwd) {
+            var runs = pwd.match(/\d{4,8}/g);
+            if (!runs) return null;
+            for (var r = 0; r < runs.length; r++) {
+                var s = runs[r];
+                if (s.length >= 8) {
+                    var y = parseInt(s.substr(0, 4), 10), m = parseInt(s.substr(4, 2), 10), d = parseInt(s.substr(6, 2), 10);
+                    if (y >= 1950 && y <= 2015 && validDate(y, m, d)) return s.substr(0, 8);
                 }
-            });
-            res.name = best;
-            best = null;
-            buildDateCandidates(birth).forEach(function (c) {
-                if (c.length >= 4 && s.indexOf(c) >= 0) {
-                    if (!best || c.length > best.length) best = c;
+                if (s.length >= 6) {
+                    var yy = parseInt(s.substr(0, 2), 10), m2 = parseInt(s.substr(2, 2), 10), d2 = parseInt(s.substr(4, 2), 10);
+                    var y2 = yy >= 50 ? 1900 + yy : 2000 + yy;
+                    if (y2 >= 1950 && y2 <= 2020 && validDate(y2, m2, d2)) return s.substr(0, 6);
                 }
-            });
-            res.birth = best;
-            return res;
+                if (s.length >= 6) {
+                    var y3 = parseInt(s.substr(0, 4), 10), m3 = parseInt(s.substr(4, 2), 10);
+                    if (y3 >= 1950 && y3 <= 2015 && m3 >= 1 && m3 <= 12) return s.substr(0, 6);
+                }
+                if (s.length >= 4) {
+                    var m4 = parseInt(s.substr(0, 2), 10), d4 = parseInt(s.substr(2, 2), 10);
+                    if (m4 >= 1 && m4 <= 12 && validDate(2000, m4, d4)) return s.substr(0, 4);
+                }
+                if (s.length >= 4) {
+                    var y5 = parseInt(s.substr(0, 4), 10);
+                    if (y5 >= 1950 && y5 <= 2015) return String(y5);
+                }
+            }
+            return null;
         }
 
         function barColor(ratio) {
@@ -405,9 +348,10 @@
                 if (dict.whole) patterns.push({ name: '常见弱密码', detail: '密码与常见弱密码「' + dict.word + '」完全相同', pen: 50 });
                 else patterns.push({ name: '字典单词', detail: '包含常见单词「' + dict.word + '」', pen: 25 });
             }
-            var personal = findPersonal(pwd, nameInput.value, birthInput.value);
-            if (personal.name) patterns.push({ name: '姓名泄露', detail: '包含姓名相关信息「' + personal.name + '」（拼音/缩写/原名）', pen: 20 });
-            if (personal.birth) patterns.push({ name: '出生日期泄露', detail: '包含出生日期「' + personal.birth + '」', pen: 15 });
+            var namePat = findNamePattern(pwd);
+            if (namePat) patterns.push({ name: '疑似姓名拼音', detail: '包含常见姓名拼音「' + namePat + '」', pen: 20 });
+            var birthPat = findBirthPattern(pwd);
+            if (birthPat) patterns.push({ name: '疑似出生日期', detail: '包含疑似出生日期「' + birthPat + '」', pen: 15 });
             var penalty = 0;
             patterns.forEach(function (p) { penalty += p.pen; });
 
@@ -442,7 +386,7 @@
                 level = '极弱';
                 color = '#e74c3c';
             }
-            if ((kb || rep || seq || personal.name || personal.birth) && entropy > 60 && (level === '强' || level === '极强')) {
+            if ((kb || rep || seq || namePat || birthPat) && entropy > 60 && (level === '强' || level === '极强')) {
                 level = '中等';
                 color = '#a5d65a';
             }
@@ -499,8 +443,8 @@
                 if (dict.whole) sug.push({ t: 'bad', text: '该密码与常见弱密码完全一致，应立即更换' });
                 else sug.push({ t: 'bad', text: '包含常见单词「' + dict.word + '」，字典攻击可轻松命中' });
             }
-            if (personal.name) sug.push({ t: 'bad', text: '密码包含姓名相关信息「' + personal.name + '」，攻击者可能通过公开信息（社交平台等）猜到' });
-            if (personal.birth) sug.push({ t: 'bad', text: '密码包含出生日期「' + personal.birth + '」，生日是字典攻击的高频词' });
+            if (namePat) sug.push({ t: 'bad', text: '密码包含常见姓名拼音「' + namePat + '」，姓名是最常被猜测的密码素材' });
+            if (birthPat) sug.push({ t: 'bad', text: '密码包含疑似出生日期「' + birthPat + '」，生日数字是字典攻击的高频项' });
             if (entropy < 60) sug.push({ t: 'bad', text: '信息熵仅 ' + entropy.toFixed(1) + ' bit（&lt; 60），建议使用随机组合或 4 个随机单词组成的短语（如 correct-horse-battery-staple）' });
             if (!sug.length) {
                 sug.push({ t: 'good', text: '恭喜！密码在长度、种类、模式与熵值上表现优秀' });
@@ -533,8 +477,6 @@
             analyze('');
             pwdInput.focus();
         });
-        nameInput.addEventListener('input', function () { analyze(pwdInput.value); });
-        birthInput.addEventListener('change', function () { analyze(pwdInput.value); });
     })();
     </script>
     <script src="../global-ui.js"></script>

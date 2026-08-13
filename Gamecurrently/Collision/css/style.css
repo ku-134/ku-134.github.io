@@ -60,6 +60,9 @@ h2 { color: var(--accent); letter-spacing: 0.2em; }
 .room-input { background: #0d1626; border: 1px solid rgba(255,255,255,0.2); color: var(--text); padding: 12px; border-radius: 10px; font-size: 1.6rem; letter-spacing: 0.5em; text-align: center; width: 220px; }
 .room-code { font-size: 3.2rem; letter-spacing: 0.3em; color: var(--accent2); text-shadow: 0 0 20px rgba(79,195,247,0.6); }
 
+/* 选球/联机：黑屏切换 */
+#screen-select, #screen-online { background: #0a0f1e; }
+
 /* 对战 */
 #screen-game { background: #05080f; }
 #gameCanvas { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 6px; box-shadow: 0 0 40px rgba(126,240,200,0.15); }

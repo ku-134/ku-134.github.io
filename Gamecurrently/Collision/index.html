@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>赛博斗蛐蛐</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+<div id="rotate-tip">请将设备旋转至横屏 🎮</div>
+
+<div id="app">
+  <!-- 首页 -->
+  <section id="screen-home" class="screen active">
+    <h1 id="gameTitle">赛博斗蛐蛐</h1>
+    <p class="subtitle">观战 · 干涉 · 决胜</p>
+    <div class="home-btns">
+      <button id="btn-start" class="btn big">开始</button>
+      <button id="btn-bestiary" class="btn big">图鉴</button>
+    </div>
+    <button id="btn-settings" class="btn gear" title="设置">⚙</button>
+  </section>
+
+  <!-- 开始面板（左滑出） -->
+  <section id="panel-start" class="panel left hidden">
+    <h2>选择模式</h2>
+    <button id="btn-single" class="btn wide">自己</button>
+    <button id="btn-online" class="btn wide">联机</button>
+    <button class="btn wide back" data-back="screen-home">返回</button>
+  </section>
+
+  <!-- 图鉴面板（右滑出） -->
+  <section id="panel-bestiary" class="panel right hidden">
+    <h2>球之图鉴</h2>
+    <div id="bestiary-list" class="card-list"></div>
+    <div id="bestiary-detail" class="detail hidden"></div>
+    <button class="btn wide back" data-back="screen-home">返回</button>
+  </section>
+
+  <!-- 设置面板 -->
+  <section id="panel-settings" class="panel right hidden">
+    <h2>设置</h2>
+    <label class="set-row">球体图案
+      <input type="file" id="skin-upload" accept="image/*">
+    </label>
+    <label class="set-row">主动技能按键
+      <input id="key-active" maxlength="1" value="J">
+    </label>
+    <p class="tip">自定义皮肤将在下一场对局中生效（联机版同步功能开发中）</p>
+    <button class="btn wide back" data-back="screen-home">返回</button>
+  </section>
+
+  <!-- 选球界面（黑屏切换） -->
+  <section id="screen-select" class="screen hidden">
+    <h2>选择你的球</h2>
+    <div id="select-list" class="card-list"></div>
+    <div class="row">
+      <button id="btn-select-confirm" class="btn big">确认出战</button>
+      <button class="btn back" data-back="panel-start">返回</button>
+    </div>
+  </section>
+
+  <!-- 联机界面 -->
+  <section id="screen-online" class="screen hidden">
+    <h2>联机对战</h2>
+    <div class="online-cols">
+      <div class="col">
+        <button id="btn-create-room" class="btn wide">创建房间</button>
+        <div id="room-wait" class="hidden">
+          <p>房间号</p>
+          <div id="room-code" class="room-code"></div>
+          <p class="tip">等待对方加入…</p>
+        </div>
+      </div>
+      <div class="col">
+        <input id="room-input" class="room-input" maxlength="5" placeholder="5位房间号" inputmode="numeric">
+        <button id="btn-join-room" class="btn wide">加入房间</button>
+        <p id="room-msg" class="tip"></p>
+      </div>
+    </div>
+    <button class="btn wide back" data-back="panel-start">返回</button>
+  </section>
+
+  <!-- 对战界面 -->
+  <section id="screen-game" class="screen hidden">
+    <canvas id="gameCanvas"></canvas>
+    <div id="hud">
+      <div class="side left">
+        <div class="pname" id="p2-name"></div>
+        <div class="bar hp"><div class="fill" id="p2-hp"></div></div>
+        <div class="bar passive"><div class="fill" id="p2-passive"></div></div>
+      </div>
+      <div class="side right">
+        <div class="pname" id="p1-name"></div>
+        <div class="bar hp"><div class="fill" id="p1-hp"></div></div>
+        <div class="bar passive"><div class="fill" id="p1-passive"></div></div>
+      </div>
+    </div>
+    <div id="skill-btn" class="skill-btn hidden"><span class="sname"></span><span class="scd"></span></div>
+    <div id="cd-bar" class="cd-bar hidden"><span id="cd-name"></span><div class="bar"><div id="cd-fill"></div></div><span id="cd-key">J</span></div>
+    <div id="countdown" class="hidden"></div>
+    <div id="result" class="hidden"></div>
+  </section>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

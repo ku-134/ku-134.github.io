@@ -38,6 +38,7 @@ export function unpack(raw) {
 }
 
 // 主机 → 客户端：状态快照（渲染 + HUD 最小集）
+// cd.dash = 基础冲刺冷却，cd.left = 职业技能冷却
 export function encodeState(sim, balls, phantoms) {
   return {
     seq: ++sim._seq,
@@ -49,6 +50,7 @@ export function encodeState(sim, balls, phantoms) {
       dashing: !!b.dashing, flash: b.flash > 0,
       effects: [...b.effects.values()].map(e => ({ id: e.def.id, left: +Math.max(0, e.duration - e.t).toFixed(1) })),
       cd: {
+        dash: +(b.dashSkill?.cooldownLeft ?? 0).toFixed(1),
         left: +(b.skill?.cooldownLeft ?? 0).toFixed(1),
         total: b.skill?.cd ?? 0,
         passiveTimer: +(b.skill?.passiveTimer ?? 0).toFixed(1),

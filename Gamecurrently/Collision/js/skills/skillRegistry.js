@@ -6,9 +6,13 @@ import thorn from './definitions/thorn.js';
 import magnet from './definitions/magnet.js';
 import puppet from './definitions/puppet.js';
 import phantom from './definitions/phantom.js';
+import baseDash from './definitions/baseDash.js';
 
+// 职业列表（图鉴/选球/联机选球展示用）
 const defs = [giant, legion, poison, thorn, magnet, puppet, phantom];
+// 全部定义（含基础冲刺：可创建但不展示在列表）
 const byId = Object.fromEntries(defs.map(d => [d.id, d]));
+byId[baseDash.id] = baseDash;
 
 export const getSkillDefs = () => defs;
 export const getSkillDef = id => byId[id];

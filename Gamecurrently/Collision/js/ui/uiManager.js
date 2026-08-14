@@ -1,10 +1,11 @@
 import { bindTap } from './input.js';
 
 // 页面管理：屏幕（全屏切换）与面板（弹窗/滑入）
+// ★ 新增战场/面板必须在这里注册，否则切换时残留可见导致重叠
 export class UIManager {
   constructor() {
     this.screens = {};
-    ['home', 'select', 'online', 'game'].forEach(id => {
+    ['home', 'select', 'online', 'game', 'game-online'].forEach(id => {
       this.screens[id] = document.getElementById('screen-' + id);
     });
     this.panels = {};

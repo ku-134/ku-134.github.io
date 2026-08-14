@@ -1,7 +1,7 @@
 import CONFIG from '../config.js';
 import { Ball } from '../entities/ball.js';
 import { GameLoop } from '../core/gameLoop.js';
-import { move, collideWalls, collideBalls } from '../core/physics.js';
+import { MatchSim } from '../core/matchSim.js';
 import { createSkill } from '../skills/skillRegistry.js';
 import { AIController } from '../ai/aiController.js';
 import { Renderer } from '../rendering/renderer.js';
@@ -12,7 +12,7 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 const AI_CLASSES = ['giant', 'legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom'];
 
 // 单机模式：玩家选球 vs AI，321 倒计时，观战 + 主动干涉
-// 狂暴机制：30s倒计时结束后，每秒对全场所有球造成10点伤害（10s内必分胜负）
+// 对战模拟与联机主机共用 MatchSim（狂暴机制、胜负判定一致）
 export class SingleMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -23,12 +23,9 @@ export class SingleMode {
     this.phase = 'idle';
     this.countdown = 0;
     this.countdownShown = -1;
-    this.matchTime = 0;
-    this.berserk = false;
-    this.berserkTime = 0;
-    this.berserkTick = 0;
     this.curSkillId = 'giant';
     this.balls = [];
+    this.sim = null;
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
     this.unsubs = [];
     this.unbindInput = null;
@@ -47,6 +44,7 @@ export class SingleMode {
     p1.isPlayer = true;
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
+    this.sim = new MatchSim(this.ctx, this.balls);
     this.ai = new AIController(p2, this.ctx);
     this.unsubs.forEach(fn => fn());
     this.unsubs = [];
@@ -92,10 +90,6 @@ export class SingleMode {
     this.phase = 'countdown';
     this.countdown = 3;
     this.countdownShown = -1;
-    this.matchTime = 0;
-    this.berserk = false;
-    this.berserkTime = 0;
-    this.berserkTick = 0;
     this.loop.start();
   }
   update(dt) {
@@ -111,43 +105,12 @@ export class SingleMode {
       return;
     }
     if (this.phase === 'end') return;
-    for (const b of this.balls) {
-      b.update(dt);
-      this.ctx.effects.update(b, dt);
-      b.flash = Math.max(0, b.flash - dt * 3);
-      move(b, dt);
-      collideWalls(b, this.ctx, this.loop.time);
-      b.skill?.update(dt);
-    }
-    collideBalls(this.balls[0], this.balls[1], this.ctx, this.loop.time);
+    const res = this.sim.step(dt);
     this.ai?.update(dt);
-    this.matchTime += dt;
-    // 狂暴机制：30s 倒计时 → 每秒全场 10 伤
-    if (!this.berserk) {
-      const left = Math.max(0, CONFIG.BERSERK.delay - this.matchTime);
-      this.hud.showMatchTimer(Math.ceil(left), false);
-      if (left <= 0) {
-        this.berserk = true;
-        this.berserkTime = 0;
-        this.berserkTick = 0;
-        this.hud.showMatchTimer(CONFIG.BERSERK.duration, true);
-      }
-    } else {
-      this.berserkTime += dt;
-      this.berserkTick += dt;
-      if (this.berserkTick >= 1) {
-        this.berserkTick -= 1;
-        for (const b of this.balls) {
-          if (!b.dead) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true);
-        }
-      }
-      const left = Math.max(0, CONFIG.BERSERK.duration - this.berserkTime);
-      this.hud.showMatchTimer(Math.ceil(left), true);
-      if (left <= 0) this.endMatch();
-    }
+    this.hud.showMatchTimer(this.sim.berserkLeft(), this.sim.berserk);
     this.renderer.update(dt);
     this.hud.tick();
-    if (this.balls.some(b => b.dead)) this.endMatch();
+    if (res.over) this.endMatch();
   }
   render() { this.renderer.render(this.balls, this.loop.time, this.ctx.phantoms || []); }
   endMatch() {

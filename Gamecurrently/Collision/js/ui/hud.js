@@ -1,6 +1,7 @@
 import CONFIG from '../config.js';
 
 // 对局 HUD：HP条/被动条/技能按钮（手机）/冷却条（电脑）
+// 被动技能（如巨人暴怒）：平时显示积攒进度，发动后显示剩余持续时间，循环刷新
 export class Hud {
   constructor() {
     this.el = {
@@ -30,11 +31,9 @@ export class Hud {
     if (isTouch) {
       this.el.cdBar.classList.add('hidden');
       this.el.skillBtn.classList.remove('hidden');
-      this.el.sname.textContent = p1.skill?.def.skillName ?? '';
     } else {
       this.el.skillBtn.classList.add('hidden');
       this.el.cdBar.classList.remove('hidden');
-      this.el.cdName.textContent = p1.skill?.def.skillName ?? '';
       this.el.cdKey.textContent = key.replace('Key', '');
     }
     this.tick();
@@ -46,11 +45,38 @@ export class Hud {
     this.setBar(this.el.p2hp, p2.hp / p2.maxHp);
     this.setBar(this.el.p1passive, (p1.skill?.state?.anger ?? 0) / CONFIG.GIANT.angerMax);
     this.setBar(this.el.p2passive, (p2.skill?.state?.anger ?? 0) / CONFIG.GIANT.angerMax);
-    const s = p1.skill;
-    if (s?.cd > 0) {
-      if (this.isTouch) {
+    this.updateSkillUI(p1);
+  }
+  // 玩家技能按钮/冷却条：主动=冷却；被动=积攒进度 / 发动剩余时间
+  updateSkillUI(ball) {
+    const s = ball.skill;
+    if (!s) return;
+    const isPassive = s.def.type === 'passive' || s.def.type === 'both';
+    const giantSt = ball.effects.get('giant_form');
+    if (this.isTouch) {
+      const btn = this.el.skillBtn;
+      if (isPassive) {
+        this.el.sname.textContent = giantSt ? '巨大化' : s.def.skillName;
+        if (giantSt) {
+          const left = Math.max(0, Math.ceil(giantSt.duration - giantSt.t));
+          this.el.scd.textContent = left + 's';
+          btn.classList.add('on-cd');
+        } else {
+          this.el.scd.textContent = `${s.state.anger ?? 0}/${CONFIG.GIANT.angerMax}`;
+          btn.classList.remove('on-cd');
+        }
+      } else if (s.cd > 0) {
+        this.el.sname.textContent = s.def.skillName;
         this.el.scd.textContent = s.cooldownLeft > 0 ? Math.ceil(s.cooldownLeft) : '⚡';
-        this.el.skillBtn.classList.toggle('on-cd', s.cooldownLeft > 0);
+        btn.classList.toggle('on-cd', s.cooldownLeft > 0);
+      }
+    } else {
+      this.el.cdName.textContent = s.def.skillName;
+      if (isPassive) {
+        const ratio = giantSt
+          ? Math.max(0, (giantSt.duration - giantSt.t) / giantSt.duration)
+          : (s.state.anger ?? 0) / CONFIG.GIANT.angerMax;
+        this.el.cdFill.style.width = (100 * ratio) + '%';
       } else {
         this.el.cdFill.style.width = (100 * (1 - s.cdRatio)) + '%';
       }

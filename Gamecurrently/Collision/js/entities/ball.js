@@ -22,6 +22,7 @@ export class Ball {
     this.effects = new Map();
     this.dashing = false;
     this.dead = false;
+    this.isPlayer = false;
   }
   get vx() { return Math.cos(this.angle) * this.speed; }
   get vy() { return Math.sin(this.angle) * this.speed; }
@@ -42,6 +43,10 @@ export class Ball {
     }
     this.hp = Math.max(0, this.hp - final);
     this.flash = 1;
+    // 受伤数字（受击球头顶弹出，持续0.5s）
+    if (final > 0) {
+      ctx.events.emit('fx:damage', { x: this.x, y: this.y - this.radiusScaled - 10, amount: final });
+    }
     ctx.events.emit('ball:hp', { ball: this });
     if (this.hp <= 0) { this.dead = true; ctx.events.emit('ball:die', { ball: this }); }
   }

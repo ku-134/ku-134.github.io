@@ -118,7 +118,7 @@ document.getElementById('btn-join-room').addEventListener('click', () => {
 const keyInput = document.getElementById('key-active');
 keyInput.value = localStorage.getItem('collision.key') || 'J';
 keyInput.addEventListener('change', () => {
-  const k = (keyInput.value.toUpperCase() || 'J').replace(\/[^A-Z]\/g, '');
+  const k = (keyInput.value.toUpperCase() || 'J').replace(/[^A-Z]/g, '');
   keyInput.value = k || 'J';
   localStorage.setItem('collision.key', k || 'J');
 });

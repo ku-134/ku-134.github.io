@@ -1,8 +1,8 @@
 import CONFIG from '../../config.js';
 import { rayHitRect } from '../../core/math.js';
 
-// 兵团【冲锋】：主动瞄准引导线 → 冲刺
-// 平衡：冷却8s；50伤高爆发但撞墙即停、可被巨大化巨人反制
+// 兵团【冲锋】：主动瞄准引导线 → 冲刺（50伤高爆发）
+// 效果 id dash 与基础冲刺 dash_base 独立，移除时互不抢速度
 export default {
   id: 'legion',
   name: '兵团',
@@ -26,6 +26,10 @@ export default {
       if (other && !other.dead) other.takeDamage(st.params.damage, ctx);
       ctx.effects.remove(b, 'dash');
     },
-    onRemove(b) { b.dashing = false; b.speed = b.baseSpeed; }
+    onRemove(b) {
+      b.dashing = false;
+      // 若基础冲刺还在（极端叠加），不抢着恢复速度
+      if (!b.effects.has('dash_base')) b.speed = b.baseSpeed;
+    }
   }]
 };

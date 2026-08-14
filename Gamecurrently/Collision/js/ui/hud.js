@@ -2,23 +2,25 @@ import CONFIG from '../config.js';
 
 // 对局 HUD：HP条/技能状态条（被动进度 or 主动冷却，敌我可见）
 // 技能按钮（手机）/冷却条（电脑）/狂暴倒计时
+// prefix：单机用 ''，联机用 'online-'（独立战场，元素不冲突）
 export class Hud {
-  constructor() {
+  constructor(prefix = '') {
+    this.prefix = prefix;
     this.el = {
-      p1name: document.getElementById('p1-name'),
-      p1hp: document.getElementById('p1-hp'),
-      p1passive: document.getElementById('p1-passive'),
-      p2name: document.getElementById('p2-name'),
-      p2hp: document.getElementById('p2-hp'),
-      p2passive: document.getElementById('p2-passive'),
-      skillBtn: document.getElementById('skill-btn'),
-      sname: document.querySelector('#skill-btn .sname'),
-      scd: document.querySelector('#skill-btn .scd'),
-      cdBar: document.getElementById('cd-bar'),
-      cdName: document.getElementById('cd-name'),
-      cdFill: document.getElementById('cd-fill'),
-      cdKey: document.getElementById('cd-key'),
-      matchTimer: document.getElementById('match-timer'),
+      p1name: document.getElementById(prefix + 'p1-name'),
+      p1hp: document.getElementById(prefix + 'p1-hp'),
+      p1passive: document.getElementById(prefix + 'p1-passive'),
+      p2name: document.getElementById(prefix + 'p2-name'),
+      p2hp: document.getElementById(prefix + 'p2-hp'),
+      p2passive: document.getElementById(prefix + 'p2-passive'),
+      skillBtn: document.getElementById(prefix + 'skill-btn'),
+      sname: document.querySelector('#' + prefix + 'skill-btn .sname'),
+      scd: document.querySelector('#' + prefix + 'skill-btn .scd'),
+      cdBar: document.getElementById(prefix + 'cd-bar'),
+      cdName: document.getElementById(prefix + 'cd-name'),
+      cdFill: document.getElementById(prefix + 'cd-fill'),
+      cdKey: document.getElementById(prefix + 'cd-key'),
+      matchTimer: document.getElementById(prefix + 'match-timer'),
     };
     this.balls = null;
     this.isTouch = false;
@@ -28,7 +30,7 @@ export class Hud {
     this.isTouch = isTouch;
     const [p1, p2] = balls;
     this.el.p1name.textContent = `你 · ${p1.skill?.def.name ?? '无'}`;
-    this.el.p2name.textContent = `AI · ${p2.skill?.def.name ?? '无'}`;
+    this.el.p2name.textContent = `对方 · ${p2.skill?.def.name ?? '无'}`;
     if (isTouch) {
       this.el.cdBar.classList.add('hidden');
       this.el.skillBtn.classList.remove('hidden');
@@ -38,6 +40,11 @@ export class Hud {
       this.el.cdKey.textContent = key.replace('Key', '');
     }
     this.tick();
+  }
+  // 覆盖名字文案（联机用：显示对方昵称）
+  setNames(p1Text, p2Text) {
+    if (p1Text) this.el.p1name.textContent = p1Text;
+    if (p2Text) this.el.p2name.textContent = p2Text;
   }
   // 狂暴倒计时：顶部中间，red=true 时为狂暴阶段
   showMatchTimer(sec, red) {
@@ -97,7 +104,6 @@ export class Hud {
     if (this.isTouch) {
       const btn = this.el.skillBtn;
       if (isPassive) {
-        // 冷却型被动（荆棘）：显示生效剩余/冷却秒数
         if (p.cooldown) {
           this.el.sname.textContent = s.def.skillName;
           if (s.passiveActive) {
@@ -130,7 +136,6 @@ export class Hud {
     } else {
       this.el.cdName.textContent = s.def.skillName;
       if (isPassive) {
-        // 冷却型被动（荆棘）：生效=剩余比例，冷却=充能进度
         if (p.cooldown) {
           if (s.passiveActive) {
             const st = ball.effects.get(p.effectId);
@@ -156,17 +161,17 @@ export class Hud {
     el.style.width = Math.max(0, Math.min(100, ratio * 100)) + '%';
   }
   showResult(win) {
-    const el = document.getElementById('result');
+    const el = document.getElementById(this.prefix + 'result');
     el.classList.remove('hidden');
     el.innerHTML = win
-      ? '<div class="rwin">🎉 胜利！</div><button id="btn-again" class="btn big">再来一局</button><button id="btn-home2" class="btn">返回首页</button>'
-      : '<div class="rlose">💥 惜败…</div><button id="btn-again" class="btn big">再来一局</button><button id="btn-home2" class="btn">返回首页</button>';
+      ? '<div class="rwin">🎉 胜利！</div><button id="' + this.prefix + 'btn-again" class="btn big">再来一局</button><button id="' + this.prefix + 'btn-home2" class="btn">返回大厅</button>'
+      : '<div class="rlose">💥 惜败…</div><button id="' + this.prefix + 'btn-again" class="btn big">再来一局</button><button id="' + this.prefix + 'btn-home2" class="btn">返回大厅</button>';
   }
-  hideResult() { document.getElementById('result').classList.add('hidden'); }
+  hideResult() { document.getElementById(this.prefix + 'result').classList.add('hidden'); }
   showCountdown(n) {
-    const el = document.getElementById('countdown');
+    const el = document.getElementById(this.prefix + 'countdown');
     el.classList.remove('hidden');
     el.textContent = n > 0 ? n : 'GO!';
   }
-  hideCountdown() { document.getElementById('countdown').classList.add('hidden'); }
+  hideCountdown() { document.getElementById(this.prefix + 'countdown').classList.add('hidden'); }
 }

@@ -5,6 +5,7 @@ const STATE_HZ = 30;
 
 // 主机权威：跑完整对战模拟 + 30Hz 状态广播 + 处理客人技能指令（dash=基础冲刺 / skill=职业技能）
 // wild：战场干扰球（巨人），随状态广播给客户端渲染
+// RESULT.win 语义：'host'=房主赢 / 'guest'=客人赢 / 'draw'=平局（明确视角，两端各自判断）
 export class Host {
   constructor({ signal, ctx, balls, wild = null, onResult }) {
     this.signal = signal;
@@ -35,9 +36,10 @@ export class Host {
     if (res.over && !this._ended) {
       this._ended = true;
       const [a, b] = this.balls;
-      const win = a.dead && b.dead ? 'draw' : a.dead ? 'enemy' : 'you';
+      // 明确视角：host/guest/draw
+      const win = a.dead && b.dead ? 'draw' : a.dead ? 'guest' : 'host';
       this.signal.send(MSG.RESULT, { win, hp1: a.hp, hp2: b.hp });
-      this.onResult?.(win);
+      this.onResult?.({ win });
     }
   }
   // 客人技能指令（客人 = balls[1]）；slot: dash=基础冲刺 / skill=职业技能

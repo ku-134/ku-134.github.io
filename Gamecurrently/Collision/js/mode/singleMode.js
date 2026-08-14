@@ -8,12 +8,12 @@ import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
 import { isTouchDevice, bindHold } from '../ui/input.js';
 
-// AI 可选职业池
-const AI_CLASSES = ['giant', 'legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom'];
+// AI 可选职业池（巨人已转战场干扰球，剔除）
+const AI_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom'];
 
 // 单机模式：玩家选球 vs AI，321 倒计时，观战 + 主动干涉
-// 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带45伤）+ 职业技能（J键/右下按钮，主动职业）
-// 对战模拟与联机主机共用 MatchSim
+// 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
+// 战场干扰球：巨人（第三方）独立游走，只保留愤怒机制（碰撞攒怒→巨大化30伤）
 export class SingleMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -24,8 +24,9 @@ export class SingleMode {
     this.phase = 'idle';
     this.countdown = 0;
     this.countdownShown = -1;
-    this.curSkillId = 'giant';
+    this.curSkillId = 'legion';
     this.balls = [];
+    this.wild = null;
     this.sim = null;
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
     this.unsubs = [];
@@ -40,16 +41,20 @@ export class SingleMode {
     const p2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, name: 'AI' });
     p1.skill = createSkill(playerSkillId, p1, this.ctx);
     p2.skill = createSkill(AI_CLASSES[Math.floor(Math.random() * AI_CLASSES.length)], p2, this.ctx);
-    // 基础冲刺（全职业通用；兵团职业自动带45伤变体）
+    // 基础冲刺（全职业通用；兵团职业自动带30伤变体）
     p1.dashSkill = createDashSkill(p1, this.ctx, playerSkillId);
     p2.dashSkill = createDashSkill(p2, this.ctx, p2.skill.def.id);
     // 球色 = 职业色；自己的球带倒三角标记
     p1.color = p1.skill.def.color;
     p2.color = p2.skill.def.color;
     p1.isPlayer = true;
+    // 战场干扰球（巨人）：hp 极高不死，只保留愤怒机制，无 dashSkill（不触发机动冲刺）
+    this.wild = new Ball({ x: w * 0.5, y: h * 0.5, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, name: '战场巨人' });
+    this.wild.skill = createSkill('giant', this.wild, this.ctx);
+    this.wild.color = this.wild.skill.def.color;
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
-    this.sim = new MatchSim(this.ctx, this.balls);
+    this.sim = new MatchSim(this.ctx, this.balls, this.wild);
     this.ai = new AIController(p2, this.ctx);
     this.unsubs.forEach(fn => fn());
     this.unsubs = [];
@@ -126,7 +131,10 @@ export class SingleMode {
     this.hud.tick();
     if (res.over) this.endMatch();
   }
-  render() { this.renderer.render(this.balls, this.loop.time, this.ctx.phantoms || []); }
+  render() {
+    const all = this.wild ? [...this.balls, this.wild] : this.balls;
+    this.renderer.render(all, this.loop.time, this.ctx.phantoms || []);
+  }
   endMatch() {
     if (this.phase === 'end') return;
     this.phase = 'end';

@@ -4,16 +4,17 @@ import { GameLoop } from '../core/gameLoop.js';
 import { createSkill, getSkillDef, getSkillDefs } from '../skills/skillRegistry.js';
 import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
-import { isTouchDevice, bindHold } from '../ui/input.js';
+import { isTouchDevice, bindHold, bindTap } from '../ui/input.js';
 import { renderCards } from '../ui/cards.js';
 import { Signal } from '../net/signal.js';
 import { Host } from '../net/host.js';
 import { Guest, makeHudSkill } from '../net/guest.js';
 import { MSG, isValidRoomCode } from '../net/protocol.js';
 
-// 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球 → 321 → 主机权威对战
+// 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球 → 各自准备 → 321 → 主机权威对战
 // 独立战场 screen-game-online（HUD 前缀 online-），与单机互不干扰
 // 对方昵称：设置里预设（localStorage collision.nick），随 PICK 交换
+// 技能按钮：HUD myIndex（房主=0 自己的球，客人=1 自己的球）
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -32,6 +33,8 @@ export class OnlineMode {
     this.enemyName = '对手';
     this.picked = false;
     this.enemyPicked = false;
+    this.ready = false;
+    this.enemyReady = false;
     this.phase = 'idle';   // idle → countdown → playing → ended
     this.countdown = 0;
     this.countdownShown = -1;
@@ -47,7 +50,9 @@ export class OnlineMode {
       enemy: document.getElementById('online-enemy'),
       msg: document.getElementById('room-msg'),
       input: document.getElementById('room-input'),
+      btnReady: document.getElementById('btn-ready'),
     };
+    bindTap(this.els.btnReady, () => this._ready());
   }
   // 昵称（设置里预设）
   get myName() { return (localStorage.getItem('collision.nick') || '玩家').slice(0, 8); }
@@ -67,6 +72,8 @@ export class OnlineMode {
     this.myClass = null; this.enemyClass = null;
     this.enemyName = '对手';
     this.picked = false; this.enemyPicked = false;
+    this.ready = false; this.enemyReady = false;
+    this._resetReadyBtn();
     this.phase = 'idle';
   }
   // ---- 创建房间 ----
@@ -110,6 +117,7 @@ export class OnlineMode {
     this.els.pick.classList.add('hidden');
     this.els.pick.innerHTML = '';
     this.els.msg.textContent = '';
+    this._resetReadyBtn();
   }
   _renderPick() {
     this.els.pick.classList.remove('hidden');
@@ -120,9 +128,27 @@ export class OnlineMode {
   _pick(classId) {
     this.myClass = classId;
     this.picked = true;
-    this.els.status.textContent = `你已选择【${getSkillDef(classId).name}】，等待对方…`;
+    this.els.status.textContent = `你已选择【${getSkillDef(classId).name}】，点击下方【准备】`;
+    this.els.btnReady.classList.remove('hidden');
     this.signal.send(MSG.PICK, { classId, name: this.myName });
     this._tryStart();
+  }
+  // ---- 准备 ----
+  _ready() {
+    if (!this.picked || this.ready) return;
+    this.ready = true;
+    this.signal.send(MSG.READY, {});
+    this.els.btnReady.textContent = '已准备 ✓';
+    this.els.btnReady.disabled = true;
+    this.els.btnReady.classList.add('on-cd');
+    this.els.status.textContent = this.enemyReady ? '双方已准备，即将开始…' : '已准备，等待对方准备…';
+    this._tryStart();
+  }
+  _resetReadyBtn() {
+    this.els.btnReady.classList.add('hidden');
+    this.els.btnReady.textContent = '准备';
+    this.els.btnReady.disabled = false;
+    this.els.btnReady.classList.remove('on-cd');
   }
   // ---- 消息处理（核心：STATE 驱动客户端画面） ----
   _onData(m) {
@@ -133,7 +159,15 @@ export class OnlineMode {
       const def = getSkillDef(m.d.classId);
       this.els.enemy.textContent = `对方：${this.enemyName}（${def ? def.name : m.d.classId}）`;
       this.els.enemy.classList.remove('hidden');
-      this.els.status.textContent = this.picked ? '双方就绪，即将开始…' : `对方已选，请选择你的球`;
+      this.els.status.textContent = this.picked
+        ? (this.ready ? '对方已选球，点击准备开始' : `对方已选，你已选【${getSkillDef(this.myClass)?.name}】，点击准备`)
+        : '对方已选，请选择你的球';
+      this._tryStart();
+    } else if (m.t === MSG.READY) {
+      this.enemyReady = true;
+      this.els.status.textContent = this.ready
+        ? '双方已准备，即将开始…'
+        : `对方已准备，请点击【准备】`;
       this._tryStart();
     } else if (m.t === MSG.START) {
       this._startMatch(m.d);
@@ -145,9 +179,9 @@ export class OnlineMode {
       if (this.isHost) this._begin();
     }
   }
-  // 主机在双方就绪时广播开局
+  // 主机在双方选球 + 双方准备后广播开局
   _tryStart() {
-    if (!this.isHost || !this.picked || !this.enemyPicked) return;
+    if (!this.isHost || !this.picked || !this.enemyPicked || !this.ready || !this.enemyReady) return;
     this._begin();
   }
   _begin() {
@@ -185,7 +219,8 @@ export class OnlineMode {
     this.countdown = 3;
     this.countdownShown = -1;
     const key = 'Key' + (localStorage.getItem('collision.key') || 'J');
-    this.hud.bind(this.balls, { isTouch: this.isTouch, key });
+    // myIndex：技能按钮显示自己的球（房主=0，客人=1）
+    this.hud.bind(this.balls, { isTouch: this.isTouch, key, myIndex: this.isHost ? 0 : 1 });
     // 名字文案：右侧=主机侧，左侧=客人侧（对方昵称来自设置/交换）
     const hostName = this.isHost ? '你' : this.enemyName;
     const guestName = this.isHost ? this.enemyName : '你';
@@ -232,7 +267,7 @@ export class OnlineMode {
   }
   _bindInput(key) {
     this.unbindInput?.();
-    // 只控制自己的球：主机=本地 balls[0]，客人=发指令由主机执行
+    // 只控制自己的球：房主=本地 balls[0]，客人=发指令由主机执行
     this.unbindInput = bindHold({
       el: document.getElementById('skill-btn-online'),
       isTouch: this.isTouch,

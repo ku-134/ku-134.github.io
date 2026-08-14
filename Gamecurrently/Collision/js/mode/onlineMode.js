@@ -9,14 +9,16 @@ import { renderCards } from '../ui/cards.js';
 import { Signal } from '../net/signal.js';
 import { Host } from '../net/host.js';
 import { Guest, makeHudSkill } from '../net/guest.js';
-import { MSG } from '../net/protocol.js';
+import { MSG, isValidRoomCode } from '../net/protocol.js';
 
-// 联机模式：创建/加入房间（5位房间号 + PeerJS）→ 双方选球 → 321 → 主机权威对战
+// 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球 → 321 → 主机权威对战
+// 独立战场 screen-game-online（HUD 前缀 online-），与单机互不干扰
+// 对方昵称：设置里预设（localStorage collision.nick），随 PICK 交换
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
     this.renderer = new Renderer(canvas);
-    this.hud = new Hud();
+    this.hud = new Hud('online-');
     this.onBack = onBack;
     this.isTouch = isTouchDevice();
     this.signal = null;
@@ -27,6 +29,7 @@ export class OnlineMode {
     this.isHost = false;
     this.myClass = null;
     this.enemyClass = null;
+    this.enemyName = '对手';
     this.picked = false;
     this.enemyPicked = false;
     this.phase = 'idle';   // idle → countdown → playing → ended
@@ -34,6 +37,7 @@ export class OnlineMode {
     this.countdownShown = -1;
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
     this.unbindInput = null;
+    this._unsubs = [];
     this.els = {
       lobby: document.getElementById('online-lobby'),
       wait: document.getElementById('online-wait'),
@@ -45,6 +49,8 @@ export class OnlineMode {
       input: document.getElementById('room-input'),
     };
   }
+  // 昵称（设置里预设）
+  get myName() { return (localStorage.getItem('collision.nick') || '玩家').slice(0, 8); }
   // 进入联机大厅（main.js 点击【联机】时调用）
   enter() {
     this.leave();
@@ -59,6 +65,7 @@ export class OnlineMode {
     this.signal = null;
     this.isHost = false;
     this.myClass = null; this.enemyClass = null;
+    this.enemyName = '对手';
     this.picked = false; this.enemyPicked = false;
     this.phase = 'idle';
   }
@@ -82,8 +89,8 @@ export class OnlineMode {
   }
   // ---- 加入房间 ----
   joinRoom(code) {
-    code = (code || '').trim().toUpperCase();
-    if (code.length !== 5) { this.els.msg.textContent = '请输入5位房间号（可含字母）'; return; }
+    code = (code || '').trim();
+    if (!isValidRoomCode(code)) { this.els.msg.textContent = '请输入5位数字房间号'; return; }
     this.leave();
     this.isHost = false;
     this._enterWait('正在连接房间 ' + code + ' …');
@@ -114,21 +121,24 @@ export class OnlineMode {
     this.myClass = classId;
     this.picked = true;
     this.els.status.textContent = `你已选择【${getSkillDef(classId).name}】，等待对方…`;
-    this.signal.send(MSG.PICK, { classId });
+    this.signal.send(MSG.PICK, { classId, name: this.myName });
     this._tryStart();
   }
-  // ---- 消息处理 ----
+  // ---- 消息处理（核心：STATE 驱动客户端画面） ----
   _onData(m) {
     if (m.t === MSG.PICK) {
       this.enemyClass = m.d.classId;
+      this.enemyName = m.d.name || '对手';
       this.enemyPicked = true;
       const def = getSkillDef(m.d.classId);
-      this.els.enemy.textContent = `对方：${def ? def.name : m.d.classId}`;
+      this.els.enemy.textContent = `对方：${this.enemyName}（${def ? def.name : m.d.classId}）`;
       this.els.enemy.classList.remove('hidden');
-      this.els.status.textContent = this.picked ? '双方就绪，即将开始…' : `对方已选【${def?.name}】，请选择你的球`;
+      this.els.status.textContent = this.picked ? '双方就绪，即将开始…' : `对方已选，请选择你的球`;
       this._tryStart();
     } else if (m.t === MSG.START) {
       this._startMatch(m.d);
+    } else if (m.t === MSG.STATE) {
+      this.guest?.applyState(m.d);
     } else if (m.t === MSG.RESULT) {
       this._showResult(m.d);
     } else if (m.t === MSG.REMATCH) {
@@ -141,12 +151,13 @@ export class OnlineMode {
     this._begin();
   }
   _begin() {
-    this.signal.send(MSG.START, { hostClass: this.myClass, guestClass: this.enemyClass });
-    this._startMatch({ hostClass: this.myClass, guestClass: this.enemyClass });
+    this.signal.send(MSG.START, { hostClass: this.myClass, guestClass: this.enemyClass, hostName: this.myName, guestName: this.enemyName });
+    this._startMatch({ hostClass: this.myClass, guestClass: this.enemyClass, hostName: this.myName, guestName: this.enemyName });
   }
   _startMatch(d) {
     this.myClass = d.hostClass;
     this.enemyClass = d.guestClass;
+    this.enemyName = (this.isHost ? d.guestName : d.hostName) || '对手';
     this.hud.hideResult();
     this.hud.hideMatchTimer();
     this.ctx.phantoms = [];
@@ -158,6 +169,7 @@ export class OnlineMode {
       b2.skill = createSkill(d.guestClass, b2, this.ctx);
       this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], onResult: w => this._showResult({ win: w }) });
       b1.isPlayer = true;
+      this._bindFx();
     } else {
       b1.skill = makeHudSkill(getSkillDef(d.hostClass));
       b2.skill = makeHudSkill(getSkillDef(d.guestClass));
@@ -174,22 +186,59 @@ export class OnlineMode {
     this.countdownShown = -1;
     const key = 'Key' + (localStorage.getItem('collision.key') || 'J');
     this.hud.bind(this.balls, { isTouch: this.isTouch, key });
+    // 名字文案：右侧=主机侧，左侧=客人侧（对方昵称来自设置/交换）
+    const hostName = this.isHost ? '你' : this.enemyName;
+    const guestName = this.isHost ? this.enemyName : '你';
+    this.hud.setNames(`${hostName} · ${getSkillDef(d.hostClass).name}`, `${guestName} · ${getSkillDef(d.guestClass).name}`);
     this._bindInput(key);
-    // 切换到对战界面
+    // 切换到联机专用战场
     const online = document.getElementById('screen-online');
-    const game = document.getElementById('screen-game');
+    const game = document.getElementById('screen-game-online');
     online.classList.remove('active'); online.classList.add('hidden');
     game.classList.remove('hidden'); game.classList.add('active');
     this.loop.start();
   }
+  // 主机端特效/伤害数字/瞄准线订阅（与单机一致）
+  _bindFx() {
+    this._unsubs.forEach(fn => fn());
+    this._unsubs = [];
+    this._unsubs.push(this.ctx.events.on('collision', e => {
+      this.renderer.particles.spawn(e.ball.x, e.ball.y, { color: e.ball.color, count: e.other ? 10 : 5, speed: 90 });
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:line', ({ ball, hit }) => this.renderer.addLineFx(ball, hit)));
+    this._unsubs.push(this.ctx.events.on('fx:transform', ({ ball }) => {
+      this.renderer.particles.spawn(ball.x, ball.y, { color: '#ffb703', count: 20, speed: 150 });
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:shield', ({ ball }) => {
+      this.renderer.particles.spawn(ball.x, ball.y, { color: '#b8a24a', count: 12, speed: 100 });
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:field', ({ ball }) => {
+      this.renderer.particles.spawn(ball.x, ball.y, { color: '#5f27cd', count: 14, speed: 90 });
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:swap', ({ a, b }) => this.renderer.addSwapFx(a, b)));
+    this._unsubs.push(this.ctx.events.on('fx:phantomHit', ({ x, y, color }) => {
+      this.renderer.particles.spawn(x, y, { color, count: 18, speed: 160, size: 4 });
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:poison', ({ ball }) => {
+      this.renderer.particles.spawn(ball.x, ball.y, { color: '#6a994e', count: 8, speed: 60 });
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:damage', ({ x, y, amount }) => {
+      this.renderer.addDmgNum(x, y, amount);
+    }));
+    this._unsubs.push(this.ctx.events.on('skill:aim', ({ inst, on }) => this.renderer.setAim(inst, on)));
+    this._unsubs.push(this.ctx.events.on('ball:die', ({ ball }) => {
+      this.renderer.particles.spawn(ball.x, ball.y, { color: '#fff', count: 30, speed: 200, size: 4 });
+    }));
+  }
   _bindInput(key) {
     this.unbindInput?.();
+    // 只控制自己的球：主机=本地 balls[0]，客人=发指令由主机执行
     this.unbindInput = bindHold({
-      el: document.getElementById('skill-btn'),
+      el: document.getElementById('skill-btn-online'),
       isTouch: this.isTouch,
       key,
-      onPress: () => { this.isHost ? this.balls[0].skill?.startAim() : this.guest?.sendCmd({ type: 'aim' }); },
-      onRelease: () => { this.isHost ? this.balls[0].skill?.releaseAim() : this.guest?.sendCmd({ type: 'release' }); },
+      onPress: () => { if (this.isHost) this.balls[0].skill?.startAim(); else this.guest?.sendCmd({ type: 'aim' }); },
+      onRelease: () => { if (this.isHost) this.balls[0].skill?.releaseAim(); else this.guest?.sendCmd({ type: 'release' }); },
     });
   }
   update(dt) {
@@ -222,18 +271,18 @@ export class OnlineMode {
     this.phase = 'ended';
     this.hud.hideMatchTimer();
     this.hud.showResult(d.win === 'you');
-    document.getElementById('btn-again').onclick = () => {
+    document.getElementById('online-btn-again').onclick = () => {
       this.hud.hideResult();
       if (this.isHost) this._begin();
       else this.signal.send(MSG.REMATCH, {});
     };
-    document.getElementById('btn-home2').onclick = () => {
+    document.getElementById('online-btn-home2').onclick = () => {
       this.hud.hideResult();
       this._backToOnline();
     };
   }
   _backToOnline() {
-    const game = document.getElementById('screen-game');
+    const game = document.getElementById('screen-game-online');
     const online = document.getElementById('screen-online');
     game.classList.remove('active'); game.classList.add('hidden');
     online.classList.remove('hidden'); online.classList.add('active');
@@ -258,9 +307,12 @@ export class OnlineMode {
   _cleanupMatch() {
     this.loop.stop();
     this.unbindInput?.(); this.unbindInput = null;
+    this._unsubs.forEach(fn => fn());
+    this._unsubs = [];
     this.host = null; this.guest = null;
     this.balls = []; this.phantoms = [];
     this.ctx.phantoms = [];
     this.hud.hideMatchTimer();
+    this.hud.hideResult();
   }
 }

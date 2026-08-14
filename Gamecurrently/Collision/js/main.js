@@ -1,7 +1,7 @@
 import CONFIG from './config.js';
 import { bus } from './core/eventBus.js';
 import { EffectSystem } from './entities/effectSystem.js';
-import { getSkillDefs, createSkill } from './skills/skillRegistry.js';
+import { getSkillDefs, getSelectableDefs, createSkill } from './skills/skillRegistry.js';
 import { Ball } from './entities/ball.js';
 import { GameLoop } from './core/gameLoop.js';
 import { move, collideWalls, collideBalls } from './core/physics.js';
@@ -59,7 +59,7 @@ const bgLoop = new GameLoop(dt => {
 }, () => bg.render(bgBalls, bgLoop.time));
 bgLoop.start();
 
-// ---- 图鉴：左列表 + 右详情 ----
+// ---- 图鉴：左列表 + 右详情（含巨人=战场干扰球说明） ----
 const bestiaryList = document.getElementById('bestiary-list');
 const detailOrb = document.getElementById('detail-orb');
 const detailName = document.getElementById('detail-name');
@@ -80,10 +80,10 @@ renderCards(bestiaryList, bestiaryDefs, {
 });
 showBestiaryDetail(bestiaryDefs[0]);
 
-// ---- 选球（单机） ----
-let selectedSkill = 'giant';
+// ---- 选球（单机）：可选职业（巨人已转战场干扰球，不显示） ----
+let selectedSkill = 'legion';
 const selectList = document.getElementById('select-list');
-renderCards(selectList, getSkillDefs(), {
+renderCards(selectList, getSelectableDefs(), {
   selectedId: selectedSkill,
   onPick: (d, card) => {
     selectedSkill = d.id;

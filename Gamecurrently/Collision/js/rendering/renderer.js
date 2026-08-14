@@ -3,7 +3,10 @@ import { Camera } from './camera.js';
 import { Particles } from './particles.js';
 import { rayHitRect } from '../core/math.js';
 
-// Canvas 渲染：只管画，不感知职业逻辑
+const INK = '#1f1a17';
+const PAPER = '#f7edd8';
+
+// Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // autoResize=false 用于首页背景（全屏拉伸做氛围）
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
@@ -52,7 +55,7 @@ export class Renderer {
     const g = this.g;
     const { w, h } = CONFIG.FIELD;
     g.setTransform(this.dpr * this.cssScale, 0, 0, this.dpr * this.cssScale, 0, 0);
-    g.fillStyle = '#0a0f1e';
+    g.fillStyle = PAPER;
     g.fillRect(-24, -24, w + 48, h + 48);
     g.save();
     this.camera.update(t);
@@ -65,58 +68,77 @@ export class Renderer {
     g.restore();
   }
   drawField(g, w, h) {
-    g.strokeStyle = 'rgba(126,240,200,0.6)';
+    // 粗黑圆角边框（手绘双线感）
+    g.strokeStyle = INK;
+    g.lineWidth = 6;
+    g.beginPath();
+    if (g.roundRect) g.roundRect(3, 3, w - 6, h - 6, 14); else g.rect(3, 3, w - 6, h - 6);
+    g.stroke();
+    g.lineWidth = 2;
+    g.strokeStyle = 'rgba(31,26,23,0.45)';
+    g.beginPath();
+    if (g.roundRect) g.roundRect(11, 11, w - 22, h - 22, 9); else g.rect(11, 11, w - 22, h - 22);
+    g.stroke();
+    // 中线（虚线十字）
+    g.save();
+    g.setLineDash([10, 10]);
+    g.strokeStyle = 'rgba(31,26,23,0.55)';
     g.lineWidth = 3;
-    g.strokeRect(0, 0, w, h);
-    g.strokeStyle = 'rgba(126,240,200,0.12)';
-    g.lineWidth = 1;
-    g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.stroke();
-    g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke();
+    g.beginPath(); g.moveTo(w / 2, 6); g.lineTo(w / 2, h - 6); g.stroke();
+    g.beginPath(); g.moveTo(6, h / 2); g.lineTo(w - 6, h / 2); g.stroke();
+    g.restore();
   }
   drawAim(g, a) {
     g.save();
     g.setLineDash([8, 8]);
-    g.strokeStyle = a.inst.def.color;
-    g.lineWidth = 2;
+    g.strokeStyle = INK;
+    g.lineWidth = 3;
     g.beginPath(); g.moveTo(a.inst.owner.x, a.inst.owner.y); g.lineTo(a.hit.x, a.hit.y); g.stroke();
     g.setLineDash([]);
-    g.fillStyle = a.inst.def.color;
-    g.beginPath(); g.arc(a.hit.x, a.hit.y, 6, 0, Math.PI * 2); g.fill();
+    // 命中点：手绘 X 标记
+    const s = 8;
+    g.strokeStyle = INK;
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(a.hit.x - s, a.hit.y - s); g.lineTo(a.hit.x + s, a.hit.y + s);
+    g.moveTo(a.hit.x + s, a.hit.y - s); g.lineTo(a.hit.x - s, a.hit.y + s);
+    g.stroke();
     g.restore();
   }
   drawLineFx(g, fx) {
     g.save();
     g.globalAlpha = Math.max(0, 1 - fx.t / 0.3);
-    g.strokeStyle = fx.ball.color;
-    g.lineWidth = 3;
+    g.strokeStyle = INK;
+    g.lineWidth = 5;
     g.beginPath(); g.moveTo(fx.ball.x, fx.ball.y); g.lineTo(fx.hit.x, fx.hit.y); g.stroke();
-    g.fillStyle = '#ffd93d';
-    g.beginPath(); g.arc(fx.hit.x, fx.hit.y, 8, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#ffb703';
+    g.beginPath(); g.arc(fx.hit.x, fx.hit.y, 10, 0, Math.PI * 2); g.fill();
     g.restore();
   }
   drawBall(g, b) {
     const r = b.radiusScaled;
     if (b.dashing) {
+      // 冲刺拖尾：方块涂鸦
       g.save();
-      g.globalAlpha = 0.35;
+      g.globalAlpha = 0.4;
       g.fillStyle = b.color;
       for (let i = 1; i <= 3; i++) {
-        g.beginPath();
-        g.arc(b.x - Math.cos(b.angle) * r * i * 0.8, b.y - Math.sin(b.angle) * r * i * 0.8, r * (1 - i * 0.2), 0, Math.PI * 2);
-        g.fill();
+        const s = r * (1 - i * 0.22);
+        g.fillRect(b.x - Math.cos(b.angle) * r * i * 0.9 - s / 2, b.y - Math.sin(b.angle) * r * i * 0.9 - s / 2, s, s);
       }
       g.restore();
     }
     g.save();
-    const grad = g.createRadialGradient(b.x - r * 0.3, b.y - r * 0.3, r * 0.2, b.x, b.y, r);
-    grad.addColorStop(0, '#ffffff88');
-    grad.addColorStop(0.35, b.color);
-    grad.addColorStop(1, b.color);
-    g.fillStyle = grad;
+    // 纯色球体
+    g.fillStyle = b.color;
     g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.fill();
+    // 手绘高光小白点
+    g.fillStyle = 'rgba(255,255,255,0.5)';
+    g.beginPath(); g.arc(b.x - r * 0.3, b.y - r * 0.35, r * 0.2, 0, Math.PI * 2); g.fill();
+    // 黑描边（巨大化变金色）
     const giant = b.effects.has('giant_form');
-    g.lineWidth = giant ? 4 : 2;
-    g.strokeStyle = giant ? '#ffd93d' : 'rgba(255,255,255,0.5)';
+    g.lineWidth = giant ? 5 : 3;
+    g.strokeStyle = giant ? '#ffb703' : INK;
     if (giant && Math.random() < 0.3) g.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
     g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.stroke();
     if (b.flash > 0) {

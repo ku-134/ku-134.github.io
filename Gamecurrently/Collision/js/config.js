@@ -2,20 +2,20 @@
 const CONFIG = {
   FIELD: { w: 800, h: 450 },
   BALL: { radius: 20, speed: 240 },
-  MAX_HP: 100,
+  MAX_HP: 200,                // 基础血量（延长对局）
   MATCH_TIME: 180,            // 兜底对局时长（正常由狂暴机制结束）
   COLLIDE_COOLDOWN: 0.4,      // 碰撞事件防抖（秒）
   TURN_INTERVAL: [1.2, 3.0],  // 球自主随机转向间隔（秒）
   TURN_ANGLE: 0.35,           // 单次随机转向最大弧度
   CAMERA: { amp: 8, freq: [0.5, 1.2] },
-  // 狂暴机制：30s后进入狂暴，每秒全场10伤，10s内必分胜负
-  BERSERK: { delay: 30, duration: 10, dps: 10 },
-  // 基础冲刺：全职业通用主动机动（瞄准冲刺，无伤害）
-  BASE_DASH: { cooldown: 5, dashMul: 2 },
+  // 狂暴机制：30s后进入狂暴，每秒全场10伤，20s=200血必分胜负
+  BERSERK: { delay: 30, duration: 20, dps: 10 },
+  // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带45伤）
+  BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
   // 巨人【暴怒】
   GIANT: { angerMax: 8, duration: 10, scale: 2, damage: 30, growTime: 1 },
-  // 兵团【冲锋】
-  LEGION: { cooldown: 8, dashMul: 2, damage: 50 },
+  // 兵团【冲锋】：技能与基础冲刺都带45伤，独立冷却
+  LEGION: { cooldown: 8, dashMul: 2, damage: 45, dashDamage: 45 },
   // 荆棘【荆棘盾】被动：8s冷却循环 + 5s生效，承受50% + 返还80% + 盾期碰撞12伤
   SHIELD: { cooldown: 8, duration: 5, mitigation: 0.5, reflect: 0.8, collideDamage: 12 },
   // 磁铁【引力场】：范围280，场内每0.1s造成0.6伤（等效dps6，频率优化）

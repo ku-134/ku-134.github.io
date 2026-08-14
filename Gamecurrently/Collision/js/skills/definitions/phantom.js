@@ -2,16 +2,17 @@ import CONFIG from '../../config.js';
 import { Phantom } from '../../entities/ball.js';
 
 // 幻影【分身】：生成幻影球干扰（15伤/次，6s存在，不触发被动）
-// 平衡：12s冷却预期15~30伤；克站桩巨人；被荆棘反弹
+// 平衡：8s冷却（唯一攻击手段）；克站桩巨人；被荆棘反弹
 export default {
   id: 'phantom',
   name: '幻影',
   type: 'active',
   skillName: '分身',
-  desc: '主动【分身】(冷却12秒)：在身旁生成一个幻影球（速度80%，存在6秒）。幻影撞墙反弹，撞到敌球造成15点伤害并消失；幻影不触发任何被动、不吃伤害。',
+  desc: '主动【分身】(冷却8秒，幻影消散后开始计算)：在身旁生成一个幻影球（速度80%，存在6秒）。幻影撞墙反弹，撞到敌球造成15点伤害并消失；幻影不触发任何被动、不吃伤害。',
   color: '#00b4d8',
   active: {
     cooldown: CONFIG.PHANTOM.cooldown,
+    cooldownStartsAfter: CONFIG.PHANTOM.duration,
     onRelease(owner, inst, ctx) {
       ctx.effects.apply(owner, 'phantom_aura', {
         duration: CONFIG.PHANTOM.duration,

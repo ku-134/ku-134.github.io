@@ -25,6 +25,13 @@ export class UIManager {
       el.classList.remove('hidden');
       el.classList.add('active');
     } else if (this.panels[id]) {
+      // 面板/弹窗显示时：背景统一切回首页（防止残留联机等界面）
+      const home = this.screens['home'];
+      Object.values(this.screens).forEach(el => {
+        el.classList.remove('active');
+        if (el !== home) el.classList.add('hidden');
+      });
+      if (home) { home.classList.remove('hidden'); home.classList.add('active'); }
       this.hidePanels();
       const el = this.panels[id];
       el.classList.remove('hidden');

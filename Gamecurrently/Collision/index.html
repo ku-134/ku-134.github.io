@@ -30,12 +30,17 @@
     <button class="btn wide back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 图鉴面板（右滑出） -->
-  <section id="panel-bestiary" class="panel right hidden">
-    <h2>球之图鉴</h2>
-    <div id="bestiary-list" class="card-list"></div>
-    <div id="bestiary-detail" class="detail hidden"></div>
-    <button class="btn wide back" data-back="screen-home">返回</button>
+  <!-- 图鉴面板（右滑出）：左2/3列表 + 右1/3详情 -->
+  <section id="panel-bestiary" class="panel right hidden bestiary-panel">
+    <div class="bestiary-wrap">
+      <div id="bestiary-list" class="card-list"></div>
+      <div id="bestiary-detail" class="detail">
+        <div id="detail-orb" class="detail-orb"></div>
+        <h3 id="detail-name"></h3>
+        <p id="detail-desc"></p>
+      </div>
+    </div>
+    <button class="btn back corner-back" data-back="screen-home">返回</button>
   </section>
 
   <!-- 设置面板 -->

@@ -13,9 +13,9 @@ import { MSG, isValidRoomCode } from '../net/protocol.js';
 
 // 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球 → 各自准备 → 321 → 主机权威对战
 // 双技能通道：基础冲刺（Space/左下，兵团带30伤）+ 职业技能（J键/右下，仅主动职业）
-// 客人端本地绘制瞄准线（aim inst），指令带 slot（dash/skill）发给主机执行
+// 客人端本地绘制瞄准线（aim inst）+ 本地监测 HP 生成伤害数字（均不占信道）
 // ★ _onData 必须处理 MSG.CMD（客人技能指令），漏了=联机技能无反应（老bug）
-// ★ 按钮 id 必须与 index.html 一致（online-dash-btn / online-active-btn）——id 错 = 触屏无反应
+// ★ 按钮 id 必须与 index.html 一致（online-dash-btn / online-active-btn）
 // ★ RESULT.win 语义 'host'/'guest'/'draw'：两端各自判断自己的输赢
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
@@ -231,7 +231,12 @@ export class OnlineMode {
       this.wild = new Ball({ x: w * 0.5, y: h * 0.5, angle: 0, hp: CONFIG.WILD.hp, name: '战场巨人' });
       this.wild.skill = makeHudSkill(getSkillDef('giant'));
       this.wild.color = getSkillDef('giant').color;
-      this.guest = new Guest({ signal: this.signal, onResult: () => {} });
+      // 客人端：本地监测 HP 差值 → 渲染伤害数字（不占用信道）
+      this.guest = new Guest({
+        signal: this.signal,
+        onResult: () => {},
+        onLocalDamage: (x, y, amount) => this.renderer.addDmgNum(x, y, amount),
+      });
       this.guest.setRenderBalls([b1, b2, this.wild]);
       b2.isPlayer = true;
       // 客人端本地瞄准线（反馈自己的瞄准方向）

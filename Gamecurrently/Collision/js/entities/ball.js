@@ -26,7 +26,8 @@ export class Ball {
   get vx() { return Math.cos(this.angle) * this.speed; }
   get vy() { return Math.sin(this.angle) * this.speed; }
   get radiusScaled() { return this.radius * this.scale; }
-  // 受击：支持伤害来源（反弹）与护盾减伤/反伤（noReflect 防无限反弹）
+  // 受击：荆棘盾期间承受50%伤害，并将伤害的80%返回敌球（无需来源）
+  // noReflect 防止双方盾互相反弹形成死循环
   takeDamage(dmg, ctx, source = null, noReflect = false) {
     if (this.dead) return;
     let final = dmg;
@@ -34,8 +35,9 @@ export class Ball {
     if (shield && !noReflect) {
       final = Math.floor(dmg * CONFIG.SHIELD.mitigation);
       const reflected = Math.floor(dmg * CONFIG.SHIELD.reflect);
-      if (source && source !== this && reflected > 0) {
-        source.takeDamage(reflected, ctx, this, true);
+      if (reflected > 0) {
+        const enemy = ctx.getEnemy(this);
+        if (enemy) enemy.takeDamage(reflected, ctx, this, true);
       }
     }
     this.hp = Math.max(0, this.hp - final);

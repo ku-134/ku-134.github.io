@@ -3,6 +3,7 @@
 // active.cooldownStartsAfter: 效果持续时长（冷却在效果结束后才开始）
 // passive.cooldown: 冷却型被动（如荆棘）：生效中不计时，效果结束后开始下一轮冷却
 // params：创建时的附加参数（如基础冲刺的 damage 变体），效果回调经 st.params 读取
+// ★ 基础机动与职业技能允许叠加发动（冲刺中可放技能/技能中可冲刺），各自独立冷却
 export class SkillInstance {
   constructor(def, owner, ctx, params = {}) {
     this.def = def;
@@ -59,7 +60,8 @@ export class SkillInstance {
   }
   destroy() { this._unbind.forEach(fn => fn()); this._unbind = []; }
   canUse() {
-    return this.def.active && this.cooldownLeft <= 0 && !this.owner.dashing && !this.owner.dead;
+    // 允许在冲刺/其他技能发动期间使用（基础机动与主动技能不冲突，独立冷却）
+    return this.def.active && this.cooldownLeft <= 0 && !this.owner.dead;
   }
   // 释放后开始冷却：若技能有持续效果（cooldownStartsAfter），冷却从效果结束后才计时
   _startCooldown() {

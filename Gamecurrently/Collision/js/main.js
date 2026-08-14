@@ -8,7 +8,9 @@ import { move, collideWalls, collideBalls } from './core/physics.js';
 import { Renderer } from './rendering/renderer.js';
 import { UIManager } from './ui/uiManager.js';
 import { SingleMode } from './mode/singleMode.js';
+import { OnlineMode } from './mode/onlineMode.js';
 import { bindTap } from './ui/input.js';
+import { renderCards } from './ui/cards.js';
 
 // ---- 全局上下文：物理与技能共享的依赖注入 ----
 const effects = new EffectSystem();
@@ -22,6 +24,10 @@ effects.setCtx(ctx);
 
 const ui = new UIManager();
 const single = new SingleMode(ctx, {
+  canvas: document.getElementById('gameCanvas'),
+  onBack: () => ui.show('home'),
+});
+const online = new OnlineMode(ctx, {
   canvas: document.getElementById('gameCanvas'),
   onBack: () => ui.show('home'),
 });
@@ -53,18 +59,6 @@ const bgLoop = new GameLoop(dt => {
 }, () => bg.render(bgBalls, bgLoop.time));
 bgLoop.start();
 
-// ---- 卡片渲染（图鉴与选球共用） ----
-function renderCards(listEl, defs, { selectedId, onPick } = {}) {
-  listEl.innerHTML = '';
-  for (const d of defs) {
-    const card = document.createElement('div');
-    card.className = 'card' + (d.id === selectedId ? ' selected' : '');
-    card.innerHTML = `<div class="orb" style="background:${d.color}"></div><div class="cname">${d.name}</div><div class="cskill">【${d.skillName}】${d.type === 'passive' ? '被动' : d.type === 'active' ? '主动' : '被动+主动'}</div>`;
-    card.addEventListener('click', () => onPick?.(d, card));
-    listEl.appendChild(card);
-  }
-}
-
 // ---- 图鉴：左列表 + 右详情 ----
 const bestiaryList = document.getElementById('bestiary-list');
 const detailOrb = document.getElementById('detail-orb');
@@ -86,7 +80,7 @@ renderCards(bestiaryList, bestiaryDefs, {
 });
 showBestiaryDetail(bestiaryDefs[0]);
 
-// ---- 选球 ----
+// ---- 选球（单机） ----
 let selectedSkill = 'giant';
 const selectList = document.getElementById('select-list');
 renderCards(selectList, getSkillDefs(), {
@@ -108,17 +102,16 @@ bindTap(document.getElementById('btn-select-confirm'), () => {
   single.start(selectedSkill);
 });
 
-// ---- 联机（M2 开发中占位） ----
+// ---- 联机 ----
 bindTap(document.getElementById('btn-online'), () => {
   ui.show('online');
-  document.getElementById('room-msg').textContent = '联机模式开发中（M2），敬请期待～';
+  online.enter();
 });
-bindTap(document.getElementById('btn-create-room'), () => {
-  document.getElementById('room-msg').textContent = '联机模式开发中（M2），敬请期待～';
-});
+bindTap(document.getElementById('btn-create-room'), () => online.createRoom());
 bindTap(document.getElementById('btn-join-room'), () => {
-  document.getElementById('room-msg').textContent = '联机模式开发中（M2），敬请期待～';
+  online.joinRoom(document.getElementById('room-input').value);
 });
+bindTap(document.getElementById('btn-online-back'), () => online.leave());
 
 // ---- 设置：主动技能按键（本地保存） ----
 const keyInput = document.getElementById('key-active');

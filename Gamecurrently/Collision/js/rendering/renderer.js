@@ -76,7 +76,10 @@ export class Renderer {
     for (const a of this.aimLines) this.drawAim(g, a);
     for (const fx of this.lineFx) this.drawLineFx(g, fx);
     for (const fx of this.swapFx) this.drawSwapFx(g, fx);
-    for (const ph of phantoms) this.drawPhantom(g, ph);
+    for (const ph of phantoms) {
+      if (ph.isPearl) this.drawPearl(g, ph);
+      else this.drawPhantom(g, ph);
+    }
     for (const b of balls) this.drawBall(g, b);
     for (const d of this.dmgNums) this.drawDmgNum(g, d);
     this.particles.draw(g);
@@ -158,6 +161,23 @@ export class Renderer {
     g.strokeStyle = INK;
     g.lineWidth = 2;
     g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.stroke();
+    g.restore();
+  }
+  // 末影珍珠弹道（傀儡）：白珠 + 青色高光 + 尾迹
+  drawPearl(g, p) {
+    const r = p.radius;
+    g.save();
+    g.globalAlpha = 0.35;
+    g.fillStyle = '#00b4d8';
+    g.beginPath(); g.arc(p.x - Math.cos(p.angle) * r * 2, p.y - Math.sin(p.angle) * r * 2, r * 0.6, 0, Math.PI * 2); g.fill();
+    g.globalAlpha = 1;
+    g.fillStyle = '#e0fbfc';
+    g.beginPath(); g.arc(p.x, p.y, r, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = INK;
+    g.lineWidth = 2.5;
+    g.beginPath(); g.arc(p.x, p.y, r, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = 'rgba(0,180,216,0.6)';
+    g.beginPath(); g.arc(p.x - r * 0.25, p.y - r * 0.25, r * 0.4, 0, Math.PI * 2); g.fill();
     g.restore();
   }
   // 受伤数字：红色大字黑描边，上浮0.5s淡出

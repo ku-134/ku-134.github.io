@@ -10,6 +10,8 @@ export default {
   desc: '被动【暴怒】：每次碰撞（边界或敌球）积攒1点愤怒；积满8点进入【巨大化】：1秒内体积增大至2倍，持续10秒，期间与敌球碰撞造成30点伤害，且不再积攒愤怒。',
   color: '#e63946',
   passive: {
+    progressKey: 'anger',
+    progressMax: 8,
     onCollision(owner, other, inst, ctx) {
       if (ctx.effects.has(owner, 'giant_form')) return;
       inst.state.anger = (inst.state.anger ?? 0) + 1;
@@ -24,7 +26,7 @@ export default {
   effects: [{
     id: 'giant_form',
     onApply(b) { b.scaleTarget = CONFIG.GIANT.scale; },
-    onCollision(b, other, st, ctx) { if (other) other.takeDamage(CONFIG.GIANT.damage, ctx); },
+    onCollision(b, other, st, ctx) { if (other) other.takeDamage(CONFIG.GIANT.damage, ctx, b); },
     onRemove(b) { b.scaleTarget = 1; }
   }]
 };

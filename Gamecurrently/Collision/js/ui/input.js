@@ -27,3 +27,24 @@ export function bindHold({ el, isTouch, key, onPress, onRelease }) {
     window.removeEventListener('keyup', up);
   };
 }
+
+// 兼容性点击：pointerdown 优先 + click 兜底（去重），
+// 避免全屏切换等场景吞掉 click 事件
+let _tapSeq = 0;
+export function bindTap(el, fn) {
+  if (!el) return () => {};
+  const seq = ++_tapSeq;
+  let last = 0;
+  const run = () => {
+    const now = Date.now();
+    if (now - last < 400) return;  // 防抖：pointerdown+click 只触发一次
+    last = now;
+    try { fn(); } catch (e) { console.error('[bindTap]', seq, e); }
+  };
+  el.addEventListener('pointerdown', run);
+  el.addEventListener('click', run);
+  return () => {
+    el.removeEventListener('pointerdown', run);
+    el.removeEventListener('click', run);
+  };
+}

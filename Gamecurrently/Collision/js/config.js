@@ -10,6 +10,8 @@ const CONFIG = {
   CAMERA: { amp: 8, freq: [0.5, 1.2] },
   // 狂暴机制：30s后进入狂暴，每秒全场10伤，10s内必分胜负
   BERSERK: { delay: 30, duration: 10, dps: 10 },
+  // 基础冲刺：全职业通用主动机动（瞄准冲刺，无伤害）
+  BASE_DASH: { cooldown: 5, dashMul: 2 },
   // 巨人【暴怒】
   GIANT: { angerMax: 8, duration: 10, scale: 2, damage: 30, growTime: 1 },
   // 兵团【冲锋】

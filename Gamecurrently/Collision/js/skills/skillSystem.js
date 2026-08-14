@@ -14,7 +14,14 @@ export class SkillInstance {
   }
   get cd() { return this.def.active?.cooldown ?? 0; }
   get cdRatio() { return this.cd <= 0 ? 0 : this.cooldownLeft / this.cd; }
-  update(dt) { if (this.cooldownLeft > 0) this.cooldownLeft = Math.max(0, this.cooldownLeft - dt); }
+  update(dt) {
+    if (this.cooldownLeft > 0) this.cooldownLeft = Math.max(0, this.cooldownLeft - dt);
+    // 长按瞄准中：实时追踪最近敌球（绳索方向时刻更新）
+    if (this.aiming) {
+      const enemy = this.ctx.getEnemy(this.owner);
+      if (enemy) this.aimDir = Math.atan2(enemy.y - this.owner.y, enemy.x - this.owner.x);
+    }
+  }
   _bindPassive() {
     const p = this.def.passive;
     if (p.onCollision) this._unbind.push(this.ctx.events.on('collision', e => {
@@ -33,7 +40,7 @@ export class SkillInstance {
     if (!this.canUse() || this.aiming) return false;
     this.aiming = true;
     const enemy = this.ctx.getEnemy(this.owner);
-    this.aimDir = Math.atan2(enemy.y - this.owner.y, enemy.x - this.owner.x);
+    this.aimDir = enemy ? Math.atan2(enemy.y - this.owner.y, enemy.x - this.owner.x) : this.owner.angle;
     this.ctx.events.emit('skill:aim', { inst: this, on: true });
     return true;
   }

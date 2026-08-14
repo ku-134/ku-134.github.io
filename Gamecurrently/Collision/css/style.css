@@ -87,6 +87,9 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .col { display: flex; flex-direction: column; gap: 14px; align-items: center; min-width: 200px; }
 .room-input { background: #fff; border: 3px solid var(--ink); color: var(--ink); padding: 12px; border-radius: 12px 4px 12px 4px / 4px 12px 4px 12px; font-size: 1.6rem; letter-spacing: 0.5em; text-align: center; width: 220px; font-family: inherit; }
 .room-code { font-size: 3.2rem; letter-spacing: 0.3em; color: var(--red); text-shadow: 3px 3px 0 var(--ink); }
+/* 房间内：等待 + 选球 */
+.online-wait { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.online-wait .card-list { max-height: 32vh; }
 
 /* 选球/联机 */
 #screen-select, #screen-online { background: var(--paper); }

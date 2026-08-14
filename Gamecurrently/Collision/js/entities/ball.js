@@ -66,11 +66,12 @@ export class Ball {
 }
 
 // 幻影实体：幻影职业的分身（不吃伤害、不触发被动、独立移动反弹）
+// 支持自定义发射角度与出生距离（多分身随机方向）
 export class Phantom {
-  constructor(owner) {
-    this.x = owner.x + 36;
-    this.y = owner.y;
-    this.angle = owner.angle;
+  constructor(owner, angle = owner.angle, dist = 36) {
+    this.x = owner.x + Math.cos(angle) * dist;
+    this.y = owner.y + Math.sin(angle) * dist;
+    this.angle = angle;
     this.speed = CONFIG.BALL.speed * CONFIG.PHANTOM.speedMul;
     this.radius = CONFIG.BALL.radius;
     this.color = owner.color;

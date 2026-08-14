@@ -25,12 +25,14 @@
     <button id="btn-settings" class="btn gear" title="设置">⚙</button>
   </section>
 
-  <!-- 开始面板（左滑出） -->
-  <section id="panel-start" class="panel left hidden">
-    <h2>选择模式</h2>
-    <button id="btn-single" class="btn wide">自己</button>
-    <button id="btn-online" class="btn wide">联机</button>
-    <button class="btn wide back" data-back="screen-home">返回</button>
+  <!-- 模式选择：弹窗覆盖（遮罩防底下按钮误触） -->
+  <section id="panel-start" class="panel hidden">
+    <div class="modal-box">
+      <h2>选择模式</h2>
+      <button id="btn-single" class="btn wide">自己</button>
+      <button id="btn-online" class="btn wide">联机</button>
+      <button class="btn wide back" data-back="screen-home">返回</button>
+    </div>
   </section>
 
   <!-- 图鉴面板（右滑出）：左2/3列表 + 右1/3详情 -->

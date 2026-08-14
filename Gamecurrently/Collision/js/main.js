@@ -18,6 +18,7 @@ const ctx = {
   balls: [],
   getEnemy(ball) { return this.balls.find(b => b !== ball && !b.dead) || this.balls.find(b => b !== ball); },
 };
+effects.setCtx(ctx);
 
 const ui = new UIManager();
 const single = new SingleMode(ctx, {
@@ -97,7 +98,7 @@ renderCards(selectList, getSkillDefs(), {
   },
 });
 
-// ---- 导航（bindTap：pointerdown + click 去重） ----
+// ---- 导航（bindTap：click） ----
 bindTap(document.getElementById('btn-start'), () => ui.show('start'));
 bindTap(document.getElementById('btn-bestiary'), () => ui.show('bestiary'));
 bindTap(document.getElementById('btn-settings'), () => ui.show('settings'));

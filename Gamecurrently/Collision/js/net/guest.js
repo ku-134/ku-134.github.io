@@ -38,7 +38,8 @@ export class Guest {
       for (const e of s.effects) {
         b.effects.set(e.id, { def: { id: e.id }, duration: Math.max(0.01, e.left), t: 0, params: {}, alive: true });
       }
-      // HUD 冷却/被动状态
+      // HUD 冷却/被动状态（冲刺 + 职业技能）
+      if (b.dashSkill) b.dashSkill.cooldownLeft = s.cd.dash ?? 0;
       if (b.skill) {
         b.skill.cooldownLeft = s.cd.left;
         b.skill.passiveActive = s.cd.passiveActive;

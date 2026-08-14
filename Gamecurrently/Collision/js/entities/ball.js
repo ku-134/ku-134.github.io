@@ -33,9 +33,10 @@ export class Ball {
     ctx.events.emit('ball:hp', { ball: this });
     if (this.hp <= 0) { this.dead = true; ctx.events.emit('ball:die', { ball: this }); }
   }
-  // 自主随机转向（观战的球自己乱窜，像斗蛐蛐）
+  // 自主随机转向（观战的球自己乱窜，像斗蛐蛐）+ 体积平滑过渡（巨大化/复原）
   update(dt) {
     if (this.dashing) return;
+    this.scale += (this.scaleTarget - this.scale) * Math.min(1, dt * 4);
     this.turnTimer -= dt;
     if (this.turnTimer <= 0) {
       this.turnTimer = rand(...CONFIG.TURN_INTERVAL);

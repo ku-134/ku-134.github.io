@@ -8,6 +8,7 @@ import { move, collideWalls, collideBalls } from './core/physics.js';
 import { Renderer } from './rendering/renderer.js';
 import { UIManager } from './ui/uiManager.js';
 import { SingleMode } from './mode/singleMode.js';
+import { bindTap } from './ui/input.js';
 
 // ---- 全局上下文：物理与技能共享的依赖注入 ----
 const effects = new EffectSystem();
@@ -24,11 +25,19 @@ const single = new SingleMode(ctx, {
   onBack: () => ui.show('home'),
 });
 
-// ---- 自动全屏（浏览器要求用户手势触发） ----
-document.addEventListener('click', () => {
+// ---- 全屏兼容：多点位前缀 + 延迟触发（不打断按钮事件流） ----
+function requestFullscreen() {
   const el = document.documentElement;
-  const req = el.requestFullscreen || el.webkitRequestFullscreen;
-  if (req && !document.fullscreenElement && !document.webkitFullscreenElement) req.call(el).catch(() => {});
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+  const isFS = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+  if (req && !isFS) {
+    try { const p = req.call(el); if (p && p.catch) p.catch(() => {}); } catch (e) { /* 静默：不支持自动全屏的浏览器 */ }
+  }
+}
+// 仅在点击按钮后延迟请求全屏，避免与按钮自身的 click 冲突
+// （同一事件里 requestFullscreen 会打断部分浏览器的后续事件分发）
+document.addEventListener('click', e => {
+  if (e.target && e.target.closest && e.target.closest('.btn')) setTimeout(requestFullscreen, 150);
 });
 
 // ---- 首页背景：模拟对战局（赛博斗蛐蛐氛围） ----
@@ -70,15 +79,26 @@ function renderCards(listEl, defs, { selectedId, onPick } = {}) {
   }
 }
 
-// ---- 图鉴 ----
+// ---- 图鉴：左列表 + 右详情 ----
 const bestiaryList = document.getElementById('bestiary-list');
-const bestiaryDetail = document.getElementById('bestiary-detail');
-renderCards(bestiaryList, getSkillDefs(), {
-  onPick: d => {
-    bestiaryDetail.classList.remove('hidden');
-    bestiaryDetail.innerHTML = `<h3 style="color:${d.color}">${d.name} · ${d.skillName}</h3><p>${d.desc}</p>`;
+const detailOrb = document.getElementById('detail-orb');
+const detailName = document.getElementById('detail-name');
+const detailDesc = document.getElementById('detail-desc');
+const bestiaryDefs = getSkillDefs();
+function showBestiaryDetail(d) {
+  detailOrb.style.background = `radial-gradient(circle at 35% 30%, #ffffff88, ${d.color})`;
+  detailName.textContent = `${d.name} · ${d.skillName}`;
+  detailDesc.textContent = d.desc;
+}
+renderCards(bestiaryList, bestiaryDefs, {
+  selectedId: bestiaryDefs[0].id,
+  onPick: (d, card) => {
+    bestiaryList.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    showBestiaryDetail(d);
   },
 });
+showBestiaryDetail(bestiaryDefs[0]);
 
 // ---- 选球 ----
 let selectedSkill = 'giant';
@@ -91,26 +111,26 @@ renderCards(selectList, getSkillDefs(), {
     card.classList.add('selected');
   },
 });
-document.getElementById('btn-select-confirm').addEventListener('click', () => {
+
+// ---- 导航（bindTap：pointerdown + click 去重，全屏场景更稳） ----
+bindTap(document.getElementById('btn-start'), () => ui.show('start'));
+bindTap(document.getElementById('btn-bestiary'), () => ui.show('bestiary'));
+bindTap(document.getElementById('btn-settings'), () => ui.show('settings'));
+bindTap(document.getElementById('btn-single'), () => ui.show('select'));
+bindTap(document.getElementById('btn-select-confirm'), () => {
   ui.show('game');
   single.start(selectedSkill);
 });
 
-// ---- 导航 ----
-document.getElementById('btn-start').addEventListener('click', () => ui.show('start'));
-document.getElementById('btn-bestiary').addEventListener('click', () => ui.show('bestiary'));
-document.getElementById('btn-settings').addEventListener('click', () => ui.show('settings'));
-document.getElementById('btn-single').addEventListener('click', () => ui.show('select'));
-
 // ---- 联机（M2 开发中占位） ----
-document.getElementById('btn-online').addEventListener('click', () => {
+bindTap(document.getElementById('btn-online'), () => {
   ui.show('online');
   document.getElementById('room-msg').textContent = '联机模式开发中（M2），敬请期待～';
 });
-document.getElementById('btn-create-room').addEventListener('click', () => {
+bindTap(document.getElementById('btn-create-room'), () => {
   document.getElementById('room-msg').textContent = '联机模式开发中（M2），敬请期待～';
 });
-document.getElementById('btn-join-room').addEventListener('click', () => {
+bindTap(document.getElementById('btn-join-room'), () => {
   document.getElementById('room-msg').textContent = '联机模式开发中（M2），敬请期待～';
 });
 

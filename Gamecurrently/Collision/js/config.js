@@ -12,8 +12,8 @@ const CONFIG = {
   GIANT: { angerMax: 8, duration: 10, scale: 2, damage: 30, growTime: 1 },
   // 兵团【冲锋】
   LEGION: { cooldown: 8, dashMul: 2, damage: 50 },
-  // 荆棘【荆棘盾】：承受50% + 返回80%（返回 > 承受，保证平衡）
-  SHIELD: { cooldown: 10, duration: 4, mitigation: 0.5, reflect: 0.8 },
+  // 荆棘【荆棘盾】：承受50% + 返还80% + 盾期碰撞基础伤12（保证有攻击手段）
+  SHIELD: { cooldown: 10, duration: 4, mitigation: 0.5, reflect: 0.8, collideDamage: 12 },
   // 磁铁【引力场】：范围280（两倍）
   MAGNET: { cooldown: 9, duration: 3, range: 280, turnSpeed: 0.35, dps: 6 },
   // 幻影【分身】：冷却8s（唯一攻击手段）

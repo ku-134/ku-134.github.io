@@ -2,11 +2,13 @@
 // 职业定义: { id, name, type, skillName, desc, color, passive?, active?, effects? }
 // active.cooldownStartsAfter: 效果持续时长（冷却在效果结束后才开始）
 // passive.cooldown: 冷却型被动（如荆棘）：生效中不计时，效果结束后开始下一轮冷却
+// params：创建时的附加参数（如基础冲刺的 damage 变体），效果回调经 st.params 读取
 export class SkillInstance {
-  constructor(def, owner, ctx) {
+  constructor(def, owner, ctx, params = {}) {
     this.def = def;
     this.owner = owner;
     this.ctx = ctx;
+    this.params = params;
     this.state = {};          // 被动状态（如愤怒值）
     this.cooldownLeft = 0;
     this.aiming = false;
@@ -29,7 +31,7 @@ export class SkillInstance {
   }
   update(dt) {
     if (this.cooldownLeft > 0) this.cooldownLeft = Math.max(0, this.cooldownLeft - dt);
-    // 长按瞄准中：实时追踪最近敌球（绳索方向时刻更新）
+    // 长按瞄准中：实时追踪最近敌球（绳索方向时刻更新，帧追踪）
     if (this.aiming) {
       const enemy = this.ctx.getEnemy(this.owner);
       if (enemy) this.aimDir = Math.atan2(enemy.y - this.owner.y, enemy.x - this.owner.x);

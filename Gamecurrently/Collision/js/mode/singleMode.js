@@ -29,8 +29,8 @@ export class SingleMode {
   start(playerSkillId) {
     this.curSkillId = playerSkillId;
     const { w, h } = CONFIG.FIELD;
-    const p1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, color: '#7ef0c8', name: '你' });
-    const p2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, color: '#ff8a65', name: 'AI' });
+    const p1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, color: '#06d6a0', name: '你' });
+    const p2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, color: '#ff9e00', name: 'AI' });
     p1.skill = createSkill(playerSkillId, p1, this.ctx);
     p2.skill = createSkill(Math.random() < 0.5 ? 'giant' : 'legion', p2, this.ctx);
     this.balls = [p1, p2];
@@ -43,7 +43,7 @@ export class SingleMode {
     }));
     this.unsubs.push(this.ctx.events.on('fx:line', ({ ball, hit }) => this.renderer.addLineFx(ball, hit)));
     this.unsubs.push(this.ctx.events.on('fx:transform', ({ ball }) => {
-      this.renderer.particles.spawn(ball.x, ball.y, { color: '#ffd93d', count: 20, speed: 150 });
+      this.renderer.particles.spawn(ball.x, ball.y, { color: '#ffb703', count: 20, speed: 150 });
     }));
     this.unsubs.push(this.ctx.events.on('skill:aim', ({ inst, on }) => this.renderer.setAim(inst, on)));
     this.unsubs.push(this.ctx.events.on('ball:die', ({ ball }) => {

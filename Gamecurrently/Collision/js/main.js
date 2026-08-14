@@ -25,26 +25,11 @@ const single = new SingleMode(ctx, {
   onBack: () => ui.show('home'),
 });
 
-// ---- 全屏兼容：多点位前缀 + 延迟触发（不打断按钮事件流） ----
-function requestFullscreen() {
-  const el = document.documentElement;
-  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
-  const isFS = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-  if (req && !isFS) {
-    try { const p = req.call(el); if (p && p.catch) p.catch(() => {}); } catch (e) { /* 静默：不支持自动全屏的浏览器 */ }
-  }
-}
-// 仅在点击按钮后延迟请求全屏，避免与按钮自身的 click 冲突
-// （同一事件里 requestFullscreen 会打断部分浏览器的后续事件分发）
-document.addEventListener('click', e => {
-  if (e.target && e.target.closest && e.target.closest('.btn')) setTimeout(requestFullscreen, 150);
-});
-
-// ---- 首页背景：模拟对战局（赛博斗蛐蛐氛围） ----
+// ---- 首页背景：模拟对战局（手绘涂鸦氛围） ----
 const bg = new Renderer(document.getElementById('bgCanvas'), { autoResize: false });
 const bgBalls = [
-  new Ball({ x: CONFIG.FIELD.w * 0.3, y: CONFIG.FIELD.h / 2, angle: Math.PI * 0.9, color: '#ef5350', name: '巨人' }),
-  new Ball({ x: CONFIG.FIELD.w * 0.7, y: CONFIG.FIELD.h / 2, angle: Math.PI * 0.1, color: '#42a5f5', name: '兵团' }),
+  new Ball({ x: CONFIG.FIELD.w * 0.3, y: CONFIG.FIELD.h / 2, angle: Math.PI * 0.9, color: '#e63946', name: '巨人' }),
+  new Ball({ x: CONFIG.FIELD.w * 0.7, y: CONFIG.FIELD.h / 2, angle: Math.PI * 0.1, color: '#3a86ff', name: '兵团' }),
 ];
 bgBalls[0].skill = createSkill('giant', bgBalls[0], ctx);
 bgBalls[1].skill = createSkill('legion', bgBalls[1], ctx);
@@ -73,7 +58,7 @@ function renderCards(listEl, defs, { selectedId, onPick } = {}) {
   for (const d of defs) {
     const card = document.createElement('div');
     card.className = 'card' + (d.id === selectedId ? ' selected' : '');
-    card.innerHTML = `<div class="orb" style="background:radial-gradient(circle at 35% 30%, #ffffff88, ${d.color})"></div><div class="cname">${d.name}</div><div class="cskill">【${d.skillName}】${d.type === 'passive' ? '被动' : d.type === 'active' ? '主动' : '被动+主动'}</div>`;
+    card.innerHTML = `<div class="orb" style="background:${d.color}"></div><div class="cname">${d.name}</div><div class="cskill">【${d.skillName}】${d.type === 'passive' ? '被动' : d.type === 'active' ? '主动' : '被动+主动'}</div>`;
     card.addEventListener('click', () => onPick?.(d, card));
     listEl.appendChild(card);
   }
@@ -86,7 +71,7 @@ const detailName = document.getElementById('detail-name');
 const detailDesc = document.getElementById('detail-desc');
 const bestiaryDefs = getSkillDefs();
 function showBestiaryDetail(d) {
-  detailOrb.style.background = `radial-gradient(circle at 35% 30%, #ffffff88, ${d.color})`;
+  detailOrb.style.background = d.color;
   detailName.textContent = `${d.name} · ${d.skillName}`;
   detailDesc.textContent = d.desc;
 }
@@ -112,7 +97,7 @@ renderCards(selectList, getSkillDefs(), {
   },
 });
 
-// ---- 导航（bindTap：pointerdown + click 去重，全屏场景更稳） ----
+// ---- 导航（bindTap：pointerdown + click 去重） ----
 bindTap(document.getElementById('btn-start'), () => ui.show('start'));
 bindTap(document.getElementById('btn-bestiary'), () => ui.show('bestiary'));
 bindTap(document.getElementById('btn-settings'), () => ui.show('settings'));

@@ -1,3 +1,5 @@
+import { bindTap } from './input.js';
+
 // 页面管理：屏幕（全屏切换）与面板（滑入滑出）
 export class UIManager {
   constructor() {
@@ -28,7 +30,7 @@ export class UIManager {
   }
   bindBack() {
     document.querySelectorAll('[data-back]').forEach(btn => {
-      btn.addEventListener('click', () => {
+      bindTap(btn, () => {
         this.show(btn.dataset.back.replace(/^(screen|panel)-/, ''));
       });
     });

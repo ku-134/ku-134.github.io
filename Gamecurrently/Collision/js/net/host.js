@@ -4,11 +4,13 @@ import { MSG, encodeState } from './protocol.js';
 const STATE_HZ = 30;
 
 // 主机权威：跑完整对战模拟 + 30Hz 状态广播 + 处理客人技能指令（dash=基础冲刺 / skill=职业技能）
+// wild：战场干扰球（巨人），随状态广播给客户端渲染
 export class Host {
-  constructor({ signal, ctx, balls, onResult }) {
+  constructor({ signal, ctx, balls, wild = null, onResult }) {
     this.signal = signal;
     this.ctx = ctx;
     this.balls = balls;
+    this.wild = wild;
     this.onResult = onResult;
     this.sim = null;
     this._acc = 0;
@@ -18,7 +20,7 @@ export class Host {
   start() {
     this._ended = false;
     this._acc = 0;
-    this.sim = new MatchSim(this.ctx, this.balls);
+    this.sim = new MatchSim(this.ctx, this.balls, this.wild);
     this._running = true;
   }
   update(dt) {
@@ -27,7 +29,8 @@ export class Host {
     this._acc += dt;
     if (this._acc >= 1 / STATE_HZ) {
       this._acc -= 1 / STATE_HZ;
-      this.signal.send(MSG.STATE, encodeState(this.sim, this.balls, this.ctx.phantoms));
+      const all = this.wild ? [...this.balls, this.wild] : this.balls;
+      this.signal.send(MSG.STATE, encodeState(this.sim, all, this.ctx.phantoms));
     }
     if (res.over && !this._ended) {
       this._ended = true;

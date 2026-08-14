@@ -1,7 +1,7 @@
 import CONFIG from '../config.js';
 
-// 对局 HUD：HP条/被动条/技能按钮（手机）/冷却条（电脑）
-// 被动技能（如巨人暴怒）：平时显示积攒进度，发动后显示剩余持续时间，循环刷新
+// 对局 HUD：HP条/技能状态条（被动进度 or 主动冷却，敌我可见）
+// 技能按钮（手机）/冷却条（电脑）
 export class Hud {
   constructor() {
     this.el = {
@@ -38,13 +38,33 @@ export class Hud {
     }
     this.tick();
   }
+  // 技能状态：被动 = 积攒进度/发动剩余；主动 = 冷却充能
+  skillState(ball) {
+    const s = ball.skill;
+    if (!s) return { ratio: 0, isCd: false };
+    const isPassive = s.def.type === 'passive' || s.def.type === 'both';
+    const giantSt = ball.effects.get('giant_form');
+    if (isPassive) {
+      return {
+        ratio: giantSt
+          ? Math.max(0, (giantSt.duration - giantSt.t) / giantSt.duration)
+          : (s.state.anger ?? 0) / CONFIG.GIANT.angerMax,
+        isCd: false,
+      };
+    }
+    return { ratio: s.cd > 0 ? 1 - s.cdRatio : 1, isCd: true };
+  }
   tick() {
     if (!this.balls) return;
     const [p1, p2] = this.balls;
     this.setBar(this.el.p1hp, p1.hp / p1.maxHp);
     this.setBar(this.el.p2hp, p2.hp / p2.maxHp);
-    this.setBar(this.el.p1passive, (p1.skill?.state?.anger ?? 0) / CONFIG.GIANT.angerMax);
-    this.setBar(this.el.p2passive, (p2.skill?.state?.anger ?? 0) / CONFIG.GIANT.angerMax);
+    const st1 = this.skillState(p1);
+    const st2 = this.skillState(p2);
+    this.el.p1passive.classList.toggle('blue', st1.isCd);
+    this.el.p2passive.classList.toggle('blue', st2.isCd);
+    this.setBar(this.el.p1passive, st1.ratio);
+    this.setBar(this.el.p2passive, st2.ratio);
     this.updateSkillUI(p1);
   }
   // 玩家技能按钮/冷却条：主动=冷却；被动=积攒进度 / 发动剩余时间

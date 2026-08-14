@@ -3,7 +3,7 @@ import { MSG, encodeState } from './protocol.js';
 
 const STATE_HZ = 30;
 
-// 主机权威：跑完整对战模拟 + 30Hz 状态广播 + 处理客人技能指令
+// 主机权威：跑完整对战模拟 + 30Hz 状态广播 + 处理客人技能指令（dash=基础冲刺 / skill=职业技能）
 export class Host {
   constructor({ signal, ctx, balls, onResult }) {
     this.signal = signal;
@@ -37,9 +37,10 @@ export class Host {
       this.onResult?.(win);
     }
   }
-  // 客人技能指令（客人 = balls[1]）
+  // 客人技能指令（客人 = balls[1]）；slot: dash=基础冲刺 / skill=职业技能
   handleCmd(cmd) {
-    const s = this.balls[1]?.skill;
+    const gBall = this.balls[1];
+    const s = cmd.slot === 'dash' ? gBall?.dashSkill : gBall?.skill;
     if (!s || !s.def?.active) return;
     if (cmd.type === 'aim') s.startAim();
     else if (cmd.type === 'release') s.releaseAim();

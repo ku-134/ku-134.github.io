@@ -1,6 +1,6 @@
 import { bindTap } from './input.js';
 
-// 页面管理：屏幕（全屏切换）与面板（滑入滑出）
+// 页面管理：屏幕（全屏切换）与面板（弹窗/滑入）
 export class UIManager {
   constructor() {
     this.screens = {};
@@ -15,9 +15,15 @@ export class UIManager {
   }
   show(id) {
     if (this.screens[id]) {
-      Object.values(this.screens).forEach(el => el.classList.remove('active'));
+      // 切换屏幕：其他屏幕显式隐藏，目标屏幕移除 hidden + 激活
+      Object.values(this.screens).forEach(el => {
+        el.classList.remove('active');
+        if (el !== this.screens[id]) el.classList.add('hidden');
+      });
       this.hidePanels();
-      this.screens[id].classList.add('active');
+      const el = this.screens[id];
+      el.classList.remove('hidden');
+      el.classList.add('active');
     } else if (this.panels[id]) {
       this.hidePanels();
       const el = this.panels[id];

@@ -26,17 +26,29 @@ export class Ball {
   get vx() { return Math.cos(this.angle) * this.speed; }
   get vy() { return Math.sin(this.angle) * this.speed; }
   get radiusScaled() { return this.radius * this.scale; }
-  takeDamage(dmg, ctx) {
+  // 受击：支持伤害来源（反弹）与护盾减伤/反伤（noReflect 防无限反弹）
+  takeDamage(dmg, ctx, source = null, noReflect = false) {
     if (this.dead) return;
-    this.hp = Math.max(0, this.hp - dmg);
+    let final = dmg;
+    const shield = this.effects.get('shield');
+    if (shield && !noReflect) {
+      final = Math.floor(dmg * CONFIG.SHIELD.mitigation);
+      const reflected = Math.floor(dmg * CONFIG.SHIELD.reflect);
+      if (source && source !== this && reflected > 0) {
+        source.takeDamage(reflected, ctx, this, true);
+      }
+    }
+    this.hp = Math.max(0, this.hp - final);
     this.flash = 1;
     ctx.events.emit('ball:hp', { ball: this });
     if (this.hp <= 0) { this.dead = true; ctx.events.emit('ball:die', { ball: this }); }
   }
-  // 自主随机转向（观战的球自己乱窜，像斗蛐蛐）+ 体积平滑过渡（巨大化/复原）
+  // 自主随机转向（观战的球自己乱窜，像斗蛐蛐）+ 体积平滑过渡
+  // 惊滞（stun）期间不转向
   update(dt) {
     if (this.dashing) return;
     this.scale += (this.scaleTarget - this.scale) * Math.min(1, dt * 4);
+    if (this.effects.has('stun')) return;
     this.turnTimer -= dt;
     if (this.turnTimer <= 0) {
       this.turnTimer = rand(...CONFIG.TURN_INTERVAL);
@@ -44,4 +56,17 @@ export class Ball {
     }
   }
   setAngle(a) { this.angle = normAngle(a); }
+}
+
+// 幻影实体：幻影职业的分身（不吃伤害、不触发被动、独立移动反弹）
+export class Phantom {
+  constructor(owner) {
+    this.x = owner.x + 36;
+    this.y = owner.y;
+    this.angle = owner.angle;
+    this.speed = CONFIG.BALL.speed * CONFIG.PHANTOM.speedMul;
+    this.radius = CONFIG.BALL.radius;
+    this.color = owner.color;
+    this.isPhantom = true;
+  }
 }

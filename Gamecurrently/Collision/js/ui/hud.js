@@ -3,6 +3,7 @@ import CONFIG from '../config.js';
 // 对局 HUD：HP条/技能状态条（被动进度 or 主动冷却，敌我可见）
 // 技能按钮（手机）/冷却条（电脑）/狂暴倒计时
 // prefix：单机用 ''，联机用 'online-'（独立战场，元素不冲突）
+// myIndex：技能按钮/冷却条显示哪颗球（单机与房主=0，客人=1）
 export class Hud {
   constructor(prefix = '') {
     this.prefix = prefix;
@@ -24,10 +25,12 @@ export class Hud {
     };
     this.balls = null;
     this.isTouch = false;
+    this.myIndex = 0;
   }
-  bind(balls, { isTouch, key }) {
+  bind(balls, { isTouch, key, myIndex = 0 }) {
     this.balls = balls;
     this.isTouch = isTouch;
+    this.myIndex = myIndex;
     const [p1, p2] = balls;
     this.el.p1name.textContent = `你 · ${p1.skill?.def.name ?? '无'}`;
     this.el.p2name.textContent = `对方 · ${p2.skill?.def.name ?? '无'}`;
@@ -92,7 +95,8 @@ export class Hud {
     this.el.p2passive.classList.toggle('blue', st2.isCd);
     this.setBar(this.el.p1passive, st1.ratio);
     this.setBar(this.el.p2passive, st2.ratio);
-    this.updateSkillUI(p1);
+    // 技能按钮/冷却条：只显示自己的球（房主=0，客人=1）
+    this.updateSkillUI(this.balls[this.myIndex] || p1);
   }
   // 玩家技能按钮/冷却条：主动=冷却；被动=进度/生效剩余/冷却充能/就绪
   updateSkillUI(ball) {

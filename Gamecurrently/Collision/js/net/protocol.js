@@ -1,7 +1,6 @@
 // 联机消息协议（JSON over DataChannel）
 // 所有消息：{ t: 类型, d: 数据 }
 export const MSG = {
-  HELLO: 'hello',
   PICK: 'pick',
   START: 'start',
   STATE: 'state',
@@ -12,22 +11,25 @@ export const MSG = {
   PONG: 'pong',
 };
 
-// 房间号字符集：去掉易混淆的 I/L/O/0/1
-const ALPHA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+// 房间号：5 位纯数字（好记好输，手机数字键盘直接输入）
+export const ROOM_LEN = 5;
+const DIGITS = '0123456789';
 
-export function genRoomCode(len = 5) {
+export function genRoomCode(len = ROOM_LEN) {
   let s = '';
   const u32 = new Uint32Array(1);
   for (let i = 0; i < len; i++) {
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
       crypto.getRandomValues(u32);
-      s += ALPHA[u32[0] % ALPHA.length];
+      s += DIGITS[u32[0] % DIGITS.length];
     } else {
-      s += ALPHA[Math.floor(Math.random() * ALPHA.length)];
+      s += DIGITS[Math.floor(Math.random() * DIGITS.length)];
     }
   }
   return s;
 }
+
+export const isValidRoomCode = code => /^\d{5}$/.test(code || '');
 
 export const pack = (t, d) => JSON.stringify({ t, d });
 export function unpack(raw) {

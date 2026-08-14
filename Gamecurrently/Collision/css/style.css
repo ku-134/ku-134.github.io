@@ -91,13 +91,13 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .online-wait { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .online-wait .card-list { max-height: 32vh; }
 
-/* 选球/联机 */
+/* 选球/联机：不透明底，遮住首页背景模拟对战 */
 #screen-select, #screen-online { background: var(--paper); }
 
-/* 对战：手绘本场地 */
-#screen-game { background: var(--paper); }
-#gameCanvas { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 4px solid var(--ink); border-radius: 14px 4px 14px 4px / 4px 14px 4px 14px; box-shadow: 8px 8px 0 rgba(31,26,17,0.35); }
-#hud { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 14px 20px; pointer-events: none; }
+/* 对战：手绘本场地（单机 + 联机专用战场都必须不透明！） */
+#screen-game, #screen-game-online { background: var(--paper); }
+#gameCanvas, #gameCanvasOnline { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 4px solid var(--ink); border-radius: 14px 4px 14px 4px / 4px 14px 4px 14px; box-shadow: 8px 8px 0 rgba(31,26,17,0.35); }
+#hud, #hud-online { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 14px 20px; pointer-events: none; }
 .side { width: 32%; display: flex; flex-direction: column; gap: 6px; }
 .pname { font-size: 1rem; letter-spacing: 0.1em; }
 .bar { height: 12px; border-radius: 8px; background: rgba(31,26,17,0.15); border: 2px solid var(--ink); overflow: hidden; }
@@ -115,20 +115,20 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
   to { transform: translateX(-50%) scale(1.12); }
 }
 
-/* 技能按钮（手机） */
+/* 技能按钮（手机）：单机 + 联机共用样式 */
 .skill-btn { position: absolute; left: 16px; bottom: 20px; width: 88px; height: 88px; border-radius: 50%; border: 3px solid var(--ink); background: var(--blue); box-shadow: 5px 5px 0 rgba(31,26,17,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; z-index: 6; touch-action: none; }
 .skill-btn .sname { font-size: 0.9rem; }
 .skill-btn .scd { font-size: 1.2rem; font-weight: bold; }
 .skill-btn.on-cd { background: #cfc6ae; box-shadow: none; }
 
-/* 冷却条（电脑） */
+/* 冷却条（电脑）：单机 + 联机共用样式 */
 .cd-bar { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: #fff; border: 3px solid var(--ink); box-shadow: 4px 4px 0 rgba(31,26,17,0.7); padding: 8px 16px; border-radius: 16px 5px 16px 5px / 5px 16px 5px 16px; z-index: 6; }
 .cd-bar .bar { width: 220px; height: 14px; }
 .cd-bar .bar .fill { background: var(--blue); }
-#cd-key { border: 2px solid var(--ink); border-radius: 8px; padding: 2px 8px; font-weight: bold; }
+#cd-key, #online-cd-key { border: 2px solid var(--ink); border-radius: 8px; padding: 2px 8px; font-weight: bold; }
 
 /* 倒计时与结算 */
-#countdown { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 7rem; font-weight: bold; color: var(--red); text-shadow: 4px 4px 0 var(--ink); z-index: 7; pointer-events: none; }
-#result { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: rgba(247,237,216,0.93); z-index: 8; font-size: 2.4rem; }
-#result .rwin { color: var(--green); text-shadow: 2px 2px 0 var(--ink); }
-#result .rlose { color: var(--red); text-shadow: 2px 2px 0 var(--ink); }
+#countdown, #online-countdown { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 7rem; font-weight: bold; color: var(--red); text-shadow: 4px 4px 0 var(--ink); z-index: 7; pointer-events: none; }
+#result, #online-result { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: rgba(247,237,216,0.93); z-index: 8; font-size: 2.4rem; }
+#result .rwin, #online-result .rwin { color: var(--green); text-shadow: 2px 2px 0 var(--ink); }
+#result .rlose, #online-result .rlose { color: var(--red); text-shadow: 2px 2px 0 var(--ink); }

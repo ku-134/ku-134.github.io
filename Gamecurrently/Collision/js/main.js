@@ -28,7 +28,7 @@ const single = new SingleMode(ctx, {
   onBack: () => ui.show('home'),
 });
 const online = new OnlineMode(ctx, {
-  canvas: document.getElementById('gameCanvas'),
+  canvas: document.getElementById('gameCanvasOnline'),
   onBack: () => ui.show('home'),
 });
 
@@ -112,6 +112,15 @@ bindTap(document.getElementById('btn-join-room'), () => {
   online.joinRoom(document.getElementById('room-input').value);
 });
 bindTap(document.getElementById('btn-online-back'), () => online.leave());
+
+// ---- 设置：联机昵称（本地保存，随 PICK 交换给对方） ----
+const nickInput = document.getElementById('nick-input');
+nickInput.value = localStorage.getItem('collision.nick') || '玩家';
+nickInput.addEventListener('change', () => {
+  const n = (nickInput.value || '玩家').trim().slice(0, 8);
+  nickInput.value = n || '玩家';
+  localStorage.setItem('collision.nick', n || '玩家');
+});
 
 // ---- 设置：主动技能按键（本地保存） ----
 const keyInput = document.getElementById('key-active');

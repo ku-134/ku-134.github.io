@@ -1,9 +1,9 @@
 import CONFIG from '../config.js';
 
-// 对局 HUD：HP条/技能状态条（被动进度 or 主动冷却，敌我可见）
-// 技能按钮（手机）/冷却条（电脑）/狂暴倒计时
-// prefix：单机用 ''，联机用 'online-'（独立战场，元素不冲突）
-// myIndex：技能按钮/冷却条显示哪颗球（单机与房主=0，客人=1）
+// 对局 HUD：HP条/技能状态条 + 双技能通道（基础冲刺 dash + 职业技能 active）
+// 触屏：dash-btn（左下，全职业）+ active-btn（右下，仅主动职业）
+// 电脑：dash-cd-bar（左下）+ cd-bar（职业，主动冷却/被动进度）
+// prefix：单机 ''，联机 'online-'；myIndex：自己球下标（房主=0，客人=1）
 export class Hud {
   constructor(prefix = '') {
     this.prefix = prefix;
@@ -14,9 +14,20 @@ export class Hud {
       p2name: document.getElementById(prefix + 'p2-name'),
       p2hp: document.getElementById(prefix + 'p2-hp'),
       p2passive: document.getElementById(prefix + 'p2-passive'),
-      skillBtn: document.getElementById(prefix + 'skill-btn'),
-      sname: document.querySelector('#' + prefix + 'skill-btn .sname'),
-      scd: document.querySelector('#' + prefix + 'skill-btn .scd'),
+      // 触屏：基础冲刺按钮（左下）
+      dashBtn: document.getElementById(prefix + 'dash-btn'),
+      dSname: document.querySelector('#' + prefix + 'dash-btn .sname'),
+      dScd: document.querySelector('#' + prefix + 'dash-btn .scd'),
+      // 触屏：职业技能按钮（右下，仅主动职业）
+      activeBtn: document.getElementById(prefix + 'active-btn'),
+      aSname: document.querySelector('#' + prefix + 'active-btn .sname'),
+      aScd: document.querySelector('#' + prefix + 'active-btn .scd'),
+      // 电脑：冲刺冷却条（左下）
+      dashCdBar: document.getElementById(prefix + 'dash-cd-bar'),
+      dashCdName: document.getElementById(prefix + 'dash-cd-name'),
+      dashCdFill: document.getElementById(prefix + 'dash-cd-fill'),
+      dashCdKey: document.getElementById(prefix + 'dash-cd-key'),
+      // 电脑：职业技能条
       cdBar: document.getElementById(prefix + 'cd-bar'),
       cdName: document.getElementById(prefix + 'cd-name'),
       cdFill: document.getElementById(prefix + 'cd-fill'),
@@ -27,7 +38,7 @@ export class Hud {
     this.isTouch = false;
     this.myIndex = 0;
   }
-  bind(balls, { isTouch, key, myIndex = 0 }) {
+  bind(balls, { isTouch, key, dashKey = 'Space', myIndex = 0 }) {
     this.balls = balls;
     this.isTouch = isTouch;
     this.myIndex = myIndex;
@@ -36,11 +47,16 @@ export class Hud {
     this.el.p2name.textContent = `对方 · ${p2.skill?.def.name ?? '无'}`;
     if (isTouch) {
       this.el.cdBar.classList.add('hidden');
-      this.el.skillBtn.classList.remove('hidden');
+      this.el.dashCdBar.classList.add('hidden');
+      this.el.dashBtn.classList.remove('hidden');
+      this.el.activeBtn.classList.remove('hidden');  // 被动职业由 updateSkillUI 隐藏
     } else {
-      this.el.skillBtn.classList.add('hidden');
+      this.el.dashBtn.classList.add('hidden');
+      this.el.activeBtn.classList.add('hidden');
       this.el.cdBar.classList.remove('hidden');
+      this.el.dashCdBar.classList.remove('hidden');
       this.el.cdKey.textContent = key.replace('Key', '');
+      this.el.dashCdKey.textContent = dashKey === 'Space' ? 'SPACE' : dashKey;
     }
     this.tick();
   }
@@ -95,10 +111,25 @@ export class Hud {
     this.el.p2passive.classList.toggle('blue', st2.isCd);
     this.setBar(this.el.p1passive, st1.ratio);
     this.setBar(this.el.p2passive, st2.ratio);
-    // 技能按钮/冷却条：只显示自己的球（房主=0，客人=1）
-    this.updateSkillUI(this.balls[this.myIndex] || p1);
+    // 双通道：只显示自己的球（房主=0，客人=1）
+    const my = this.balls[this.myIndex] || p1;
+    this.updateDashUI(my);
+    this.updateSkillUI(my);
   }
-  // 玩家技能按钮/冷却条：主动=冷却；被动=进度/生效剩余/冷却充能/就绪
+  // 基础冲刺按钮/冷却条（全职业）
+  updateDashUI(ball) {
+    const s = ball.dashSkill;
+    if (!s) return;
+    if (this.isTouch) {
+      this.el.dSname.textContent = s.def.skillName;
+      this.el.dScd.textContent = s.cooldownLeft > 0 ? Math.ceil(s.cooldownLeft) : '⚡';
+      this.el.dashBtn.classList.toggle('on-cd', s.cooldownLeft > 0);
+    } else {
+      this.el.dashCdName.textContent = s.def.skillName;
+      this.el.dashCdFill.style.width = (100 * (1 - s.cdRatio)) + '%';
+    }
+  }
+  // 职业技能：触屏=右下按钮（仅主动职业）；电脑=冷却条（主动冷却/被动进度）
   updateSkillUI(ball) {
     const s = ball.skill;
     if (!s) return;
@@ -106,59 +137,34 @@ export class Hud {
     const p = s.def.passive || {};
     const giantSt = ball.effects.get('giant_form');
     if (this.isTouch) {
-      const btn = this.el.skillBtn;
-      if (isPassive) {
-        if (p.cooldown) {
-          this.el.sname.textContent = s.def.skillName;
-          if (s.passiveActive) {
-            const st = ball.effects.get(p.effectId);
-            const left = st ? Math.max(0, Math.ceil(st.duration - st.t)) : p.duration;
-            this.el.scd.textContent = left + 's';
-            btn.classList.toggle('on-cd', false);
-          } else {
-            this.el.scd.textContent = Math.ceil(s.passiveTimer) + 's';
-            btn.classList.toggle('on-cd', true);
-          }
-          return;
-        }
-        const key = p.progressKey;
-        this.el.sname.textContent = giantSt ? '巨大化' : s.def.skillName;
-        btn.classList.toggle('on-cd', !!giantSt);
-        if (giantSt) {
-          const left = Math.max(0, Math.ceil(giantSt.duration - giantSt.t));
-          this.el.scd.textContent = left + 's';
-        } else if (key) {
-          this.el.scd.textContent = `${s.state[key] ?? 0}/${p.progressMax || 1}`;
+      const btn = this.el.activeBtn;
+      if (isPassive) { btn.classList.add('hidden'); return; }
+      btn.classList.remove('hidden');
+      this.el.aSname.textContent = s.def.skillName;
+      this.el.aScd.textContent = s.cooldownLeft > 0 ? Math.ceil(s.cooldownLeft) : '⚡';
+      btn.classList.toggle('on-cd', s.cooldownLeft > 0);
+      return;
+    }
+    this.el.cdName.textContent = s.def.skillName;
+    if (isPassive) {
+      if (p.cooldown) {
+        if (s.passiveActive) {
+          const st = ball.effects.get(p.effectId);
+          const ratio = st ? Math.max(0, (st.duration - st.t) / p.duration) : 1;
+          this.el.cdFill.style.width = (100 * ratio) + '%';
         } else {
-          this.el.scd.textContent = '被动';
+          this.el.cdFill.style.width = (100 * Math.max(0, 1 - s.passiveTimer / p.cooldown)) + '%';
         }
-      } else if (s.cd > 0) {
-        this.el.sname.textContent = s.def.skillName;
-        this.el.scd.textContent = s.cooldownLeft > 0 ? Math.ceil(s.cooldownLeft) : '⚡';
-        btn.classList.toggle('on-cd', s.cooldownLeft > 0);
+        return;
       }
+      const key = p.progressKey;
+      if (!key) { this.el.cdFill.style.width = '100%'; return; }
+      const ratio = giantSt
+        ? Math.max(0, (giantSt.duration - giantSt.t) / giantSt.duration)
+        : (s.state[key] ?? 0) / (p.progressMax || 1);
+      this.el.cdFill.style.width = (100 * ratio) + '%';
     } else {
-      this.el.cdName.textContent = s.def.skillName;
-      if (isPassive) {
-        if (p.cooldown) {
-          if (s.passiveActive) {
-            const st = ball.effects.get(p.effectId);
-            const ratio = st ? Math.max(0, (st.duration - st.t) / p.duration) : 1;
-            this.el.cdFill.style.width = (100 * ratio) + '%';
-          } else {
-            this.el.cdFill.style.width = (100 * Math.max(0, 1 - s.passiveTimer / p.cooldown)) + '%';
-          }
-          return;
-        }
-        const key = p.progressKey;
-        if (!key) { this.el.cdFill.style.width = '100%'; return; }
-        const ratio = giantSt
-          ? Math.max(0, (giantSt.duration - giantSt.t) / giantSt.duration)
-          : (s.state[key] ?? 0) / (p.progressMax || 1);
-        this.el.cdFill.style.width = (100 * ratio) + '%';
-      } else {
-        this.el.cdFill.style.width = (100 * (1 - s.cdRatio)) + '%';
-      }
+      this.el.cdFill.style.width = (100 * (1 - s.cdRatio)) + '%';
     }
   }
   setBar(el, ratio) {

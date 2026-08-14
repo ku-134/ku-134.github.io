@@ -1,5 +1,6 @@
 // 技能实例：管理冷却、被动事件绑定、主动瞄准/释放
 // 职业定义: { id, name, type, skillName, desc, color, passive?, active?, effects? }
+// active.cooldownStartsAfter: 效果持续时长（冷却在效果结束后才开始）
 export class SkillInstance {
   constructor(def, owner, ctx) {
     this.def = def;
@@ -13,7 +14,7 @@ export class SkillInstance {
     if (def.passive) this._bindPassive();
   }
   get cd() { return this.def.active?.cooldown ?? 0; }
-  get cdRatio() { return this.cd <= 0 ? 0 : this.cooldownLeft / this.cd; }
+  get cdRatio() { return this.cd <= 0 ? 0 : Math.min(1, this.cooldownLeft / this.cd); }
   update(dt) {
     if (this.cooldownLeft > 0) this.cooldownLeft = Math.max(0, this.cooldownLeft - dt);
     // 长按瞄准中：实时追踪最近敌球（绳索方向时刻更新）
@@ -35,6 +36,11 @@ export class SkillInstance {
   canUse() {
     return this.def.active && this.cooldownLeft <= 0 && !this.owner.dashing && !this.owner.dead;
   }
+  // 释放后开始冷却：若技能有持续效果（cooldownStartsAfter），冷却从效果结束后才计时
+  _startCooldown() {
+    const wait = this.def.active?.cooldownStartsAfter || 0;
+    this.cooldownLeft = this.cd + wait;
+  }
   // 长按瞄准（触屏/键盘按下）
   startAim() {
     if (!this.canUse() || this.aiming) return false;
@@ -50,7 +56,7 @@ export class SkillInstance {
     this.aiming = false;
     this.ctx.events.emit('skill:aim', { inst: this, on: false });
     if (this.def.active.onRelease) this.def.active.onRelease(this.owner, this, this.ctx);
-    this.cooldownLeft = this.cd;
+    this._startCooldown();
     this.ctx.events.emit('skill:used', { inst: this });
     return true;
   }
@@ -59,7 +65,7 @@ export class SkillInstance {
     if (!this.canUse()) return false;
     this.aimDir = aimDir;
     if (this.def.active.onRelease) this.def.active.onRelease(this.owner, this, this.ctx);
-    this.cooldownLeft = this.cd;
+    this._startCooldown();
     this.ctx.events.emit('skill:used', { inst: this });
     return true;
   }

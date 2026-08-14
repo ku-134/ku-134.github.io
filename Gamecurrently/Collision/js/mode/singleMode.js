@@ -12,7 +12,8 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 const AI_CLASSES = ['giant', 'legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom'];
 
 // 单机模式：玩家选球 vs AI，321 倒计时，观战 + 主动干涉
-// 对战模拟与联机主机共用 MatchSim（狂暴机制、胜负判定一致）
+// 双技能通道：基础冲刺（Space/左下按钮，全职业）+ 职业技能（J键/右下按钮，主动职业）
+// 对战模拟与联机主机共用 MatchSim
 export class SingleMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -28,7 +29,8 @@ export class SingleMode {
     this.sim = null;
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
     this.unsubs = [];
-    this.unbindInput = null;
+    this.unbindDash = null;
+    this.unbindActive = null;
   }
   start(playerSkillId) {
     this.curSkillId = playerSkillId;
@@ -38,6 +40,9 @@ export class SingleMode {
     const p2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, name: 'AI' });
     p1.skill = createSkill(playerSkillId, p1, this.ctx);
     p2.skill = createSkill(AI_CLASSES[Math.floor(Math.random() * AI_CLASSES.length)], p2, this.ctx);
+    // 基础冲刺（全职业通用）
+    p1.dashSkill = createSkill('base_dash', p1, this.ctx);
+    p2.dashSkill = createSkill('base_dash', p2, this.ctx);
     // 球色 = 职业色；自己的球带倒三角标记
     p1.color = p1.skill.def.color;
     p2.color = p2.skill.def.color;
@@ -75,10 +80,19 @@ export class SingleMode {
     this.unsubs.push(this.ctx.events.on('ball:die', ({ ball }) => {
       this.renderer.particles.spawn(ball.x, ball.y, { color: '#fff', count: 30, speed: 200, size: 4 });
     }));
-    this.unbindInput?.();
+    // 双技能通道输入：冲刺（Space/左下按钮）+ 职业技能（J键/右下按钮）
+    this.unbindDash?.();
+    this.unbindActive?.();
+    this.unbindDash = bindHold({
+      el: document.getElementById('dash-btn'),
+      isTouch: this.isTouch,
+      key: 'Space',
+      onPress: () => p1.dashSkill?.startAim(),
+      onRelease: () => p1.dashSkill?.releaseAim(),
+    });
     const key = 'Key' + (localStorage.getItem('collision.key') || 'J');
-    this.unbindInput = bindHold({
-      el: document.getElementById('skill-btn'),
+    this.unbindActive = bindHold({
+      el: document.getElementById('active-btn'),
       isTouch: this.isTouch,
       key,
       onPress: () => p1.skill?.startAim(),
@@ -135,7 +149,7 @@ export class SingleMode {
     this.hud.hideMatchTimer();
     this.unsubs.forEach(fn => fn());
     this.unsubs = [];
-    this.unbindInput?.();
-    this.unbindInput = null;
+    this.unbindDash?.(); this.unbindDash = null;
+    this.unbindActive?.(); this.unbindActive = null;
   }
 }

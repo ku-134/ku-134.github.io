@@ -45,10 +45,13 @@ export class Hud {
     const isPassive = s.def.type === 'passive' || s.def.type === 'both';
     const giantSt = ball.effects.get('giant_form');
     if (isPassive) {
+      const p = s.def.passive || {};
+      const key = p.progressKey;
+      if (!key) return { ratio: 1, isCd: false };  // 无进度条的被动（如毒液）= 常驻满格
       return {
         ratio: giantSt
           ? Math.max(0, (giantSt.duration - giantSt.t) / giantSt.duration)
-          : (s.state.anger ?? 0) / CONFIG.GIANT.angerMax,
+          : (s.state[key] ?? 0) / (p.progressMax || 1),
         isCd: false,
       };
     }
@@ -67,7 +70,7 @@ export class Hud {
     this.setBar(this.el.p2passive, st2.ratio);
     this.updateSkillUI(p1);
   }
-  // 玩家技能按钮/冷却条：主动=冷却；被动=积攒进度 / 发动剩余时间
+  // 玩家技能按钮/冷却条：主动=冷却；被动=进度/剩余/就绪
   updateSkillUI(ball) {
     const s = ball.skill;
     if (!s) return;
@@ -76,14 +79,17 @@ export class Hud {
     if (this.isTouch) {
       const btn = this.el.skillBtn;
       if (isPassive) {
+        const p = s.def.passive || {};
+        const key = p.progressKey;
         this.el.sname.textContent = giantSt ? '巨大化' : s.def.skillName;
+        btn.classList.toggle('on-cd', !!giantSt);
         if (giantSt) {
           const left = Math.max(0, Math.ceil(giantSt.duration - giantSt.t));
           this.el.scd.textContent = left + 's';
-          btn.classList.add('on-cd');
+        } else if (key) {
+          this.el.scd.textContent = `${s.state[key] ?? 0}/${p.progressMax || 1}`;
         } else {
-          this.el.scd.textContent = `${s.state.anger ?? 0}/${CONFIG.GIANT.angerMax}`;
-          btn.classList.remove('on-cd');
+          this.el.scd.textContent = '被动';
         }
       } else if (s.cd > 0) {
         this.el.sname.textContent = s.def.skillName;
@@ -93,9 +99,12 @@ export class Hud {
     } else {
       this.el.cdName.textContent = s.def.skillName;
       if (isPassive) {
+        const p = s.def.passive || {};
+        const key = p.progressKey;
+        if (!key) { this.el.cdFill.style.width = '100%'; return; }
         const ratio = giantSt
           ? Math.max(0, (giantSt.duration - giantSt.t) / giantSt.duration)
-          : (s.state.anger ?? 0) / CONFIG.GIANT.angerMax;
+          : (s.state[key] ?? 0) / (p.progressMax || 1);
         this.el.cdFill.style.width = (100 * ratio) + '%';
       } else {
         this.el.cdFill.style.width = (100 * (1 - s.cdRatio)) + '%';

@@ -109,7 +109,7 @@ export class Renderer {
     }
     g.save();
     const grad = g.createRadialGradient(b.x - r * 0.3, b.y - r * 0.3, r * 0.2, b.x, b.y, r);
-    grad.addColorStop(0, '#ffffff' + '88');
+    grad.addColorStop(0, '#ffffff88');
     grad.addColorStop(0.35, b.color);
     grad.addColorStop(1, b.color);
     g.fillStyle = grad;
@@ -119,12 +119,6 @@ export class Renderer {
     g.strokeStyle = giant ? '#ffd93d' : 'rgba(255,255,255,0.5)';
     if (giant && Math.random() < 0.3) g.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
     g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.stroke();
-    const ex = b.x + Math.cos(b.angle) * r * 0.35;
-    const ey = b.y + Math.sin(b.angle) * r * 0.35;
-    g.fillStyle = '#fff';
-    g.beginPath(); g.arc(ex, ey, r * 0.3, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#111';
-    g.beginPath(); g.arc(ex + Math.cos(b.angle) * r * 0.12, ey + Math.sin(b.angle) * r * 0.12, r * 0.15, 0, Math.PI * 2); g.fill();
     if (b.flash > 0) {
       g.globalAlpha = Math.min(1, b.flash);
       g.fillStyle = '#fff';

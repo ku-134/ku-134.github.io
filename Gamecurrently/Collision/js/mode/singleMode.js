@@ -12,6 +12,7 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 const AI_CLASSES = ['giant', 'legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom'];
 
 // 单机模式：玩家选球 vs AI，321 倒计时，观战 + 主动干涉
+// 狂暴机制：30s 倒计时结束后，每秒对全场所有球造成10点伤害（10s内必分胜负）
 export class SingleMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -23,6 +24,9 @@ export class SingleMode {
     this.countdown = 0;
     this.countdownShown = -1;
     this.matchTime = 0;
+    this.berserk = false;
+    this.berserkTime = 0;
+    this.berserkTick = 0;
     this.curSkillId = 'giant';
     this.balls = [];
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
@@ -77,10 +81,14 @@ export class SingleMode {
     });
     this.hud.bind(this.balls, { isTouch: this.isTouch, key });
     this.hud.hideResult();
+    this.hud.hideMatchTimer();
     this.phase = 'countdown';
     this.countdown = 3;
     this.countdownShown = -1;
     this.matchTime = 0;
+    this.berserk = false;
+    this.berserkTime = 0;
+    this.berserkTick = 0;
     this.loop.start();
   }
   update(dt) {
@@ -107,14 +115,38 @@ export class SingleMode {
     collideBalls(this.balls[0], this.balls[1], this.ctx, this.loop.time);
     this.ai?.update(dt);
     this.matchTime += dt;
+    // 狂暴机制：30s 倒计时 → 每秒全场 10 伤
+    if (!this.berserk) {
+      const left = Math.max(0, CONFIG.BERSERK.delay - this.matchTime);
+      this.hud.showMatchTimer(Math.ceil(left), false);
+      if (left <= 0) {
+        this.berserk = true;
+        this.berserkTime = 0;
+        this.berserkTick = 0;
+        this.hud.showMatchTimer(CONFIG.BERSERK.duration, true);
+      }
+    } else {
+      this.berserkTime += dt;
+      this.berserkTick += dt;
+      if (this.berserkTick >= 1) {
+        this.berserkTick -= 1;
+        for (const b of this.balls) {
+          if (!b.dead) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true);
+        }
+      }
+      const left = Math.max(0, CONFIG.BERSERK.duration - this.berserkTime);
+      this.hud.showMatchTimer(Math.ceil(left), true);
+      if (left <= 0) this.endMatch();
+    }
     this.renderer.update(dt);
     this.hud.tick();
-    if (this.matchTime >= CONFIG.MATCH_TIME || this.balls.some(b => b.dead)) this.endMatch();
+    if (this.balls.some(b => b.dead)) this.endMatch();
   }
   render() { this.renderer.render(this.balls, this.loop.time, this.ctx.phantoms || []); }
   endMatch() {
     if (this.phase === 'end') return;
     this.phase = 'end';
+    this.hud.hideMatchTimer();
     const [p1, p2] = this.balls;
     let win;
     if (p1.dead && p2.dead) win = p1.hp >= p2.hp;
@@ -130,6 +162,7 @@ export class SingleMode {
   stop() {
     this.loop.stop();
     this.ctx.phantoms = [];
+    this.hud.hideMatchTimer();
     this.unsubs.forEach(fn => fn());
     this.unsubs = [];
     this.unbindInput?.();

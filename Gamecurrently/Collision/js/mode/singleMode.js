@@ -8,6 +8,9 @@ import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
 import { isTouchDevice, bindHold } from '../ui/input.js';
 
+// AI 可选职业池
+const AI_CLASSES = ['giant', 'legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom'];
+
 // 单机模式：玩家选球 vs AI，321 倒计时，观战 + 主动干涉
 export class SingleMode {
   constructor(ctx, { canvas, onBack }) {
@@ -28,11 +31,12 @@ export class SingleMode {
   }
   start(playerSkillId) {
     this.curSkillId = playerSkillId;
+    this.ctx.phantoms = [];
     const { w, h } = CONFIG.FIELD;
     const p1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, color: '#06d6a0', name: '你' });
     const p2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, color: '#ff9e00', name: 'AI' });
     p1.skill = createSkill(playerSkillId, p1, this.ctx);
-    p2.skill = createSkill(Math.random() < 0.5 ? 'giant' : 'legion', p2, this.ctx);
+    p2.skill = createSkill(AI_CLASSES[Math.floor(Math.random() * AI_CLASSES.length)], p2, this.ctx);
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
     this.ai = new AIController(p2, this.ctx);
@@ -44,6 +48,19 @@ export class SingleMode {
     this.unsubs.push(this.ctx.events.on('fx:line', ({ ball, hit }) => this.renderer.addLineFx(ball, hit)));
     this.unsubs.push(this.ctx.events.on('fx:transform', ({ ball }) => {
       this.renderer.particles.spawn(ball.x, ball.y, { color: '#ffb703', count: 20, speed: 150 });
+    }));
+    this.unsubs.push(this.ctx.events.on('fx:shield', ({ ball }) => {
+      this.renderer.particles.spawn(ball.x, ball.y, { color: '#b8a24a', count: 12, speed: 100 });
+    }));
+    this.unsubs.push(this.ctx.events.on('fx:field', ({ ball }) => {
+      this.renderer.particles.spawn(ball.x, ball.y, { color: '#5f27cd', count: 14, speed: 90 });
+    }));
+    this.unsubs.push(this.ctx.events.on('fx:swap', ({ a, b }) => this.renderer.addSwapFx(a, b)));
+    this.unsubs.push(this.ctx.events.on('fx:phantomHit', ({ x, y, color }) => {
+      this.renderer.particles.spawn(x, y, { color, count: 18, speed: 160, size: 4 });
+    }));
+    this.unsubs.push(this.ctx.events.on('fx:poison', ({ ball }) => {
+      this.renderer.particles.spawn(ball.x, ball.y, { color: '#6a994e', count: 8, speed: 60 });
     }));
     this.unsubs.push(this.ctx.events.on('skill:aim', ({ inst, on }) => this.renderer.setAim(inst, on)));
     this.unsubs.push(this.ctx.events.on('ball:die', ({ ball }) => {
@@ -94,7 +111,7 @@ export class SingleMode {
     this.hud.tick();
     if (this.matchTime >= CONFIG.MATCH_TIME || this.balls.some(b => b.dead)) this.endMatch();
   }
-  render() { this.renderer.render(this.balls, this.loop.time); }
+  render() { this.renderer.render(this.balls, this.loop.time, this.ctx.phantoms || []); }
   endMatch() {
     if (this.phase === 'end') return;
     this.phase = 'end';
@@ -112,6 +129,7 @@ export class SingleMode {
   }
   stop() {
     this.loop.stop();
+    this.ctx.phantoms = [];
     this.unsubs.forEach(fn => fn());
     this.unsubs = [];
     this.unbindInput?.();

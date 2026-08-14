@@ -1,7 +1,7 @@
 import CONFIG from '../config.js';
 import { Ball } from '../entities/ball.js';
 import { GameLoop } from '../core/gameLoop.js';
-import { createSkill, getSkillDef, getSkillDefs } from '../skills/skillRegistry.js';
+import { createSkill, createDashSkill, getSkillDef, getSkillDefs } from '../skills/skillRegistry.js';
 import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
 import { isTouchDevice, bindHold, bindTap } from '../ui/input.js';
@@ -12,7 +12,7 @@ import { Guest, makeHudSkill } from '../net/guest.js';
 import { MSG, isValidRoomCode } from '../net/protocol.js';
 
 // 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球 → 各自准备 → 321 → 主机权威对战
-// 双技能通道：基础冲刺（Space/左下）+ 职业技能（J键/右下，仅主动职业）
+// 双技能通道：基础冲刺（Space/左下，兵团带45伤）+ 职业技能（J键/右下，仅主动职业）
 // 客人端本地绘制瞄准线（aim inst），指令带 slot（dash/skill）发给主机执行
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
@@ -202,8 +202,9 @@ export class OnlineMode {
     if (this.isHost) {
       b1.skill = createSkill(d.hostClass, b1, this.ctx);
       b2.skill = createSkill(d.guestClass, b2, this.ctx);
-      b1.dashSkill = createSkill('base_dash', b1, this.ctx);
-      b2.dashSkill = createSkill('base_dash', b2, this.ctx);
+      // 基础冲刺：全职业通用，兵团职业自动带45伤变体
+      b1.dashSkill = createDashSkill(b1, this.ctx, d.hostClass);
+      b2.dashSkill = createDashSkill(b2, this.ctx, d.guestClass);
       this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], onResult: w => this._showResult({ win: w }) });
       b1.isPlayer = true;
       this._bindFx();

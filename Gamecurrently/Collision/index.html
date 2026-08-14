@@ -51,13 +51,16 @@
   <!-- 设置面板 -->
   <section id="panel-settings" class="panel right hidden">
     <h2>设置</h2>
+    <label class="set-row">联机昵称
+      <input id="nick-input" maxlength="8" value="玩家">
+    </label>
     <label class="set-row">球体图案
       <input type="file" id="skin-upload" accept="image/*">
     </label>
     <label class="set-row">主动技能按键
       <input id="key-active" maxlength="1" value="J">
     </label>
-    <p class="tip">自定义皮肤将在下一场对局中生效（联机版同步功能开发中）</p>
+    <p class="tip">联机昵称会显示在对方的对局界面中；自定义皮肤同步功能开发中</p>
     <button class="btn wide back" data-back="screen-home">返回</button>
   </section>
 
@@ -77,10 +80,10 @@
     <div id="online-lobby" class="online-cols">
       <div class="col">
         <button id="btn-create-room" class="btn wide">创建房间</button>
-        <p class="tip">生成5位房间号，对方输入即可加入</p>
+        <p class="tip">生成5位数字房间号，对方输入即可加入</p>
       </div>
       <div class="col">
-        <input id="room-input" class="room-input" maxlength="5" placeholder="5位房间号" inputmode="numeric">
+        <input id="room-input" class="room-input" maxlength="5" placeholder="5位数字房间号" inputmode="numeric">
         <button id="btn-join-room" class="btn wide">加入房间</button>
         <p id="room-msg" class="tip"></p>
       </div>
@@ -95,7 +98,7 @@
     <button id="btn-online-back" class="btn back corner-back" data-back="panel-start">返回</button>
   </section>
 
-  <!-- 对战界面 -->
+  <!-- 对战界面（单机） -->
   <section id="screen-game" class="screen hidden">
     <canvas id="gameCanvas"></canvas>
     <div id="hud">
@@ -115,6 +118,28 @@
     <div id="cd-bar" class="cd-bar hidden"><span id="cd-name"></span><div class="bar"><div id="cd-fill"></div></div><span id="cd-key">J</span></div>
     <div id="countdown" class="hidden"></div>
     <div id="result" class="hidden"></div>
+  </section>
+
+  <!-- 对战界面（联机专用战场，元素 id 加 online- 前缀互不干扰） -->
+  <section id="screen-game-online" class="screen hidden">
+    <canvas id="gameCanvasOnline"></canvas>
+    <div id="hud-online">
+      <div class="side left">
+        <div class="pname" id="online-p2-name"></div>
+        <div class="bar hp"><div class="fill" id="online-p2-hp"></div></div>
+        <div class="bar passive"><div class="fill" id="online-p2-passive"></div></div>
+      </div>
+      <div class="side right">
+        <div class="pname" id="online-p1-name"></div>
+        <div class="bar hp"><div class="fill" id="online-p1-hp"></div></div>
+        <div class="bar passive"><div class="fill" id="online-p1-passive"></div></div>
+      </div>
+    </div>
+    <div id="online-match-timer" class="match-timer hidden"></div>
+    <div id="online-skill-btn" class="skill-btn hidden"><span class="sname"></span><span class="scd"></span></div>
+    <div id="online-cd-bar" class="cd-bar hidden"><span id="online-cd-name"></span><div class="bar"><div id="online-cd-fill"></div></div><span id="online-cd-key">J</span></div>
+    <div id="online-countdown" class="hidden"></div>
+    <div id="online-result" class="hidden"></div>
   </section>
 </div>
 

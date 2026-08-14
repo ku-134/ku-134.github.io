@@ -1,7 +1,7 @@
 import CONFIG from '../config.js';
 import { Ball } from '../entities/ball.js';
 import { GameLoop } from '../core/gameLoop.js';
-import { createSkill, createDashSkill, getSkillDef, getSkillDefs } from '../skills/skillRegistry.js';
+import { createSkill, createDashSkill, getSkillDef, getSelectableDefs } from '../skills/skillRegistry.js';
 import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
 import { isTouchDevice, bindHold, bindTap } from '../ui/input.js';
@@ -12,8 +12,12 @@ import { Guest, makeHudSkill } from '../net/guest.js';
 import { MSG, isValidRoomCode } from '../net/protocol.js';
 
 // 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球 → 各自准备 → 321 → 主机权威对战
-// 双技能通道：基础冲刺（Space/左下，兵团带45伤）+ 职业技能（J键/右下，仅主动职业）
+// 双技能通道：基础冲刺（Space/左下，兵团带30伤）+ 职业技能（J键/右下，仅主动职业）
 // 客人端本地绘制瞄准线（aim inst），指令带 slot（dash/skill）发给主机执行
+// ★ _onData 必须处理 MSG.CMD（客人技能指令），漏了=联机技能无反应（老bug）
+// 战场干扰球：巨人（第三方）随状态广播
+import { getSelectableDefs as _selectable } from '../skills/skillRegistry.js';
+
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -26,6 +30,7 @@ export class OnlineMode {
     this.guest = null;
     this.balls = [];
     this.phantoms = [];
+    this.wild = null;
     this.isHost = false;
     this.myClass = null;
     this.enemyClass = null;
@@ -123,7 +128,8 @@ export class OnlineMode {
   }
   _renderPick() {
     this.els.pick.classList.remove('hidden');
-    renderCards(this.els.pick, getSkillDefs(), {
+    // 选球列表：可选职业（巨人已转战场干扰球，不可选）
+    renderCards(this.els.pick, getSelectableDefs(), {
       onPick: d => this._pick(d.id),
     });
   }
@@ -151,7 +157,7 @@ export class OnlineMode {
     this.els.btnReady.disabled = false;
     this.els.btnReady.classList.remove('on-cd');
   }
-  // ---- 消息处理 ----
+  // ---- 消息处理（★ CMD 必须处理，否则客人技能无反应） ----
   _onData(m) {
     if (m.t === MSG.PICK) {
       this.enemyClass = m.d.classId;
@@ -174,6 +180,9 @@ export class OnlineMode {
       this._startMatch(m.d);
     } else if (m.t === MSG.STATE) {
       this.guest?.applyState(m.d);
+    } else if (m.t === MSG.CMD) {
+      // ★ 客人技能/机动指令 → 主机执行（漏了=联机技能无反应）
+      if (this.isHost) this.host?.handleCmd(m.d);
     } else if (m.t === MSG.RESULT) {
       this._showResult(m.d);
     } else if (m.t === MSG.REMATCH) {
@@ -202,10 +211,14 @@ export class OnlineMode {
     if (this.isHost) {
       b1.skill = createSkill(d.hostClass, b1, this.ctx);
       b2.skill = createSkill(d.guestClass, b2, this.ctx);
-      // 基础冲刺：全职业通用，兵团职业自动带45伤变体
+      // 基础冲刺：全职业通用，兵团职业自动带30伤变体
       b1.dashSkill = createDashSkill(b1, this.ctx, d.hostClass);
       b2.dashSkill = createDashSkill(b2, this.ctx, d.guestClass);
-      this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], onResult: w => this._showResult({ win: w }) });
+      // 战场干扰球（巨人，第三方）：只保留愤怒机制，无 dashSkill
+      this.wild = new Ball({ x: w * 0.5, y: h * 0.5, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, name: '战场巨人' });
+      this.wild.skill = createSkill('giant', this.wild, this.ctx);
+      this.wild.color = this.wild.skill.def.color;
+      this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], wild: this.wild, onResult: w => this._showResult({ win: w }) });
       b1.isPlayer = true;
       this._bindFx();
     } else {
@@ -213,8 +226,12 @@ export class OnlineMode {
       b2.skill = makeHudSkill(getSkillDef(d.guestClass));
       b1.dashSkill = makeHudSkill(getSkillDef('base_dash'));
       b2.dashSkill = makeHudSkill(getSkillDef('base_dash'));
+      // 客人端渲染战场球（状态由 host 广播）
+      this.wild = new Ball({ x: w * 0.5, y: h * 0.5, angle: 0, hp: CONFIG.WILD.hp, name: '战场巨人' });
+      this.wild.skill = makeHudSkill(getSkillDef('giant'));
+      this.wild.color = getSkillDef('giant').color;
       this.guest = new Guest({ signal: this.signal, onResult: w => this._showResult({ win: w }) });
-      this.guest.setRenderBalls([b1, b2]);
+      this.guest.setRenderBalls([b1, b2, this.wild]);
       b2.isPlayer = true;
       // 客人端本地瞄准线（反馈自己的瞄准方向）
       this.dashAim = { owner: b2, aimDir: 0 };
@@ -222,8 +239,8 @@ export class OnlineMode {
     }
     b1.color = getSkillDef(d.hostClass).color;
     b2.color = getSkillDef(d.guestClass).color;
-    this.balls = [b1, b2];
-    this.ctx.balls = this.balls;
+    this.balls = [b1, b2, this.wild];
+    this.ctx.balls = [b1, b2];   // getEnemy 只看玩家球（战场球不干扰目标选择）
     this.phase = 'countdown';
     this.countdown = 3;
     this.countdownShown = -1;
@@ -384,6 +401,7 @@ export class OnlineMode {
     this._unsubs = [];
     this.host = null; this.guest = null;
     this.balls = []; this.phantoms = [];
+    this.wild = null;
     this.ctx.phantoms = [];
     this.dashAim = null; this.skillAim = null;
     this.hud.hideMatchTimer();

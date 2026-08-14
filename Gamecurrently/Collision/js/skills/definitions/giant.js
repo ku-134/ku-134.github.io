@@ -8,7 +8,7 @@ export default {
   type: 'passive',
   skillName: '暴怒',
   desc: '被动【暴怒】：每次碰撞（边界或敌球）积攒1点愤怒；积满8点进入【巨大化】：1秒内体积增大至2倍，持续10秒，期间与敌球碰撞造成30点伤害，且不再积攒愤怒。',
-  color: '#ef5350',
+  color: '#e63946',
   passive: {
     onCollision(owner, other, inst, ctx) {
       if (ctx.effects.has(owner, 'giant_form')) return;

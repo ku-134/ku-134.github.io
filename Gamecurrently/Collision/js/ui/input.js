@@ -5,20 +5,12 @@ export function isTouchDevice() {
 }
 
 // 统一按住-松开交互（瞄准预览 → 释放技能）
-// 防卡：键盘分支跟踪按下状态，窗口失焦自动释放（防止 keyup 丢失导致瞄准/冷却卡死）
+// ★ 双保险：键盘永远监听（电脑/外接键盘），触屏按钮存在即绑定（手机/触屏笔记本）
+// 两者互不排斥，杜绝"id 不匹配导致按钮绑定不到"的无反应 bug
+// 防卡：键盘分支跟踪按下状态，窗口失焦自动释放（keyup 丢失不会卡瞄准）
 export function bindHold({ el, isTouch, key, onPress, onRelease }) {
-  if (isTouch && el) {
-    const start = e => { e.preventDefault(); onPress(); };
-    const end = e => { e.preventDefault(); onRelease(); };
-    el.addEventListener('touchstart', start, { passive: false });
-    el.addEventListener('touchend', end, { passive: false });
-    el.addEventListener('touchcancel', end, { passive: false });
-    return () => {
-      el.removeEventListener('touchstart', start);
-      el.removeEventListener('touchend', end);
-      el.removeEventListener('touchcancel', end);
-    };
-  }
+  const unbinds = [];
+  // 1) 键盘：始终监听（不依赖 isTouch）
   let pressed = false;
   const down = e => { if (e.code === key && !pressed) { pressed = true; e.preventDefault(); onPress(); } };
   const up = e => { if (e.code === key && pressed) { pressed = false; e.preventDefault(); onRelease(); } };
@@ -26,11 +18,25 @@ export function bindHold({ el, isTouch, key, onPress, onRelease }) {
   window.addEventListener('keydown', down);
   window.addEventListener('keyup', up);
   window.addEventListener('blur', onBlur);
-  return () => {
+  unbinds.push(() => {
     window.removeEventListener('keydown', down);
     window.removeEventListener('keyup', up);
     window.removeEventListener('blur', onBlur);
-  };
+  });
+  // 2) 触屏按钮：元素存在即绑定（手机/触屏设备）
+  if (el) {
+    const start = e => { e.preventDefault(); onPress(); };
+    const end = e => { e.preventDefault(); onRelease(); };
+    el.addEventListener('touchstart', start, { passive: false });
+    el.addEventListener('touchend', end, { passive: false });
+    el.addEventListener('touchcancel', end, { passive: false });
+    unbinds.push(() => {
+      el.removeEventListener('touchstart', start);
+      el.removeEventListener('touchend', end);
+      el.removeEventListener('touchcancel', end);
+    });
+  }
+  return () => unbinds.forEach(fn => fn());
 }
 
 // 点击绑定：只用 click（pointerdown 会在按下瞬间弹窗，

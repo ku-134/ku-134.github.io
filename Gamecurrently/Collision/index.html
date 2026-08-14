@@ -99,7 +99,7 @@
     <button id="btn-online-back" class="btn back corner-back" data-back="panel-start">返回</button>
   </section>
 
-  <!-- 对战界面（单机） -->
+  <!-- 对战界面（单机）：双技能通道（冲刺 + 职业技能） -->
   <section id="screen-game" class="screen hidden">
     <canvas id="gameCanvas"></canvas>
     <div id="hud">
@@ -115,7 +115,9 @@
       </div>
     </div>
     <div id="match-timer" class="match-timer hidden"></div>
-    <div id="skill-btn" class="skill-btn hidden"><span class="sname"></span><span class="scd"></span></div>
+    <div id="dash-btn" class="skill-btn hidden"><span class="sname">冲刺</span><span class="scd"></span></div>
+    <div id="active-btn" class="skill-btn active-pos hidden"><span class="sname"></span><span class="scd"></span></div>
+    <div id="dash-cd-bar" class="cd-bar dash-pos hidden"><span id="dash-cd-name">冲刺</span><div class="bar"><div id="dash-cd-fill"></div></div><span id="dash-cd-key">SPACE</span></div>
     <div id="cd-bar" class="cd-bar hidden"><span id="cd-name"></span><div class="bar"><div id="cd-fill"></div></div><span id="cd-key">J</span></div>
     <div id="countdown" class="hidden"></div>
     <div id="result" class="hidden"></div>
@@ -137,7 +139,9 @@
       </div>
     </div>
     <div id="online-match-timer" class="match-timer hidden"></div>
-    <div id="online-skill-btn" class="skill-btn hidden"><span class="sname"></span><span class="scd"></span></div>
+    <div id="online-dash-btn" class="skill-btn hidden"><span class="sname">冲刺</span><span class="scd"></span></div>
+    <div id="online-active-btn" class="skill-btn active-pos hidden"><span class="sname"></span><span class="scd"></span></div>
+    <div id="online-dash-cd-bar" class="cd-bar dash-pos hidden"><span id="online-dash-cd-name">冲刺</span><div class="bar"><div id="online-dash-cd-fill"></div></div><span id="online-dash-cd-key">SPACE</span></div>
     <div id="online-cd-bar" class="cd-bar hidden"><span id="online-cd-name"></span><div class="bar"><div id="online-cd-fill"></div></div><span id="online-cd-key">J</span></div>
     <div id="online-countdown" class="hidden"></div>
     <div id="online-result" class="hidden"></div>

@@ -9,7 +9,7 @@ export default {
   type: 'active',
   skillName: '冲锋',
   desc: '主动【冲锋】(冷却8秒)：朝最近的敌球方向射出引导线（仅命中边框）；线命中后球立即转向冲刺点，以2倍速度冲去；途中碰到敌球造成50点伤害，任意碰撞即停。长按瞄准，松开释放。',
-  color: '#42a5f5',
+  color: '#3a86ff',
   active: {
     cooldown: CONFIG.LEGION.cooldown,
     onRelease(owner, inst, ctx) {

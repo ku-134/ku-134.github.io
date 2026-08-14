@@ -1,14 +1,15 @@
 import CONFIG from '../../config.js';
 import { normAngle } from '../../core/math.js';
 
-// 磁铁【引力场】：空间控制（牵引敌球方向 + 每秒伤害，范围280）
+// 磁铁【引力场】：空间控制（牵引敌球方向 + 高频伤害，范围280）
 // 平衡：双刃剑——拉近对手也把自己送进缠斗区；冷却在3s场结束后才开始
+// 伤害频率 0.1s/0.6 = 等效dps6，球速快也能稳定吃到伤害
 export default {
   id: 'magnet',
   name: '磁铁',
   type: 'active',
   skillName: '引力场',
-  desc: '主动【引力场】(冷却9秒，场结束后开始计算)：展开引力场3秒，大范围内的敌球被持续牵引（方向朝自己偏转），并每秒受到6点伤害。注意：把对手拉近也可能引狼入室。',
+  desc: '主动【引力场】(冷却9秒，场结束后开始计算)：展开半径280的引力场持续3秒，范围内的敌球被持续牵引（方向朝自己偏转），并每0.1秒受到0.6点伤害（等效每秒6点）。注意：把对手拉近也可能引狼入室。',
   color: '#5f27cd',
   active: {
     cooldown: CONFIG.MAGNET.cooldown,
@@ -30,9 +31,9 @@ export default {
       const diff = normAngle(target - enemy.angle);
       const maxTurn = CONFIG.MAGNET.turnSpeed * dt;
       enemy.setAngle(enemy.angle + Math.max(-maxTurn, Math.min(maxTurn, diff)));
-      // 每秒伤害
+      // 高频伤害：每0.1s 0.6伤（球速快也稳定命中）
       st._t = (st._t || 0) + dt;
-      if (st._t >= 1) { st._t -= 1; enemy.takeDamage(CONFIG.MAGNET.dps, ctx, b); }
+      if (st._t >= CONFIG.MAGNET.tick) { st._t -= CONFIG.MAGNET.tick; enemy.takeDamage(CONFIG.MAGNET.tickDamage, ctx, b); }
     }
   }]
 };

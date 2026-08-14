@@ -12,7 +12,7 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 const AI_CLASSES = ['giant', 'legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom'];
 
 // 单机模式：玩家选球 vs AI，321 倒计时，观战 + 主动干涉
-// 狂暴机制：30s 倒计时结束后，每秒对全场所有球造成10点伤害（10s内必分胜负）
+// 狂暴机制：30s倒计时结束后，每秒对全场所有球造成10点伤害（10s内必分胜负）
 export class SingleMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -37,10 +37,14 @@ export class SingleMode {
     this.curSkillId = playerSkillId;
     this.ctx.phantoms = [];
     const { w, h } = CONFIG.FIELD;
-    const p1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, color: '#06d6a0', name: '你' });
-    const p2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, color: '#ff9e00', name: 'AI' });
+    const p1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, name: '你' });
+    const p2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, name: 'AI' });
     p1.skill = createSkill(playerSkillId, p1, this.ctx);
     p2.skill = createSkill(AI_CLASSES[Math.floor(Math.random() * AI_CLASSES.length)], p2, this.ctx);
+    // 球色 = 职业色；自己的球带倒三角标记
+    p1.color = p1.skill.def.color;
+    p2.color = p2.skill.def.color;
+    p1.isPlayer = true;
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
     this.ai = new AIController(p2, this.ctx);
@@ -65,6 +69,9 @@ export class SingleMode {
     }));
     this.unsubs.push(this.ctx.events.on('fx:poison', ({ ball }) => {
       this.renderer.particles.spawn(ball.x, ball.y, { color: '#6a994e', count: 8, speed: 60 });
+    }));
+    this.unsubs.push(this.ctx.events.on('fx:damage', ({ x, y, amount }) => {
+      this.renderer.addDmgNum(x, y, amount);
     }));
     this.unsubs.push(this.ctx.events.on('skill:aim', ({ inst, on }) => this.renderer.setAim(inst, on)));
     this.unsubs.push(this.ctx.events.on('ball:die', ({ ball }) => {

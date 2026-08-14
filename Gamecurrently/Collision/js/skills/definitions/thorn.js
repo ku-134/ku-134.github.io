@@ -1,19 +1,19 @@
 import CONFIG from '../../config.js';
 
-// 荆棘【荆棘盾】：防御反击（承受50% + 伤害80%返还敌球）
-// 盾期碰撞造成12点基础伤害：保证荆棘永远有主动攻击手段（同职业对战不死局）
-// 平衡：克爆发型；被巨人（攒怒节奏）克制；冷却在4s盾结束后才开始
+// 荆棘【荆棘盾】：被动循环（5s生效 / 8s冷却），减伤50% + 返还80% + 盾期碰撞12伤
+// 平衡：开局立即开盾；生效期间不开始冷却（效果结束后才倒计时），保证覆盖率稳定
+// 克爆发型；盾期碰撞12伤保证永远有攻击手段（同职业对战不死局）
 export default {
   id: 'thorn',
   name: '荆棘',
-  type: 'active',
+  type: 'passive',
   skillName: '荆棘盾',
-  desc: '主动【荆棘盾】(冷却10秒，盾结束后开始计算)：开启后4秒内受到的伤害减半、将80%返还敌球，且盾期碰撞对敌球造成12点基础伤害。专治高爆发，同职业对拼也不虚。',
+  desc: '被动【荆棘盾】（循环：生效5秒→冷却8秒，开局立即开启）：无需操作自动生效，生效期间受到的伤害减半、并将80%返还敌球；盾期碰撞对敌球造成12点基础伤害。专治高爆发，同职业对拼也不虚。',
   color: '#9aa5b1',
-  active: {
+  passive: {
     cooldown: CONFIG.SHIELD.cooldown,
-    cooldownStartsAfter: CONFIG.SHIELD.duration,
-    onRelease(owner, inst, ctx) {
+    effectId: 'shield',
+    onTrigger(owner, inst, ctx) {
       ctx.effects.apply(owner, 'shield', { duration: CONFIG.SHIELD.duration });
       ctx.events.emit('fx:shield', { ball: owner });
     }

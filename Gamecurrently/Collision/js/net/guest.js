@@ -15,13 +15,16 @@ export function makeHudSkill(def) {
 }
 
 // 客户端：接收主机状态 → 更新渲染对象（球/幻影/HUD状态） → 转发输入指令
+// 伤害数字：本地监测 HP 下降差值生成（不占用网络信道，与房主端特效一致）
 export class Guest {
-  constructor({ signal, onResult }) {
+  constructor({ signal, onResult, onLocalDamage }) {
     this.signal = signal;
     this.onResult = onResult;
+    this.onLocalDamage = onLocalDamage;   // (x, y, amount) 本地渲染伤害数字
     this.balls = null;
     this.phantoms = [];
     this.berserk = { active: false, left: 0 };
+    this._hpInited = false;               // 首帧只记录 HP，不生成数字（避免初始差值误报）
   }
   setRenderBalls(balls) { this.balls = balls; }
   applyState(d) {
@@ -30,9 +33,14 @@ export class Guest {
     d.balls.forEach((s, i) => {
       const b = this.balls[i];
       if (!b) return;
+      const prevHp = b.hp;
       b.x = s.x; b.y = s.y; b.angle = s.angle;
       b.hp = s.hp; b.scale = s.scale;
       b.dashing = s.dashing; b.flash = s.flash ? 1 : 0;
+      // 本地监测 HP 下降 → 伤害数字（不占用信道；首帧跳过）
+      if (this._hpInited && prevHp > s.hp && this.onLocalDamage) {
+        this.onLocalDamage(b.x, b.y - b.radiusScaled - 10, +(prevHp - s.hp).toFixed(1));
+      }
       // 效果重建（渲染用：护盾锯齿/磁铁圈/腐蚀泡/巨大化描边）
       b.effects.clear();
       for (const e of s.effects) {
@@ -46,6 +54,7 @@ export class Guest {
         b.skill.passiveTimer = s.cd.passiveTimer;
       }
     });
+    this._hpInited = true;
     this.phantoms = d.phantoms.map(p => ({ ...p, radius: 20, isPhantom: true, speed: 0 }));
   }
   sendCmd(cmd) { this.signal.send(MSG.CMD, cmd); }

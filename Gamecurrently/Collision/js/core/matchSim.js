@@ -3,6 +3,8 @@ import { move, collideWalls, collideBalls } from './physics.js';
 
 // 公共对战模拟：单机模式与联机主机共用（保证逻辑一致）
 // 负责：球更新、碰撞、技能、狂暴倒计时与全场伤害、胜负判定
+// ★ 必须同时更新 skill（职业技能）与 dashSkill（基础冲刺）：
+//   否则冲刺冷却永不递减（用完卡死）、瞄准帧追踪失效
 export class MatchSim {
   constructor(ctx, balls) {
     this.ctx = ctx;
@@ -20,7 +22,8 @@ export class MatchSim {
       b.flash = Math.max(0, b.flash - dt * 3);
       move(b, dt);
       collideWalls(b, this.ctx, this.time);
-      b.skill?.update(dt);
+      b.skill?.update(dt);      // 职业技能：冷却递减/瞄准帧追踪
+      b.dashSkill?.update(dt);  // 基础冲刺：冷却递减/瞄准帧追踪（★勿漏）
     }
     collideBalls(this.balls[0], this.balls[1], this.ctx, this.time);
     this.time += dt;

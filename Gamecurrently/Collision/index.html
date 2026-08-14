@@ -71,17 +71,13 @@
     </div>
   </section>
 
-  <!-- 联机界面 -->
+  <!-- 联机界面：大厅（创建/加入） + 房间（等待/选球） -->
   <section id="screen-online" class="screen hidden">
     <h2>联机对战</h2>
-    <div class="online-cols">
+    <div id="online-lobby" class="online-cols">
       <div class="col">
         <button id="btn-create-room" class="btn wide">创建房间</button>
-        <div id="room-wait" class="hidden">
-          <p>房间号</p>
-          <div id="room-code" class="room-code"></div>
-          <p class="tip">等待对方加入…</p>
-        </div>
+        <p class="tip">生成5位房间号，对方输入即可加入</p>
       </div>
       <div class="col">
         <input id="room-input" class="room-input" maxlength="5" placeholder="5位房间号" inputmode="numeric">
@@ -89,7 +85,14 @@
         <p id="room-msg" class="tip"></p>
       </div>
     </div>
-    <button class="btn wide back" data-back="panel-start">返回</button>
+    <div id="online-wait" class="online-wait hidden">
+      <p>房间号</p>
+      <div id="room-code" class="room-code"></div>
+      <p id="room-status" class="tip"></p>
+      <p id="online-enemy" class="tip hidden"></p>
+      <div id="online-pick" class="card-list online-pick-list hidden"></div>
+    </div>
+    <button id="btn-online-back" class="btn back corner-back" data-back="panel-start">返回</button>
   </section>
 
   <!-- 对战界面 -->
@@ -115,6 +118,7 @@
   </section>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

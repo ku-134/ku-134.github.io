@@ -1,17 +1,18 @@
 import CONFIG from '../../config.js';
 import { normAngle } from '../../core/math.js';
 
-// 磁铁【引力场】：空间控制（牵引敌球方向 + 每秒伤害）
-// 平衡：双刃剑——拉近对手也把自己送进缠斗区；克兵团/风筝，被巨人反制
+// 磁铁【引力场】：空间控制（牵引敌球方向 + 每秒伤害，范围280）
+// 平衡：双刃剑——拉近对手也把自己送进缠斗区；冷却在3s场结束后才开始
 export default {
   id: 'magnet',
   name: '磁铁',
   type: 'active',
   skillName: '引力场',
-  desc: '主动【引力场】(冷却9秒)：展开引力场3秒，范围内的敌球被持续牵引（方向朝自己偏转），并每秒受到6点伤害。注意：把对手拉近也可能引狼入室。',
+  desc: '主动【引力场】(冷却9秒，场结束后开始计算)：展开引力场3秒，大范围内的敌球被持续牵引（方向朝自己偏转），并每秒受到6点伤害。注意：把对手拉近也可能引狼入室。',
   color: '#5f27cd',
   active: {
     cooldown: CONFIG.MAGNET.cooldown,
+    cooldownStartsAfter: CONFIG.MAGNET.duration,
     onRelease(owner, inst, ctx) {
       ctx.effects.apply(owner, 'tether', { duration: CONFIG.MAGNET.duration });
       ctx.events.emit('fx:field', { ball: owner });

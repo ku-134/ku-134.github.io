@@ -14,10 +14,10 @@ const CONFIG = {
   GIANT: { angerMax: 8, duration: 10, scale: 2, damage: 30, growTime: 1 },
   // 兵团【冲锋】
   LEGION: { cooldown: 8, dashMul: 2, damage: 50 },
-  // 荆棘【荆棘盾】：承受50% + 返还80% + 盾期碰撞基础伤12（保证有攻击手段）
-  SHIELD: { cooldown: 10, duration: 4, mitigation: 0.5, reflect: 0.8, collideDamage: 12 },
-  // 磁铁【引力场】：范围280（两倍）
-  MAGNET: { cooldown: 9, duration: 3, range: 280, turnSpeed: 0.35, dps: 6 },
+  // 荆棘【荆棘盾】被动：8s冷却循环 + 5s生效，承受50% + 返还80% + 盾期碰撞12伤
+  SHIELD: { cooldown: 8, duration: 5, mitigation: 0.5, reflect: 0.8, collideDamage: 12 },
+  // 磁铁【引力场】：范围280，场内每0.1s造成0.6伤（等效dps6，频率优化）
+  MAGNET: { cooldown: 9, duration: 3, range: 280, turnSpeed: 0.35, tick: 0.1, tickDamage: 0.6 },
   // 幻影【分身】：冷却8s（唯一攻击手段）
   PHANTOM: { cooldown: 8, duration: 6, damage: 15, speedMul: 0.8 },
   // 毒液【腐蚀】

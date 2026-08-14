@@ -15,8 +15,8 @@ import { MSG, isValidRoomCode } from '../net/protocol.js';
 // 双技能通道：基础冲刺（Space/左下，兵团带30伤）+ 职业技能（J键/右下，仅主动职业）
 // 客人端本地绘制瞄准线（aim inst），指令带 slot（dash/skill）发给主机执行
 // ★ _onData 必须处理 MSG.CMD（客人技能指令），漏了=联机技能无反应（老bug）
-// ★ RESULT.win 语义 'host'/'guest'/'draw'：两端各自判断自己的输赢（防止双方显示相同）
-// 战场干扰球：巨人（第三方）随状态广播
+// ★ 按钮 id 必须与 index.html 一致（online-dash-btn / online-active-btn）——id 错 = 触屏无反应
+// ★ RESULT.win 语义 'host'/'guest'/'draw'：两端各自判断自己的输赢
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -57,6 +57,8 @@ export class OnlineMode {
       msg: document.getElementById('room-msg'),
       input: document.getElementById('room-input'),
       btnReady: document.getElementById('btn-ready'),
+      dashBtn: document.getElementById('online-dash-btn'),
+      activeBtn: document.getElementById('online-active-btn'),
     };
     bindTap(this.els.btnReady, () => this._ready());
   }
@@ -266,8 +268,9 @@ export class OnlineMode {
     this.unbindDash?.();
     this.unbindActive?.();
     // 冲刺：房主本地执行，客人发指令（slot: dash）+ 本地画瞄准线
+    // ★ id 与 index.html 一致：online-dash-btn / online-active-btn
     this.unbindDash = bindHold({
-      el: document.getElementById('dash-btn-online'),
+      el: this.els.dashBtn,
       isTouch: this.isTouch,
       key: 'Space',
       onPress: () => {
@@ -281,7 +284,7 @@ export class OnlineMode {
     });
     // 职业技能：房主本地执行，客人发指令（slot: skill）+ 本地画瞄准线
     this.unbindActive = bindHold({
-      el: document.getElementById('active-btn-online'),
+      el: this.els.activeBtn,
       isTouch: this.isTouch,
       key,
       onPress: () => {

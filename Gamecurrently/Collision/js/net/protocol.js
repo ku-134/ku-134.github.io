@@ -2,6 +2,7 @@
 // 所有消息：{ t: 类型, d: 数据 }
 export const MSG = {
   PICK: 'pick',
+  READY: 'ready',
   START: 'start',
   STATE: 'state',
   CMD: 'cmd',

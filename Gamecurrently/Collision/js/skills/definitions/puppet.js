@@ -59,5 +59,11 @@ export default {
       // 清理残留珍珠（保险）
       ctx.phantoms = (ctx.phantoms || []).filter(x => !x.isPearl);
     }
+  }, {
+    // 惊滞效果：命中后敌球无法自主转向
+    id: 'stun',
+    onApply() {},
+    onUpdate() {},
+    onRemove() {}
   }]
 };

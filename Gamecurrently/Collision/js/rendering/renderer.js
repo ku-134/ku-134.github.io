@@ -37,18 +37,16 @@ export class Renderer {
   }
   setAim(inst, on) {
     this.aimLines = this.aimLines.filter(a => a.inst !== inst);
-    if (on) {
-      const hit = rayHitRect(inst.owner.x, inst.owner.y, inst.aimDir, CONFIG.FIELD.w, CONFIG.FIELD.h);
-      this.aimLines.push({ inst, hit });
-    }
+    if (on) this.aimLines.push({ inst });
   }
-  addLineFx(ball, hit) { this.lineFx.push({ ball, hit, t: 0 }); }
+  // 释放线：记录释放瞬间的起点（不跟随球移动，避免乱飞）
+  addLineFx(ball, hit) { this.lineFx.push({ x0: ball.x, y0: ball.y, hit, t: 0 }); }
   update(dt) {
     this.particles.update(dt);
     for (let i = this.lineFx.length - 1; i >= 0; i--) {
       const fx = this.lineFx[i];
       fx.t += dt;
-      if (fx.t > 0.3) this.lineFx.splice(i, 1);
+      if (fx.t > 0.45) this.lineFx.splice(i, 1);
     }
   }
   render(balls, t) {
@@ -88,29 +86,31 @@ export class Renderer {
     g.beginPath(); g.moveTo(6, h / 2); g.lineTo(w - 6, h / 2); g.stroke();
     g.restore();
   }
+  // 瞄准线：每帧实时计算命中点（绳索时刻指向最近敌球）
   drawAim(g, a) {
+    const hit = rayHitRect(a.inst.owner.x, a.inst.owner.y, a.inst.aimDir, CONFIG.FIELD.w, CONFIG.FIELD.h);
     g.save();
     g.setLineDash([8, 8]);
     g.strokeStyle = INK;
     g.lineWidth = 3;
-    g.beginPath(); g.moveTo(a.inst.owner.x, a.inst.owner.y); g.lineTo(a.hit.x, a.hit.y); g.stroke();
+    g.beginPath(); g.moveTo(a.inst.owner.x, a.inst.owner.y); g.lineTo(hit.x, hit.y); g.stroke();
     g.setLineDash([]);
     // 命中点：手绘 X 标记
     const s = 8;
     g.strokeStyle = INK;
     g.lineWidth = 3;
     g.beginPath();
-    g.moveTo(a.hit.x - s, a.hit.y - s); g.lineTo(a.hit.x + s, a.hit.y + s);
-    g.moveTo(a.hit.x + s, a.hit.y - s); g.lineTo(a.hit.x - s, a.hit.y + s);
+    g.moveTo(hit.x - s, hit.y - s); g.lineTo(hit.x + s, hit.y + s);
+    g.moveTo(hit.x + s, hit.y - s); g.lineTo(hit.x - s, hit.y + s);
     g.stroke();
     g.restore();
   }
   drawLineFx(g, fx) {
     g.save();
-    g.globalAlpha = Math.max(0, 1 - fx.t / 0.3);
+    g.globalAlpha = Math.max(0, 1 - fx.t / 0.45);
     g.strokeStyle = INK;
     g.lineWidth = 5;
-    g.beginPath(); g.moveTo(fx.ball.x, fx.ball.y); g.lineTo(fx.hit.x, fx.hit.y); g.stroke();
+    g.beginPath(); g.moveTo(fx.x0, fx.y0); g.lineTo(fx.hit.x, fx.hit.y); g.stroke();
     g.fillStyle = '#ffb703';
     g.beginPath(); g.arc(fx.hit.x, fx.hit.y, 10, 0, Math.PI * 2); g.fill();
     g.restore();

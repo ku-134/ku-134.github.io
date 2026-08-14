@@ -1,4 +1,4 @@
-// 轻量粒子系统：碰撞火花、变身、命中、拖尾
+// 轻量粒子系统：碰撞火花、变身、命中、拖尾（方块涂鸦风）
 export class Particles {
   constructor() { this.list = []; }
   spawn(x, y, { count = 6, color = '#fff', speed = 80, life = 0.5, size = 3 } = {}) {
@@ -27,9 +27,8 @@ export class Particles {
     for (const p of this.list) {
       g.globalAlpha = Math.max(0, p.life / p.max);
       g.fillStyle = p.color;
-      g.beginPath();
-      g.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      g.fill();
+      const s = p.size * 2;
+      g.fillRect(p.x - s / 2, p.y - s / 2, s, s);
     }
     g.globalAlpha = 1;
   }

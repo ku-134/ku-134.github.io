@@ -15,7 +15,7 @@ export default {
       inst.state.anger = (inst.state.anger ?? 0) + 1;
       if (inst.state.anger >= CONFIG.GIANT.angerMax) {
         inst.state.anger = 0;
-        ctx.effects.apply(owner, 'giant_form', {});
+        ctx.effects.apply(owner, 'giant_form', { duration: CONFIG.GIANT.duration });
         ctx.events.emit('fx:transform', { ball: owner });
       }
       ctx.events.emit('hud:passive', { ball: owner, value: inst.state.anger, max: CONFIG.GIANT.angerMax });
@@ -24,8 +24,7 @@ export default {
   effects: [{
     id: 'giant_form',
     onApply(b) { b.scaleTarget = CONFIG.GIANT.scale; },
-    onUpdate(b, dt, st) { b.scale += (b.scaleTarget - b.scale) * Math.min(1, dt * 3); },
     onCollision(b, other, st, ctx) { if (other) other.takeDamage(CONFIG.GIANT.damage, ctx); },
-    onRemove(b) { b.scaleTarget = 1; b.scale = 1; }
+    onRemove(b) { b.scaleTarget = 1; }
   }]
 };

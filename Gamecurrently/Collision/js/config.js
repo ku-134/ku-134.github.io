@@ -12,7 +12,7 @@ const CONFIG = {
   BERSERK: { delay: 30, duration: 20, dps: 10 },
   // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带30伤）
   BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
-  // 巨人【暴怒】
+  // 巨人【暴怒】：战场干扰球（第三方，不可选择），只保留愤怒机制
   GIANT: { angerMax: 8, duration: 10, scale: 2, damage: 30, growTime: 1 },
   // 兵团【冲锋】：机动性是职业特色；技能与基础冲刺都30伤，独立冷却
   LEGION: { cooldown: 8, dashMul: 2, damage: 30, dashDamage: 30 },
@@ -24,8 +24,10 @@ const CONFIG = {
   PHANTOM: { cooldown: 8, duration: 6, damage: 15, speedMul: 0.8, count: 3 },
   // 毒液【腐蚀】
   POISON: { duration: 3.5, tick: 0.5, tickDamage: 3 },
-  // 傀儡【置换】：末影珍珠弹道，命中触发换位+18伤+0.6s惊滞
-  PUPPET: { cooldown: 10, damage: 18, stunDuration: 0.6, pearlSpeedMul: 1.6 },
+  // 傀儡【置换】：末影珍珠弹道（命中率低，冷却缩短至7s），命中触发换位+18伤+0.6s惊滞
+  PUPPET: { cooldown: 7, damage: 18, stunDuration: 0.6, pearlSpeedMul: 1.6 },
+  // 战场干扰球（巨人）：hp 高到不会死
+  WILD: { hp: 9999 },
   // AI
   AI: { thinkInterval: [2, 5], skillChance: 0.4, aimJitter: 0.3 },
   KEY_ACTIVE: 'KeyJ',

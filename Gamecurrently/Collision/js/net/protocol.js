@@ -38,7 +38,7 @@ export function unpack(raw) {
 }
 
 // 主机 → 客户端：状态快照（渲染 + HUD 最小集）
-// cd.dash = 基础冲刺冷却，cd.left = 职业技能冷却
+// hp 保留 1 位小数：客人端本地监测 HP 差值生成精确伤害数字（不额外占信道）
 export function encodeState(sim, balls, phantoms) {
   return {
     seq: ++sim._seq,
@@ -46,7 +46,7 @@ export function encodeState(sim, balls, phantoms) {
     berserk: { active: sim.berserk, left: sim.berserkLeft() },
     balls: balls.map(b => ({
       x: +b.x.toFixed(1), y: +b.y.toFixed(1), angle: +b.angle.toFixed(3),
-      hp: Math.max(0, Math.round(b.hp)), scale: +b.scale.toFixed(2),
+      hp: +Math.max(0, b.hp).toFixed(1), scale: +b.scale.toFixed(2),
       dashing: !!b.dashing, flash: b.flash > 0,
       effects: [...b.effects.values()].map(e => ({ id: e.def.id, left: +Math.max(0, e.duration - e.t).toFixed(1) })),
       cd: {

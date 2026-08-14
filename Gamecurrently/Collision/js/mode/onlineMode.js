@@ -12,9 +12,8 @@ import { Guest, makeHudSkill } from '../net/guest.js';
 import { MSG, isValidRoomCode } from '../net/protocol.js';
 
 // 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球 → 各自准备 → 321 → 主机权威对战
-// 独立战场 screen-game-online（HUD 前缀 online-），与单机互不干扰
-// 对方昵称：设置里预设（localStorage collision.nick），随 PICK 交换
-// 技能按钮：HUD myIndex（房主=0 自己的球，客人=1 自己的球）
+// 双技能通道：基础冲刺（Space/左下）+ 职业技能（J键/右下，仅主动职业）
+// 客人端本地绘制瞄准线（aim inst），指令带 slot（dash/skill）发给主机执行
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -39,8 +38,11 @@ export class OnlineMode {
     this.countdown = 0;
     this.countdownShown = -1;
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
-    this.unbindInput = null;
+    this.unbindDash = null;
+    this.unbindActive = null;
     this._unsubs = [];
+    this.dashAim = null;   // 客人端本地瞄准线（基础冲刺）
+    this.skillAim = null;  // 客人端本地瞄准线（职业技能）
     this.els = {
       lobby: document.getElementById('online-lobby'),
       wait: document.getElementById('online-wait'),
@@ -131,7 +133,6 @@ export class OnlineMode {
     this.els.status.textContent = `你已选择【${getSkillDef(classId).name}】，点击下方【准备】`;
     this.els.btnReady.classList.remove('hidden');
     this.signal.send(MSG.PICK, { classId, name: this.myName });
-    this._tryStart();
   }
   // ---- 准备 ----
   _ready() {
@@ -150,7 +151,7 @@ export class OnlineMode {
     this.els.btnReady.disabled = false;
     this.els.btnReady.classList.remove('on-cd');
   }
-  // ---- 消息处理（核心：STATE 驱动客户端画面） ----
+  // ---- 消息处理 ----
   _onData(m) {
     if (m.t === MSG.PICK) {
       this.enemyClass = m.d.classId;
@@ -201,15 +202,22 @@ export class OnlineMode {
     if (this.isHost) {
       b1.skill = createSkill(d.hostClass, b1, this.ctx);
       b2.skill = createSkill(d.guestClass, b2, this.ctx);
+      b1.dashSkill = createSkill('base_dash', b1, this.ctx);
+      b2.dashSkill = createSkill('base_dash', b2, this.ctx);
       this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], onResult: w => this._showResult({ win: w }) });
       b1.isPlayer = true;
       this._bindFx();
     } else {
       b1.skill = makeHudSkill(getSkillDef(d.hostClass));
       b2.skill = makeHudSkill(getSkillDef(d.guestClass));
+      b1.dashSkill = makeHudSkill(getSkillDef('base_dash'));
+      b2.dashSkill = makeHudSkill(getSkillDef('base_dash'));
       this.guest = new Guest({ signal: this.signal, onResult: w => this._showResult({ win: w }) });
       this.guest.setRenderBalls([b1, b2]);
       b2.isPlayer = true;
+      // 客人端本地瞄准线（反馈自己的瞄准方向）
+      this.dashAim = { owner: b2, aimDir: 0 };
+      this.skillAim = { owner: b2, aimDir: 0 };
     }
     b1.color = getSkillDef(d.hostClass).color;
     b2.color = getSkillDef(d.guestClass).color;
@@ -221,7 +229,6 @@ export class OnlineMode {
     const key = 'Key' + (localStorage.getItem('collision.key') || 'J');
     // myIndex：技能按钮显示自己的球（房主=0，客人=1）
     this.hud.bind(this.balls, { isTouch: this.isTouch, key, myIndex: this.isHost ? 0 : 1 });
-    // 名字文案：右侧=主机侧，左侧=客人侧（对方昵称来自设置/交换）
     const hostName = this.isHost ? '你' : this.enemyName;
     const guestName = this.isHost ? this.enemyName : '你';
     this.hud.setNames(`${hostName} · ${getSkillDef(d.hostClass).name}`, `${guestName} · ${getSkillDef(d.guestClass).name}`);
@@ -232,6 +239,43 @@ export class OnlineMode {
     online.classList.remove('active'); online.classList.add('hidden');
     game.classList.remove('hidden'); game.classList.add('active');
     this.loop.start();
+  }
+  // 客人端瞄准线方向：追踪最近敌球
+  _aimUpdate(inst) {
+    const enemy = this.ctx.getEnemy(inst.owner);
+    if (enemy) inst.aimDir = Math.atan2(enemy.y - inst.owner.y, enemy.x - inst.owner.x);
+  }
+  _bindInput(key) {
+    this.unbindDash?.();
+    this.unbindActive?.();
+    // 冲刺：房主本地执行，客人发指令（slot: dash）+ 本地画瞄准线
+    this.unbindDash = bindHold({
+      el: document.getElementById('dash-btn-online'),
+      isTouch: this.isTouch,
+      key: 'Space',
+      onPress: () => {
+        if (this.isHost) this.balls[0].dashSkill?.startAim();
+        else { this._aimUpdate(this.dashAim); this.renderer.setAim(this.dashAim, true); this.guest.sendCmd({ type: 'aim', slot: 'dash' }); }
+      },
+      onRelease: () => {
+        if (this.isHost) this.balls[0].dashSkill?.releaseAim();
+        else { this.renderer.setAim(this.dashAim, false); this.guest.sendCmd({ type: 'release', slot: 'dash' }); }
+      },
+    });
+    // 职业技能：房主本地执行，客人发指令（slot: skill）+ 本地画瞄准线
+    this.unbindActive = bindHold({
+      el: document.getElementById('active-btn-online'),
+      isTouch: this.isTouch,
+      key,
+      onPress: () => {
+        if (this.isHost) this.balls[0].skill?.startAim();
+        else { this._aimUpdate(this.skillAim); this.renderer.setAim(this.skillAim, true); this.guest.sendCmd({ type: 'aim', slot: 'skill' }); }
+      },
+      onRelease: () => {
+        if (this.isHost) this.balls[0].skill?.releaseAim();
+        else { this.renderer.setAim(this.skillAim, false); this.guest.sendCmd({ type: 'release', slot: 'skill' }); }
+      },
+    });
   }
   // 主机端特效/伤害数字/瞄准线订阅（与单机一致）
   _bindFx() {
@@ -265,17 +309,6 @@ export class OnlineMode {
       this.renderer.particles.spawn(ball.x, ball.y, { color: '#fff', count: 30, speed: 200, size: 4 });
     }));
   }
-  _bindInput(key) {
-    this.unbindInput?.();
-    // 只控制自己的球：房主=本地 balls[0]，客人=发指令由主机执行
-    this.unbindInput = bindHold({
-      el: document.getElementById('skill-btn-online'),
-      isTouch: this.isTouch,
-      key,
-      onPress: () => { if (this.isHost) this.balls[0].skill?.startAim(); else this.guest?.sendCmd({ type: 'aim' }); },
-      onRelease: () => { if (this.isHost) this.balls[0].skill?.releaseAim(); else this.guest?.sendCmd({ type: 'release' }); },
-    });
-  }
   update(dt) {
     if (this.phase === 'countdown') {
       const n = Math.ceil(this.countdown);
@@ -297,6 +330,9 @@ export class OnlineMode {
     } else {
       this.hud.showMatchTimer(this.guest.berserk.left, this.guest.berserk.active);
       this.phantoms = this.guest.phantoms;
+      // 客人端瞄准线持续追踪敌球
+      this._aimUpdate(this.dashAim);
+      this._aimUpdate(this.skillAim);
     }
     this.renderer.update(dt);
     this.hud.tick();
@@ -341,12 +377,14 @@ export class OnlineMode {
   }
   _cleanupMatch() {
     this.loop.stop();
-    this.unbindInput?.(); this.unbindInput = null;
+    this.unbindDash?.(); this.unbindDash = null;
+    this.unbindActive?.(); this.unbindActive = null;
     this._unsubs.forEach(fn => fn());
     this._unsubs = [];
     this.host = null; this.guest = null;
     this.balls = []; this.phantoms = [];
     this.ctx.phantoms = [];
+    this.dashAim = null; this.skillAim = null;
     this.hud.hideMatchTimer();
     this.hud.hideResult();
   }

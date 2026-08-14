@@ -1,7 +1,7 @@
 import CONFIG from '../config.js';
 
 // 对局 HUD：HP条/技能状态条（被动进度 or 主动冷却，敌我可见）
-// 技能按钮（手机）/冷却条（电脑）
+// 技能按钮（手机）/冷却条（电脑）/狂暴倒计时
 export class Hud {
   constructor() {
     this.el = {
@@ -18,6 +18,7 @@ export class Hud {
       cdName: document.getElementById('cd-name'),
       cdFill: document.getElementById('cd-fill'),
       cdKey: document.getElementById('cd-key'),
+      matchTimer: document.getElementById('match-timer'),
     };
     this.balls = null;
     this.isTouch = false;
@@ -38,6 +39,14 @@ export class Hud {
     }
     this.tick();
   }
+  // 狂暴倒计时：顶部中间，red=true 时为狂暴阶段
+  showMatchTimer(sec, red) {
+    const el = this.el.matchTimer;
+    el.textContent = red ? `狂暴 ${sec}` : sec;
+    el.classList.toggle('berserk', !!red);
+    el.classList.remove('hidden');
+  }
+  hideMatchTimer() { this.el.matchTimer.classList.add('hidden'); }
   // 技能状态：被动 = 积攒进度/发动剩余；主动 = 冷却充能
   skillState(ball) {
     const s = ball.skill;

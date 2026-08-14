@@ -5,6 +5,7 @@ import { rayHitRect } from '../core/math.js';
 
 const INK = '#1f1a17';
 const PAPER = '#f7edd8';
+const DMG = '#e63946';
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // autoResize=false 用于首页背景（全屏拉伸做氛围）
@@ -17,6 +18,7 @@ export class Renderer {
     this.aimLines = [];
     this.lineFx = [];
     this.swapFx = [];
+    this.dmgNums = [];
     this.autoResize = autoResize;
     if (autoResize) {
       this.resize();
@@ -42,6 +44,7 @@ export class Renderer {
   }
   addLineFx(ball, hit) { this.lineFx.push({ x0: ball.x, y0: ball.y, hit, t: 0 }); }
   addSwapFx(a, b) { this.swapFx.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, t: 0 }); }
+  addDmgNum(x, y, amount) { this.dmgNums.push({ x, y, amount, t: 0 }); }
   update(dt) {
     this.particles.update(dt);
     for (let i = this.lineFx.length - 1; i >= 0; i--) {
@@ -53,6 +56,11 @@ export class Renderer {
       const fx = this.swapFx[i];
       fx.t += dt;
       if (fx.t > 0.5) this.swapFx.splice(i, 1);
+    }
+    for (let i = this.dmgNums.length - 1; i >= 0; i--) {
+      const d = this.dmgNums[i];
+      d.t += dt;
+      if (d.t > 0.5) this.dmgNums.splice(i, 1);
     }
   }
   render(balls, t, phantoms = []) {
@@ -70,6 +78,7 @@ export class Renderer {
     for (const fx of this.swapFx) this.drawSwapFx(g, fx);
     for (const ph of phantoms) this.drawPhantom(g, ph);
     for (const b of balls) this.drawBall(g, b);
+    for (const d of this.dmgNums) this.drawDmgNum(g, d);
     this.particles.draw(g);
     g.restore();
   }
@@ -151,8 +160,39 @@ export class Renderer {
     g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.stroke();
     g.restore();
   }
+  // 受伤数字：红色大字黑描边，上浮0.5s淡出
+  drawDmgNum(g, d) {
+    const a = Math.max(0, 1 - d.t / 0.5);
+    const y = d.y - d.t * 26;
+    g.save();
+    g.globalAlpha = a;
+    g.font = "bold 20px 'ZCOOL KuaiLe', 'Comic Sans MS', sans-serif";
+    g.textAlign = 'center';
+    g.lineWidth = 4;
+    g.strokeStyle = '#fff';
+    g.strokeText(d.amount, d.x, y);
+    g.strokeStyle = INK;
+    g.lineWidth = 2.5;
+    g.strokeText(d.amount, d.x, y);
+    g.fillStyle = DMG;
+    g.fillText(d.amount, d.x, y);
+    g.restore();
+  }
   drawBall(g, b) {
     const r = b.radiusScaled;
+    // 自己的球：头顶持续显示黑色倒三角标记
+    if (b.isPlayer) {
+      g.save();
+      const bob = Math.sin(performance.now() / 280) * 3;
+      g.fillStyle = INK;
+      g.beginPath();
+      g.moveTo(b.x, b.y - r - 24 + bob);
+      g.lineTo(b.x - 9, b.y - r - 11 + bob);
+      g.lineTo(b.x + 9, b.y - r - 11 + bob);
+      g.closePath();
+      g.fill();
+      g.restore();
+    }
     // 荆棘盾：金色锯齿环
     if (b.effects.has('shield')) {
       g.save();

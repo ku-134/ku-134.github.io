@@ -47,14 +47,22 @@ export class Hud {
     el.classList.remove('hidden');
   }
   hideMatchTimer() { this.el.matchTimer.classList.add('hidden'); }
-  // 技能状态：被动 = 积攒进度/发动剩余；主动 = 冷却充能
+  // 技能状态：被动 = 积攒进度/生效剩余/冷却充能；主动 = 冷却充能
   skillState(ball) {
     const s = ball.skill;
     if (!s) return { ratio: 0, isCd: false };
     const isPassive = s.def.type === 'passive' || s.def.type === 'both';
+    const p = s.def.passive || {};
     const giantSt = ball.effects.get('giant_form');
     if (isPassive) {
-      const p = s.def.passive || {};
+      // 冷却型被动（如荆棘）：生效中=剩余比例，冷却中=充能进度
+      if (p.cooldown) {
+        if (s.passiveActive) {
+          const st = ball.effects.get(p.effectId);
+          return { ratio: st ? Math.max(0, (st.duration - st.t) / st.duration) : 1, isCd: false };
+        }
+        return { ratio: Math.max(0, 1 - s.passiveTimer / p.cooldown), isCd: true };
+      }
       const key = p.progressKey;
       if (!key) return { ratio: 1, isCd: false };  // 无进度条的被动（如毒液）= 常驻满格
       return {
@@ -79,16 +87,30 @@ export class Hud {
     this.setBar(this.el.p2passive, st2.ratio);
     this.updateSkillUI(p1);
   }
-  // 玩家技能按钮/冷却条：主动=冷却；被动=进度/剩余/就绪
+  // 玩家技能按钮/冷却条：主动=冷却；被动=进度/生效剩余/冷却充能/就绪
   updateSkillUI(ball) {
     const s = ball.skill;
     if (!s) return;
     const isPassive = s.def.type === 'passive' || s.def.type === 'both';
+    const p = s.def.passive || {};
     const giantSt = ball.effects.get('giant_form');
     if (this.isTouch) {
       const btn = this.el.skillBtn;
       if (isPassive) {
-        const p = s.def.passive || {};
+        // 冷却型被动（荆棘）：显示生效剩余/冷却秒数
+        if (p.cooldown) {
+          this.el.sname.textContent = s.def.skillName;
+          if (s.passiveActive) {
+            const st = ball.effects.get(p.effectId);
+            const left = st ? Math.max(0, Math.ceil(st.duration - st.t)) : p.duration;
+            this.el.scd.textContent = left + 's';
+            btn.classList.toggle('on-cd', false);
+          } else {
+            this.el.scd.textContent = Math.ceil(s.passiveTimer) + 's';
+            btn.classList.toggle('on-cd', true);
+          }
+          return;
+        }
         const key = p.progressKey;
         this.el.sname.textContent = giantSt ? '巨大化' : s.def.skillName;
         btn.classList.toggle('on-cd', !!giantSt);
@@ -108,7 +130,17 @@ export class Hud {
     } else {
       this.el.cdName.textContent = s.def.skillName;
       if (isPassive) {
-        const p = s.def.passive || {};
+        // 冷却型被动（荆棘）：生效=剩余比例，冷却=充能进度
+        if (p.cooldown) {
+          if (s.passiveActive) {
+            const st = ball.effects.get(p.effectId);
+            const ratio = st ? Math.max(0, (st.duration - st.t) / p.duration) : 1;
+            this.el.cdFill.style.width = (100 * ratio) + '%';
+          } else {
+            this.el.cdFill.style.width = (100 * Math.max(0, 1 - s.passiveTimer / p.cooldown)) + '%';
+          }
+          return;
+        }
         const key = p.progressKey;
         if (!key) { this.el.cdFill.style.width = '100%'; return; }
         const ratio = giantSt

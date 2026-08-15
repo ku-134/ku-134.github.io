@@ -46,6 +46,8 @@ export class Ball {
     // 受伤数字（受击球头顶弹出，持续0.5s）
     if (final > 0) {
       ctx.events.emit('fx:damage', { x: this.x, y: this.y - this.radiusScaled - 10, amount: final });
+      // 通用命中音效（150ms 全局节流，防磁铁电疗等高频刷屏）
+      ctx.events.emit('sfx:play', { name: 'hit', throttle: 150 });
     }
     ctx.events.emit('ball:hp', { ball: this });
     if (this.hp <= 0) { this.dead = true; ctx.events.emit('ball:die', { ball: this }); }

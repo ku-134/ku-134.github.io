@@ -33,6 +33,8 @@ const online = new OnlineMode(ctx, {
 });
 
 // ---- 首页背景：随机两个可选职业打一场（手绘涂鸦氛围） ----
+// ★ 背景与正式对战共用事件总线：正式对局开始必须暂停背景（bg:run 事件），
+//   否则背景技能的 fx:damage / collision 等特效会穿透到上层战场（老bug根因）
 const BG_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom', 'knight'];
 function randBgClasses() {
   const a = BG_CLASSES[Math.floor(Math.random() * BG_CLASSES.length)];
@@ -75,6 +77,13 @@ function setupBg() {
   bgLoop.start();
 }
 setupBg();
+// 背景开关：正式对局（单机/联机）暂停，返回首页/大厅恢复
+let bgRunning = true;
+bus.on('bg:run', run => {
+  bgRunning = !!run;
+  if (bgRunning && bgLoop) { bgLoop.start(); bgLoop.time = 0; }
+  else bgLoop?.stop();
+});
 
 // ---- 分类标签渲染（图鉴/选球/联机共用） ----
 function renderCatTabs(container, cats, current, onSwitch) {

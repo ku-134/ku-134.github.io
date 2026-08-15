@@ -32,32 +32,49 @@ const online = new OnlineMode(ctx, {
   onBack: () => ui.show('home'),
 });
 
-// ---- 首页背景：模拟对战局（手绘涂鸦氛围） ----
+// ---- 首页背景：随机两个可选职业打一场（手绘涂鸦氛围） ----
+const BG_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom', 'knight'];
+function randBgClasses() {
+  const a = BG_CLASSES[Math.floor(Math.random() * BG_CLASSES.length)];
+  let b = a;
+  while (b === a) b = BG_CLASSES[Math.floor(Math.random() * BG_CLASSES.length)];
+  return [a, b];
+}
 const bg = new Renderer(document.getElementById('bgCanvas'), { autoResize: false });
-const bgBalls = [
-  new Ball({ x: CONFIG.FIELD.w * 0.3, y: CONFIG.FIELD.h / 2, angle: Math.PI * 0.9, color: '#e63946', name: '巨人' }),
-  new Ball({ x: CONFIG.FIELD.w * 0.7, y: CONFIG.FIELD.h / 2, angle: Math.PI * 0.1, color: '#3a86ff', name: '兵团' }),
-];
-bgBalls[0].skill = createSkill('giant', bgBalls[0], ctx);
-bgBalls[1].skill = createSkill('legion', bgBalls[1], ctx);
-const bgCtx = { ...ctx, balls: bgBalls };
-const bgLoop = new GameLoop(dt => {
-  for (const b of bgBalls) {
-    b.update(dt);
-    effects.update(b, dt);
-    b.flash = Math.max(0, b.flash - dt * 3);
-    move(b, dt);
-    collideWalls(b, bgCtx, bgLoop.time);
-    b.skill?.update(dt);
-  }
-  collideBalls(bgBalls[0], bgBalls[1], bgCtx, bgLoop.time);
-  bg.update(dt);
-  if (bgBalls[1].skill?.canUse() && Math.random() < 0.003) {
-    const enemy = bgCtx.getEnemy(bgBalls[1]);
-    bgBalls[1].skill.forceUse(Math.atan2(enemy.y - bgBalls[1].y, enemy.x - bgBalls[1].x));
-  }
-}, () => bg.render(bgBalls, bgLoop.time));
-bgLoop.start();
+let bgBalls = [];
+let bgCtx = null;
+let bgLoop = null;
+function setupBg() {
+  const [c1, c2] = randBgClasses();
+  const d1 = getSkillDefs().find(d => d.id === c1);
+  const d2 = getSkillDefs().find(d => d.id === c2);
+  bgBalls = [
+    new Ball({ x: CONFIG.FIELD.w * 0.3, y: CONFIG.FIELD.h / 2, angle: Math.PI * 0.9, color: d1.color, name: d1.name }),
+    new Ball({ x: CONFIG.FIELD.w * 0.7, y: CONFIG.FIELD.h / 2, angle: Math.PI * 0.1, color: d2.color, name: d2.name }),
+  ];
+  bgBalls[0].skill = createSkill(c1, bgBalls[0], ctx);
+  bgBalls[1].skill = createSkill(c2, bgBalls[1], ctx);
+  bgCtx = { ...ctx, balls: bgBalls };
+  if (bgLoop) bgLoop.stop();
+  bgLoop = new GameLoop(dt => {
+    for (const b of bgBalls) {
+      b.update(dt);
+      effects.update(b, dt);
+      b.flash = Math.max(0, b.flash - dt * 3);
+      move(b, dt);
+      collideWalls(b, bgCtx, bgLoop.time);
+      b.skill?.update(dt);
+    }
+    collideBalls(bgBalls[0], bgBalls[1], bgCtx, bgLoop.time);
+    bg.update(dt);
+    if (bgBalls[1].skill?.canUse() && Math.random() < 0.003) {
+      const enemy = bgCtx.getEnemy(bgBalls[1]);
+      bgBalls[1].skill.forceUse(Math.atan2(enemy.y - bgBalls[1].y, enemy.x - bgBalls[1].x));
+    }
+  }, () => bg.render(bgBalls, bgLoop.time));
+  bgLoop.start();
+}
+setupBg();
 
 // ---- 分类标签渲染（图鉴/选球/联机共用） ----
 function renderCatTabs(container, cats, current, onSwitch) {
@@ -81,6 +98,7 @@ function showBestiaryDetail(d) {
   detailOrb.style.background = d.color;
   detailName.textContent = `${d.name} · ${d.skillName}`;
   detailDesc.textContent = d.desc;
+  detailDesc.scrollTop = 0;
 }
 function renderBestiary(cat) {
   const defs = getDefsByCategory(cat);
@@ -140,7 +158,7 @@ renderAI(CATEGORIES[0]);
 
 // ---- 战场选择（单机）：确认出战前选战场，为后续新战场留位 ----
 const BATTLE_FIELDS = [
-  { id: 'arena', name: '经典角斗场', desc: '800×450 手绘角斗场。战场干扰球：巨人（基础）乱撞 + 魔王（剑与魔法）召唤魔族大军。', color: '#f7edd8' },
+  { id: 'arena', name: '经典角斗场', desc: '800×450 手绘角斗场。战场干扰球每局随机：巨人（基础）或魔王（剑与魔法）。', color: '#f7edd8' },
 ];
 let selectedBattle = BATTLE_FIELDS[0].id;
 const battleList = document.getElementById('battle-list');

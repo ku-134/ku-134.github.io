@@ -94,6 +94,9 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 /* 设置 */
 .set-row { display: flex; align-items: center; gap: 14px; font-size: 1.05rem; }
 .set-row input { background: #fff; border: 3px solid var(--ink); color: var(--ink); padding: 8px 12px; border-radius: 10px 4px 10px 4px \/ 4px 10px 4px 10px; font-family: inherit; font-size: 1rem; }
+/* 音效开关：手绘风大勾选框 */
+.set-divider { margin-top: 8px; font-size: 1.1rem; letter-spacing: 0.2em; color: var(--ink); background: var(--yellow); border: 3px solid var(--ink); border-radius: 12px 4px 12px 4px \/ 4px 12px 4px 12px; padding: 4px 18px; box-shadow: 3px 3px 0 rgba(31,26,17,0.6); }
+.set-row input[type="checkbox"] { width: 26px; height: 26px; margin-left: auto; accent-color: var(--orange); border: 3px solid var(--ink); border-radius: 6px; cursor: pointer; }
 
 /* 选球界面：顶部一排（左上=AI的球+返回并列 | 中间=选择球 | 右上=你的球），下方左右对称选择器，底部确认 */
 .select-screen { justify-content: flex-start; padding: 0; }

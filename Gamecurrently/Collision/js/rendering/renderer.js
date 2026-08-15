@@ -84,7 +84,8 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔）
-// 摄像机：ringHole 大圆场 = 缩放适配（完整展示大圆）+ 小幅度追踪自己球（球偏哪显示框往哪移）
+// 摄像机：ringHole 大圆场 = 小幅度追踪自己球（不缩放，保持原偏移观感）
+// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形（isSlashFx）——两端渲染一致
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -159,23 +160,16 @@ export class Renderer {
     const { w, h } = CONFIG.FIELD;
     g.setTransform(this.dpr * this.cssScale, 0, 0, this.dpr * this.cssScale, 0, 0);
     g.fillStyle = PAPER;
-    g.fillRect(-80, -80, w + 160, h + 160);   // 纸底加大：容纳缩放/偏移
+    g.fillRect(-56, -56, w + 112, h + 112);   // 纸底加大：容纳追踪偏移
     g.save();
     this.camera.update(t);
     this.camera.apply(g);
-    // ★ 方孔大圆场摄像机：缩放适配大圆 + 小幅度追踪自己球
+    // ★ 方孔大圆场摄像机：小幅度追踪自己球（不缩放）
     if (battleMap?.id === 'ringHole') {
-      const cx = w / 2, cy = h / 2;
-      // 缩放：圆直径+边距完整落入画布（受短边限制），战场整体缩小展示
-      const need = (battleMap.radius + 30) * 2;
-      const s = Math.min(1, Math.min(w, h) / need);
-      g.translate(cx, cy);
-      g.scale(s, s);
-      g.translate(-cx, -cy);
-      // 追踪自己球：球偏哪，显示框往哪移（小幅度）
       const me = balls.find(b => b.isPlayer);
       if (me) {
-        const maxShift = 22;
+        const cx = w / 2, cy = h / 2;
+        const maxShift = 34;
         g.translate(
           -((me.x - cx) / battleMap.radius) * maxShift,
           -((me.y - cy) / battleMap.radius) * maxShift
@@ -274,6 +268,29 @@ export class Renderer {
     g.restore();
   }
   drawPhantom(g, ph) {
+    // 斩击扇形（isSlashFx 实体，随 phantoms 同步——房主/客人渲染一致）
+    if (ph.isSlashFx) {
+      const a = Math.max(0, 1 - (ph.t || 0) / 0.35);
+      const R = (ph.r || 90) + 20;
+      g.save();
+      g.globalAlpha = a * 0.45;
+      g.fillStyle = ph.hit ? '#ffd93d' : '#ffffff';
+      g.beginPath();
+      g.moveTo(ph.x, ph.y);
+      g.arc(ph.x, ph.y, R, ph.dir - Math.PI / 2, ph.dir + Math.PI / 2);
+      g.closePath();
+      g.fill();
+      g.globalAlpha = a * 0.75;
+      g.strokeStyle = INK;
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(ph.x, ph.y);
+      g.arc(ph.x, ph.y, R, ph.dir - Math.PI / 2, ph.dir + Math.PI / 2);
+      g.closePath();
+      g.stroke();
+      g.restore();
+      return;
+    }
     // 奥术飞弹：紫色小弹（蓄能=实心+光晕 / 飞行=拖影）
     if (ph.isMissile) {
       const r = ph.radius || 7;
@@ -346,7 +363,7 @@ export class Renderer {
     g.beginPath(); g.arc(p.x - r * 0.25, p.y - r * 0.25, r * 0.4, 0, Math.PI * 2); g.fill();
     g.restore();
   }
-  // 骑士斩击扇形：半透明白（命中=金色），面向 dir 的 180° 半圆
+  // 骑士斩击扇形（本地 slashFx 数组保留：兼容单机/旧调用；主力渲染走 phantoms）
   drawSlashFx(g, fx) {
     const a = Math.max(0, 1 - fx.t / 0.35);
     const R = fx.r + 20;

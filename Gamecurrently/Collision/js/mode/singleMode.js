@@ -8,8 +8,8 @@ import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
 import { isTouchDevice, bindHold } from '../ui/input.js';
 
-// AI 可选职业池（巨人已转战场干扰球，剔除）
-const AI_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom'];
+// AI 可选职业池（巨人已转战场干扰球，剔除；含剑与魔法分类的骑士）
+const AI_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom', 'knight'];
 
 // 单机模式：玩家选球 vs AI，321 倒计时，观战 + 主动干涉
 // 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
@@ -48,7 +48,7 @@ export class SingleMode {
     p1.color = p1.skill.def.color;
     p2.color = p2.skill.def.color;
     p1.isPlayer = true;
-    // 战场干扰球（巨人）：hp 极高不死，只保留愤怒机制，无 dashSkill（不触发机动冲刺）
+    // 战场干扰球（巨人）：hp 极高不死，只保留愤怒机制，无 dashSkill
     this.wild = new Ball({ x: w * 0.5, y: h * 0.5, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, name: '战场巨人' });
     this.wild.skill = createSkill('giant', this.wild, this.ctx);
     this.wild.color = this.wild.skill.def.color;
@@ -80,6 +80,9 @@ export class SingleMode {
     }));
     this.unsubs.push(this.ctx.events.on('fx:damage', ({ x, y, amount }) => {
       this.renderer.addDmgNum(x, y, amount);
+    }));
+    this.unsubs.push(this.ctx.events.on('fx:slash', ({ x, y, dir, r, hit }) => {
+      this.renderer.addSlashFx(x, y, dir, r, hit);
     }));
     this.unsubs.push(this.ctx.events.on('skill:aim', ({ inst, on }) => this.renderer.setAim(inst, on)));
     this.unsubs.push(this.ctx.events.on('ball:die', ({ ball }) => {

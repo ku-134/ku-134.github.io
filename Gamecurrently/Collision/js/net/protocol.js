@@ -8,6 +8,7 @@ export const MSG = {
   CMD: 'cmd',
   RESULT: 'result',
   REMATCH: 'rematch',
+  BATTLE: 'battle',   // 房主广播所选场地
   PING: 'ping',
   PONG: 'pong',
 };
@@ -38,8 +39,8 @@ export function unpack(raw) {
 }
 
 // 主机 → 客户端：状态快照（渲染 + HUD 最小集）
-// hp 保留 1 位小数：客人端本地监测 HP 差值生成精确伤害数字（不额外占信道）
-// phantoms 含幻影分身/末影珍珠/魔族（isMinion+dashAngle 供客人端渲染冲刺拖影）
+// hp 保留 1 位小数：客人端本地监测 HP 差值生成伤害/加血数字（不额外占信道）
+// phantoms：幻影分身/末影珍珠/魔族/奥术飞弹/斩击扇形（isSlashFx）——两端渲染一致
 export function encodeState(sim, balls, phantoms) {
   return {
     seq: ++sim._seq,
@@ -61,6 +62,8 @@ export function encodeState(sim, balls, phantoms) {
     phantoms: (phantoms || []).map(p => ({
       x: +p.x.toFixed(1), y: +p.y.toFixed(1), angle: +p.angle.toFixed(3), color: p.color,
       isMinion: !!p.isMinion, dashAngle: +(p.dashAngle ?? 0).toFixed(3),
+      isMissile: !!p.isMissile, charging: !!p.charging, radius: +(p.radius ?? 20).toFixed(1),
+      isSlashFx: !!p.isSlashFx, dir: +(p.dir ?? 0).toFixed(3), r: +(p.r ?? 90).toFixed(1), hit: !!p.hit, t: +(p.t ?? 0).toFixed(2),
     })),
   };
 }

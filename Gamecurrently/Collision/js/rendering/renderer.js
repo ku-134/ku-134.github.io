@@ -185,8 +185,8 @@ export class Renderer {
     }
     for (const fx of this.slashFx) this.drawSlashFx(g, fx);
     for (const b of balls) this.drawBall(g, b);
-    for (const d of this.dmgNums) this.drawNum(g, d, DMG);
-    for (const d of this.healNums) this.drawNum(g, d, HEAL);
+    for (const d of this.dmgNums) this.drawNum(g, d, DMG, '');
+    for (const d of this.healNums) this.drawNum(g, d, HEAL, '+');
     this.particles.draw(g);
     g.restore();
   }
@@ -346,21 +346,23 @@ export class Renderer {
     g.stroke();
     g.restore();
   }
-  drawNum(g, d, color) {
+  // 数字：prefix 区分加减血（减血无符号，加血带 +）
+  drawNum(g, d, color, prefix) {
     const a = Math.max(0, 1 - d.t / 0.5);
     const y = d.y - d.t * 26;
+    const text = prefix + d.amount;
     g.save();
     g.globalAlpha = a;
     g.font = "bold 20px 'ZCOOL KuaiLe', 'Comic Sans MS', sans-serif";
     g.textAlign = 'center';
     g.lineWidth = 4;
     g.strokeStyle = '#fff';
-    g.strokeText('+' + d.amount, d.x, y);
+    g.strokeText(text, d.x, y);
     g.strokeStyle = INK;
     g.lineWidth = 2.5;
-    g.strokeText('+' + d.amount, d.x, y);
+    g.strokeText(text, d.x, y);
     g.fillStyle = color;
-    g.fillText('+' + d.amount, d.x, y);
+    g.fillText(text, d.x, y);
     g.restore();
   }
   drawBall(g, b) {

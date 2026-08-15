@@ -25,7 +25,7 @@
     <button id="btn-settings" class="btn gear" title="设置">⚙</button>
   </section>
 
-  <!-- 模式选择：弹窗覆盖（遮罩防底下按钮误触） -->
+  <!-- 模式选择 -->
   <section id="panel-start" class="panel hidden">
     <div class="modal-box">
       <h2>选择模式</h2>
@@ -35,7 +35,7 @@
     </div>
   </section>
 
-  <!-- 图鉴面板（右滑出）：分类切换 + 左半列表 + 右半详情（可滚动大展示框） -->
+  <!-- 图鉴面板 -->
   <section id="panel-bestiary" class="panel right hidden bestiary-panel">
     <div id="cat-tabs-bestiary" class="cat-tabs"></div>
     <div class="bestiary-wrap">
@@ -49,7 +49,7 @@
     <button class="btn back corner-back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 设置面板：精简布局（音效设置收进弹窗），左下角返回固定 -->
+  <!-- 设置面板（精简，音效收进弹窗；左下角返回固定） -->
   <section id="panel-settings" class="panel right hidden settings-panel">
     <h2>设置</h2>
     <label class="set-row">联机昵称
@@ -66,7 +66,7 @@
     <button class="btn back corner-back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 音效设置弹窗：分类开关（手机友好弹窗） -->
+  <!-- 音效设置弹窗 -->
   <section id="panel-sfx" class="panel hidden sfx-panel">
     <div class="modal-box sfx-modal">
       <h2>音效设置</h2>
@@ -81,7 +81,7 @@
     </div>
   </section>
 
-  <!-- 选球界面（单机）：顶部一排（左上AI的球+返回并列 | 中间选择球 | 右上你的球），下方左右对称选择器，底部确认 -->
+  <!-- 选球界面（单机） -->
   <section id="screen-select" class="screen hidden select-screen">
     <div class="select-header">
       <div class="select-header-left">
@@ -106,7 +106,7 @@
     </div>
   </section>
 
-  <!-- 战场选择界面（单机）：左右滑动选战场（小型渲染图+文案+随机） -->
+  <!-- 战场选择界面（单机） -->
   <section id="screen-battle" class="screen hidden">
     <h2>选择战场</h2>
     <div id="battle-list" class="battle-scroll"></div>
@@ -116,7 +116,7 @@
     </div>
   </section>
 
-  <!-- 联机界面：大厅（创建/加入） + 房间（选球双列 + 房主选场地 + 准备） -->
+  <!-- 联机界面：大厅 + 房间（两个独立阶段：先场地选择，再选球） -->
   <section id="screen-online" class="screen hidden">
     <h2>联机对战</h2>
     <div id="online-lobby" class="online-cols">
@@ -134,29 +134,36 @@
       <p>房间号</p>
       <div id="room-code" class="room-code"></div>
       <p id="room-status" class="tip"></p>
-      <div class="online-pick-cols">
-        <div class="select-col">
-          <h3 class="col-title">对方的球</h3>
-          <div id="online-enemy-ball" class="enemy-ball">？</div>
-          <p id="online-enemy" class="tip hidden"></p>
-        </div>
-        <div class="select-col">
-          <h3 class="col-title">你的球</h3>
-          <div id="cat-tabs-online" class="cat-tabs hidden"></div>
-          <div id="online-pick" class="card-list online-pick-list hidden"></div>
-        </div>
+
+      <!-- 阶段1：场地选择（房主选+确认；客人只读查看，房主确认后才可确认下一步） -->
+      <div id="stage-battle" class="stage">
+        <h3 class="col-title">选择场地</h3>
+        <div id="stage-battle-cards" class="battle-scroll stage-battle-cards"></div>
+        <p id="stage-battle-info" class="tip">等待房主选择场地…</p>
+        <button id="btn-battle-confirm-online" class="btn wide hidden">确认下一步</button>
       </div>
-      <div id="online-battle-wrap" class="online-battle-wrap hidden">
-        <h3 class="col-title battle-title">场地（房主选择）</h3>
-        <div id="online-battle-tabs" class="cat-tabs"></div>
-        <div id="online-battle-preview" class="online-battle-preview"></div>
+
+      <!-- 阶段2：选球（右=我的分类列表，左=对方球展示；准备后进入战场） -->
+      <div id="stage-pick" class="stage hidden">
+        <div class="online-pick-cols">
+          <div class="select-col">
+            <h3 class="col-title">对方的球</h3>
+            <div id="online-enemy-ball" class="enemy-ball">？</div>
+            <p id="online-enemy" class="tip hidden"></p>
+          </div>
+          <div class="select-col">
+            <h3 class="col-title">你的球</h3>
+            <div id="cat-tabs-online" class="cat-tabs hidden"></div>
+            <div id="online-pick" class="card-list online-pick-list hidden"></div>
+          </div>
+        </div>
+        <button id="btn-ready" class="btn wide hidden">准备</button>
       </div>
-      <button id="btn-ready" class="btn wide hidden">准备</button>
     </div>
     <button id="btn-online-back" class="btn back corner-back" data-back="panel-start">返回</button>
   </section>
 
-  <!-- 对战界面（单机）：双技能通道（冲刺 + 职业技能） -->
+  <!-- 对战界面（单机） -->
   <section id="screen-game" class="screen hidden">
     <canvas id="gameCanvas"></canvas>
     <div id="hud">
@@ -180,7 +187,7 @@
     <div id="result" class="hidden"></div>
   </section>
 
-  <!-- 对战界面（联机专用战场，元素 id 加 online- 前缀互不干扰） -->
+  <!-- 对战界面（联机） -->
   <section id="screen-game-online" class="screen hidden">
     <canvas id="gameCanvasOnline"></canvas>
     <div id="hud-online">

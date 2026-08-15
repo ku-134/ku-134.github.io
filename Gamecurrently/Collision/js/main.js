@@ -112,7 +112,11 @@ const detailOrb = document.getElementById('detail-orb');
 const detailName = document.getElementById('detail-name');
 const detailDesc = document.getElementById('detail-desc');
 function showBestiaryDetail(d) {
-  detailOrb.style.background = `url('${ballIconDataURL(d, 150)}') center / cover no-repeat, ${d.color}`;
+  detailOrb.style.backgroundImage = `url('${ballIconDataURL(d, 150)}')`;
+  detailOrb.style.backgroundSize = 'cover';
+  detailOrb.style.backgroundPosition = 'center';
+  detailOrb.style.backgroundRepeat = 'no-repeat';
+  detailOrb.style.background = `url('${ballIconDataURL(d, 150)}') center / cover no-repeat`;
   detailName.textContent = `${d.name} · ${d.skillName}`;
   detailDesc.textContent = d.desc;
   document.getElementById('bestiary-detail').scrollTop = 0;
@@ -168,7 +172,7 @@ function makeRoulette(listEl) {
       idx = 0;
       const show = () => {
         const d = defs[idx];
-        orb.style.background = `url('${ballIconDataURL(d, 140)}') center / cover no-repeat, ${d.color}`;
+        orb.style.background = `url('${ballIconDataURL(d, 140)}') center / cover no-repeat`;
         name.textContent = d.name;
         skill.textContent = d.skillName;
       };

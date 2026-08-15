@@ -5,7 +5,7 @@ import { bindTap } from './input.js';
 export class UIManager {
   constructor() {
     this.screens = {};
-    ['home', 'select', 'online', 'game', 'game-online'].forEach(id => {
+    ['home', 'select', 'battle', 'online', 'game', 'game-online'].forEach(id => {
       this.screens[id] = document.getElementById('screen-' + id);
     });
     this.panels = {};

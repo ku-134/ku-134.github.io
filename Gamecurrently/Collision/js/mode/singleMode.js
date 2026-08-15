@@ -10,7 +10,24 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 
 // 单机模式：玩家选球 vs 玩家指定的 AI 职业，321 倒计时，观战 + 主动干涉
 // 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
-// 战场干扰球：巨人（基础分类）+ 魔王（剑与魔法分类，召唤魔族）——均为第三方，不参与胜负
+// 战场干扰球：每局随机一个——巨人（基础分类）或魔王（剑与魔法分类，召唤魔族），均为第三方，不参与胜负
+const WILD_IDS = ['giant', 'demon'];
+
+// 创建战场干扰球（巨人 r=20 红色暴怒 / 魔王 r=30 紫色召唤）
+export function makeWildBall(id, ctx, w, h) {
+  const isDemon = id === 'demon';
+  const b = new Ball({
+    x: w * 0.5, y: isDemon ? h * 0.65 : h * 0.35,
+    angle: Math.random() * Math.PI * 2,
+    hp: CONFIG.WILD.hp,
+    radius: isDemon ? CONFIG.BALL.radius * CONFIG.DEMON.scale : undefined,
+    name: isDemon ? '战场魔王' : '战场巨人',
+  });
+  b.skill = createSkill(id, b, ctx);
+  b.color = b.skill.def.color;
+  return b;
+}
+
 export class SingleMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -49,14 +66,8 @@ export class SingleMode {
     p1.color = p1.skill.def.color;
     p2.color = p2.skill.def.color;
     p1.isPlayer = true;
-    // 战场干扰球：巨人（基础分类）+ 魔王（剑与魔法分类，1.5倍体型，召唤魔族）
-    const giant = new Ball({ x: w * 0.5, y: h * 0.3, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, name: '战场巨人' });
-    giant.skill = createSkill('giant', giant, this.ctx);
-    giant.color = giant.skill.def.color;
-    const demon = new Ball({ x: w * 0.5, y: h * 0.7, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, radius: CONFIG.BALL.radius * CONFIG.DEMON.scale, name: '战场魔王' });
-    demon.skill = createSkill('demon', demon, this.ctx);
-    demon.color = demon.skill.def.color;
-    this.wilds = [giant, demon];
+    // 战场干扰球：每局随机一个（巨人 | 魔王）
+    this.wilds = [makeWildBall(WILD_IDS[Math.floor(Math.random() * WILD_IDS.length)], this.ctx, w, h)];
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
     this.sim = new MatchSim(this.ctx, this.balls, this.wilds);

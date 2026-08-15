@@ -9,6 +9,8 @@ import puppet from './definitions/puppet.js';
 import phantom from './definitions/phantom.js';
 import demon from './definitions/demon.js';
 import knight from './definitions/knight.js';
+import mage from './definitions/mage.js';
+import priest from './definitions/priest.js';
 import baseDash from './definitions/baseDash.js';
 
 // 职业分类（图鉴/选球顶部切换）
@@ -24,7 +26,9 @@ const defs = [
   { ...puppet, category: '基础' },
   { ...phantom, category: '基础' },
   demon,    // 剑与魔法分类第1位（战场球）
-  knight,   // 剑与魔法分类第2位（可选职业）
+  knight,   // 剑与魔法：骑士
+  mage,     // 剑与魔法：法师
+  priest,   // 剑与魔法：牧师
 ];
 // 可选职业（选球/联机选球用）：战场球（巨人/魔王）剔除
 const selectableDefs = defs.filter(d => d.id !== 'giant' && d.id !== 'demon');

@@ -1,7 +1,7 @@
 import CONFIG from './config.js';
 import { bus } from './core/eventBus.js';
 import { EffectSystem } from './entities/effectSystem.js';
-import { CATEGORIES, getSkillDefs, getDefsByCategory, createSkill } from './skills/skillRegistry.js';
+import { CATEGORIES, getSkillDefs, getDefsByCategory, getSelectableDefs, createSkill } from './skills/skillRegistry.js';
 import { Ball } from './entities/ball.js';
 import { GameLoop } from './core/gameLoop.js';
 import { move, collideWalls, collideBalls } from './core/physics.js';
@@ -11,48 +11,13 @@ import { SingleMode } from './mode/singleMode.js';
 import { OnlineMode } from './mode/onlineMode.js';
 import { bindTap } from './ui/input.js';
 import { renderCards } from './ui/cards.js';
+import { playSfx, unlockSfx } from './audio/sfx.js';
 
-// ---- 音效：全局管理器（修复命中无音效） ----
-// 浏览器自动播放策略：Audio.play() 必须发生在用户手势（点击/按键）之后才允许出声。
-// 之前 knight.js 在技能触发（rAF 循环内）时才 new Audio().play()，首次必被拦截。
-// 方案：1) 首次用户交互时预加载音频 + 静音播放解锁；2) 命中事件复用已解锁实例播放。
-const SLASH_SFX = ['audio/slash1.ogg', 'audio/slash2.ogg'];
-let slashAudios = null;
-function ensureSlashAudios() {
-  if (slashAudios) return;
-  slashAudios = SLASH_SFX.map(src => {
-    const a = new Audio(src);
-    a.preload = 'auto';
-    a.load();
-    return a;
-  });
-}
-function playSlashSfx() {
-  try {
-    ensureSlashAudios();
-    const a = slashAudios[Math.random() < 0.5 ? 0 : 1];
-    a.currentTime = 0;
-    const p = a.play();
-    if (p && p.catch) p.catch(() => {});
-  } catch { }
-}
-// 首次用户手势：预加载 + 静音播放一次（授予播放权，之后命中即可出声）
-let sfxUnlocked = false;
-function unlockSfx() {
-  if (sfxUnlocked) return;
-  sfxUnlocked = true;
-  try {
-    ensureSlashAudios();
-    slashAudios.forEach(a => {
-      a.muted = true;
-      a.play().catch(() => {});
-      setTimeout(() => { a.muted = false; }, 200);
-    });
-  } catch { }
-}
+// ---- 音效事件接线：任何模块 emit('sfx:play', { name, throttle }) 即播放 ----
+// 首次用户交互解锁播放权（浏览器自动播放策略）
 window.addEventListener('pointerdown', unlockSfx, { once: true });
 window.addEventListener('keydown', unlockSfx, { once: true });
-bus.on('fx:slashHit', playSlashSfx);
+bus.on('sfx:play', ({ name, throttle }) => playSfx(name, { throttle }));
 
 // ---- 全局上下文：物理与技能共享的依赖注入 ----
 const effects = new EffectSystem();
@@ -169,7 +134,9 @@ function renderBestiary(cat) {
 }
 renderBestiary(CATEGORIES[0]);
 
-// ---- 选球（单机）：左=设置AI的对战球，右=设置玩家自己的球（各自分类切换） ----
+// ---- 选球（单机）：左=设置AI的对战球，右=设置玩家自己的球（各自分类切换 + 随机轮播） ----
+// 分类标签：基础 / 剑与魔法 / 随机（随机=快速轮播所有可选职业，不含战场球）
+const SELECT_CATS = [...CATEGORIES, '随机'];
 let selectedSkill = 'legion';
 let selectedAISkill = 'legion';
 const selectList = document.getElementById('select-list');
@@ -178,10 +145,51 @@ const aiList = document.getElementById('select-list-ai');
 const aiTabs = document.getElementById('cat-tabs-ai');
 let selectCat = CATEGORIES[0];
 let aiCat = CATEGORIES[0];
+// 轮播器：每150ms高亮下一张，当前高亮即所选；点击任意卡片停止并确定
+function makeRoulette(listEl, onSelect) {
+  let timer = null;
+  let cards = [];
+  let defs = [];
+  let idx = 0;
+  return {
+    start(defList) {
+      this.stop();
+      defs = defList;
+      renderCards(listEl, defs, {
+        selectedId: defs[0]?.id,
+        onPick: (d, card) => {
+          this.stop();
+          listEl.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          onSelect(d.id);
+        },
+      });
+      cards = [...listEl.querySelectorAll('.card')];
+      if (!cards.length) return;
+      idx = 0;
+      cards[idx].classList.add('selected');
+      onSelect(defs[idx].id);
+      timer = setInterval(() => {
+        cards[idx]?.classList.remove('selected');
+        idx = (idx + 1) % cards.length;
+        cards[idx]?.classList.add('selected');
+        onSelect(defs[idx].id);   // 跟随轮播更新所选
+      }, 150);
+    },
+    stop() { if (timer) { clearInterval(timer); timer = null; } },
+  };
+}
+const aiRoulette = makeRoulette(aiList, id => { selectedAISkill = id; });
+const selectRoulette = makeRoulette(selectList, id => { selectedSkill = id; });
 function renderSelect(cat) {
   selectCat = cat;
+  renderCatTabs(selectTabs, SELECT_CATS, cat, renderSelect);
+  if (cat === '随机') {
+    selectRoulette.start(getSelectableDefs());
+    return;
+  }
+  selectRoulette.stop();
   const defs = getDefsByCategory(cat, { selectable: true });
-  renderCatTabs(selectTabs, CATEGORIES, cat, renderSelect);
   renderCards(selectList, defs, {
     selectedId: selectedSkill,
     onPick: (d, card) => {
@@ -193,8 +201,13 @@ function renderSelect(cat) {
 }
 function renderAI(cat) {
   aiCat = cat;
+  renderCatTabs(aiTabs, SELECT_CATS, cat, renderAI);
+  if (cat === '随机') {
+    aiRoulette.start(getSelectableDefs());
+    return;
+  }
+  aiRoulette.stop();
   const defs = getDefsByCategory(cat, { selectable: true });
-  renderCatTabs(aiTabs, CATEGORIES, cat, renderAI);
   renderCards(aiList, defs, {
     selectedId: selectedAISkill,
     onPick: (d, card) => {

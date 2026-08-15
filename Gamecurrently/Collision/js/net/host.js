@@ -4,14 +4,14 @@ import { MSG, encodeState } from './protocol.js';
 const STATE_HZ = 30;
 
 // 主机权威：跑完整对战模拟 + 30Hz 状态广播 + 处理客人技能指令（dash=基础冲刺 / skill=职业技能）
-// wild：战场干扰球（巨人），随状态广播给客户端渲染
+// wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类），随状态广播给客户端渲染
 // RESULT.win 语义：'host'=房主赢 / 'guest'=客人赢 / 'draw'=平局（明确视角，两端各自判断）
 export class Host {
-  constructor({ signal, ctx, balls, wild = null, onResult }) {
+  constructor({ signal, ctx, balls, wilds = [], onResult }) {
     this.signal = signal;
     this.ctx = ctx;
     this.balls = balls;
-    this.wild = wild;
+    this.wilds = Array.isArray(wilds) ? wilds : (wilds ? [wilds] : []);
     this.onResult = onResult;
     this.sim = null;
     this._acc = 0;
@@ -21,7 +21,7 @@ export class Host {
   start() {
     this._ended = false;
     this._acc = 0;
-    this.sim = new MatchSim(this.ctx, this.balls, this.wild);
+    this.sim = new MatchSim(this.ctx, this.balls, this.wilds);
     this._running = true;
   }
   update(dt) {
@@ -30,7 +30,7 @@ export class Host {
     this._acc += dt;
     if (this._acc >= 1 / STATE_HZ) {
       this._acc -= 1 / STATE_HZ;
-      const all = this.wild ? [...this.balls, this.wild] : this.balls;
+      const all = [...this.balls, ...this.wilds];
       this.signal.send(MSG.STATE, encodeState(this.sim, all, this.ctx.phantoms));
     }
     if (res.over && !this._ended) {

@@ -1,13 +1,55 @@
-// 全局音效管理器：自动播放策略解锁 + 预加载 + 事件驱动播放
+// 全局音效管理器 v2：分类开关 + 自动播放策略解锁 + 预加载 + 事件驱动播放
 // 用法：任何模块 ctx.events.emit('sfx:play', { name, throttle }) 或直接 import playSfx
+// 分类开关（设置面板可调，localStorage 持久化）：
+//   master 全局 / ui 按钮交互 / hit 受击 / dash 冲刺 / skill 技能 / match 对局（倒计时/狂暴/结算）
 // 音频文件放 audio/ 目录（.ogg），不存在时播放静默失败（不报错）
 // ★ 自动播放策略：首次用户手势（pointerdown/keydown）后调用 unlockSfx() 授予播放权
+
+// 音效 → 分类映射（开关粒度）
+const CATEGORY = {
+  ui_click: 'ui',
+  dash: 'dash',
+  slash: 'skill',
+  hit: 'hit',
+  heal: 'skill',
+  count: 'match',
+  berserk: 'match',
+  win: 'match',
+  lose: 'match',
+};
+
+const DEFAULT_TOGGLES = { master: true, ui: true, hit: true, dash: true, skill: true, match: true };
+const toggles = { ...DEFAULT_TOGGLES };
+
+// 从 localStorage 恢复开关（Node 环境无 localStorage → 跳过）
+function loadToggles() {
+  try {
+    if (typeof localStorage === 'undefined') return;
+    for (const k of Object.keys(DEFAULT_TOGGLES)) {
+      const v = localStorage.getItem('collision.sfx.' + k);
+      if (v !== null) toggles[k] = v === '1';
+    }
+  } catch { /* 隐私模式等 */ }
+}
+loadToggles();
+
+export function setSfxToggle(key, on) {
+  toggles[key] = !!on;
+  try { localStorage.setItem('collision.sfx.' + key, toggles[key] ? '1' : '0'); } catch {}
+}
+export function getSfxToggle(key) { return toggles[key] ?? true; }
+export function isSfxEnabled(name) {
+  if (!toggles.master) return false;
+  const cat = CATEGORY[name];
+  return !cat || toggles[cat];
+}
+
 const SFX_DEFS = {
   ui_click: ['audio/ui_click.ogg'],          // 按钮点击（所有 bindTap 按钮）
   dash: ['audio/dash.ogg'],                  // 基础冲刺释放（松开瞄准瞬间）
-  slash: ['audio/slash1.ogg', 'audio/slash2.ogg'],  // 骑士斩击（挥剑即响，提前于命中）
+  slash: ['audio/slash1.ogg', 'audio/slash2.ogg'],  // 骑士斩击（挥剑即响）
   hit: ['audio/hit.ogg'],                    // 通用伤害命中（150ms 节流防高频刷屏）
-  heal: ['audio/heal.ogg'],                  // 治疗术发动（闪绿+数字同步）
+  heal: ['audio/heal.ogg'],                  // 治疗术发动
   count: ['audio/count.ogg'],                // 321 倒计时每声
   berserk: ['audio/berserk.ogg'],            // 狂暴降临瞬间
   win: ['audio/win.ogg'],                    // 胜利结算
@@ -33,9 +75,10 @@ function ensure() {
   }
 }
 
-// 播放音效：随机取一个实例，未加载/被拦截时静默
+// 播放音效：受开关控制（master + 分类）；随机取一个实例，未加载/被拦截时静默
 // throttle>0：全局节流（毫秒），防高频技能（磁铁电疗等）刷爆音效
 export function playSfx(name, { throttle = 0 } = {}) {
+  if (!isSfxEnabled(name)) return;
   try {
     ensure();
     const arr = audios[name];

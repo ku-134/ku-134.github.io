@@ -15,11 +15,12 @@ import { MSG, isValidRoomCode } from '../net/protocol.js';
 import { makeWildBall } from './singleMode.js';
 
 // 联机模式：创建/加入房间（5位纯数字 + PeerJS）
-// 房间内分两个独立阶段界面（互不干扰）：
-//   阶段1 场地选择：房主选场地→确认（BATTLE 广播）；客人只读查看，房主确认后才可确认下一步
+// 房间内分三个阶段独立界面（互不挤占）：
+//   阶段0 连接确认：房间号独占一屏，连接成功后双方点【确认连接】才继续
+//   阶段1 场地选择：房主选→确认（BATTLE 广播）；客人只读查看，房主确认后才可确认下一步
 //   阶段2 选球：右=我的分类列表（可随机），左=对方球展示；准备后进入战场
 // 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
-// ★ 客人端 HP 升降本地监测数字（伤害/加血）；_onData 必须处理 MSG.CMD（老bug）
+// ★ 客人端 HP 升降本地监测数字；_onData 必须处理 MSG.CMD（老bug）
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -35,8 +36,9 @@ export class OnlineMode {
     this.wilds = [];
     this.battleId = 'arena';
     this.battleMap = getBattleField('arena');
-    this.battleSelected = false;   // 房主已确认场地（客人=已收到 BATTLE）
-    this.stage = 'battle';         // 'battle' | 'pick'
+    this.battleSelected = false;
+    this.stage = 'conn';   // 'conn' | 'battle' | 'pick'
+    this.connected = false;
     this.isHost = false;
     this.myClass = null;
     this.enemyClass = null;
@@ -45,7 +47,7 @@ export class OnlineMode {
     this.enemyPicked = false;
     this.ready = false;
     this.enemyReady = false;
-    this.randomPick = false;       // 玩家选了随机（准备时随机决定）
+    this.randomPick = false;
     this.phase = 'idle';
     this.countdown = 0;
     this.countdownShown = -1;
@@ -60,10 +62,12 @@ export class OnlineMode {
     this.els = {
       lobby: document.getElementById('online-lobby'),
       wait: document.getElementById('online-wait'),
-      code: document.getElementById('room-code'),
-      status: document.getElementById('room-status'),
+      stageConn: document.getElementById('stage-conn'),
       stageBattle: document.getElementById('stage-battle'),
       stagePick: document.getElementById('stage-pick'),
+      code: document.getElementById('room-code'),
+      connStatus: document.getElementById('room-conn-status'),
+      btnConnConfirm: document.getElementById('btn-conn-confirm'),
       battleCards: document.getElementById('stage-battle-cards'),
       battleInfo: document.getElementById('stage-battle-info'),
       btnBattleConfirm: document.getElementById('btn-battle-confirm-online'),
@@ -79,9 +83,9 @@ export class OnlineMode {
     };
     bindTap(this.els.btnReady, () => this._ready());
     bindTap(this.els.btnBattleConfirm, () => this._confirmBattle());
+    bindTap(this.els.btnConnConfirm, () => this._confirmConn());
   }
   get myName() { return (localStorage.getItem('collision.nick') || '玩家').slice(0, 8); }
-  // 进入联机大厅：清空上次房间号残留
   enter() {
     this.leave();
     this.els.lobby.classList.remove('hidden');
@@ -94,13 +98,14 @@ export class OnlineMode {
     this.signal?.close();
     this.signal = null;
     this.isHost = false;
+    this.connected = false;
     this.myClass = null; this.enemyClass = null;
     this.enemyName = '对手';
     this.picked = false; this.enemyPicked = false;
     this.ready = false; this.enemyReady = false;
     this.randomPick = false;
     this.battleId = 'arena'; this.battleSelected = false;
-    this.stage = 'battle';
+    this.stage = 'conn';
     this._resetReadyBtn();
     this.phase = 'idle';
   }
@@ -108,14 +113,17 @@ export class OnlineMode {
     this.leave();
     this.els.input.value = '';
     this.isHost = true;
-    this._enterWait('正在连接信令服务器…');
+    this._enterWait('正在连接信令服务器…', '连接中…');
     this.signal = new Signal({
       onOpen: id => {
         this.els.code.textContent = id;
-        this.els.status.textContent = '等待对方加入…（房主先选场地）';
-        this._renderStageBattle();
+        this.els.connStatus.textContent = '等待对方加入…';
       },
-      onConnect: () => { this.els.status.textContent = '对方已加入！请选择场地'; },
+      onConnect: () => {
+        this.connected = true;
+        this.els.connStatus.textContent = '对方已加入！点击确认连接';
+        this.els.btnConnConfirm.classList.remove('hidden');
+      },
       onData: m => this._onData(m),
       onDisconnect: () => this._onDisconnect(),
       onError: err => this._onError(err),
@@ -127,11 +135,13 @@ export class OnlineMode {
     if (!isValidRoomCode(code)) { this.els.msg.textContent = '请输入5位数字房间号'; return; }
     this.leave();
     this.isHost = false;
-    this._enterWait('正在连接房间 ' + code + ' …');
+    this.els.code.textContent = code;
+    this._enterWait('正在连接房间 ' + code + ' …', '正在连接房间 ' + code + ' …');
     this.signal = new Signal({
       onConnect: () => {
-        this.els.status.textContent = '已连接！等待房主选择场地…';
-        this._renderStageBattle();
+        this.connected = true;
+        this.els.connStatus.textContent = '连接成功！点击确认连接';
+        this.els.btnConnConfirm.classList.remove('hidden');
       },
       onData: m => this._onData(m),
       onDisconnect: () => this._onDisconnect(),
@@ -139,15 +149,16 @@ export class OnlineMode {
     });
     this.signal.joinRoom(code);
   }
-  _enterWait(status) {
+  _enterWait(status, connText) {
     this.els.lobby.classList.add('hidden');
     this.els.wait.classList.remove('hidden');
-    this.els.status.textContent = status;
-    this.stage = 'battle';
-    this.els.stageBattle.classList.remove('hidden');
+    this.els.status = status;
+    this.stage = 'conn';
+    this.els.stageConn.classList.remove('hidden');
+    this.els.stageBattle.classList.add('hidden');
     this.els.stagePick.classList.add('hidden');
-    this.els.battleInfo.textContent = this.isHost ? '请选择场地' : '等待房主选择场地…';
-    this.els.btnBattleConfirm.classList.add('hidden');
+    this.els.connStatus.textContent = connText || status;
+    this.els.btnConnConfirm.classList.add('hidden');
     this.els.battleCards.innerHTML = '';
     this.els.enemy.classList.add('hidden');
     this.els.enemyBall.style.background = 'none';
@@ -157,6 +168,15 @@ export class OnlineMode {
     this.els.pick.innerHTML = '';
     this.els.msg.textContent = '';
     this._resetReadyBtn();
+  }
+  // ---- 阶段0：连接确认 → 进入场地选择 ----
+  _confirmConn() {
+    if (!this.connected || this.stage !== 'conn') return;
+    this.stage = 'battle';
+    this.els.stageConn.classList.add('hidden');
+    this.els.stageBattle.classList.remove('hidden');
+    this.els.status = this.isHost ? '请选择场地' : '等待房主选择场地…';
+    this._renderStageBattle();
   }
   // ---- 阶段1：场地选择 ----
   _renderStageBattle() {
@@ -171,7 +191,7 @@ export class OnlineMode {
       card.appendChild(cv); card.appendChild(name); card.appendChild(desc);
       this._drawBattlePreview(map, cv, 260, 100);
       card.addEventListener('click', () => {
-        if (!this.isHost || this.stage !== 'battle') return;   // 客人只读
+        if (!this.isHost || this.stage !== 'battle') return;
         this.battleId = map.id;
         cards.forEach(c => c.classList.toggle('selected', c === card));
         this.els.battleInfo.textContent = '已选：' + map.name + '，点击确认下一步';
@@ -202,12 +222,10 @@ export class OnlineMode {
   _confirmBattle() {
     if (this.stage !== 'battle') return;
     if (this.isHost) {
-      // 房主：广播场地 → 进入选球
       this.battleSelected = true;
       this.signal.send(MSG.BATTLE, { battleId: this.battleId });
       this._toPick();
     } else {
-      // 客人：房主已确认后才能确认下一步
       if (!this.battleSelected) {
         this.els.battleInfo.textContent = '房主还没选好场地，请稍候…';
         return;
@@ -219,10 +237,10 @@ export class OnlineMode {
     this.stage = 'pick';
     this.els.stageBattle.classList.add('hidden');
     this.els.stagePick.classList.remove('hidden');
-    this.els.status.textContent = '请选择你的球，然后点击准备';
+    this.els.status = '请选择你的球，然后点击准备';
     this._renderPick();
   }
-  // ---- 阶段2：选球（双列：左=对方球展示，右=我的分类列表） ----
+  // ---- 阶段2：选球 ----
   _renderPick() {
     this.els.pickTabs.classList.remove('hidden');
     this.els.pick.classList.remove('hidden');
@@ -272,11 +290,10 @@ export class OnlineMode {
   _pick(classId) {
     this.myClass = classId;
     this.picked = true;
-    this.els.status.textContent = `你已选择【${getSkillDef(classId).name}】，点击下方【准备】`;
+    this.els.status = `你已选择【${getSkillDef(classId).name}】，点击下方【准备】`;
     this.els.btnReady.classList.remove('hidden');
     this.signal.send(MSG.PICK, { classId, name: this.myName });
   }
-  // ---- 准备 ----
   _ready() {
     if (this.stage !== 'pick' || this.ready) return;
     if (!this.picked) {
@@ -285,7 +302,7 @@ export class OnlineMode {
         const d = defs[Math.floor(Math.random() * defs.length)];
         this._pick(d.id);
       } else {
-        this.els.status.textContent = '请先选择你的球';
+        this.els.status = '请先选择你的球';
         return;
       }
     }
@@ -294,7 +311,7 @@ export class OnlineMode {
     this.els.btnReady.textContent = '已准备 ✓';
     this.els.btnReady.disabled = true;
     this.els.btnReady.classList.add('on-cd');
-    this.els.status.textContent = this.enemyReady ? '双方已准备，即将开始…' : '已准备，等待对方准备…';
+    this.els.status = this.enemyReady ? '双方已准备，即将开始…' : '已准备，等待对方准备…';
     this._tryStart();
   }
   _resetReadyBtn() {
@@ -303,7 +320,6 @@ export class OnlineMode {
     this.els.btnReady.disabled = false;
     this.els.btnReady.classList.remove('on-cd');
   }
-  // ---- 消息处理 ----
   _onData(m) {
     if (m.t === MSG.PICK) {
       this.enemyClass = m.d.classId;
@@ -314,21 +330,20 @@ export class OnlineMode {
       this.els.enemyBall.textContent = '';
       this.els.enemy.textContent = `${this.enemyName}（${def.name}）`;
       this.els.enemy.classList.remove('hidden');
-      this.els.status.textContent = this.picked
+      this.els.status = this.picked
         ? (this.ready ? '对方已选球，点击准备开始' : `对方已选，你已选【${getSkillDef(this.myClass)?.name}】，点击准备`)
         : '对方已选，请选择你的球';
       this._tryStart();
     } else if (m.t === MSG.BATTLE) {
-      // 房主确认场地：客人更新 + 可确认下一步
       this.battleId = m.d.battleId || 'arena';
       this.battleSelected = true;
       if (this.stage === 'battle') {
-        this._renderStageBattle();   // 高亮房主所选 + 显示确认按钮
-        this.els.status.textContent = '房主已选场地，请点击确认下一步';
+        this._renderStageBattle();
+        this.els.status = '房主已选场地，请点击确认下一步';
       }
     } else if (m.t === MSG.READY) {
       this.enemyReady = true;
-      this.els.status.textContent = this.ready
+      this.els.status = this.ready
         ? '双方已准备，即将开始…'
         : `对方已准备，请点击【准备】`;
       this._tryStart();

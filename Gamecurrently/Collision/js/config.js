@@ -28,6 +28,11 @@ const CONFIG = {
   PUPPET: { cooldown: 7, damage: 18, stunDuration: 0.6, pearlSpeedMul: 1.6 },
   // 骑士【斩击】：每4s自动向敌球方向扇形斩击（范围90，命中40伤）
   KNIGHT: { cooldown: 4, range: 90, damage: 40 },
+  // 魔王【召唤魔族】：战场干扰球（剑与魔法分类，不可选择）
+  // 体型恒为基础球1.5倍；每5~8秒召唤一只魔族眷属
+  DEMON: { scale: 1.5, summonInterval: [5, 8] },
+  // 魔族：魔王眷属，只能由魔王召唤；游走1~4s后瞄准场上球冲刺撞击（10伤）
+  MINION: { radius: 14, wanderSpeed: 60, dashSpeed: 480, life: [1, 4], damage: 10 },
   // 战场干扰球（巨人）：hp 高到不会死
   WILD: { hp: 9999 },
   // AI

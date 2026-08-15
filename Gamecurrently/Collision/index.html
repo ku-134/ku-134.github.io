@@ -35,8 +35,9 @@
     </div>
   </section>
 
-  <!-- 图鉴面板（右滑出）：左2/3列表 + 右1/3详情 -->
+  <!-- 图鉴面板（右滑出）：分类切换 + 左2/3列表 + 右1/3详情 -->
   <section id="panel-bestiary" class="panel right hidden bestiary-panel">
+    <div id="cat-tabs-bestiary" class="cat-tabs"></div>
     <div class="bestiary-wrap">
       <div id="bestiary-list" class="card-list"></div>
       <div id="bestiary-detail" class="detail">
@@ -64,9 +65,10 @@
     <button class="btn wide back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 选球界面（黑屏切换） -->
+  <!-- 选球界面（单机）：分类切换 + 选球 -->
   <section id="screen-select" class="screen hidden">
     <h2>选择你的球</h2>
+    <div id="cat-tabs-select" class="cat-tabs"></div>
     <div id="select-list" class="card-list"></div>
     <div class="row">
       <button id="btn-select-confirm" class="btn big">确认出战</button>
@@ -93,6 +95,7 @@
       <div id="room-code" class="room-code"></div>
       <p id="room-status" class="tip"></p>
       <p id="online-enemy" class="tip hidden"></p>
+      <div id="cat-tabs-online" class="cat-tabs hidden"></div>
       <div id="online-pick" class="card-list online-pick-list hidden"></div>
       <button id="btn-ready" class="btn wide hidden">准备</button>
     </div>

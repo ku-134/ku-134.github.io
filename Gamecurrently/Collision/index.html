@@ -49,7 +49,7 @@
     <button class="btn back corner-back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 设置面板：精简布局（音效设置收进弹窗），左下角返回 -->
+  <!-- 设置面板：精简布局（音效设置收进弹窗），左下角返回固定 -->
   <section id="panel-settings" class="panel right hidden settings-panel">
     <h2>设置</h2>
     <label class="set-row">联机昵称
@@ -116,7 +116,7 @@
     </div>
   </section>
 
-  <!-- 联机界面：大厅（创建/加入） + 房间（等待/选球/准备） -->
+  <!-- 联机界面：大厅（创建/加入） + 房间（选球双列 + 房主选场地 + 准备） -->
   <section id="screen-online" class="screen hidden">
     <h2>联机对战</h2>
     <div id="online-lobby" class="online-cols">
@@ -134,9 +134,23 @@
       <p>房间号</p>
       <div id="room-code" class="room-code"></div>
       <p id="room-status" class="tip"></p>
-      <p id="online-enemy" class="tip hidden"></p>
-      <div id="cat-tabs-online" class="cat-tabs hidden"></div>
-      <div id="online-pick" class="card-list online-pick-list hidden"></div>
+      <div class="online-pick-cols">
+        <div class="select-col">
+          <h3 class="col-title">对方的球</h3>
+          <div id="online-enemy-ball" class="enemy-ball">？</div>
+          <p id="online-enemy" class="tip hidden"></p>
+        </div>
+        <div class="select-col">
+          <h3 class="col-title">你的球</h3>
+          <div id="cat-tabs-online" class="cat-tabs hidden"></div>
+          <div id="online-pick" class="card-list online-pick-list hidden"></div>
+        </div>
+      </div>
+      <div id="online-battle-wrap" class="online-battle-wrap hidden">
+        <h3 class="col-title battle-title">场地（房主选择）</h3>
+        <div id="online-battle-tabs" class="cat-tabs"></div>
+        <div id="online-battle-preview" class="online-battle-preview"></div>
+      </div>
       <button id="btn-ready" class="btn wide hidden">准备</button>
     </div>
     <button id="btn-online-back" class="btn back corner-back" data-back="panel-start">返回</button>
@@ -189,6 +203,14 @@
     <div id="online-countdown" class="hidden"></div>
     <div id="online-result" class="hidden"></div>
   </section>
+
+  <!-- 专属提示弹窗（替代浏览器 alert） -->
+  <div id="game-alert" class="hidden">
+    <div class="modal-box alert-box">
+      <p id="alert-msg"></p>
+      <button id="alert-ok" class="btn wide">确定</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>

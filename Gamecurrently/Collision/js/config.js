@@ -24,8 +24,10 @@ const CONFIG = {
   PHANTOM: { cooldown: 8, duration: 6, damage: 15, speedMul: 0.8, count: 3 },
   // 毒液【腐蚀】
   POISON: { duration: 3.5, tick: 0.5, tickDamage: 3 },
-  // 傀儡【置换】：末影珍珠弹道（命中率低，冷却缩短至7s），命中触发换位+18伤+0.6s惊滞
+  // 傀儡【置换】：末影珍珠弹道（冷却7s），命中触发换位+18伤+0.6s惊滞
   PUPPET: { cooldown: 7, damage: 18, stunDuration: 0.6, pearlSpeedMul: 1.6 },
+  // 骑士【斩击】：每4s自动向敌球方向扇形斩击（范围90，命中40伤）
+  KNIGHT: { cooldown: 4, range: 90, damage: 40 },
   // 战场干扰球（巨人）：hp 高到不会死
   WILD: { hp: 9999 },
   // AI

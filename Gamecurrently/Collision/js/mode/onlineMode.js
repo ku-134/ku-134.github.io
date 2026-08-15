@@ -338,8 +338,20 @@ export class OnlineMode {
     this._unsubs.push(this.ctx.events.on('fx:damage', ({ x, y, amount }) => {
       this.renderer.addDmgNum(x, y, amount);
     }));
+    this._unsubs.push(this.ctx.events.on('fx:heal', ({ x, y, amount }) => {
+      this.renderer.addHealNum(x, y, amount);
+    }));
     this._unsubs.push(this.ctx.events.on('fx:slash', ({ x, y, dir, r, hit }) => {
       this.renderer.addSlashFx(x, y, dir, r, hit);
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:charge', ({ x, y }) => {
+      this.renderer.particles.spawn(x, y, { color: '#b89fea', count: 6, speed: 50 });
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:fire', ({ x, y }) => {
+      this.renderer.particles.spawn(x, y, { color: '#b89fea', count: 16, speed: 140 });
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:missileHit', ({ x, y, color }) => {
+      this.renderer.particles.spawn(x, y, { color: color || '#b89fea', count: 10, speed: 130, size: 3 });
     }));
     this._unsubs.push(this.ctx.events.on('fx:summon', ({ x, y }) => {
       this.renderer.particles.spawn(x, y, { color: '#6d4a7e', count: 14, speed: 90 });

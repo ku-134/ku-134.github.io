@@ -39,6 +39,7 @@ export function unpack(raw) {
 
 // 主机 → 客户端：状态快照（渲染 + HUD 最小集）
 // hp 保留 1 位小数：客人端本地监测 HP 差值生成精确伤害数字（不额外占信道）
+// phantoms 含幻影分身/末影珍珠/魔族（isMinion+dashAngle 供客人端渲染冲刺拖影）
 export function encodeState(sim, balls, phantoms) {
   return {
     seq: ++sim._seq,
@@ -57,6 +58,9 @@ export function encodeState(sim, balls, phantoms) {
         passiveActive: !!b.skill?.passiveActive,
       },
     })),
-    phantoms: (phantoms || []).map(p => ({ x: +p.x.toFixed(1), y: +p.y.toFixed(1), angle: +p.angle.toFixed(3), color: p.color })),
+    phantoms: (phantoms || []).map(p => ({
+      x: +p.x.toFixed(1), y: +p.y.toFixed(1), angle: +p.angle.toFixed(3), color: p.color,
+      isMinion: !!p.isMinion, dashAngle: +(p.dashAngle ?? 0).toFixed(3),
+    })),
   };
 }

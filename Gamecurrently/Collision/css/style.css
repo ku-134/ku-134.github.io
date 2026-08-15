@@ -72,34 +72,34 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .card .cname { font-weight: bold; font-size: 1.05rem; }
 .card .cskill { font-size: 0.85rem; opacity: 0.75; }
 
-/* 图鉴：左2\/3列表 + 右1\/3详情（描述可滚动），返回左下角 */
+/* 图鉴：左半列表 + 右半详情（大展示框，整体可滚动），返回左下角 */
 .bestiary-panel { justify-content: flex-start; align-items: stretch; padding: 30px 26px 84px; }
 .bestiary-panel .cat-tabs { margin-bottom: 10px; }
-.bestiary-wrap { display: flex; gap: 28px; flex: 1; min-height: 0; width: 100%; }
-.bestiary-wrap .card-list { flex: 2; max-width: none; max-height: 100%; align-content: flex-start; justify-content: flex-start; }
-.bestiary-wrap .detail { flex: 1; max-width: none; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; background: #fff; border: 3px solid var(--ink); border-radius: 24px 8px 24px 8px \/ 8px 24px 8px 24px; box-shadow: 5px 5px 0 rgba(31,26,17,0.8); padding: 18px; line-height: 1.6; overflow: hidden; }
-.detail-orb { width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--ink); box-shadow: 5px 5px 0 rgba(31,26,17,0.6); flex-shrink: 0; }
+.bestiary-wrap { display: flex; gap: 24px; flex: 1; min-height: 0; width: 100%; }
+.bestiary-wrap .card-list { flex: 1 1 50%; max-width: none; max-height: 100%; align-content: flex-start; justify-content: flex-start; min-width: 0; }
+.bestiary-wrap .detail { flex: 1 1 50%; max-width: none; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 16px; text-align: center; background: #fff; border: 3px solid var(--ink); border-radius: 24px 8px 24px 8px \/ 8px 24px 8px 24px; box-shadow: 5px 5px 0 rgba(31,26,17,0.8); padding: 30px 28px; line-height: 1.6; overflow-y: auto; scrollbar-width: thin; }
+.detail-orb { width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--ink); box-shadow: 5px 5px 0 rgba(31,26,17,0.6); flex-shrink: 0; }
 #detail-name { color: var(--red); letter-spacing: 0.1em; flex-shrink: 0; }
-/* 技能描述：明确高度 + 区域内滚动（长文本不截断不溢出） */
-#detail-desc { font-size: 0.92rem; line-height: 1.65; overflow-y: auto; flex: 1 1 auto; min-height: 90px; max-height: 46vh; word-break: break-word; overflow-wrap: break-word; padding: 4px 8px; scrollbar-width: thin; }
+/* 技能描述：随父容器（右半展示框）整体滚动，不单独溢出 */
+#detail-desc { font-size: 0.95rem; line-height: 1.7; overflow: visible; word-break: break-word; overflow-wrap: break-word; padding: 0 4px; }
 .corner-back { position: absolute; left: 24px; bottom: 24px; }
 
 /* 设置 */
 .set-row { display: flex; align-items: center; gap: 14px; font-size: 1.05rem; }
 .set-row input { background: #fff; border: 3px solid var(--ink); color: var(--ink); padding: 8px 12px; border-radius: 10px 4px 10px 4px \/ 4px 10px 4px 10px; font-family: inherit; font-size: 1rem; }
 
-/* 选球界面：顶部一排（返回 | AI的球 | 选择你的球 | 你的球），下方左右对称选择器（不超出显示区），底部确认 */
+/* 选球界面：顶部一排（左上=AI的球+返回并列 | 中间=选择球 | 右上=你的球），下方左右对称选择器，底部确认 */
 .select-screen { justify-content: flex-start; padding: 0; }
-.select-header { display: flex; align-items: center; justify-content: center; gap: 34px; width: 100%; padding: 16px 20px 10px; }
-.select-header .select-back { margin-right: auto; flex-shrink: 0; }
-.select-header .col-title { flex-shrink: 0; }
-.center-title { transform: rotate(-1deg); flex-shrink: 0; }
+.select-header { display: flex; align-items: center; width: 100%; padding: 16px 26px 10px; gap: 16px; }
+.select-header-left { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.select-header .center-title { margin: 0 auto; flex-shrink: 0; }
+.select-header-right { flex-shrink: 0; margin-left: auto; }
+.col-title { color: var(--ink); letter-spacing: 0.12em; font-size: 1.15rem; background: #fff; border: 3px solid var(--ink); border-radius: 16px 5px 16px 5px \/ 5px 16px 5px 16px; box-shadow: 3px 3px 0 rgba(31,26,17,0.6); padding: 6px 22px; }
 .select-layout { flex: 1; display: flex; justify-content: space-between; width: 100%; min-height: 0; padding: 6px 44px 0; gap: 48px; }
 .select-col { flex: 1; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 0; }
 .select-col .card-list { flex: 1; max-height: none; width: 100%; max-width: 320px; justify-content: flex-start; align-content: flex-start; overflow-y: auto; }
 .select-col .card { width: 130px; }
 .select-confirm-wrap { padding: 12px 0 26px; }
-.col-title { color: var(--ink); letter-spacing: 0.12em; font-size: 1.15rem; background: #fff; border: 3px solid var(--ink); border-radius: 16px 5px 16px 5px \/ 5px 16px 5px 16px; box-shadow: 3px 3px 0 rgba(31,26,17,0.6); padding: 6px 22px; }
 
 /* 战场选择 */
 .battle-list { max-height: 50vh; }

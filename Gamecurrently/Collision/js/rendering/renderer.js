@@ -8,7 +8,7 @@ const PAPER = '#f7edd8';
 const DMG = '#e63946';
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
-// autoResize=false 用于首页背景（全屏拉伸做氛围）
+// 骑士：腰间佩剑（剑身始终指向敌球）+ 斩击扇形特效
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -19,6 +19,7 @@ export class Renderer {
     this.lineFx = [];
     this.swapFx = [];
     this.dmgNums = [];
+    this.slashFx = [];
     this.autoResize = autoResize;
     if (autoResize) {
       this.resize();
@@ -45,6 +46,7 @@ export class Renderer {
   addLineFx(ball, hit) { this.lineFx.push({ x0: ball.x, y0: ball.y, hit, t: 0 }); }
   addSwapFx(a, b) { this.swapFx.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, t: 0 }); }
   addDmgNum(x, y, amount) { this.dmgNums.push({ x, y, amount, t: 0 }); }
+  addSlashFx(x, y, dir, r, hit) { this.slashFx.push({ x, y, dir, r, hit, t: 0 }); }
   update(dt) {
     this.particles.update(dt);
     for (let i = this.lineFx.length - 1; i >= 0; i--) {
@@ -62,6 +64,11 @@ export class Renderer {
       d.t += dt;
       if (d.t > 0.5) this.dmgNums.splice(i, 1);
     }
+    for (let i = this.slashFx.length - 1; i >= 0; i--) {
+      const fx = this.slashFx[i];
+      fx.t += dt;
+      if (fx.t > 0.35) this.slashFx.splice(i, 1);
+    }
   }
   render(balls, t, phantoms = []) {
     const g = this.g;
@@ -72,6 +79,19 @@ export class Renderer {
     g.save();
     this.camera.update(t);
     this.camera.apply(g);
+    // 骑士佩剑方向：剑身指向最近的敌球
+    for (let i = 0; i < balls.length; i++) {
+      const b = balls[i];
+      if (b.skill?.def?.id === 'knight') {
+        let other = null; let bd = Infinity;
+        for (let j = 0; j < balls.length; j++) {
+          if (j === i) continue;
+          const d = Math.hypot(balls[j].x - b.x, balls[j].y - b.y);
+          if (d < bd) { bd = d; other = balls[j]; }
+        }
+        b._swordAngle = other ? Math.atan2(other.y - b.y, other.x - b.x) : b.angle;
+      }
+    }
     this.drawField(g, w, h);
     for (const a of this.aimLines) this.drawAim(g, a);
     for (const fx of this.lineFx) this.drawLineFx(g, fx);
@@ -80,6 +100,7 @@ export class Renderer {
       if (ph.isPearl) this.drawPearl(g, ph);
       else this.drawPhantom(g, ph);
     }
+    for (const fx of this.slashFx) this.drawSlashFx(g, fx);
     for (const b of balls) this.drawBall(g, b);
     for (const d of this.dmgNums) this.drawDmgNum(g, d);
     this.particles.draw(g);
@@ -131,7 +152,6 @@ export class Renderer {
     g.beginPath(); g.arc(fx.hit.x, fx.hit.y, 10, 0, Math.PI * 2); g.fill();
     g.restore();
   }
-  // 置换特效：S 形交换弧线
   drawSwapFx(g, fx) {
     const a = Math.max(0, 1 - fx.t / 0.5);
     g.save();
@@ -147,7 +167,6 @@ export class Renderer {
     g.beginPath(); g.arc(fx.x2, fx.y2, 8, 0, Math.PI * 2); g.fill();
     g.restore();
   }
-  // 幻影球：半透明 + 虚线描边 + 拖影
   drawPhantom(g, ph) {
     const r = ph.radius;
     g.save();
@@ -163,7 +182,6 @@ export class Renderer {
     g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.stroke();
     g.restore();
   }
-  // 末影珍珠弹道（傀儡）：白珠 + 青色高光 + 尾迹
   drawPearl(g, p) {
     const r = p.radius;
     g.save();
@@ -180,7 +198,28 @@ export class Renderer {
     g.beginPath(); g.arc(p.x - r * 0.25, p.y - r * 0.25, r * 0.4, 0, Math.PI * 2); g.fill();
     g.restore();
   }
-  // 受伤数字：红色大字黑描边，上浮0.5s淡出
+  // 骑士斩击扇形：半透明白（命中=金色），面向 dir 的 180° 半圆
+  drawSlashFx(g, fx) {
+    const a = Math.max(0, 1 - fx.t / 0.35);
+    const R = fx.r + 20;   // 从球边延伸 fx.r
+    g.save();
+    g.globalAlpha = a * 0.45;
+    g.fillStyle = fx.hit ? '#ffd93d' : '#ffffff';
+    g.beginPath();
+    g.moveTo(fx.x, fx.y);
+    g.arc(fx.x, fx.y, R, fx.dir - Math.PI / 2, fx.dir + Math.PI / 2);
+    g.closePath();
+    g.fill();
+    g.globalAlpha = a * 0.75;
+    g.strokeStyle = INK;
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(fx.x, fx.y);
+    g.arc(fx.x, fx.y, R, fx.dir - Math.PI / 2, fx.dir + Math.PI / 2);
+    g.closePath();
+    g.stroke();
+    g.restore();
+  }
   drawDmgNum(g, d) {
     const a = Math.max(0, 1 - d.t / 0.5);
     const y = d.y - d.t * 26;
@@ -211,6 +250,36 @@ export class Renderer {
       g.lineTo(b.x + 9, b.y - r - 11 + bob);
       g.closePath();
       g.fill();
+      g.restore();
+    }
+    // 骑士：腰间佩剑（剑身指向最近的敌球）
+    if (b.skill?.def?.id === 'knight' && b._swordAngle !== undefined) {
+      g.save();
+      const dir = b._swordAngle;
+      const bx = b.x + Math.cos(dir) * r;
+      const by = b.y + Math.sin(dir) * r;
+      // 剑身（银灰，向敌球方向延伸）
+      g.strokeStyle = '#c8c8c8';
+      g.lineWidth = 5;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(bx, by);
+      g.lineTo(bx + Math.cos(dir) * r * 0.9, by + Math.sin(dir) * r * 0.9);
+      g.stroke();
+      // 剑尖
+      g.fillStyle = '#f0f0f0';
+      g.beginPath(); g.arc(bx + Math.cos(dir) * r * 0.9, by + Math.sin(dir) * r * 0.9, 3.5, 0, Math.PI * 2); g.fill();
+      // 护手（剑柄，金色横档）
+      g.strokeStyle = '#8a6d3b';
+      g.lineWidth = 4;
+      const hx = bx + Math.cos(dir) * r * 0.25;
+      const hy = by + Math.sin(dir) * r * 0.25;
+      const px = Math.cos(dir + Math.PI / 2) * 7;
+      const py = Math.sin(dir + Math.PI / 2) * 7;
+      g.beginPath();
+      g.moveTo(hx - px, hy - py);
+      g.lineTo(hx + px, hy + py);
+      g.stroke();
       g.restore();
     }
     // 荆棘盾：金色锯齿环

@@ -2,9 +2,24 @@ import CONFIG from '../../config.js';
 
 // 骑士【斩击】：被动范围近战——每4秒自动向最近的敌球方向挥出扇形斩击
 // 斩击：球外延伸90的半透明白色扇形（半圆，面向敌球），瞬时命中40伤
-// 命中后随机播放命中音效（audio/slash1.ogg / slash2.ogg）
+// 命中音效：预加载 + 复用 Audio 实例 + play().catch()（修复自动播放策略导致无声）
 // 剑的装饰（腰间佩剑，对局中剑身指向敌球）由 renderer 绘制（b.skill.def.id === 'knight'）
 // 冷却型被动：无 effectId → passiveActive 恒 false → 每 cooldown 秒循环触发
+let slashAudios = null;
+function playSlashSfx() {
+  try {
+    if (!slashAudios) {
+      slashAudios = [
+        new Audio('audio/slash1.ogg'),
+        new Audio('audio/slash2.ogg'),
+      ];
+    }
+    const a = slashAudios[Math.random() < 0.5 ? 0 : 1];
+    a.currentTime = 0;
+    a.play().catch(() => { /* 自动播放被拦截时静默 */ });
+  } catch { /* 无音频环境（Node 测试等） */ }
+}
+
 export default {
   id: 'knight',
   name: '骑士',
@@ -24,11 +39,7 @@ export default {
       const hit = d <= reach;
       if (hit) {
         enemy.takeDamage(CONFIG.KNIGHT.damage, ctx, owner);
-        // 命中音效（随机二选一；静音环境自动跳过）
-        try {
-          const src = Math.random() < 0.5 ? 'audio/slash1.ogg' : 'audio/slash2.ogg';
-          new Audio(src).play();
-        } catch { /* 无音频环境 */ }
+        playSlashSfx();
       }
       // 斩击扇形特效（命中=金色，未命中=白色）
       ctx.events.emit('fx:slash', { x: owner.x, y: owner.y, dir, r: CONFIG.KNIGHT.range, hit });

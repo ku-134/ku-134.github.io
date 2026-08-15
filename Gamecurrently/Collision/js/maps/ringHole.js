@@ -1,15 +1,15 @@
 import CONFIG from '../config.js';
 
-// 方孔大圆场：大圆内部、旋转方孔外部游走
+// 方孔大圆场：大圆内部、旋转方孔外部游走（圆超出显示框，由摄像机追踪展示）
 // 场地文件职责：出生点位 + 绘制（外圆 + 顺时针旋转方孔）+ 物理边界（外圆反弹 + 方孔推出）
 // 旋转：方孔绕中心顺时针自转（spin rad/s），球撞孔边反弹、被推入孔内则推出
-// 出生点：4 个对称点位（距圆心 150：圆内、孔外安全区）
+// ★ 反弹方向：法线指向球外，球向孔移动时 v·n < 0 → 反射（原代码写反导致无反弹）
 export default {
   id: 'ringHole',
   name: '方孔大圆场',
   desc: '大圆场地中央有顺时针旋转的方孔——球只能在大圆内部、方孔外部游走，孔边旋转会把球刮走，走位更有讲究！',
   color: '#efe3cf',
-  radius: CONFIG.RINGHOLE.radius,      // 外圆半径
+  radius: CONFIG.RINGHOLE.radius,      // 外圆半径（大于显示框，摄像机追踪）
   holeSize: CONFIG.RINGHOLE.holeSize,  // 方孔边长
   spin: CONFIG.RINGHOLE.spin,          // 方孔旋转角速度（rad/s，顺时针）
   spawnPoints: [
@@ -23,7 +23,7 @@ export default {
   // 场地绘制：外圆 + 旋转方孔（纸色洞 + 黑框 + 右缘标记点显旋转）
   draw(g, t, w, h) {
     const cx = w / 2, cy = h / 2;
-    // 外圆
+    // 外圆（超出画布部分自然裁掉）
     g.save();
     g.strokeStyle = '#1f1a17';
     g.lineWidth = 6;
@@ -96,11 +96,11 @@ export default {
       // 位置修正（孔局部）→ 世界
       b.x = cx + px * Math.cos(ang) - py * Math.sin(ang);
       b.y = cy + px * Math.sin(ang) + py * Math.cos(ang);
-      // 反弹（世界法线）
+      // ★ 反弹：法线指向球外，球向孔移动（v·n < 0）→ 反射（原写 vn>0 导致无反弹）
       const wnx = nx2 * Math.cos(ang) - ny2 * Math.sin(ang);
       const wny = nx2 * Math.sin(ang) + ny2 * Math.cos(ang);
       const vn = b.vx * wnx + b.vy * wny;
-      if (vn > 0) b.setAngle(Math.atan2(b.vy - 2 * vn * wny, b.vx - 2 * vn * wnx));
+      if (vn < 0) b.setAngle(Math.atan2(b.vy - 2 * vn * wny, b.vx - 2 * vn * wnx));
       hit = true;
     }
     return hit;

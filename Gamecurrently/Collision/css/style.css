@@ -72,6 +72,13 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .card .cname { font-weight: bold; font-size: 1.05rem; }
 .card .cskill { font-size: 0.85rem; opacity: 0.75; }
 
+/* 随机轮播卡：单个大球（纯展示，不可点击） */
+.roulette-card { width: 230px; padding: 26px; cursor: default; }
+.roulette-card:hover { transform: none; background: #fff; }
+.roulette-card .roulette-orb { width: 140px; height: 140px; margin: 0 auto 14px; }
+.roulette-card .cname { font-size: 1.4rem; }
+.roulette-card .cskill { font-size: 1rem; }
+
 /* 图鉴：左半列表 + 右半详情（大展示框，整体可滚动），返回左下角 */
 .bestiary-panel { justify-content: flex-start; align-items: stretch; padding: 30px 26px 84px; }
 .bestiary-panel .cat-tabs { margin-bottom: 10px; }

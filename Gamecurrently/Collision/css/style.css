@@ -88,22 +88,18 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .set-row { display: flex; align-items: center; gap: 14px; font-size: 1.05rem; }
 .set-row input { background: #fff; border: 3px solid var(--ink); color: var(--ink); padding: 8px 12px; border-radius: 10px 4px 10px 4px \/ 4px 10px 4px 10px; font-family: inherit; font-size: 1rem; }
 
-/* 选球界面：三列布局（左上返回；左=AI贴左 中=标题顶+确认底 右=玩家贴右）
-   两选择器固定列宽 + 列表左对齐 → 切换分类数量变化不抖动 */
+/* 选球界面：顶部一排（返回 | AI的球 | 选择你的球 | 你的球），下方左右对称选择器（不超出显示区），底部确认 */
 .select-screen { justify-content: flex-start; padding: 0; }
-.select-back { position: absolute; top: 18px; left: 18px; z-index: 3; }
-.select-layout { display: flex; width: 100%; height: 100%; padding-top: 20px; }
-.select-left, .select-right { flex: 0 0 320px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 54px 14px 14px; overflow: hidden; }
-.select-left { padding-left: 22px; }
-.select-right { padding-right: 22px; align-items: flex-end; }
-.select-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 8px 0 26px; }
-.center-title { transform: rotate(-1deg); margin-top: 2px; }
-.center-confirm { margin-bottom: 2px; }
+.select-header { display: flex; align-items: center; justify-content: center; gap: 34px; width: 100%; padding: 16px 20px 10px; }
+.select-header .select-back { margin-right: auto; flex-shrink: 0; }
+.select-header .col-title { flex-shrink: 0; }
+.center-title { transform: rotate(-1deg); flex-shrink: 0; }
+.select-layout { flex: 1; display: flex; justify-content: space-between; width: 100%; min-height: 0; padding: 6px 44px 0; gap: 48px; }
+.select-col { flex: 1; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 0; }
+.select-col .card-list { flex: 1; max-height: none; width: 100%; max-width: 320px; justify-content: flex-start; align-content: flex-start; overflow-y: auto; }
+.select-col .card { width: 130px; }
+.select-confirm-wrap { padding: 12px 0 26px; }
 .col-title { color: var(--ink); letter-spacing: 0.12em; font-size: 1.15rem; background: #fff; border: 3px solid var(--ink); border-radius: 16px 5px 16px 5px \/ 5px 16px 5px 16px; box-shadow: 3px 3px 0 rgba(31,26,17,0.6); padding: 6px 22px; }
-.select-left .col-title, .select-left .cat-tabs, .select-left .card-list { align-self: flex-start; }
-.select-right .col-title, .select-right .cat-tabs, .select-right .card-list { align-self: flex-end; }
-.select-left .card-list, .select-right .card-list { max-height: calc(100% - 120px); max-width: 300px; justify-content: flex-start; align-content: flex-start; }
-.select-left .card, .select-right .card { width: 120px; }
 
 /* 战场选择 */
 .battle-list { max-height: 50vh; }

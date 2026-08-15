@@ -4,13 +4,13 @@ import { rand, normAngle } from '../core/math.js';
 let uid = 0;
 
 export class Ball {
-  constructor({ x, y, angle, color = '#4caf50', name = '', hp = CONFIG.MAX_HP, skill = null }) {
+  constructor({ x, y, angle, color = '#4caf50', name = '', hp = CONFIG.MAX_HP, skill = null, radius = null }) {
     this.id = ++uid;
     this.x = x; this.y = y;
     this.angle = angle;
     this.baseSpeed = CONFIG.BALL.speed;
     this.speed = this.baseSpeed;
-    this.radius = CONFIG.BALL.radius;
+    this.radius = radius ?? CONFIG.BALL.radius;   // 魔王等大体积球可传 radius
     this.hp = hp; this.maxHp = hp;
     this.color = color;
     this.name = name;

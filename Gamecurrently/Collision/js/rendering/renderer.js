@@ -84,8 +84,8 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔）
+// 摄像机：ringHole 场地小幅度追踪自己球（按球离中心位置偏移显示框，战场仍是战场）
 // 装饰（魔王角/骑士剑/法师胡须/牧师十字架）必须画在球体填充之后，否则被球体盖住
-// 特效：斩击扇形 / 奥术飞弹（蓄能绕球+飞行拖影）/ 闪白(受击)/闪绿(加血) + 红/绿数字
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -160,10 +160,22 @@ export class Renderer {
     const { w, h } = CONFIG.FIELD;
     g.setTransform(this.dpr * this.cssScale, 0, 0, this.dpr * this.cssScale, 0, 0);
     g.fillStyle = PAPER;
-    g.fillRect(-24, -24, w + 48, h + 48);
+    g.fillRect(-56, -56, w + 112, h + 112);   // 纸底加大：容纳摄像机偏移
     g.save();
     this.camera.update(t);
     this.camera.apply(g);
+    // ★ 方孔大圆场：摄像机小幅度追踪自己球（球偏哪，显示框往哪偏移，露出更大圆）
+    if (battleMap?.id === 'ringHole') {
+      const me = balls.find(b => b.isPlayer);
+      if (me) {
+        const cx = w / 2, cy = h / 2;
+        const maxShift = 34;
+        g.translate(
+          -((me.x - cx) / battleMap.radius) * maxShift,
+          -((me.y - cy) / battleMap.radius) * maxShift
+        );
+      }
+    }
     // 骑士佩剑方向：剑身指向最近的敌球
     for (let i = 0; i < balls.length; i++) {
       const b = balls[i];

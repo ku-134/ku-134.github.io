@@ -6,10 +6,11 @@ import { rayHitRect } from '../core/math.js';
 const INK = '#1f1a17';
 const PAPER = '#f7edd8';
 const DMG = '#e63946';
+const HEAL = '#06d6a0';
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
-// 骑士：腰间佩剑（剑身始终指向敌球）+ 斩击扇形特效
-// 魔王：紫色大球（1.5倍）+ 头顶双角；魔族：深紫小眷属（游走/冲刺）
+// 装饰：骑士佩剑 / 魔王双角 / 法师八字胡 / 牧师十字架
+// 特效：斩击扇形 / 奥术飞弹（蓄能绕球+飞行拖影）/ 闪白(受击)/闪绿(加血) + 红/绿数字
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -20,6 +21,7 @@ export class Renderer {
     this.lineFx = [];
     this.swapFx = [];
     this.dmgNums = [];
+    this.healNums = [];
     this.slashFx = [];
     this.autoResize = autoResize;
     if (autoResize) {
@@ -47,6 +49,7 @@ export class Renderer {
   addLineFx(ball, hit) { this.lineFx.push({ x0: ball.x, y0: ball.y, hit, t: 0 }); }
   addSwapFx(a, b) { this.swapFx.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, t: 0 }); }
   addDmgNum(x, y, amount) { this.dmgNums.push({ x, y, amount, t: 0 }); }
+  addHealNum(x, y, amount) { this.healNums.push({ x, y, amount, t: 0 }); }
   addSlashFx(x, y, dir, r, hit) { this.slashFx.push({ x, y, dir, r, hit, t: 0 }); }
   update(dt) {
     this.particles.update(dt);
@@ -64,6 +67,11 @@ export class Renderer {
       const d = this.dmgNums[i];
       d.t += dt;
       if (d.t > 0.5) this.dmgNums.splice(i, 1);
+    }
+    for (let i = this.healNums.length - 1; i >= 0; i--) {
+      const d = this.healNums[i];
+      d.t += dt;
+      if (d.t > 0.5) this.healNums.splice(i, 1);
     }
     for (let i = this.slashFx.length - 1; i >= 0; i--) {
       const fx = this.slashFx[i];
@@ -103,7 +111,8 @@ export class Renderer {
     }
     for (const fx of this.slashFx) this.drawSlashFx(g, fx);
     for (const b of balls) this.drawBall(g, b);
-    for (const d of this.dmgNums) this.drawDmgNum(g, d);
+    for (const d of this.dmgNums) this.drawNum(g, d, DMG);
+    for (const d of this.healNums) this.drawNum(g, d, HEAL);
     this.particles.draw(g);
     g.restore();
   }
@@ -169,6 +178,26 @@ export class Renderer {
     g.restore();
   }
   drawPhantom(g, ph) {
+    // 奥术飞弹：紫色小弹（蓄能=实心+光晕 / 飞行=拖影）
+    if (ph.isMissile) {
+      const r = ph.radius || 7;
+      g.save();
+      if (!ph.charging) {
+        g.globalAlpha = 0.3;
+        g.fillStyle = ph.color;
+        g.beginPath(); g.arc(ph.x - Math.cos(ph.angle) * r * 1.8, ph.y - Math.sin(ph.angle) * r * 1.8, r * 0.7, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
+      }
+      g.fillStyle = ph.color;
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = INK;
+      g.lineWidth = 1.5;
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,0.8)';
+      g.beginPath(); g.arc(ph.x - r * 0.25, ph.y - r * 0.25, r * 0.35, 0, Math.PI * 2); g.fill();
+      g.restore();
+      return;
+    }
     // 魔族（魔王眷属）：深紫实心小眷属 + 双角，冲刺时带拖影
     if (ph.isMinion) {
       const r = ph.radius;
@@ -184,7 +213,6 @@ export class Renderer {
       g.strokeStyle = INK;
       g.lineWidth = 2.5;
       g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.stroke();
-      // 双角
       g.fillStyle = INK;
       g.beginPath(); g.moveTo(ph.x - 6, ph.y - r + 2); g.lineTo(ph.x - 2, ph.y - r - 9); g.lineTo(ph.x + 1, ph.y - r + 2); g.closePath(); g.fill();
       g.beginPath(); g.moveTo(ph.x + 1, ph.y - r + 2); g.lineTo(ph.x + 5, ph.y - r - 9); g.lineTo(ph.x + 8, ph.y - r + 2); g.closePath(); g.fill();
@@ -225,7 +253,7 @@ export class Renderer {
   // 骑士斩击扇形：半透明白（命中=金色），面向 dir 的 180° 半圆
   drawSlashFx(g, fx) {
     const a = Math.max(0, 1 - fx.t / 0.35);
-    const R = fx.r + 20;   // 从球边延伸 fx.r
+    const R = fx.r + 20;
     g.save();
     g.globalAlpha = a * 0.45;
     g.fillStyle = fx.hit ? '#ffd93d' : '#ffffff';
@@ -244,7 +272,7 @@ export class Renderer {
     g.stroke();
     g.restore();
   }
-  drawDmgNum(g, d) {
+  drawNum(g, d, color) {
     const a = Math.max(0, 1 - d.t / 0.5);
     const y = d.y - d.t * 26;
     g.save();
@@ -253,12 +281,12 @@ export class Renderer {
     g.textAlign = 'center';
     g.lineWidth = 4;
     g.strokeStyle = '#fff';
-    g.strokeText(d.amount, d.x, y);
+    g.strokeText('+' + d.amount, d.x, y);
     g.strokeStyle = INK;
     g.lineWidth = 2.5;
-    g.strokeText(d.amount, d.x, y);
-    g.fillStyle = DMG;
-    g.fillText(d.amount, d.x, y);
+    g.strokeText('+' + d.amount, d.x, y);
+    g.fillStyle = color;
+    g.fillText('+' + d.amount, d.x, y);
     g.restore();
   }
   drawBall(g, b) {
@@ -311,6 +339,34 @@ export class Renderer {
       g.beginPath();
       g.moveTo(hx - px, hy - py);
       g.lineTo(hx + px, hy + py);
+      g.stroke();
+      g.restore();
+    }
+    // 法师：灰色八字胡（球中央偏下，固定不动）
+    if (b.skill?.def?.id === 'mage') {
+      g.save();
+      g.strokeStyle = '#7a7a7a';
+      g.lineWidth = 3.5;
+      g.lineCap = 'round';
+      const cx = b.x, cy = b.y + r * 0.18;
+      g.beginPath();
+      g.moveTo(cx - r * 0.06, cy - r * 0.08);
+      g.quadraticCurveTo(cx - r * 0.34, cy - r * 0.1, cx - r * 0.42, cy + r * 0.12);
+      g.moveTo(cx + r * 0.06, cy - r * 0.08);
+      g.quadraticCurveTo(cx + r * 0.34, cy - r * 0.1, cx + r * 0.42, cy + r * 0.12);
+      g.stroke();
+      g.restore();
+    }
+    // 牧师：木头色十字架（球中央偏下，固定不动）
+    if (b.skill?.def?.id === 'priest') {
+      g.save();
+      g.strokeStyle = '#8b5a2b';
+      g.lineWidth = 5;
+      g.lineCap = 'round';
+      const cx = b.x, cy = b.y + r * 0.18;
+      g.beginPath();
+      g.moveTo(cx, cy - r * 0.55); g.lineTo(cx, cy + r * 0.55);
+      g.moveTo(cx - r * 0.35, cy - r * 0.12); g.lineTo(cx + r * 0.35, cy - r * 0.12);
       g.stroke();
       g.restore();
     }
@@ -381,9 +437,16 @@ export class Renderer {
     g.strokeStyle = giant ? '#ffb703' : INK;
     if (giant && Math.random() < 0.3) g.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
     g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.stroke();
+    // 受击闪白 / 加血闪绿（叠在球体上）
     if (b.flash > 0) {
       g.globalAlpha = Math.min(1, b.flash);
       g.fillStyle = '#fff';
+      g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 1;
+    }
+    if (b.healFlash > 0) {
+      g.globalAlpha = Math.min(1, b.healFlash);
+      g.fillStyle = HEAL;
       g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.fill();
       g.globalAlpha = 1;
     }

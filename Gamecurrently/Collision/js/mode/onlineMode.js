@@ -15,7 +15,8 @@ import { makeWildBall } from './singleMode.js';
 // 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球（分类切换）→ 各自准备 → 321 → 主机权威对战
 // 双技能通道：基础冲刺（Space/左下，兵团带30伤）+ 职业技能（J键/右下，仅主动职业）
 // 战场干扰球：每局随机一个（巨人 | 魔王），主机在 START 里广播 wildId，双方渲染一致
-// 客人端本地绘制瞄准线（aim inst）+ 本地监测 HP 生成伤害数字（均不占信道）
+// ★ 正式对局暂停首页背景（bg:run false），返回大厅恢复——背景与正式对战共用事件总线，
+//   不暂停会导致背景技能伤害/碰撞特效穿透到上层战场（老bug根因）
 // ★ _onData 必须处理 MSG.CMD（客人技能指令），漏了=联机技能无反应（老bug）
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
@@ -218,6 +219,8 @@ export class OnlineMode {
     this._startMatch({ hostClass: this.myClass, guestClass: this.enemyClass, hostName: this.myName, guestName: this.enemyName, wildId });
   }
   _startMatch(d) {
+    // 正式对局：暂停首页背景（防特效/伤害穿透）
+    this.ctx.events.emit('bg:run', false);
     this.myClass = d.hostClass;
     this.enemyClass = d.guestClass;
     this.enemyName = (this.isHost ? d.guestName : d.hostName) || '对手';
@@ -429,5 +432,7 @@ export class OnlineMode {
     this.dashAim = null; this.skillAim = null;
     this.hud.hideMatchTimer();
     this.hud.hideResult();
+    // 离开对局：恢复首页背景（重开一局时 _startMatch 会再关闭）
+    this.ctx.events.emit('bg:run', true);
   }
 }

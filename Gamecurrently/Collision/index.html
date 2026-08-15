@@ -49,8 +49,8 @@
     <button class="btn back corner-back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 设置面板：基础设置 + 音效开关（分类独立） -->
-  <section id="panel-settings" class="panel right hidden">
+  <!-- 设置面板：精简布局（音效设置收进弹窗），左下角返回 -->
+  <section id="panel-settings" class="panel right hidden settings-panel">
     <h2>设置</h2>
     <label class="set-row">联机昵称
       <input id="nick-input" maxlength="8" value="玩家">
@@ -61,15 +61,24 @@
     <label class="set-row">主动技能按键
       <input id="key-active" maxlength="1" value="J">
     </label>
-    <div class="set-divider">音效开关</div>
-    <label class="set-row">全局音效 <input type="checkbox" id="sfx-master" class="sfx-toggle" checked></label>
-    <label class="set-row">按钮交互音效 <input type="checkbox" id="sfx-ui" class="sfx-toggle" checked></label>
-    <label class="set-row">受击音效 <input type="checkbox" id="sfx-hit" class="sfx-toggle" checked></label>
-    <label class="set-row">冲刺音效 <input type="checkbox" id="sfx-dash" class="sfx-toggle" checked></label>
-    <label class="set-row">技能音效 <input type="checkbox" id="sfx-skill" class="sfx-toggle" checked></label>
-    <label class="set-row">对局音效（倒计时/狂暴/结算） <input type="checkbox" id="sfx-match" class="sfx-toggle" checked></label>
+    <button id="btn-sfx" class="btn wide">🎵 音效设置</button>
     <p class="tip">联机昵称会显示在对方的对局界面中；自定义皮肤同步功能开发中</p>
-    <button class="btn wide back" data-back="screen-home">返回</button>
+    <button class="btn back corner-back" data-back="screen-home">返回</button>
+  </section>
+
+  <!-- 音效设置弹窗：分类开关（手机友好弹窗） -->
+  <section id="panel-sfx" class="panel hidden sfx-panel">
+    <div class="modal-box sfx-modal">
+      <h2>音效设置</h2>
+      <label class="set-row">全局音效 <input type="checkbox" id="sfx-master" class="sfx-toggle" checked></label>
+      <label class="set-row">按钮交互音效 <input type="checkbox" id="sfx-ui" class="sfx-toggle" checked></label>
+      <label class="set-row">受击音效 <input type="checkbox" id="sfx-hit" class="sfx-toggle" checked></label>
+      <label class="set-row">冲刺音效 <input type="checkbox" id="sfx-dash" class="sfx-toggle" checked></label>
+      <label class="set-row">技能音效 <input type="checkbox" id="sfx-skill" class="sfx-toggle" checked></label>
+      <label class="set-row">对局音效 <input type="checkbox" id="sfx-match" class="sfx-toggle" checked></label>
+      <p class="tip">倒计时/狂暴/胜负结算属于对局音效</p>
+      <button class="btn wide back" data-back="settings">完成</button>
+    </div>
   </section>
 
   <!-- 选球界面（单机）：顶部一排（左上AI的球+返回并列 | 中间选择球 | 右上你的球），下方左右对称选择器，底部确认 -->

@@ -11,11 +11,11 @@ import { SingleMode } from './mode/singleMode.js';
 import { OnlineMode } from './mode/onlineMode.js';
 import { bindTap } from './ui/input.js';
 import { renderCards } from './ui/cards.js';
-import { playSfx, unlockSfx } from './audio/sfx.js';
+import { playSfx, unlockSfx, setSfxToggle, getSfxToggle } from './audio/sfx.js';
 import { ballIconDataURL } from './ui/ballIcon.js';
 import { BATTLE_FIELDS } from './maps/index.js';
 
-// ---- 音效事件接线：任何模块 emit('sfx:play', { name, throttle }) 即播放 ----
+// ---- 音效事件接线：任何模块 emit('sfx:play', { name, throttle }) 即播放（受分类开关控制） ----
 // 首次用户交互解锁播放权（浏览器自动播放策略）
 window.addEventListener('pointerdown', unlockSfx, { once: true });
 window.addEventListener('keydown', unlockSfx, { once: true });
@@ -301,6 +301,13 @@ keyInput.addEventListener('change', () => {
   const k = (keyInput.value.toUpperCase() || 'J').replace(/[^A-Z]/g, '');
   keyInput.value = k || 'J';
   localStorage.setItem('collision.key', k || 'J');
+});
+
+// ---- 设置：音效开关（分类独立，localStorage 持久化） ----
+document.querySelectorAll('.sfx-toggle').forEach(cb => {
+  const key = cb.id.replace('sfx-', '');
+  cb.checked = getSfxToggle(key);
+  cb.addEventListener('change', () => setSfxToggle(key, cb.checked));
 });
 
 // ---- 设置：皮肤上传（v1 占位，联机同步 M2） ----

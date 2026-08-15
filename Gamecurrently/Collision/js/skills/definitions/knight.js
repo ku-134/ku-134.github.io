@@ -2,8 +2,8 @@ import CONFIG from '../../config.js';
 
 // 骑士【斩击】：被动范围近战——每4秒自动向最近的敌球方向挥出扇形斩击
 // 斩击：球外延伸90的半透明白色扇形（半圆，面向敌球），瞬时命中40伤
-// 命中音效：发出 fx:slashHit 事件，由 main.js 全局音效管理器播放
-//   （管理器在首次用户交互时预加载+解锁，解决浏览器自动播放策略导致无声）
+// ★ 挥剑音效在斩击发动瞬间播放（提前于命中判定：未命中也有挥剑声，
+//   避免"只有打中了才响"的滞后感）；音效由全局管理器播放（已解锁）
 // 剑的装饰（腰间佩剑，对局中剑身指向敌球）由 renderer 绘制（b.skill.def.id === 'knight'）
 // 冷却型被动：无 effectId → passiveActive 恒 false → 每 cooldown 秒循环触发
 export default {
@@ -20,13 +20,13 @@ export default {
       const enemy = ctx.getEnemy(owner);
       if (!enemy) return;
       const dir = Math.atan2(enemy.y - owner.y, enemy.x - owner.x);
+      // 挥剑音效：斩击发动瞬间播放（提前于命中判定，与扇形特效同步）
+      ctx.events.emit('sfx:play', { name: 'slash' });
       const d = Math.hypot(enemy.x - owner.x, enemy.y - owner.y);
       const reach = CONFIG.KNIGHT.range + owner.radiusScaled + enemy.radiusScaled;
       const hit = d <= reach;
       if (hit) {
         enemy.takeDamage(CONFIG.KNIGHT.damage, ctx, owner);
-        // 命中音效：交给全局音效管理器播放（自动播放策略解锁）
-        ctx.events.emit('fx:slashHit');
       }
       // 斩击扇形特效（命中=金色，未命中=白色）
       ctx.events.emit('fx:slash', { x: owner.x, y: owner.y, dir, r: CONFIG.KNIGHT.range, hit });

@@ -9,7 +9,7 @@ const DMG = '#e63946';
 const HEAL = '#06d6a0';
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
-// 装饰：骑士佩剑 / 魔王双角 / 法师八字胡 / 牧师十字架
+// 装饰（魔王角/骑士剑/法师胡须/牧师十字架）必须画在球体填充之后，否则被球体盖住
 // 特效：斩击扇形 / 奥术飞弹（蓄能绕球+飞行拖影）/ 闪白(受击)/闪绿(加血) + 红/绿数字
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
@@ -304,6 +304,76 @@ export class Renderer {
       g.fill();
       g.restore();
     }
+    // 荆棘盾：金色锯齿环
+    if (b.effects.has('shield')) {
+      g.save();
+      g.strokeStyle = '#b8a24a';
+      g.lineWidth = 3;
+      for (let i = 0; i < 14; i++) {
+        const a0 = i / 14 * Math.PI * 2 + performance.now() / 1000 * 1.5;
+        g.beginPath();
+        g.moveTo(b.x + Math.cos(a0) * (r + 5), b.y + Math.sin(a0) * (r + 5));
+        g.lineTo(b.x + Math.cos(a0 + 0.14) * (r + 12), b.y + Math.sin(a0 + 0.14) * (r + 12));
+        g.stroke();
+      }
+      g.restore();
+    }
+    // 引力场：虚线范围圈 + 方向线
+    const magnet = b.effects.get('tether');
+    if (magnet) {
+      g.save();
+      g.setLineDash([6, 6]);
+      g.strokeStyle = 'rgba(95,39,205,0.55)';
+      g.lineWidth = 2;
+      g.beginPath(); g.arc(b.x, b.y, CONFIG.MAGNET.range, 0, Math.PI * 2); g.stroke();
+      g.setLineDash([]);
+      const a0 = magnet.t * 3;
+      for (let i = 0; i < 6; i++) {
+        const a = a0 + i / 6 * Math.PI * 2;
+        g.strokeStyle = 'rgba(95,39,205,0.4)';
+        g.beginPath();
+        g.moveTo(b.x + Math.cos(a) * 30, b.y + Math.sin(a) * 30);
+        g.lineTo(b.x + Math.cos(a) * 46, b.y + Math.sin(a) * 46);
+        g.stroke();
+      }
+      g.restore();
+    }
+    // 腐蚀：绿色气泡描边
+    if (b.effects.has('poison')) {
+      g.save();
+      g.strokeStyle = 'rgba(106,153,78,0.75)';
+      g.lineWidth = 3;
+      for (let i = 0; i < 8; i++) {
+        const a0 = i / 8 * Math.PI * 2;
+        g.beginPath();
+        g.arc(b.x + Math.cos(a0) * (r + 3), b.y + Math.sin(a0) * (r + 3), 4, 0, Math.PI * 2);
+        g.stroke();
+      }
+      g.restore();
+    }
+    if (b.dashing) {
+      g.save();
+      g.globalAlpha = 0.4;
+      g.fillStyle = b.color;
+      for (let i = 1; i <= 3; i++) {
+        const s = r * (1 - i * 0.22);
+        g.fillRect(b.x - Math.cos(b.angle) * r * i * 0.9 - s / 2, b.y - Math.sin(b.angle) * r * i * 0.9 - s / 2, s, s);
+      }
+      g.restore();
+    }
+    // 球体基础：填充 + 高光 + 描边
+    g.save();
+    g.fillStyle = b.color;
+    g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.5)';
+    g.beginPath(); g.arc(b.x - r * 0.3, b.y - r * 0.35, r * 0.2, 0, Math.PI * 2); g.fill();
+    const giant = b.effects.has('giant_form');
+    g.lineWidth = giant ? 5 : 3;
+    g.strokeStyle = giant ? '#ffb703' : INK;
+    if (giant && Math.random() < 0.3) g.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
+    g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.stroke();
+    g.restore();
+    // ★ 职业装饰：必须在球体填充之后绘制，否则被球色盖住（老bug）
     // 魔王：头顶双角（战场干扰球）
     if (b.skill?.def?.id === 'demon') {
       g.save();
@@ -370,74 +440,8 @@ export class Renderer {
       g.stroke();
       g.restore();
     }
-    // 荆棘盾：金色锯齿环
-    if (b.effects.has('shield')) {
-      g.save();
-      g.strokeStyle = '#b8a24a';
-      g.lineWidth = 3;
-      for (let i = 0; i < 14; i++) {
-        const a0 = i / 14 * Math.PI * 2 + performance.now() / 1000 * 1.5;
-        g.beginPath();
-        g.moveTo(b.x + Math.cos(a0) * (r + 5), b.y + Math.sin(a0) * (r + 5));
-        g.lineTo(b.x + Math.cos(a0 + 0.14) * (r + 12), b.y + Math.sin(a0 + 0.14) * (r + 12));
-        g.stroke();
-      }
-      g.restore();
-    }
-    // 引力场：虚线范围圈 + 方向线
-    const magnet = b.effects.get('tether');
-    if (magnet) {
-      g.save();
-      g.setLineDash([6, 6]);
-      g.strokeStyle = 'rgba(95,39,205,0.55)';
-      g.lineWidth = 2;
-      g.beginPath(); g.arc(b.x, b.y, CONFIG.MAGNET.range, 0, Math.PI * 2); g.stroke();
-      g.setLineDash([]);
-      const a0 = magnet.t * 3;
-      for (let i = 0; i < 6; i++) {
-        const a = a0 + i / 6 * Math.PI * 2;
-        g.strokeStyle = 'rgba(95,39,205,0.4)';
-        g.beginPath();
-        g.moveTo(b.x + Math.cos(a) * 30, b.y + Math.sin(a) * 30);
-        g.lineTo(b.x + Math.cos(a) * 46, b.y + Math.sin(a) * 46);
-        g.stroke();
-      }
-      g.restore();
-    }
-    // 腐蚀：绿色气泡描边
-    if (b.effects.has('poison')) {
-      g.save();
-      g.strokeStyle = 'rgba(106,153,78,0.75)';
-      g.lineWidth = 3;
-      for (let i = 0; i < 8; i++) {
-        const a0 = i / 8 * Math.PI * 2;
-        g.beginPath();
-        g.arc(b.x + Math.cos(a0) * (r + 3), b.y + Math.sin(a0) * (r + 3), 4, 0, Math.PI * 2);
-        g.stroke();
-      }
-      g.restore();
-    }
-    if (b.dashing) {
-      g.save();
-      g.globalAlpha = 0.4;
-      g.fillStyle = b.color;
-      for (let i = 1; i <= 3; i++) {
-        const s = r * (1 - i * 0.22);
-        g.fillRect(b.x - Math.cos(b.angle) * r * i * 0.9 - s / 2, b.y - Math.sin(b.angle) * r * i * 0.9 - s / 2, s, s);
-      }
-      g.restore();
-    }
+    // 受击闪白 / 加血闪绿（叠在球体+装饰上）
     g.save();
-    g.fillStyle = b.color;
-    g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.5)';
-    g.beginPath(); g.arc(b.x - r * 0.3, b.y - r * 0.35, r * 0.2, 0, Math.PI * 2); g.fill();
-    const giant = b.effects.has('giant_form');
-    g.lineWidth = giant ? 5 : 3;
-    g.strokeStyle = giant ? '#ffb703' : INK;
-    if (giant && Math.random() < 0.3) g.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
-    g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.stroke();
-    // 受击闪白 / 加血闪绿（叠在球体上）
     if (b.flash > 0) {
       g.globalAlpha = Math.min(1, b.flash);
       g.fillStyle = '#fff';

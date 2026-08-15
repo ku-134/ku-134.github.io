@@ -11,6 +11,8 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 // 单机模式：玩家选球 vs 玩家指定的 AI 职业，321 倒计时，观战 + 主动干涉
 // 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
 // 战场干扰球：每局随机一个——巨人（基础分类）或魔王（剑与魔法分类，召唤魔族），均为第三方，不参与胜负
+// ★ 对局开始暂停首页背景（bg:run false），返回时恢复——背景与正式对战共用事件总线，
+//   不暂停会导致背景技能的伤害/碰撞特效穿透到上层战场（老bug根因）
 const WILD_IDS = ['giant', 'demon'];
 
 // 创建战场干扰球（巨人 r=20 红色暴怒 / 魔王 r=30 紫色召唤）
@@ -53,6 +55,8 @@ export class SingleMode {
     this.curSkillId = playerSkillId;
     this.curAISkillId = aiSkillId;
     this.battleId = battleId;
+    // 正式对局：暂停首页背景（防特效/伤害穿透）
+    this.ctx.events.emit('bg:run', false);
     this.ctx.phantoms = [];
     const { w, h } = CONFIG.FIELD;
     const p1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, name: '你' });
@@ -184,5 +188,7 @@ export class SingleMode {
     this.unsubs = [];
     this.unbindDash?.(); this.unbindDash = null;
     this.unbindActive?.(); this.unbindActive = null;
+    // 返回首页：恢复背景
+    this.ctx.events.emit('bg:run', true);
   }
 }

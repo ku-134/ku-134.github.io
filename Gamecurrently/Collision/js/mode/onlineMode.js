@@ -355,7 +355,11 @@ export class OnlineMode {
   update(dt) {
     if (this.phase === 'countdown') {
       const n = Math.ceil(this.countdown);
-      if (n !== this.countdownShown) { this.countdownShown = n; this.hud.showCountdown(n); }
+      if (n !== this.countdownShown) {
+        this.countdownShown = n;
+        this.hud.showCountdown(n);
+        if (n > 0) this.ctx.events.emit('sfx:play', { name: 'count' });
+      }
       this.countdown -= dt;
       if (this.countdown <= 0) {
         this.phase = 'playing';
@@ -386,6 +390,7 @@ export class OnlineMode {
     this.hud.hideMatchTimer();
     const isWin = d.win === 'draw' ? false : this.isHost ? d.win === 'host' : d.win === 'guest';
     this.hud.showResult(isWin);
+    this.ctx.events.emit('sfx:play', { name: isWin ? 'win' : 'lose' });
     document.getElementById('online-btn-again').onclick = () => {
       this.hud.hideResult();
       if (this.isHost) this._begin();

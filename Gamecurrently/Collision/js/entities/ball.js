@@ -16,7 +16,8 @@ export class Ball {
     this.name = name;
     this.skill = skill;
     this.scale = 1; this.scaleTarget = 1;
-    this.flash = 0;
+    this.flash = 0;         // 受击闪白
+    this.healFlash = 0;     // 加血闪绿
     this.turnTimer = rand(...CONFIG.TURN_INTERVAL);
     this.lastCollide = 0;
     this.effects = new Map();
@@ -52,11 +53,25 @@ export class Ball {
     ctx.events.emit('ball:hp', { ball: this });
     if (this.hp <= 0) { this.dead = true; ctx.events.emit('ball:die', { ball: this }); }
   }
+  // 治疗：恢复血量（不可突破上限）→ 闪绿 + 绿色加血数字
+  heal(amount, ctx) {
+    if (this.dead || amount <= 0) return 0;
+    const before = this.hp;
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    const actual = +(this.hp - before).toFixed(1);
+    if (actual > 0) {
+      this.healFlash = 1;
+      ctx.events.emit('fx:heal', { x: this.x, y: this.y - this.radiusScaled - 10, amount: actual });
+      ctx.events.emit('sfx:play', { name: 'heal' });
+    }
+    return actual;
+  }
   // 自主随机转向（观战的球自己乱窜，像斗蛐蛐）+ 体积平滑过渡
   // 惊滞（stun）期间不转向
   update(dt) {
     if (this.dashing) return;
     this.scale += (this.scaleTarget - this.scale) * Math.min(1, dt * 4);
+    this.healFlash = Math.max(0, (this.healFlash || 0) - dt * 2.5);
     if (this.effects.has('stun')) return;
     this.turnTimer -= dt;
     if (this.turnTimer <= 0) {

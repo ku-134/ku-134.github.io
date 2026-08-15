@@ -13,6 +13,7 @@ import { bindTap } from './ui/input.js';
 import { renderCards } from './ui/cards.js';
 import { playSfx, unlockSfx } from './audio/sfx.js';
 import { ballIconDataURL } from './ui/ballIcon.js';
+import { BATTLE_FIELDS } from './maps/index.js';
 
 // ---- 音效事件接线：任何模块 emit('sfx:play', { name, throttle }) 即播放 ----
 // 首次用户交互解锁播放权（浏览器自动播放策略）
@@ -41,8 +42,8 @@ const online = new OnlineMode(ctx, {
 });
 
 // ---- 首页背景：随机两个可选职业打一场（手绘涂鸦氛围） ----
-// 背景与正式对战共用事件总线：正式对局开始必须暂停背景（bg:run 事件），
-// 否则背景技能的 fx:damage / collision 等特效会穿透到上层战场（老bug根因）
+// 背景与正式对战共用事件总线：正式对局开始必须暂停背景（bg:run 事件）
+// ★ 背景不运行技能（update 被跳过）：技能音效（slash/dash 等）不再产生（背景静音）
 const BG_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom', 'knight'];
 function randBgClasses() {
   const a = BG_CLASSES[Math.floor(Math.random() * BG_CLASSES.length)];
@@ -73,14 +74,10 @@ function setupBg() {
       b.flash = Math.max(0, b.flash - dt * 3);
       move(b, dt);
       collideWalls(b, bgCtx, bgLoop.time);
-      b.skill?.update(dt);
+      // ★ 背景不打技能：技能 update 跳过 → 无技能音效/特效穿透（静音）
     }
     collideBalls(bgBalls[0], bgBalls[1], bgCtx, bgLoop.time);
     bg.update(dt);
-    if (bgBalls[1].skill?.canUse() && Math.random() < 0.003) {
-      const enemy = bgCtx.getEnemy(bgBalls[1]);
-      bgBalls[1].skill.forceUse(Math.atan2(enemy.y - bgBalls[1].y, enemy.x - bgBalls[1].x));
-    }
   }, () => bg.render(bgBalls, bgLoop.time));
   bgLoop.start();
 }
@@ -112,10 +109,6 @@ const detailOrb = document.getElementById('detail-orb');
 const detailName = document.getElementById('detail-name');
 const detailDesc = document.getElementById('detail-desc');
 function showBestiaryDetail(d) {
-  detailOrb.style.backgroundImage = `url('${ballIconDataURL(d, 150)}')`;
-  detailOrb.style.backgroundSize = 'cover';
-  detailOrb.style.backgroundPosition = 'center';
-  detailOrb.style.backgroundRepeat = 'no-repeat';
   detailOrb.style.background = `url('${ballIconDataURL(d, 150)}') center / cover no-repeat`;
   detailName.textContent = `${d.name} · ${d.skillName}`;
   detailDesc.textContent = d.desc;
@@ -225,25 +218,48 @@ function renderAI(cat) {
 renderSelect(CATEGORIES[0]);
 renderAI(CATEGORIES[0]);
 
-// ---- 战场选择（单机）：确认出战前选战场，为后续新战场留位 ----
-const BATTLE_FIELDS = [
-  { id: 'arena', name: '经典角斗场', desc: '800x450 手绘角斗场。战场干扰球每局随机：巨人（基础）或魔王（剑与魔法）。', color: '#f7edd8' },
-];
-let selectedBattle = BATTLE_FIELDS[0].id;
+// ---- 战场选择（单机）：左右滑动选战场（小型渲染图 + 文案）+ 随机战场 ----
+// selectedBattle = null → 随机战场（确认时随机，再来一局重新随机）
+let selectedBattle = null;
 const battleList = document.getElementById('battle-list');
+function renderBattlePreview(map, canvas, t = 8) {
+  const g = canvas.getContext('2d');
+  const { w, h } = CONFIG.FIELD;
+  canvas.width = 260; canvas.height = 146;
+  g.setTransform(260 / w, 0, 0, 146 / h, 0, 0);
+  g.fillStyle = map.color || '#f7edd8';
+  g.fillRect(0, 0, w, h);
+  map.draw(g, t, w, h);   // t=8：方孔转个角度，预览更生动
+}
 function renderBattles() {
   battleList.innerHTML = '';
-  BATTLE_FIELDS.forEach(f => {
+  const cards = [];
+  // 随机战场卡（最前）
+  const rnd = document.createElement('div');
+  rnd.className = 'battle-card rnd' + (selectedBattle == null ? ' selected' : '');
+  rnd.innerHTML = `<div class="battle-preview rnd-preview">🎲</div><div class="cname">随机战场</div><div class="cskill">每局从所有战场中随机一个</div>`;
+  rnd.addEventListener('click', () => {
+    selectedBattle = null;
+    cards.forEach(c => c.el.classList.toggle('selected', c.match(selectedBattle)));
+  });
+  battleList.appendChild(rnd);
+  cards.push({ el: rnd, match: b => b == null });
+  // 各战场卡
+  for (const map of BATTLE_FIELDS) {
     const card = document.createElement('div');
-    card.className = 'card battle-card' + (f.id === selectedBattle ? ' selected' : '');
-    card.innerHTML = `<div class="orb" style="background:${f.color}"></div><div class="cname">${f.name}</div><div class="cskill">${f.desc}</div>`;
+    card.className = 'battle-card' + (selectedBattle === map.id ? ' selected' : '');
+    const cv = document.createElement('canvas');
+    const name = document.createElement('div'); name.className = 'cname'; name.textContent = map.name;
+    const desc = document.createElement('div'); desc.className = 'cskill'; desc.textContent = map.desc;
+    card.appendChild(cv); card.appendChild(name); card.appendChild(desc);
+    renderBattlePreview(map, cv);
     card.addEventListener('click', () => {
-      selectedBattle = f.id;
-      battleList.querySelectorAll('.battle-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
+      selectedBattle = map.id;
+      cards.forEach(c => c.el.classList.toggle('selected', c.match(selectedBattle)));
     });
     battleList.appendChild(card);
-  });
+    cards.push({ el: card, match: b => b === map.id });
+  }
 }
 renderBattles();
 

@@ -7,6 +7,7 @@ const SFX_DEFS = {
   dash: ['audio/dash.ogg'],                  // 基础冲刺释放（松开瞄准瞬间）
   slash: ['audio/slash1.ogg', 'audio/slash2.ogg'],  // 骑士斩击（挥剑即响，提前于命中）
   hit: ['audio/hit.ogg'],                    // 通用伤害命中（150ms 节流防高频刷屏）
+  heal: ['audio/heal.ogg'],                  // 治疗术发动（闪绿+数字同步）
   count: ['audio/count.ogg'],                // 321 倒计时每声
   berserk: ['audio/berserk.ogg'],            // 狂暴降临瞬间
   win: ['audio/win.ogg'],                    // 胜利结算

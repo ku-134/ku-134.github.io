@@ -15,6 +15,16 @@ import { playSfx, unlockSfx, setSfxToggle, getSfxToggle } from './audio/sfx.js';
 import { ballIconDataURL } from './ui/ballIcon.js';
 import { BATTLE_FIELDS } from './maps/index.js';
 
+// ---- 专属提示弹窗（替代浏览器 alert，手绘风格） ----
+const gameAlert = document.getElementById('game-alert');
+const alertMsg = document.getElementById('alert-msg');
+function showAlert(msg) {
+  alertMsg.textContent = msg;
+  gameAlert.classList.remove('hidden');
+}
+bindTap(document.getElementById('alert-ok'), () => gameAlert.classList.add('hidden'));
+window.showAlert = showAlert;
+
 // ---- 音效事件接线：任何模块 emit('sfx:play', { name, throttle }) 即播放（受分类开关控制） ----
 // 首次用户交互解锁播放权（浏览器自动播放策略）
 window.addEventListener('pointerdown', unlockSfx, { once: true });
@@ -41,9 +51,7 @@ const online = new OnlineMode(ctx, {
   onBack: () => ui.show('home'),
 });
 
-// ---- 首页背景：随机两个可选职业打一场（手绘涂鸦氛围） ----
-// 背景与正式对战共用事件总线：正式对局开始必须暂停背景（bg:run 事件）
-// ★ 背景不运行技能（update 被跳过）：技能音效（slash/dash 等）不再产生（背景静音）
+// ---- 首页背景：随机两个可选职业打一场（手绘涂鸦氛围，不运行技能=静音） ----
 const BG_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom', 'knight'];
 function randBgClasses() {
   const a = BG_CLASSES[Math.floor(Math.random() * BG_CLASSES.length)];
@@ -133,8 +141,6 @@ function renderBestiary(cat) {
 renderBestiary(CATEGORIES[0]);
 
 // ---- 选球（单机）：左=设置AI的对战球，右=设置玩家自己的球 ----
-// 分类标签：基础 / 剑与魔法 / 随机（随机不是分类：只展示单个球轮播职业，不可选择，
-// 确认出战时从可选职业随机决定；再来一局重新随机）
 const SELECT_CATS = [...CATEGORIES, '随机'];
 let selectedSkill = 'legion';      // null = 随机（确认时决定）
 let selectedAISkill = 'legion';
@@ -219,7 +225,6 @@ renderSelect(CATEGORIES[0]);
 renderAI(CATEGORIES[0]);
 
 // ---- 战场选择（单机）：左右滑动选战场（小型渲染图 + 文案）+ 随机战场 ----
-// selectedBattle = null → 随机战场（确认时随机，再来一局重新随机）
 let selectedBattle = null;
 const battleList = document.getElementById('battle-list');
 function renderBattlePreview(map, canvas, t = 8) {
@@ -234,7 +239,6 @@ function renderBattlePreview(map, canvas, t = 8) {
 function renderBattles() {
   battleList.innerHTML = '';
   const cards = [];
-  // 随机战场卡（最前）
   const rnd = document.createElement('div');
   rnd.className = 'battle-card rnd' + (selectedBattle == null ? ' selected' : '');
   rnd.innerHTML = `<div class="battle-preview rnd-preview">🎲</div><div class="cname">随机战场</div><div class="cskill">每局从所有战场中随机一个</div>`;
@@ -244,7 +248,6 @@ function renderBattles() {
   });
   battleList.appendChild(rnd);
   cards.push({ el: rnd, match: b => b == null });
-  // 各战场卡
   for (const map of BATTLE_FIELDS) {
     const card = document.createElement('div');
     card.className = 'battle-card' + (selectedBattle === map.id ? ' selected' : '');

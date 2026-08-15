@@ -65,14 +65,34 @@
     <button class="btn wide back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 选球界面（单机）：分类切换 + 选球 -->
+  <!-- 选球界面（单机）：左=AI对战球 右=玩家的球（各自分类切换），底部确认/返回（上下排列） -->
   <section id="screen-select" class="screen hidden">
     <h2>选择你的球</h2>
-    <div id="cat-tabs-select" class="cat-tabs"></div>
-    <div id="select-list" class="card-list"></div>
-    <div class="row">
+    <div class="select-cols">
+      <div class="select-col">
+        <h3 class="col-title">AI 对战球</h3>
+        <div id="cat-tabs-ai" class="cat-tabs"></div>
+        <div id="select-list-ai" class="card-list"></div>
+      </div>
+      <div class="select-col">
+        <h3 class="col-title">你的球</h3>
+        <div id="cat-tabs-select" class="cat-tabs"></div>
+        <div id="select-list" class="card-list"></div>
+      </div>
+    </div>
+    <div class="select-btns">
       <button id="btn-select-confirm" class="btn big">确认出战</button>
       <button class="btn back" data-back="panel-start">返回</button>
+    </div>
+  </section>
+
+  <!-- 战场选择界面（单机）：确认出战前选战场，为后续新战场留位 -->
+  <section id="screen-battle" class="screen hidden">
+    <h2>选择战场</h2>
+    <div id="battle-list" class="card-list battle-list"></div>
+    <div class="select-btns">
+      <button id="btn-battle-confirm" class="btn big">确认开战</button>
+      <button class="btn back" data-back="screen-select">返回</button>
     </div>
   </section>
 

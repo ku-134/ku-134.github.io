@@ -8,12 +8,9 @@ import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
 import { isTouchDevice, bindHold } from '../ui/input.js';
 
-// AI 可选职业池（巨人已转战场干扰球，剔除；含剑与魔法分类的骑士）
-const AI_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom', 'knight'];
-
-// 单机模式：玩家选球 vs AI，321 倒计时，观战 + 主动干涉
+// 单机模式：玩家选球 vs 玩家指定的 AI 职业，321 倒计时，观战 + 主动干涉
 // 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
-// 战场干扰球：巨人（第三方）独立游走，只保留愤怒机制（碰撞攒怒→巨大化30伤）
+// 战场干扰球：巨人（基础分类）+ 魔王（剑与魔法分类，召唤魔族）——均为第三方，不参与胜负
 export class SingleMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -25,36 +22,44 @@ export class SingleMode {
     this.countdown = 0;
     this.countdownShown = -1;
     this.curSkillId = 'legion';
+    this.curAISkillId = 'legion';
+    this.battleId = 'arena';
     this.balls = [];
-    this.wild = null;
+    this.wilds = [];
     this.sim = null;
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
     this.unsubs = [];
     this.unbindDash = null;
     this.unbindActive = null;
   }
-  start(playerSkillId) {
+  start(playerSkillId, aiSkillId = 'legion', battleId = 'arena') {
     this.curSkillId = playerSkillId;
+    this.curAISkillId = aiSkillId;
+    this.battleId = battleId;
     this.ctx.phantoms = [];
     const { w, h } = CONFIG.FIELD;
     const p1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, name: '你' });
     const p2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, name: 'AI' });
     p1.skill = createSkill(playerSkillId, p1, this.ctx);
-    p2.skill = createSkill(AI_CLASSES[Math.floor(Math.random() * AI_CLASSES.length)], p2, this.ctx);
+    p2.skill = createSkill(aiSkillId, p2, this.ctx);
     // 基础冲刺（全职业通用；兵团职业自动带30伤变体）
     p1.dashSkill = createDashSkill(p1, this.ctx, playerSkillId);
-    p2.dashSkill = createDashSkill(p2, this.ctx, p2.skill.def.id);
+    p2.dashSkill = createDashSkill(p2, this.ctx, aiSkillId);
     // 球色 = 职业色；自己的球带倒三角标记
     p1.color = p1.skill.def.color;
     p2.color = p2.skill.def.color;
     p1.isPlayer = true;
-    // 战场干扰球（巨人）：hp 极高不死，只保留愤怒机制，无 dashSkill
-    this.wild = new Ball({ x: w * 0.5, y: h * 0.5, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, name: '战场巨人' });
-    this.wild.skill = createSkill('giant', this.wild, this.ctx);
-    this.wild.color = this.wild.skill.def.color;
+    // 战场干扰球：巨人（基础分类）+ 魔王（剑与魔法分类，1.5倍体型，召唤魔族）
+    const giant = new Ball({ x: w * 0.5, y: h * 0.3, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, name: '战场巨人' });
+    giant.skill = createSkill('giant', giant, this.ctx);
+    giant.color = giant.skill.def.color;
+    const demon = new Ball({ x: w * 0.5, y: h * 0.7, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, radius: CONFIG.BALL.radius * CONFIG.DEMON.scale, name: '战场魔王' });
+    demon.skill = createSkill('demon', demon, this.ctx);
+    demon.color = demon.skill.def.color;
+    this.wilds = [giant, demon];
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
-    this.sim = new MatchSim(this.ctx, this.balls, this.wild);
+    this.sim = new MatchSim(this.ctx, this.balls, this.wilds);
     this.ai = new AIController(p2, this.ctx);
     this.unsubs.forEach(fn => fn());
     this.unsubs = [];
@@ -83,6 +88,12 @@ export class SingleMode {
     }));
     this.unsubs.push(this.ctx.events.on('fx:slash', ({ x, y, dir, r, hit }) => {
       this.renderer.addSlashFx(x, y, dir, r, hit);
+    }));
+    this.unsubs.push(this.ctx.events.on('fx:summon', ({ x, y }) => {
+      this.renderer.particles.spawn(x, y, { color: '#6d4a7e', count: 14, speed: 90 });
+    }));
+    this.unsubs.push(this.ctx.events.on('fx:minionHit', ({ x, y, color }) => {
+      this.renderer.particles.spawn(x, y, { color, count: 16, speed: 150, size: 4 });
     }));
     this.unsubs.push(this.ctx.events.on('skill:aim', ({ inst, on }) => this.renderer.setAim(inst, on)));
     this.unsubs.push(this.ctx.events.on('ball:die', ({ ball }) => {
@@ -135,7 +146,7 @@ export class SingleMode {
     if (res.over) this.endMatch();
   }
   render() {
-    const all = this.wild ? [...this.balls, this.wild] : this.balls;
+    const all = [...this.balls, ...this.wilds];
     this.renderer.render(all, this.loop.time, this.ctx.phantoms || []);
   }
   endMatch() {
@@ -151,7 +162,7 @@ export class SingleMode {
     this.hud.showResult(win);
     const again = document.getElementById('btn-again');
     const home = document.getElementById('btn-home2');
-    again.onclick = () => { this.hud.hideResult(); this.start(this.curSkillId); };
+    again.onclick = () => { this.hud.hideResult(); this.start(this.curSkillId, this.curAISkillId, this.battleId); };
     home.onclick = () => { this.hud.hideResult(); this.stop(); this.onBack(); };
   }
   stop() {

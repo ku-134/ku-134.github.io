@@ -65,24 +65,24 @@
     <button class="btn wide back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 选球界面（单机）：左=AI对战球 右=玩家的球（各自分类切换），底部确认/返回（上下排列） -->
-  <section id="screen-select" class="screen hidden">
-    <h2>选择你的球</h2>
-    <div class="select-cols">
-      <div class="select-col">
-        <h3 class="col-title">AI 对战球</h3>
+  <!-- 选球界面（单机）：左上返回；左=AI对战球（贴左） 中=标题+确认（上下贴边） 右=玩家的球（贴右） -->
+  <section id="screen-select" class="screen hidden select-screen">
+    <button class="btn back select-back" data-back="panel-start">返回</button>
+    <div class="select-layout">
+      <div class="select-left">
+        <h3 class="col-title">AI 的球</h3>
         <div id="cat-tabs-ai" class="cat-tabs"></div>
         <div id="select-list-ai" class="card-list"></div>
       </div>
-      <div class="select-col">
+      <div class="select-center">
+        <h2 class="center-title">选择你的球</h2>
+        <button id="btn-select-confirm" class="btn big center-confirm">确认出战</button>
+      </div>
+      <div class="select-right">
         <h3 class="col-title">你的球</h3>
         <div id="cat-tabs-select" class="cat-tabs"></div>
         <div id="select-list" class="card-list"></div>
       </div>
-    </div>
-    <div class="select-btns">
-      <button id="btn-select-confirm" class="btn big">确认出战</button>
-      <button class="btn back" data-back="panel-start">返回</button>
     </div>
   </section>
 

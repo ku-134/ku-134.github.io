@@ -7,13 +7,14 @@ import thorn from './definitions/thorn.js';
 import magnet from './definitions/magnet.js';
 import puppet from './definitions/puppet.js';
 import phantom from './definitions/phantom.js';
+import demon from './definitions/demon.js';
 import knight from './definitions/knight.js';
 import baseDash from './definitions/baseDash.js';
 
 // 职业分类（图鉴/选球顶部切换）
 export const CATEGORIES = ['基础', '剑与魔法'];
 
-// 全部职业定义（图鉴展示用，含巨人=战场干扰球说明）
+// 全部职业定义（图鉴展示用，含战场球：巨人=基础第1位、魔王=剑与魔法第1位）
 const defs = [
   { ...giant, category: '基础' },
   { ...legion, category: '基础' },
@@ -22,18 +23,19 @@ const defs = [
   { ...magnet, category: '基础' },
   { ...puppet, category: '基础' },
   { ...phantom, category: '基础' },
-  knight,   // 自带 category: '剑与魔法'
+  demon,    // 剑与魔法分类第1位（战场球）
+  knight,   // 剑与魔法分类第2位（可选职业）
 ];
-// 可选职业（选球/联机选球用）：巨人已转战场干扰球，剔除
-const selectableDefs = defs.filter(d => d.id !== 'giant');
+// 可选职业（选球/联机选球用）：战场球（巨人/魔王）剔除
+const selectableDefs = defs.filter(d => d.id !== 'giant' && d.id !== 'demon');
 // 全部定义（含基础冲刺：可创建但不展示在列表）
 const byId = Object.fromEntries(defs.map(d => [d.id, d]));
 byId[baseDash.id] = baseDash;
 
-export const getSkillDefs = () => defs;                    // 图鉴（全部）
-export const getSelectableDefs = () => selectableDefs;     // 选球（不含巨人）
+export const getSkillDefs = () => defs;                    // 图鉴（全部，含战场球）
+export const getSelectableDefs = () => selectableDefs;     // 选球（不含战场球）
 export const getSkillDef = id => byId[id];
-// 分类：可选项是否含巨人由 getAll 参数控制
+// 分类：可选项是否含战场球由 selectable 参数控制
 export const getDefsByCategory = (cat, { selectable = false } = {}) => {
   const pool = selectable ? selectableDefs : defs;
   return pool.filter(d => d.category === cat);

@@ -59,7 +59,7 @@ const bgLoop = new GameLoop(dt => {
 }, () => bg.render(bgBalls, bgLoop.time));
 bgLoop.start();
 
-// ---- 分类标签渲染（图鉴/选球共用） ----
+// ---- 分类标签渲染（图鉴/选球/联机共用） ----
 function renderCatTabs(container, cats, current, onSwitch) {
   container.innerHTML = '';
   for (const cat of cats) {
@@ -71,7 +71,7 @@ function renderCatTabs(container, cats, current, onSwitch) {
   }
 }
 
-// ---- 图鉴：分类切换 + 左列表 + 右详情（含巨人=战场干扰球说明） ----
+// ---- 图鉴：分类切换 + 左列表 + 右详情（含战场球：巨人/魔王说明） ----
 const bestiaryList = document.getElementById('bestiary-list');
 const bestiaryTabs = document.getElementById('cat-tabs-bestiary');
 const detailOrb = document.getElementById('detail-orb');
@@ -100,11 +100,17 @@ function renderBestiary(cat) {
 }
 renderBestiary(CATEGORIES[0]);
 
-// ---- 选球（单机）：分类切换 + 选球（巨人不可选） ----
+// ---- 选球（单机）：左=设置AI的对战球，右=设置玩家自己的球（各自分类切换） ----
 let selectedSkill = 'legion';
+let selectedAISkill = 'legion';
 const selectList = document.getElementById('select-list');
 const selectTabs = document.getElementById('cat-tabs-select');
+const aiList = document.getElementById('select-list-ai');
+const aiTabs = document.getElementById('cat-tabs-ai');
+let selectCat = CATEGORIES[0];
+let aiCat = CATEGORIES[0];
 function renderSelect(cat) {
+  selectCat = cat;
   const defs = getDefsByCategory(cat, { selectable: true });
   renderCatTabs(selectTabs, CATEGORIES, cat, renderSelect);
   renderCards(selectList, defs, {
@@ -116,16 +122,53 @@ function renderSelect(cat) {
     },
   });
 }
+function renderAI(cat) {
+  aiCat = cat;
+  const defs = getDefsByCategory(cat, { selectable: true });
+  renderCatTabs(aiTabs, CATEGORIES, cat, renderAI);
+  renderCards(aiList, defs, {
+    selectedId: selectedAISkill,
+    onPick: (d, card) => {
+      selectedAISkill = d.id;
+      aiList.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    },
+  });
+}
 renderSelect(CATEGORIES[0]);
+renderAI(CATEGORIES[0]);
+
+// ---- 战场选择（单机）：确认出战前选战场，为后续新战场留位 ----
+const BATTLE_FIELDS = [
+  { id: 'arena', name: '经典角斗场', desc: '800×450 手绘角斗场。战场干扰球：巨人（基础）乱撞 + 魔王（剑与魔法）召唤魔族大军。', color: '#f7edd8' },
+];
+let selectedBattle = BATTLE_FIELDS[0].id;
+const battleList = document.getElementById('battle-list');
+function renderBattles() {
+  battleList.innerHTML = '';
+  BATTLE_FIELDS.forEach(f => {
+    const card = document.createElement('div');
+    card.className = 'card battle-card' + (f.id === selectedBattle ? ' selected' : '');
+    card.innerHTML = `<div class="orb" style="background:${f.color}"></div><div class="cname">${f.name}</div><div class="cskill">${f.desc}</div>`;
+    card.addEventListener('click', () => {
+      selectedBattle = f.id;
+      battleList.querySelectorAll('.battle-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    });
+    battleList.appendChild(card);
+  });
+}
+renderBattles();
 
 // ---- 导航（bindTap：click） ----
 bindTap(document.getElementById('btn-start'), () => ui.show('start'));
 bindTap(document.getElementById('btn-bestiary'), () => ui.show('bestiary'));
 bindTap(document.getElementById('btn-settings'), () => ui.show('settings'));
 bindTap(document.getElementById('btn-single'), () => ui.show('select'));
-bindTap(document.getElementById('btn-select-confirm'), () => {
+bindTap(document.getElementById('btn-select-confirm'), () => ui.show('battle'));
+bindTap(document.getElementById('btn-battle-confirm'), () => {
   ui.show('game');
-  single.start(selectedSkill);
+  single.start(selectedSkill, selectedAISkill, selectedBattle);
 });
 
 // ---- 联机 ----

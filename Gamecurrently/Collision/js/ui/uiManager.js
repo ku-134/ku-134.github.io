@@ -9,7 +9,7 @@ export class UIManager {
       this.screens[id] = document.getElementById('screen-' + id);
     });
     this.panels = {};
-    ['start', 'bestiary', 'settings'].forEach(id => {
+    ['start', 'bestiary', 'settings', 'sfx'].forEach(id => {
       this.panels[id] = document.getElementById('panel-' + id);
     });
     this.bindBack();

@@ -9,6 +9,7 @@ const DMG = '#e63946';
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // 骑士：腰间佩剑（剑身始终指向敌球）+ 斩击扇形特效
+// 魔王：紫色大球（1.5倍）+ 头顶双角；魔族：深紫小眷属（游走/冲刺）
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -168,6 +169,29 @@ export class Renderer {
     g.restore();
   }
   drawPhantom(g, ph) {
+    // 魔族（魔王眷属）：深紫实心小眷属 + 双角，冲刺时带拖影
+    if (ph.isMinion) {
+      const r = ph.radius;
+      g.save();
+      if (ph.dashing) {
+        g.globalAlpha = 0.35;
+        g.fillStyle = ph.color;
+        g.beginPath(); g.arc(ph.x - Math.cos(ph.dashAngle) * r * 1.4, ph.y - Math.sin(ph.dashAngle) * r * 1.4, r * 0.7, 0, Math.PI * 2); g.fill();
+        g.globalAlpha = 1;
+      }
+      g.fillStyle = ph.color;
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = INK;
+      g.lineWidth = 2.5;
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.stroke();
+      // 双角
+      g.fillStyle = INK;
+      g.beginPath(); g.moveTo(ph.x - 6, ph.y - r + 2); g.lineTo(ph.x - 2, ph.y - r - 9); g.lineTo(ph.x + 1, ph.y - r + 2); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(ph.x + 1, ph.y - r + 2); g.lineTo(ph.x + 5, ph.y - r - 9); g.lineTo(ph.x + 8, ph.y - r + 2); g.closePath(); g.fill();
+      g.restore();
+      return;
+    }
+    // 幻影分身：半透明虚影
     const r = ph.radius;
     g.save();
     g.globalAlpha = 0.25;
@@ -252,13 +276,23 @@ export class Renderer {
       g.fill();
       g.restore();
     }
+    // 魔王：头顶双角（战场干扰球）
+    if (b.skill?.def?.id === 'demon') {
+      g.save();
+      g.fillStyle = INK;
+      g.beginPath(); g.moveTo(b.x - 10, b.y - r + 3); g.lineTo(b.x - 3, b.y - r - 18); g.lineTo(b.x + 2, b.y - r + 3); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(b.x + 2, b.y - r + 3); g.lineTo(b.x + 8, b.y - r - 18); g.lineTo(b.x + 14, b.y - r + 3); g.closePath(); g.fill();
+      g.fillStyle = '#ffb703';
+      g.beginPath(); g.arc(b.x - 3, b.y - r - 18, 3, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.arc(b.x + 8, b.y - r - 18, 3, 0, Math.PI * 2); g.fill();
+      g.restore();
+    }
     // 骑士：腰间佩剑（剑身指向最近的敌球）
     if (b.skill?.def?.id === 'knight' && b._swordAngle !== undefined) {
       g.save();
       const dir = b._swordAngle;
       const bx = b.x + Math.cos(dir) * r;
       const by = b.y + Math.sin(dir) * r;
-      // 剑身（银灰，向敌球方向延伸）
       g.strokeStyle = '#c8c8c8';
       g.lineWidth = 5;
       g.lineCap = 'round';
@@ -266,10 +300,8 @@ export class Renderer {
       g.moveTo(bx, by);
       g.lineTo(bx + Math.cos(dir) * r * 0.9, by + Math.sin(dir) * r * 0.9);
       g.stroke();
-      // 剑尖
       g.fillStyle = '#f0f0f0';
       g.beginPath(); g.arc(bx + Math.cos(dir) * r * 0.9, by + Math.sin(dir) * r * 0.9, 3.5, 0, Math.PI * 2); g.fill();
-      // 护手（剑柄，金色横档）
       g.strokeStyle = '#8a6d3b';
       g.lineWidth = 4;
       const hx = bx + Math.cos(dir) * r * 0.25;

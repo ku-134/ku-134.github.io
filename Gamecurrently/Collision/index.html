@@ -35,7 +35,7 @@
     </div>
   </section>
 
-  <!-- 图鉴面板（右滑出）：分类切换 + 左2/3列表 + 右1/3详情 -->
+  <!-- 图鉴面板（右滑出）：分类切换 + 左半列表 + 右半详情（可滚动大展示框） -->
   <section id="panel-bestiary" class="panel right hidden bestiary-panel">
     <div id="cat-tabs-bestiary" class="cat-tabs"></div>
     <div class="bestiary-wrap">
@@ -65,13 +65,15 @@
     <button class="btn wide back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 选球界面（单机）：顶部一排（返回 | AI的球 | 选择你的球 | 你的球），下方左右对称选择器，底部确认 -->
+  <!-- 选球界面（单机）：顶部一排（左上AI的球+返回并列 | 中间选择球 | 右上你的球），下方左右对称选择器，底部确认 -->
   <section id="screen-select" class="screen hidden select-screen">
     <div class="select-header">
-      <button class="btn back select-back" data-back="panel-start">返回</button>
-      <span class="col-title">AI 的球</span>
-      <h2 class="center-title">选择你的球</h2>
-      <span class="col-title">你的球</span>
+      <div class="select-header-left">
+        <span class="col-title">AI 的球</span>
+        <button class="btn back" data-back="panel-start">返回</button>
+      </div>
+      <h2 class="center-title">选择球</h2>
+      <span class="col-title select-header-right">你的球</span>
     </div>
     <div class="select-layout">
       <div class="select-col">

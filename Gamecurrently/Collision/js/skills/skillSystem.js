@@ -1,6 +1,7 @@
 // 技能实例：管理冷却、被动事件绑定、主动瞄准/释放
 // 职业定义: { id, name, type, skillName, desc, color, passive?, active?, effects? }
 // active.cooldownStartsAfter: 效果持续时长（冷却在效果结束后才开始）
+// active.noAim: 无需瞄准（如牧师治疗），不显示瞄准线
 // passive.cooldown: 冷却型被动（如荆棘）：生效中不计时，效果结束后开始下一轮冷却
 // params：创建时的附加参数（如基础冲刺的 damage 变体），效果回调经 st.params 读取
 // ★ 基础机动与职业技能允许叠加发动（冲刺中可放技能/技能中可冲刺），各自独立冷却
@@ -68,20 +69,20 @@ export class SkillInstance {
     const wait = this.def.active?.cooldownStartsAfter || 0;
     this.cooldownLeft = this.cd + wait;
   }
-  // 长按瞄准（触屏/键盘按下）
+  // 长按瞄准（触屏/键盘按下）：noAim 技能不显示瞄准线
   startAim() {
     if (!this.canUse() || this.aiming) return false;
     this.aiming = true;
     const enemy = this.ctx.getEnemy(this.owner);
     this.aimDir = enemy ? Math.atan2(enemy.y - this.owner.y, enemy.x - this.owner.x) : this.owner.angle;
-    this.ctx.events.emit('skill:aim', { inst: this, on: true });
+    if (!this.def.active?.noAim) this.ctx.events.emit('skill:aim', { inst: this, on: true });
     return true;
   }
   // 松开释放
   releaseAim() {
     if (!this.aiming) return false;
     this.aiming = false;
-    this.ctx.events.emit('skill:aim', { inst: this, on: false });
+    if (!this.def.active?.noAim) this.ctx.events.emit('skill:aim', { inst: this, on: false });
     if (this.def.active.onRelease) this.def.active.onRelease(this.owner, this, this.ctx);
     this._startCooldown();
     this.ctx.events.emit('skill:used', { inst: this });

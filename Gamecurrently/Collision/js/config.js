@@ -28,6 +28,11 @@ const CONFIG = {
   PUPPET: { cooldown: 7, damage: 18, stunDuration: 0.6, pearlSpeedMul: 1.6 },
   // 骑士【斩击】：每4s自动向敌球方向扇形斩击（范围90，命中40伤）
   KNIGHT: { cooldown: 4, range: 90, damage: 40 },
+  // 法师【奥术飞弹】：8s循环=前5s每秒蓄能1颗（五角星）+第6s全发射（随机方向）
+  // 每颗飞弹命中敌球5伤（撞球/撞墙即消失）；发射完2s空窗后重新循环
+  MAGE: { cooldown: 8, chargeTime: 5, orbit: 46, missileSpeed: 420, missileDamage: 5 },
+  // 牧师【治疗术】：主动14s冷却，发动后给自己加10~25血（不可突破上限）
+  PRIEST: { cooldown: 14, healMin: 10, healMax: 25 },
   // 魔王【召唤魔族】：战场干扰球（剑与魔法分类，不可选择）
   // 体型恒为基础球1.5倍；每5~8秒召唤一只魔族眷属
   DEMON: { scale: 1.5, summonInterval: [5, 8] },

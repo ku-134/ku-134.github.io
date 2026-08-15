@@ -8,6 +8,80 @@ const PAPER = '#f7edd8';
 const DMG = '#e63946';
 const HEAL = '#06d6a0';
 
+// ★ 职业装饰：必须在球体填充之后绘制（否则被球色盖住——老bug）
+// 供对战 drawBall 与卡片图标（ui/ballIcon.js）共用：技能id + 骑士剑方向
+export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
+  // 魔王：头顶双角（战场干扰球）
+  if (skillId === 'demon') {
+    g.save();
+    g.fillStyle = INK;
+    g.beginPath(); g.moveTo(x - 10, y - r + 3); g.lineTo(x - 3, y - r - 18); g.lineTo(x + 2, y - r + 3); g.closePath(); g.fill();
+    g.beginPath(); g.moveTo(x + 2, y - r + 3); g.lineTo(x + 8, y - r - 18); g.lineTo(x + 14, y - r + 3); g.closePath(); g.fill();
+    g.fillStyle = '#ffb703';
+    g.beginPath(); g.arc(x - 3, y - r - 18, 3, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.arc(x + 8, y - r - 18, 3, 0, Math.PI * 2); g.fill();
+    g.restore();
+    return;
+  }
+  // 骑士：腰间佩剑（剑身指向最近敌球；图标里固定斜 45°）
+  if (skillId === 'knight' && swordAngle !== undefined) {
+    const dir = swordAngle;
+    const bx = x + Math.cos(dir) * r;
+    const by = y + Math.sin(dir) * r;
+    g.save();
+    g.strokeStyle = '#c8c8c8';
+    g.lineWidth = 5;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(bx, by);
+    g.lineTo(bx + Math.cos(dir) * r * 0.9, by + Math.sin(dir) * r * 0.9);
+    g.stroke();
+    g.fillStyle = '#f0f0f0';
+    g.beginPath(); g.arc(bx + Math.cos(dir) * r * 0.9, by + Math.sin(dir) * r * 0.9, 3.5, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#8a6d3b';
+    g.lineWidth = 4;
+    const hx = bx + Math.cos(dir) * r * 0.25;
+    const hy = by + Math.sin(dir) * r * 0.25;
+    const px = Math.cos(dir + Math.PI / 2) * 7;
+    const py = Math.sin(dir + Math.PI / 2) * 7;
+    g.beginPath();
+    g.moveTo(hx - px, hy - py);
+    g.lineTo(hx + px, hy + py);
+    g.stroke();
+    g.restore();
+    return;
+  }
+  // 法师：灰色八字胡（球中央偏下，固定不动）
+  if (skillId === 'mage') {
+    g.save();
+    g.strokeStyle = '#7a7a7a';
+    g.lineWidth = 3.5;
+    g.lineCap = 'round';
+    const cx = x, cy = y + r * 0.18;
+    g.beginPath();
+    g.moveTo(cx - r * 0.06, cy - r * 0.08);
+    g.quadraticCurveTo(cx - r * 0.34, cy - r * 0.1, cx - r * 0.42, cy + r * 0.12);
+    g.moveTo(cx + r * 0.06, cy - r * 0.08);
+    g.quadraticCurveTo(cx + r * 0.34, cy - r * 0.1, cx + r * 0.42, cy + r * 0.12);
+    g.stroke();
+    g.restore();
+    return;
+  }
+  // 牧师：木头色十字架（球中央偏下，固定不动）
+  if (skillId === 'priest') {
+    g.save();
+    g.strokeStyle = '#8b5a2b';
+    g.lineWidth = 5;
+    g.lineCap = 'round';
+    const cx = x, cy = y + r * 0.18;
+    g.beginPath();
+    g.moveTo(cx, cy - r * 0.55); g.lineTo(cx, cy + r * 0.55);
+    g.moveTo(cx - r * 0.35, cy - r * 0.12); g.lineTo(cx + r * 0.35, cy - r * 0.12);
+    g.stroke();
+    g.restore();
+  }
+}
+
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // 装饰（魔王角/骑士剑/法师胡须/牧师十字架）必须画在球体填充之后，否则被球体盖住
 // 特效：斩击扇形 / 奥术飞弹（蓄能绕球+飞行拖影）/ 闪白(受击)/闪绿(加血) + 红/绿数字
@@ -373,73 +447,8 @@ export class Renderer {
     if (giant && Math.random() < 0.3) g.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
     g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.stroke();
     g.restore();
-    // ★ 职业装饰：必须在球体填充之后绘制，否则被球色盖住（老bug）
-    // 魔王：头顶双角（战场干扰球）
-    if (b.skill?.def?.id === 'demon') {
-      g.save();
-      g.fillStyle = INK;
-      g.beginPath(); g.moveTo(b.x - 10, b.y - r + 3); g.lineTo(b.x - 3, b.y - r - 18); g.lineTo(b.x + 2, b.y - r + 3); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(b.x + 2, b.y - r + 3); g.lineTo(b.x + 8, b.y - r - 18); g.lineTo(b.x + 14, b.y - r + 3); g.closePath(); g.fill();
-      g.fillStyle = '#ffb703';
-      g.beginPath(); g.arc(b.x - 3, b.y - r - 18, 3, 0, Math.PI * 2); g.fill();
-      g.beginPath(); g.arc(b.x + 8, b.y - r - 18, 3, 0, Math.PI * 2); g.fill();
-      g.restore();
-    }
-    // 骑士：腰间佩剑（剑身指向最近的敌球）
-    if (b.skill?.def?.id === 'knight' && b._swordAngle !== undefined) {
-      g.save();
-      const dir = b._swordAngle;
-      const bx = b.x + Math.cos(dir) * r;
-      const by = b.y + Math.sin(dir) * r;
-      g.strokeStyle = '#c8c8c8';
-      g.lineWidth = 5;
-      g.lineCap = 'round';
-      g.beginPath();
-      g.moveTo(bx, by);
-      g.lineTo(bx + Math.cos(dir) * r * 0.9, by + Math.sin(dir) * r * 0.9);
-      g.stroke();
-      g.fillStyle = '#f0f0f0';
-      g.beginPath(); g.arc(bx + Math.cos(dir) * r * 0.9, by + Math.sin(dir) * r * 0.9, 3.5, 0, Math.PI * 2); g.fill();
-      g.strokeStyle = '#8a6d3b';
-      g.lineWidth = 4;
-      const hx = bx + Math.cos(dir) * r * 0.25;
-      const hy = by + Math.sin(dir) * r * 0.25;
-      const px = Math.cos(dir + Math.PI / 2) * 7;
-      const py = Math.sin(dir + Math.PI / 2) * 7;
-      g.beginPath();
-      g.moveTo(hx - px, hy - py);
-      g.lineTo(hx + px, hy + py);
-      g.stroke();
-      g.restore();
-    }
-    // 法师：灰色八字胡（球中央偏下，固定不动）
-    if (b.skill?.def?.id === 'mage') {
-      g.save();
-      g.strokeStyle = '#7a7a7a';
-      g.lineWidth = 3.5;
-      g.lineCap = 'round';
-      const cx = b.x, cy = b.y + r * 0.18;
-      g.beginPath();
-      g.moveTo(cx - r * 0.06, cy - r * 0.08);
-      g.quadraticCurveTo(cx - r * 0.34, cy - r * 0.1, cx - r * 0.42, cy + r * 0.12);
-      g.moveTo(cx + r * 0.06, cy - r * 0.08);
-      g.quadraticCurveTo(cx + r * 0.34, cy - r * 0.1, cx + r * 0.42, cy + r * 0.12);
-      g.stroke();
-      g.restore();
-    }
-    // 牧师：木头色十字架（球中央偏下，固定不动）
-    if (b.skill?.def?.id === 'priest') {
-      g.save();
-      g.strokeStyle = '#8b5a2b';
-      g.lineWidth = 5;
-      g.lineCap = 'round';
-      const cx = b.x, cy = b.y + r * 0.18;
-      g.beginPath();
-      g.moveTo(cx, cy - r * 0.55); g.lineTo(cx, cy + r * 0.55);
-      g.moveTo(cx - r * 0.35, cy - r * 0.12); g.lineTo(cx + r * 0.35, cy - r * 0.12);
-      g.stroke();
-      g.restore();
-    }
+    // ★ 职业装饰：必须在球体填充之后绘制（否则被球色盖住——老bug）
+    drawBallDeco(g, b.x, b.y, r, b.skill?.def?.id, b._swordAngle);
     // 受击闪白 / 加血闪绿（叠在球体+装饰上）
     g.save();
     if (b.flash > 0) {

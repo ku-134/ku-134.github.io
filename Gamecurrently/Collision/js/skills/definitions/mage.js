@@ -6,6 +6,7 @@ import CONFIG from '../../config.js';
 // 发射完后进入2秒空窗期，之后重新积累
 // 蓄能与发射动作在 effect onUpdate（0~6s）完成；发射后的飞行/命中由 MatchSim._updateArcane 管理
 //   （飞弹独立于效果存在，空窗期继续飞，命中/撞墙才消失）
+// ★ effect 必须带 duration（6s）——否则效果永不结束、passiveActive 恒 true、循环卡死
 // 八字胡装饰（球中央偏下固定）由 renderer 绘制（b.skill.def.id === 'mage'）
 // 冷却型被动：effectId='arcane' → 蓄能期间 passiveActive，空窗期倒计时2s（8-6）
 export default {
@@ -20,7 +21,10 @@ export default {
     cooldown: CONFIG.MAGE.cooldown,
     effectId: 'arcane',
     onTrigger(owner, inst, ctx) {
-      ctx.effects.apply(owner, 'arcane', { t: 0, spawned: 0, fired: false });
+      ctx.effects.apply(owner, 'arcane', {
+        duration: CONFIG.MAGE.effectDuration,   // 6s：蓄能5s + 发射动作1s
+        t: 0, spawned: 0, fired: false,
+      });
     }
   },
   effects: [{

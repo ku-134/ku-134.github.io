@@ -3,7 +3,8 @@ import CONFIG from '../../config.js';
 // 法师【奥术飞弹】：被动游走远程——8秒循环：
 // 前5秒每秒在球周围五角星位置依次生成1颗蓄能飞弹（共5颗，跟随球转）
 //   第5颗在第5秒集齐，完整展示1秒（chargeTime=5 生成完毕 → fireTime=6 才发射）
-// 第6秒将5颗飞弹随机向四面八方发射（撞球/撞边界即消失），每颗命中敌球5伤
+// 第6秒向敌球方向 ±25°（共50°）散射发射（带瞄准属性，不再完全随机）
+// 飞弹撞球/撞边界即消失，每颗命中敌球5伤
 // 发射完后进入2秒空窗期，之后重新积累
 // 蓄能与发射动作在 effect onUpdate（0~6s）完成；发射后的飞行/命中由 MatchSim._updateArcane 管理
 // ★ effect 必须带 duration（6s）——否则效果永不结束、passiveActive 恒 true、循环卡死
@@ -15,7 +16,7 @@ export default {
   type: 'passive',
   category: '剑与魔法',
   skillName: '奥术飞弹',
-  desc: '被动【奥术飞弹】(8秒循环)：前5秒每秒在球周围五角星位置生成1颗蓄能飞弹（第5秒集齐5颗并展示1秒），第6秒全部向随机方向发射；每颗飞弹命中敌球造成5点伤害，撞球或边界即消失。发射完进入2秒空窗期后重新积累。游走远程，飞弹会自己找人！',
+  desc: '被动【奥术飞弹】(8秒循环)：前5秒每秒在球周围五角星位置生成1颗蓄能飞弹（第5秒集齐5颗并展示1秒），第6秒向敌球方向50°扇形内散射发射；每颗飞弹命中敌球造成5点伤害，撞球或边界即消失。发射完进入2秒空窗期后重新积累。游走远程，弹幕带瞄准！',
   color: '#B89FEA',
   passive: {
     cooldown: CONFIG.MAGE.cooldown,
@@ -50,13 +51,16 @@ export default {
           p.spawned++;
           ctx.events.emit('fx:charge', { x: b.x, y: b.y });
         }
-        // 第6秒（fireTime）：全部发射（随机方向）——与集齐（chargeTime=5）间隔1秒
+        // 第6秒（fireTime）：向敌球方向 50° 扇形散射（带瞄准属性）
         if (p.t >= CONFIG.MAGE.fireTime) {
           p.fired = true;
+          const enemy = ctx.getEnemy(b);
+          const base = enemy && !enemy.dead ? Math.atan2(enemy.y - b.y, enemy.x - b.x) : b.angle;
+          const half = CONFIG.MAGE.spread / 2;   // ±25°
           for (const m of phs) {
             if (m.isMissile && m.charging && m.owner === b) {
               m.charging = false;
-              m.angle = Math.random() * Math.PI * 2;
+              m.angle = base + (Math.random() * 2 - 1) * half;
               m.speed = CONFIG.MAGE.missileSpeed;
             }
           }

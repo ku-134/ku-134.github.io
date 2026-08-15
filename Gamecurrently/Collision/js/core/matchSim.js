@@ -9,6 +9,7 @@ import { move, collideWalls, collideBalls } from './physics.js';
 //   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），
 //   hp 极高不会死，无 dashSkill（不触发机动冲刺）
 // ★ 魔王专属：召唤魔族（每5~8s一只）→ 魔族游走1~4s后瞄准场上球冲刺撞击（10伤）
+// ★ 狂暴降临瞬间发 berserk 音效（sfx:play 事件 → 全局管理器）
 export class MatchSim {
   constructor(ctx, balls, wilds = []) {
     this.ctx = ctx;
@@ -42,7 +43,10 @@ export class MatchSim {
     this.time += dt;
     // 狂暴：30s 后每秒全场 10 伤（只对玩家球；战场球不死无需）
     if (!this.berserk) {
-      if (this.time >= CONFIG.BERSERK.delay) { this.berserk = true; this.berserkTime = 0; this.berserkTick = 0; }
+      if (this.time >= CONFIG.BERSERK.delay) {
+        this.berserk = true; this.berserkTime = 0; this.berserkTick = 0;
+        this.ctx.events.emit('sfx:play', { name: 'berserk' });
+      }
     } else {
       this.berserkTime += dt;
       this.berserkTick += dt;

@@ -83,6 +83,7 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
 }
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
+// 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔）
 // 装饰（魔王角/骑士剑/法师胡须/牧师十字架）必须画在球体填充之后，否则被球体盖住
 // 特效：斩击扇形 / 奥术飞弹（蓄能绕球+飞行拖影）/ 闪白(受击)/闪绿(加血) + 红/绿数字
 export class Renderer {
@@ -153,7 +154,8 @@ export class Renderer {
       if (fx.t > 0.35) this.slashFx.splice(i, 1);
     }
   }
-  render(balls, t, phantoms = []) {
+  // render(balls, t, phantoms, battleMap)：battleMap 提供场地绘制（js/maps/*）
+  render(balls, t, phantoms = [], battleMap = null) {
     const g = this.g;
     const { w, h } = CONFIG.FIELD;
     g.setTransform(this.dpr * this.cssScale, 0, 0, this.dpr * this.cssScale, 0, 0);
@@ -175,7 +177,9 @@ export class Renderer {
         b._swordAngle = other ? Math.atan2(other.y - b.y, other.x - b.x) : b.angle;
       }
     }
-    this.drawField(g, w, h);
+    // 场地绘制：battleMap.draw（arena/ringHole）或默认矩形
+    if (battleMap?.draw) battleMap.draw(g, t, w, h);
+    else this.drawField(g, w, h);
     for (const a of this.aimLines) this.drawAim(g, a);
     for (const fx of this.lineFx) this.drawLineFx(g, fx);
     for (const fx of this.swapFx) this.drawSwapFx(g, fx);

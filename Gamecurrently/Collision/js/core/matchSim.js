@@ -6,10 +6,8 @@ import { move, collideWalls, collideBalls } from './physics.js';
 // ★ 必须同时更新 skill（职业技能）与 dashSkill（基础冲刺）：
 //   否则冲刺冷却永不递减（用完卡死）、瞄准帧追踪失效
 // ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类，第三方）：
-//   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），
-//   hp 极高不会死，无 dashSkill（不触发机动冲刺）
-// ★ 魔王专属：召唤魔族（每5~8s一只）→ 魔族游走1~4s后瞄准场上球冲刺撞击（10伤）
-// ★ 法师专属：奥术飞弹飞行阶段（蓄能在技能 effect 内完成；飞行弹独立于效果继续飞）
+//   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），hp 极高不会死
+// ★ 魔王：召唤魔族；法师：奥术飞弹飞行；骑士：斩击扇形（isSlashFx 实体随 phantoms 同步）
 // ★ 狂暴降临瞬间发 berserk 音效（sfx:play 事件 → 全局管理器）
 export class MatchSim {
   constructor(ctx, balls, wilds = []) {
@@ -42,6 +40,7 @@ export class MatchSim {
     }
     this._updateDemon(dt, all);
     this._updateArcane(dt, all);
+    this._updateFx(dt);
     this.time += dt;
     // 狂暴：30s 后每秒全场 10 伤（只对玩家球；战场球不死无需）
     if (!this.berserk) {
@@ -132,8 +131,12 @@ export class MatchSim {
       if (!m.isMissile || m.charging) continue;
       m.x += Math.cos(m.angle) * m.speed * dt;
       m.y += Math.sin(m.angle) * m.speed * dt;
-      // 撞边界即消失
-      if (m.x < m.radius || m.x > CONFIG.FIELD.w - m.radius || m.y < m.radius || m.y > CONFIG.FIELD.h - m.radius) {
+      // 撞边界即消失（矩形默认；ringHole 用外圆边界）
+      const map = this.ctx.battleMap;
+      if (map?.id === 'ringHole') {
+        const cx = CONFIG.FIELD.w / 2, cy = CONFIG.FIELD.h / 2;
+        if (Math.hypot(m.x - cx, m.y - cy) > map.radius - m.radius) { ph.splice(i, 1); continue; }
+      } else if (m.x < m.radius || m.x > CONFIG.FIELD.w - m.radius || m.y < m.radius || m.y > CONFIG.FIELD.h - m.radius) {
         ph.splice(i, 1);
         continue;
       }
@@ -141,12 +144,22 @@ export class MatchSim {
       for (const b of all) {
         if (b === m.owner || b.dead) continue;
         if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
-          if (!b.skill?.def?.id?.startsWith?.('wild')) b.takeDamage(m.damage, this.ctx, null, true);
+          if (!b.skill?.def?.type?.startsWith?.('wild')) b.takeDamage(m.damage, this.ctx, null, true);
           this.ctx.events.emit('fx:missileHit', { x: m.x, y: m.y, color: m.color });
           ph.splice(i, 1);
           break;
         }
       }
+    }
+  }
+  // 斩击扇形（isSlashFx）生命周期：0.35s 后移除（随 phantoms 同步两端）
+  _updateFx(dt) {
+    const ph = this.ctx.phantoms = this.ctx.phantoms || [];
+    for (let i = ph.length - 1; i >= 0; i--) {
+      const fx = ph[i];
+      if (!fx.isSlashFx) continue;
+      fx.t += dt;
+      if (fx.t > 0.35) ph.splice(i, 1);
     }
   }
   // 顶部倒计时剩余秒数（普通=距狂暴，狂暴=距结束）

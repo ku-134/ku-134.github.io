@@ -79,21 +79,21 @@ export default {
     const ddx = lx - qx, ddy = ly - qy;
     const dist = Math.hypot(ddx, ddy);
     if (dist < r) {
-      // 法线（孔局部，指向球）：球心在孔内时取最近边方向
-      let nx2, ny2;
+      // 目标位置（孔局部）：球心到矩形最近点（或最近边）向外 r
+      let nx2, ny2, px, py;
       if (dist < 0.001) {
+        // 球心在孔内：沿最近边法线推出到边外 r（防止只推 r 仍卡孔内）
         const dL = lx + half, dR = half - lx, dT = ly + half, dB = half - ly;
         const m = Math.min(dL, dR, dT, dB);
-        if (m === dL) { nx2 = -1; ny2 = 0; }
-        else if (m === dR) { nx2 = 1; ny2 = 0; }
-        else if (m === dT) { nx2 = 0; ny2 = -1; }
-        else { nx2 = 0; ny2 = 1; }
+        if (m === dL) { nx2 = -1; ny2 = 0; px = -half - r; py = Math.max(-half, Math.min(half, ly)); }
+        else if (m === dR) { nx2 = 1; ny2 = 0; px = half + r; py = Math.max(-half, Math.min(half, ly)); }
+        else if (m === dT) { nx2 = 0; ny2 = -1; py = -half - r; px = Math.max(-half, Math.min(half, lx)); }
+        else { nx2 = 0; ny2 = 1; py = half + r; px = Math.max(-half, Math.min(half, lx)); }
       } else {
         nx2 = ddx / dist; ny2 = ddy / dist;
+        px = qx + nx2 * r; py = qy + ny2 * r;
       }
-      // 位置修正：q + n*r（孔局部）→ 世界
-      const px = qx + nx2 * r;
-      const py = qy + ny2 * r;
+      // 位置修正（孔局部）→ 世界
       b.x = cx + px * Math.cos(ang) - py * Math.sin(ang);
       b.y = cy + px * Math.sin(ang) + py * Math.cos(ang);
       // 反弹（世界法线）

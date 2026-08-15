@@ -19,15 +19,13 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-i
 
 /* 屏幕与面板 */
 .screen, .panel { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; }
-/* 非活动屏幕：完全不可见不可交互（防止透明覆盖层吞点击） */
 .screen:not(.active) { visibility: hidden; pointer-events: none; }
-/* 面板：纯 opacity 淡入（不用 transform，避免合成层缩放/位移渲染 bug） */
 .panel { background: var(--paper); z-index: 5; border: 3px solid var(--ink); box-shadow: 6px 6px 0 rgba(31,26,23,0.9); border-radius: 30px 10px 30px 10px \/ 10px 30px 10px 30px; transition: opacity 0.25s ease; opacity: 0; }
 .panel.show { opacity: 1; }
 .hidden { display: none !important; }
 .screen.active { z-index: 2; }
 
-/* 模式选择弹窗：遮罩 + 居中纸卡（入场弹出动画） */
+/* 模式选择弹窗 */
 #panel-start { position: fixed; inset: 0; z-index: 10; background: rgba(31,26,23,0.55); border: none; box-shadow: none; border-radius: 0; }
 .modal-box { background: var(--paper); border: 4px solid var(--ink); border-radius: 30px 10px 30px 10px \/ 10px 30px 10px 30px; box-shadow: 8px 8px 0 rgba(31,26,23,0.85); padding: 34px 46px; display: flex; flex-direction: column; gap: 16px; align-items: center; animation: popIn 0.3s ease; }
 @keyframes popIn {
@@ -35,17 +33,22 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-i
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* 音效设置弹窗：遮罩 + 纸卡（手机友好，内容居中不过长） */
+/* 音效设置弹窗 */
 #panel-sfx { position: fixed; inset: 0; z-index: 10; background: rgba(31,26,23,0.55); border: none; box-shadow: none; border-radius: 0; }
 .sfx-modal { padding: 26px 40px; gap: 13px; max-height: 86vh; overflow-y: auto; }
 .sfx-modal .set-row { min-width: 260px; }
+
+/* 专属提示弹窗（替代浏览器 alert） */
+#game-alert { position: fixed; inset: 0; z-index: 90; background: rgba(31,26,23,0.55); display: flex; align-items: center; justify-content: center; }
+.alert-box { max-width: 420px; text-align: center; }
+#alert-msg { font-size: 1.15rem; line-height: 1.6; word-break: break-word; }
 
 /* 首页 */
 #gameTitle { font-size: clamp(2.6rem, 9vw, 5.6rem); letter-spacing: 0.1em; color: var(--red); text-shadow: 3px 3px 0 var(--ink); transform: rotate(-2deg); }
 .subtitle { color: var(--ink); letter-spacing: 0.4em; opacity: 0.7; margin-bottom: 30px; }
 .home-btns { display: flex; flex-direction: column; gap: 16px; }
 
-/* 按钮：纯色块 + 黑描边 + 手绘圆角 */
+/* 按钮 */
 .btn { cursor: pointer; font-family: inherit; border: 3px solid var(--ink); box-shadow: 4px 4px 0 rgba(31,26,17,0.85); background: var(--green); color: var(--ink); padding: 12px 34px; font-size: 1.2rem; border-radius: 255px 15px 225px 15px \/ 15px 225px 15px 255px; transition: transform 0.12s, box-shadow 0.12s; -webkit-tap-highlight-color: transparent; }
 .btn:hover { transform: rotate(-1.2deg) translateY(-2px); box-shadow: 6px 6px 0 rgba(31,26,17,0.85); }
 .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 rgba(31,26,17,0.85); }
@@ -64,12 +67,12 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .tip { opacity: 0.7; font-size: 0.9rem; }
 
 /* 职业分类标签 */
-.cat-tabs { display: flex; gap: 12px; align-items: center; }
+.cat-tabs { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
 .cat-tab { cursor: pointer; font-family: inherit; border: 3px solid var(--ink); background: #fff; color: var(--ink); padding: 6px 20px; font-size: 1rem; border-radius: 20px 6px 20px 6px \/ 6px 20px 6px 20px; box-shadow: 3px 3px 0 rgba(31,26,17,0.7); transition: transform 0.1s; }
 .cat-tab:hover { transform: rotate(-1deg); }
 .cat-tab.active { background: var(--yellow); transform: rotate(-1.5deg) scale(1.05); }
 
-/* 卡片：白纸块 + 黑描边 */
+/* 卡片 */
 .card-list { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 780px; max-height: 55vh; overflow-y: auto; padding: 8px; }
 .card { cursor: pointer; width: 150px; padding: 14px; border-radius: 20px 6px 20px 6px \/ 6px 20px 6px 20px; border: 3px solid var(--ink); background: #fff; box-shadow: 4px 4px 0 rgba(31,26,17,0.8); text-align: center; transition: transform 0.12s; }
 .card:hover, .card.selected { transform: rotate(-1.5deg) scale(1.04); background: var(--yellow); }
@@ -77,14 +80,14 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .card .cname { font-weight: bold; font-size: 1.05rem; }
 .card .cskill { font-size: 0.85rem; opacity: 0.75; }
 
-/* 随机轮播卡：单个大球（纯展示，不可点击） */
+/* 随机轮播卡 */
 .roulette-card { width: 230px; padding: 26px; cursor: default; }
 .roulette-card:hover { transform: none; background: #fff; }
 .roulette-card .roulette-orb { width: 140px; height: 140px; margin: 0 auto 14px; }
 .roulette-card .cname { font-size: 1.4rem; }
 .roulette-card .cskill { font-size: 1rem; }
 
-/* 图鉴：左半列表 + 右半详情（大展示框，整体可滚动），返回左下角 */
+/* 图鉴 */
 .bestiary-panel { justify-content: flex-start; align-items: stretch; padding: 30px 26px 84px; }
 .bestiary-panel .cat-tabs { margin-bottom: 10px; }
 .bestiary-wrap { display: flex; gap: 24px; flex: 1; min-height: 0; width: 100%; }
@@ -92,20 +95,19 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .bestiary-wrap .detail { flex: 1 1 50%; max-width: none; min-width: 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 16px; text-align: center; background: #fff; border: 3px solid var(--ink); border-radius: 24px 8px 24px 8px \/ 8px 24px 8px 24px; box-shadow: 5px 5px 0 rgba(31,26,17,0.8); padding: 30px 28px; line-height: 1.6; overflow-y: auto; scrollbar-width: thin; }
 .detail-orb { width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--ink); box-shadow: 5px 5px 0 rgba(31,26,17,0.6); flex-shrink: 0; }
 #detail-name { color: var(--red); letter-spacing: 0.1em; flex-shrink: 0; }
-/* 技能描述：随父容器（右半展示框）整体滚动，不单独溢出 */
 #detail-desc { font-size: 0.95rem; line-height: 1.7; overflow: visible; word-break: break-word; overflow-wrap: break-word; padding: 0 4px; }
 .corner-back { position: absolute; left: 24px; bottom: 24px; }
 
-/* 设置面板：精简内容，返回按钮左下角固定（不再溢出点不到） */
+/* 设置面板：内容可滚动，返回按钮 fixed 固定不随滚动 */
 .settings-panel { overflow-y: auto; justify-content: flex-start; padding: 48px 0 90px; gap: 16px; }
-.settings-panel .corner-back { position: absolute; left: 24px; bottom: 24px; z-index: 3; }
+.settings-panel .corner-back { position: fixed; left: 24px; bottom: 24px; z-index: 15; }
 
-/* 设置行 */
+/* 设置行 + 音效开关 */
 .set-row { display: flex; align-items: center; gap: 14px; font-size: 1.05rem; }
 .set-row input { background: #fff; border: 3px solid var(--ink); color: var(--ink); padding: 8px 12px; border-radius: 10px 4px 10px 4px \/ 4px 10px 4px 10px; font-family: inherit; font-size: 1rem; }
 .set-row input[type="checkbox"] { width: 26px; height: 26px; margin-left: auto; accent-color: var(--orange); border: 3px solid var(--ink); border-radius: 6px; cursor: pointer; }
 
-/* 选球界面：顶部一排（左上=AI的球+返回并列 | 中间=选择球 | 右上=你的球），下方左右对称选择器，底部确认 */
+/* 选球界面（单机） */
 .select-screen { justify-content: flex-start; padding: 0; }
 .select-header { display: flex; align-items: center; width: 100%; padding: 16px 26px 10px; gap: 16px; }
 .select-header-left { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
@@ -118,7 +120,7 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .select-col .card { width: 130px; }
 .select-confirm-wrap { padding: 12px 0 26px; }
 
-/* 战场选择：左右滑动（横向滚动）卡片，含小型渲染图 + 文案 + 随机战场 */
+/* 战场选择（单机）滑动 */
 .battle-scroll { display: flex; gap: 22px; overflow-x: auto; overflow-y: hidden; max-width: 92vw; width: 100%; padding: 10px 18px 18px; scroll-snap-type: x proximity; align-items: flex-start; }
 .battle-card { cursor: pointer; flex: 0 0 auto; width: 280px; background: #fff; border: 3px solid var(--ink); border-radius: 20px 6px 20px 6px \/ 6px 20px 6px 20px; box-shadow: 4px 4px 0 rgba(31,26,17,0.8); padding: 14px; text-align: center; scroll-snap-align: start; transition: transform 0.12s; }
 .battle-card:hover, .battle-card.selected { transform: rotate(-1deg) scale(1.03); background: var(--yellow); }
@@ -127,19 +129,26 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .battle-card .cskill { font-size: 0.85rem; opacity: 0.8; line-height: 1.5; }
 .battle-card.rnd .battle-preview { width: 100%; height: 146px; border: 3px solid var(--ink); border-radius: 10px 3px 10px 3px \/ 3px 10px 3px 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-size: 3.4rem; background: var(--yellow); }
 
-/* 联机 */
+/* 联机：选球双列 + 场地选择 */
 .online-cols { display: flex; gap: 40px; align-items: flex-start; }
 .col { display: flex; flex-direction: column; gap: 14px; align-items: center; min-width: 200px; }
 .room-input { background: #fff; border: 3px solid var(--ink); color: var(--ink); padding: 12px; border-radius: 12px 4px 12px 4px \/ 4px 12px 4px 12px; font-size: 1.6rem; letter-spacing: 0.5em; text-align: center; width: 220px; font-family: inherit; }
 .room-code { font-size: 3.2rem; letter-spacing: 0.3em; color: var(--red); text-shadow: 3px 3px 0 var(--ink); }
-/* 房间内：等待 + 选球 */
-.online-wait { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.online-wait .card-list { max-height: 32vh; }
+.online-wait { display: flex; flex-direction: column; align-items: center; gap: 10px; max-height: 100%; }
+.online-pick-cols { display: flex; gap: 48px; justify-content: center; width: 100%; }
+.online-pick-cols .select-col { max-width: 320px; }
+.online-pick-cols .card-list { max-height: 24vh; max-width: 300px; }
+.enemy-ball { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; box-shadow: 4px 4px 0 rgba(31,26,17,0.7); display: flex; align-items: center; justify-content: center; font-size: 2.4rem; color: rgba(31,26,23,0.5); }
+.online-battle-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.battle-title { font-size: 0.95rem; padding: 4px 14px; }
+.online-battle-preview { display: flex; align-items: center; gap: 10px; }
+.online-battle-preview canvas { width: 240px; height: auto; border: 3px solid var(--ink); border-radius: 10px 3px 10px 3px \/ 3px 10px 3px 10px; }
+.online-battle-preview span { font-size: 0.9rem; opacity: 0.8; max-width: 130px; }
 
-/* 选球\/联机\/战场：不透明底，遮住首页背景模拟对战 */
+/* 选球/联机/战场：不透明底 */
 #screen-select, #screen-online, #screen-battle { background: var(--paper); }
 
-/* 对战：手绘本场地（单机 + 联机专用战场都必须不透明！） */
+/* 对战 */
 #screen-game, #screen-game-online { background: var(--paper); }
 #gameCanvas, #gameCanvasOnline { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 4px solid var(--ink); border-radius: 14px 4px 14px 4px \/ 4px 14px 4px 14px; box-shadow: 8px 8px 0 rgba(31,26,17,0.35); }
 #hud, #hud-online { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 14px 20px; pointer-events: none; }
@@ -152,7 +161,7 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .bar.passive .fill { background: var(--orange); }
 .bar.passive .fill.blue { background: var(--blue); }
 
-/* 狂暴倒计时：顶部居中 */
+/* 狂暴倒计时 */
 .match-timer { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); font-size: 2rem; font-weight: bold; background: #fff; border: 3px solid var(--ink); border-radius: 12px 4px 12px 4px \/ 4px 12px 4px 12px; box-shadow: 3px 3px 0 rgba(31,26,17,0.5); padding: 0 18px; z-index: 6; pointer-events: none; }
 .match-timer.berserk { color: var(--red); background: var(--yellow); animation: timerPulse 0.5s ease-in-out infinite alternate; }
 @keyframes timerPulse {
@@ -160,14 +169,14 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
   to { transform: translateX(-50%) scale(1.12); }
 }
 
-/* 技能按钮（手机）：dash-btn 左下蓝（全职业）+ active-btn 右下橙（仅主动职业） */
+/* 技能按钮 */
 .skill-btn { position: absolute; left: 16px; bottom: 20px; width: 88px; height: 88px; border-radius: 50%; border: 3px solid var(--ink); background: var(--blue); box-shadow: 5px 5px 0 rgba(31,26,17,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; z-index: 6; touch-action: none; }
 .skill-btn .sname { font-size: 0.9rem; }
 .skill-btn .scd { font-size: 1.2rem; font-weight: bold; }
 .skill-btn.on-cd { background: #cfc6ae; box-shadow: none; }
 .active-pos { left: auto; right: 16px; background: var(--orange); }
 
-/* 冷却条（电脑）：cd-bar 底部居中（职业） + dash-pos 左下（冲刺） */
+/* 冷却条 */
 .cd-bar { position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; background: #fff; border: 3px solid var(--ink); box-shadow: 4px 4px 0 rgba(31,26,17,0.7); padding: 8px 16px; border-radius: 16px 5px 16px 5px \/ 5px 16px 5px 16px; z-index: 6; }
 .cd-bar .bar { width: 220px; height: 14px; }
 .cd-bar .bar .fill { background: var(--blue); }

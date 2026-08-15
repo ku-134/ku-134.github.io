@@ -9,6 +9,7 @@ import { move, collideWalls, collideBalls } from './physics.js';
 //   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），
 //   hp 极高不会死，无 dashSkill（不触发机动冲刺）
 // ★ 魔王专属：召唤魔族（每5~8s一只）→ 魔族游走1~4s后瞄准场上球冲刺撞击（10伤）
+// ★ 法师专属：奥术飞弹飞行阶段（蓄能在技能 effect 内完成；飞行弹独立于效果继续飞）
 // ★ 狂暴降临瞬间发 berserk 音效（sfx:play 事件 → 全局管理器）
 export class MatchSim {
   constructor(ctx, balls, wilds = []) {
@@ -40,6 +41,7 @@ export class MatchSim {
       }
     }
     this._updateDemon(dt, all);
+    this._updateArcane(dt, all);
     this.time += dt;
     // 狂暴：30s 后每秒全场 10 伤（只对玩家球；战场球不死无需）
     if (!this.berserk) {
@@ -119,6 +121,31 @@ export class MatchSim {
           }
         }
         if (hit) ph.splice(i, 1);
+      }
+    }
+  }
+  // 法师：奥术飞弹飞行阶段（蓄能弹由技能 effect 管理；飞行弹撞球/撞墙即消失）
+  _updateArcane(dt, all) {
+    const ph = this.ctx.phantoms = this.ctx.phantoms || [];
+    for (let i = ph.length - 1; i >= 0; i--) {
+      const m = ph[i];
+      if (!m.isMissile || m.charging) continue;
+      m.x += Math.cos(m.angle) * m.speed * dt;
+      m.y += Math.sin(m.angle) * m.speed * dt;
+      // 撞边界即消失
+      if (m.x < m.radius || m.x > CONFIG.FIELD.w - m.radius || m.y < m.radius || m.y > CONFIG.FIELD.h - m.radius) {
+        ph.splice(i, 1);
+        continue;
+      }
+      // 命中球（非主人）即消失；玩家球受伤5点，战场球只挡弹
+      for (const b of all) {
+        if (b === m.owner || b.dead) continue;
+        if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
+          if (!b.skill?.def?.id?.startsWith?.('wild')) b.takeDamage(m.damage, this.ctx, null, true);
+          this.ctx.events.emit('fx:missileHit', { x: m.x, y: m.y, color: m.color });
+          ph.splice(i, 1);
+          break;
+        }
       }
     }
   }

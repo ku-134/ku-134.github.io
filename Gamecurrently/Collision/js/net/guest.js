@@ -15,12 +15,13 @@ export function makeHudSkill(def) {
 }
 
 // 客户端：接收主机状态 → 更新渲染对象（球/幻影/HUD状态） → 转发输入指令
-// 伤害数字：本地监测 HP 下降差值生成（不占用网络信道，与房主端特效一致）
+// 本地监测：HP 下降 → 红色伤害数字；HP 上升 → 绿色加血数字（均不占用信道）
 export class Guest {
-  constructor({ signal, onResult, onLocalDamage }) {
+  constructor({ signal, onResult, onLocalDamage, onLocalHeal }) {
     this.signal = signal;
     this.onResult = onResult;
     this.onLocalDamage = onLocalDamage;   // (x, y, amount) 本地渲染伤害数字
+    this.onLocalHeal = onLocalHeal;       // (x, y, amount) 本地渲染加血数字
     this.balls = null;
     this.phantoms = [];
     this.berserk = { active: false, left: 0 };
@@ -37,9 +38,13 @@ export class Guest {
       b.x = s.x; b.y = s.y; b.angle = s.angle;
       b.hp = s.hp; b.scale = s.scale;
       b.dashing = s.dashing; b.flash = s.flash ? 1 : 0;
-      // 本地监测 HP 下降 → 伤害数字（不占用信道；首帧跳过）
-      if (this._hpInited && prevHp > s.hp && this.onLocalDamage) {
-        this.onLocalDamage(b.x, b.y - b.radiusScaled - 10, +(prevHp - s.hp).toFixed(1));
+      // 本地监测 HP 变化 → 数字（首帧跳过）
+      if (this._hpInited) {
+        if (prevHp > s.hp && this.onLocalDamage) {
+          this.onLocalDamage(b.x, b.y - b.radiusScaled - 10, +(prevHp - s.hp).toFixed(1));
+        } else if (prevHp < s.hp && this.onLocalHeal) {
+          this.onLocalHeal(b.x, b.y - b.radiusScaled - 10, +(s.hp - prevHp).toFixed(1));
+        }
       }
       // 效果重建（渲染用：护盾锯齿/磁铁圈/腐蚀泡/巨大化描边）
       b.effects.clear();
@@ -55,9 +60,10 @@ export class Guest {
       }
     });
     this._hpInited = true;
+    // 幻影/飞弹/斩击扇形：保留类型字段，两端渲染一致
     this.phantoms = d.phantoms.map(p => ({
       ...p,
-      radius: p.isMinion ? 14 : 20,
+      radius: p.radius || (p.isMinion ? 14 : 20),
       isPhantom: true,
       speed: 0,
     }));

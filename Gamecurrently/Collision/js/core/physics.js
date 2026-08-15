@@ -14,7 +14,17 @@ function fireCollision(ball, other, ctx, t) {
 }
 
 // 边界反弹，返回是否碰撞
+// ★ 场地边界由 ctx.battleMap（场地文件）控制：arena=矩形 / ringHole=外圆+旋转方孔
+//   场地文件提供 collide(ball, t)；无场地时退回默认矩形
 export function collideWalls(ball, ctx, t) {
+  const map = ctx.battleMap;
+  const hit = map?.collide ? map.collide(ball, t) : rectCollide(ball);
+  if (hit) fireCollision(ball, null, ctx, t);
+  return hit;
+}
+
+// 默认矩形边界（经典角斗场）
+function rectCollide(ball) {
   const { w, h } = CONFIG.FIELD;
   const r = ball.radiusScaled;
   let hit = false;
@@ -22,7 +32,6 @@ export function collideWalls(ball, ctx, t) {
   else if (ball.x > w - r) { ball.x = w - r; ball.setAngle(Math.PI - ball.angle); hit = true; }
   if (ball.y < r) { ball.y = r; ball.setAngle(-ball.angle); hit = true; }
   else if (ball.y > h - r) { ball.y = h - r; ball.setAngle(-ball.angle); hit = true; }
-  if (hit) fireCollision(ball, null, ctx, t);
   return hit;
 }
 

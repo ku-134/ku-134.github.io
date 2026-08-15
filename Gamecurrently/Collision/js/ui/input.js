@@ -1,4 +1,5 @@
 // 输入适配：手机触控按钮 / 电脑键盘按键
+import { bus } from '../core/eventBus.js';
 
 export function isTouchDevice() {
   return (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window;
@@ -41,9 +42,11 @@ export function bindHold({ el, isTouch, key, onPress, onRelease }) {
 
 // 点击绑定：只用 click（pointerdown 会在按下瞬间弹窗，
 // 松手时误触弹出层按钮；去掉全屏后 click 已足够可靠）
+// 点击音效：ui_click（交给全局音效管理器，首次手势已解锁）
 export function bindTap(el, fn) {
   if (!el) return () => {};
   const handler = e => {
+    bus.emit('sfx:play', { name: 'ui_click' });
     try { fn(e); } catch (err) { console.error('[bindTap]', err); }
   };
   el.addEventListener('click', handler);

@@ -13,6 +13,7 @@ import { MSG, isValidRoomCode } from '../net/protocol.js';
 
 // 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球（分类切换）→ 各自准备 → 321 → 主机权威对战
 // 双技能通道：基础冲刺（Space/左下，兵团带30伤）+ 职业技能（J键/右下，仅主动职业）
+// 战场干扰球：巨人 + 魔王（召唤魔族）——随 STATE 广播，客人端渲染
 // 客人端本地绘制瞄准线（aim inst）+ 本地监测 HP 生成伤害数字（均不占信道）
 // ★ _onData 必须处理 MSG.CMD（客人技能指令），漏了=联机技能无反应（老bug）
 export class OnlineMode {
@@ -27,7 +28,7 @@ export class OnlineMode {
     this.guest = null;
     this.balls = [];
     this.phantoms = [];
-    this.wild = null;
+    this.wilds = [];
     this.isHost = false;
     this.myClass = null;
     this.enemyClass = null;
@@ -223,16 +224,23 @@ export class OnlineMode {
     const { w, h } = CONFIG.FIELD;
     const b1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, name: '你' });
     const b2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, name: '对方' });
+    // 战场干扰球：巨人 + 魔王（两种模式端各自创建）
+    const makeWilds = () => {
+      const giant = new Ball({ x: w * 0.5, y: h * 0.3, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, name: '战场巨人' });
+      const demon = new Ball({ x: w * 0.5, y: h * 0.7, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, radius: CONFIG.BALL.radius * CONFIG.DEMON.scale, name: '战场魔王' });
+      return [giant, demon];
+    };
     if (this.isHost) {
       b1.skill = createSkill(d.hostClass, b1, this.ctx);
       b2.skill = createSkill(d.guestClass, b2, this.ctx);
       b1.dashSkill = createDashSkill(b1, this.ctx, d.hostClass);
       b2.dashSkill = createDashSkill(b2, this.ctx, d.guestClass);
-      // 战场干扰球（巨人，第三方）：只保留愤怒机制，无 dashSkill
-      this.wild = new Ball({ x: w * 0.5, y: h * 0.5, angle: Math.random() * Math.PI * 2, hp: CONFIG.WILD.hp, name: '战场巨人' });
-      this.wild.skill = createSkill('giant', this.wild, this.ctx);
-      this.wild.color = this.wild.skill.def.color;
-      this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], wild: this.wild, onResult: r => this._showResult(r) });
+      this.wilds = makeWilds();
+      this.wilds[0].skill = createSkill('giant', this.wilds[0], this.ctx);
+      this.wilds[1].skill = createSkill('demon', this.wilds[1], this.ctx);
+      this.wilds[0].color = this.wilds[0].skill.def.color;
+      this.wilds[1].color = this.wilds[1].skill.def.color;
+      this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], wilds: this.wilds, onResult: r => this._showResult(r) });
       b1.isPlayer = true;
       this._bindFx();
     } else {
@@ -240,22 +248,24 @@ export class OnlineMode {
       b2.skill = makeHudSkill(getSkillDef(d.guestClass));
       b1.dashSkill = makeHudSkill(getSkillDef('base_dash'));
       b2.dashSkill = makeHudSkill(getSkillDef('base_dash'));
-      this.wild = new Ball({ x: w * 0.5, y: h * 0.5, angle: 0, hp: CONFIG.WILD.hp, name: '战场巨人' });
-      this.wild.skill = makeHudSkill(getSkillDef('giant'));
-      this.wild.color = getSkillDef('giant').color;
+      this.wilds = makeWilds();
+      this.wilds[0].skill = makeHudSkill(getSkillDef('giant'));
+      this.wilds[1].skill = makeHudSkill(getSkillDef('demon'));
+      this.wilds[0].color = getSkillDef('giant').color;
+      this.wilds[1].color = getSkillDef('demon').color;
       this.guest = new Guest({
         signal: this.signal,
         onResult: () => {},
         onLocalDamage: (x, y, amount) => this.renderer.addDmgNum(x, y, amount),
       });
-      this.guest.setRenderBalls([b1, b2, this.wild]);
+      this.guest.setRenderBalls([b1, b2, ...this.wilds]);
       b2.isPlayer = true;
       this.dashAim = { owner: b2, aimDir: 0 };
       this.skillAim = { owner: b2, aimDir: 0 };
     }
     b1.color = getSkillDef(d.hostClass).color;
     b2.color = getSkillDef(d.guestClass).color;
-    this.balls = [b1, b2, this.wild];
+    this.balls = [b1, b2, ...this.wilds];
     this.ctx.balls = [b1, b2];   // getEnemy 只看玩家球（战场球不干扰目标选择）
     this.phase = 'countdown';
     this.countdown = 3;
@@ -335,6 +345,12 @@ export class OnlineMode {
     }));
     this._unsubs.push(this.ctx.events.on('fx:slash', ({ x, y, dir, r, hit }) => {
       this.renderer.addSlashFx(x, y, dir, r, hit);
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:summon', ({ x, y }) => {
+      this.renderer.particles.spawn(x, y, { color: '#6d4a7e', count: 14, speed: 90 });
+    }));
+    this._unsubs.push(this.ctx.events.on('fx:minionHit', ({ x, y, color }) => {
+      this.renderer.particles.spawn(x, y, { color, count: 16, speed: 150, size: 4 });
     }));
     this._unsubs.push(this.ctx.events.on('skill:aim', ({ inst, on }) => this.renderer.setAim(inst, on)));
     this._unsubs.push(this.ctx.events.on('ball:die', ({ ball }) => {
@@ -416,7 +432,7 @@ export class OnlineMode {
     this._unsubs = [];
     this.host = null; this.guest = null;
     this.balls = []; this.phantoms = [];
-    this.wild = null;
+    this.wilds = [];
     this.ctx.phantoms = [];
     this.dashAim = null; this.skillAim = null;
     this.hud.hideMatchTimer();

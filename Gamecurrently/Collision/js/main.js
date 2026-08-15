@@ -134,10 +134,11 @@ function renderBestiary(cat) {
 }
 renderBestiary(CATEGORIES[0]);
 
-// ---- 选球（单机）：左=设置AI的对战球，右=设置玩家自己的球（各自分类切换 + 随机轮播） ----
-// 分类标签：基础 / 剑与魔法 / 随机（随机=快速轮播所有可选职业，不含战场球）
+// ---- 选球（单机）：左=设置AI的对战球，右=设置玩家自己的球 ----
+// 分类标签：基础 / 剑与魔法 / 随机（随机不是分类：只展示单个球轮播职业，不可选择，
+// 确认出战时从可选职业随机决定；再来一局重新随机）
 const SELECT_CATS = [...CATEGORIES, '随机'];
-let selectedSkill = 'legion';
+let selectedSkill = 'legion';      // null = 随机（确认时决定）
 let selectedAISkill = 'legion';
 const selectList = document.getElementById('select-list');
 const selectTabs = document.getElementById('cat-tabs-select');
@@ -145,46 +146,44 @@ const aiList = document.getElementById('select-list-ai');
 const aiTabs = document.getElementById('cat-tabs-ai');
 let selectCat = CATEGORIES[0];
 let aiCat = CATEGORIES[0];
-// 轮播器：每150ms高亮下一张，当前高亮即所选；点击任意卡片停止并确定
-function makeRoulette(listEl, onSelect) {
+// 随机轮播：只展示一个球，每150ms切换职业（纯预览，不可点击选择）
+function makeRoulette(listEl) {
   let timer = null;
-  let cards = [];
   let defs = [];
   let idx = 0;
   return {
     start(defList) {
       this.stop();
       defs = defList;
-      renderCards(listEl, defs, {
-        selectedId: defs[0]?.id,
-        onPick: (d, card) => {
-          this.stop();
-          listEl.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
-          card.classList.add('selected');
-          onSelect(d.id);
-        },
-      });
-      cards = [...listEl.querySelectorAll('.card')];
-      if (!cards.length) return;
+      if (!defs.length) return;
+      listEl.innerHTML = '';
+      const card = document.createElement('div');
+      card.className = 'card roulette-card selected';
+      card.innerHTML = `<div class="orb roulette-orb"></div><div class="cname"></div><div class="cskill">?</div>`;
+      listEl.appendChild(card);
+      const orb = card.querySelector('.orb');
+      const name = card.querySelector('.cname');
+      const skill = card.querySelector('.cskill');
       idx = 0;
-      cards[idx].classList.add('selected');
-      onSelect(defs[idx].id);
-      timer = setInterval(() => {
-        cards[idx]?.classList.remove('selected');
-        idx = (idx + 1) % cards.length;
-        cards[idx]?.classList.add('selected');
-        onSelect(defs[idx].id);   // 跟随轮播更新所选
-      }, 150);
+      const show = () => {
+        const d = defs[idx];
+        orb.style.background = d.color;
+        name.textContent = d.name;
+        skill.textContent = d.skillName;
+      };
+      show();
+      timer = setInterval(() => { idx = (idx + 1) % defs.length; show(); }, 150);
     },
     stop() { if (timer) { clearInterval(timer); timer = null; } },
   };
 }
-const aiRoulette = makeRoulette(aiList, id => { selectedAISkill = id; });
-const selectRoulette = makeRoulette(selectList, id => { selectedSkill = id; });
+const aiRoulette = makeRoulette(aiList);
+const selectRoulette = makeRoulette(selectList);
 function renderSelect(cat) {
   selectCat = cat;
   renderCatTabs(selectTabs, SELECT_CATS, cat, renderSelect);
   if (cat === '随机') {
+    selectedSkill = null;          // 随机：确认时从可选职业随机决定
     selectRoulette.start(getSelectableDefs());
     return;
   }
@@ -203,6 +202,7 @@ function renderAI(cat) {
   aiCat = cat;
   renderCatTabs(aiTabs, SELECT_CATS, cat, renderAI);
   if (cat === '随机') {
+    selectedAISkill = null;
     aiRoulette.start(getSelectableDefs());
     return;
   }

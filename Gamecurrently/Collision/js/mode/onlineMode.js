@@ -2,6 +2,7 @@ import CONFIG from '../config.js';
 import { Ball } from '../entities/ball.js';
 import { GameLoop } from '../core/gameLoop.js';
 import { CATEGORIES, createSkill, createDashSkill, getSkillDef, getDefsByCategory } from '../skills/skillRegistry.js';
+import { getBattleField, pickSpawns } from '../maps/index.js';
 import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
 import { isTouchDevice, bindHold, bindTap } from '../ui/input.js';
@@ -14,9 +15,9 @@ import { makeWildBall } from './singleMode.js';
 
 // 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球（分类切换）→ 各自准备 → 321 → 主机权威对战
 // 双技能通道：基础冲刺（Space/左下，兵团带30伤）+ 职业技能（J键/右下，仅主动职业）
+// 战场：联机固定经典角斗场（场地文件控制出生点/绘制/边界）
 // 战场干扰球：每局随机一个（巨人 | 魔王），主机在 START 里广播 wildId，双方渲染一致
-// ★ 正式对局暂停首页背景（bg:run false），返回大厅恢复——背景与正式对战共用事件总线，
-//   不暂停会导致背景技能伤害/碰撞特效穿透到上层战场（老bug根因）
+// ★ 正式对局暂停首页背景（bg:run false），返回大厅恢复（背景无技能音效）
 // ★ _onData 必须处理 MSG.CMD（客人技能指令），漏了=联机技能无反应（老bug）
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
@@ -31,6 +32,7 @@ export class OnlineMode {
     this.balls = [];
     this.phantoms = [];
     this.wilds = [];
+    this.battleMap = getBattleField('arena');
     this.isHost = false;
     this.myClass = null;
     this.enemyClass = null;
@@ -219,7 +221,7 @@ export class OnlineMode {
     this._startMatch({ hostClass: this.myClass, guestClass: this.enemyClass, hostName: this.myName, guestName: this.enemyName, wildId });
   }
   _startMatch(d) {
-    // 正式对局：暂停首页背景（防特效/伤害穿透）
+    // 正式对局：暂停首页背景（防特效/伤害穿透 + 静音）
     this.ctx.events.emit('bg:run', false);
     this.myClass = d.hostClass;
     this.enemyClass = d.guestClass;
@@ -227,9 +229,13 @@ export class OnlineMode {
     this.hud.hideResult();
     this.hud.hideMatchTimer();
     this.ctx.phantoms = [];
+    // 联机固定经典角斗场（出生点/绘制/边界由场地文件控制）
+    this.battleMap = getBattleField('arena');
+    this.ctx.battleMap = this.battleMap;
     const { w, h } = CONFIG.FIELD;
-    const b1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, name: '你' });
-    const b2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, name: '对方' });
+    const [s1, s2, sw] = pickSpawns(this.battleMap, 3);
+    const b1 = new Ball({ x: s1.x, y: s1.y, angle: Math.PI * 0.9, name: '你' });
+    const b2 = new Ball({ x: s2.x, y: s2.y, angle: Math.PI * 0.1, name: '对方' });
     const wildId = d.wildId || 'giant';
     if (this.isHost) {
       b1.skill = createSkill(d.hostClass, b1, this.ctx);
@@ -237,6 +243,7 @@ export class OnlineMode {
       b1.dashSkill = createDashSkill(b1, this.ctx, d.hostClass);
       b2.dashSkill = createDashSkill(b2, this.ctx, d.guestClass);
       this.wilds = [makeWildBall(wildId, this.ctx, w, h)];
+      this.wilds[0].x = sw.x; this.wilds[0].y = sw.y;
       this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], wilds: this.wilds, onResult: r => this._showResult(r) });
       b1.isPlayer = true;
       this._bindFx();
@@ -248,6 +255,7 @@ export class OnlineMode {
       this.wilds = [makeWildBall(wildId, this.ctx, w, h)];
       this.wilds[0].skill = makeHudSkill(getSkillDef(wildId));
       this.wilds[0].color = getSkillDef(wildId).color;
+      this.wilds[0].x = sw.x; this.wilds[0].y = sw.y;
       this.guest = new Guest({
         signal: this.signal,
         onResult: () => {},
@@ -395,7 +403,7 @@ export class OnlineMode {
     this.renderer.update(dt);
     this.hud.tick();
   }
-  render() { this.renderer.render(this.balls, this.loop.time, this.phantoms); }
+  render() { this.renderer.render(this.balls, this.loop.time, this.phantoms, this.battleMap); }
   // ★ RESULT 视角：'host'/'guest'/'draw'，两端各自判断自己的输赢
   _showResult(d) {
     this.phase = 'ended';

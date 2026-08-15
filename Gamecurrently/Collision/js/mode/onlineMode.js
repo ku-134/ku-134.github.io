@@ -14,12 +14,12 @@ import { Guest, makeHudSkill } from '../net/guest.js';
 import { MSG, isValidRoomCode } from '../net/protocol.js';
 import { makeWildBall } from './singleMode.js';
 
-// 联机模式：创建/加入房间（5位纯数字 + PeerJS）→ 双方选球（与我模式相同的双列布局）
-//   → 房主选场地（BATTLE 消息广播，客人等待期间可见）→ 各自准备 → 321 → 主机权威对战
-// 双技能通道：基础冲刺（Space/左下，兵团带30伤）+ 职业技能（J键/右下，仅主动职业）
-// 战场干扰球：每局随机一个（巨人 | 魔王），START 广播 wildId + battleId，双方渲染一致
-// ★ 客人端特效同步：phantoms 随 STATE 广播（斩击扇形/奥术飞弹/魔族），HP 升降本地监测数字
-// ★ 正式对局暂停首页背景（bg:run false）；_onData 必须处理 MSG.CMD（老bug）
+// 联机模式：创建/加入房间（5位纯数字 + PeerJS）
+// 房间内分两个独立阶段界面（互不干扰）：
+//   阶段1 场地选择：房主选场地→确认（BATTLE 广播）；客人只读查看，房主确认后才可确认下一步
+//   阶段2 选球：右=我的分类列表（可随机），左=对方球展示；准备后进入战场
+// 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
+// ★ 客人端 HP 升降本地监测数字（伤害/加血）；_onData 必须处理 MSG.CMD（老bug）
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -35,7 +35,8 @@ export class OnlineMode {
     this.wilds = [];
     this.battleId = 'arena';
     this.battleMap = getBattleField('arena');
-    this.battleSelected = false;   // 房主已选场地
+    this.battleSelected = false;   // 房主已确认场地（客人=已收到 BATTLE）
+    this.stage = 'battle';         // 'battle' | 'pick'
     this.isHost = false;
     this.myClass = null;
     this.enemyClass = null;
@@ -45,7 +46,7 @@ export class OnlineMode {
     this.ready = false;
     this.enemyReady = false;
     this.randomPick = false;       // 玩家选了随机（准备时随机决定）
-    this.phase = 'idle';   // idle → countdown → playing → ended
+    this.phase = 'idle';
     this.countdown = 0;
     this.countdownShown = -1;
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
@@ -55,19 +56,21 @@ export class OnlineMode {
     this.dashAim = null;
     this.skillAim = null;
     this.pickCat = CATEGORIES[0];
-    this._roulette = null;   // 随机轮播 timer
+    this._roulette = null;
     this.els = {
       lobby: document.getElementById('online-lobby'),
       wait: document.getElementById('online-wait'),
       code: document.getElementById('room-code'),
       status: document.getElementById('room-status'),
+      stageBattle: document.getElementById('stage-battle'),
+      stagePick: document.getElementById('stage-pick'),
+      battleCards: document.getElementById('stage-battle-cards'),
+      battleInfo: document.getElementById('stage-battle-info'),
+      btnBattleConfirm: document.getElementById('btn-battle-confirm-online'),
       pick: document.getElementById('online-pick'),
       pickTabs: document.getElementById('cat-tabs-online'),
       enemyBall: document.getElementById('online-enemy-ball'),
       enemy: document.getElementById('online-enemy'),
-      battleWrap: document.getElementById('online-battle-wrap'),
-      battleTabs: document.getElementById('online-battle-tabs'),
-      battlePreview: document.getElementById('online-battle-preview'),
       msg: document.getElementById('room-msg'),
       input: document.getElementById('room-input'),
       btnReady: document.getElementById('btn-ready'),
@@ -75,10 +78,10 @@ export class OnlineMode {
       activeBtn: document.getElementById('online-active-btn'),
     };
     bindTap(this.els.btnReady, () => this._ready());
+    bindTap(this.els.btnBattleConfirm, () => this._confirmBattle());
   }
-  // 昵称（设置里预设）
   get myName() { return (localStorage.getItem('collision.nick') || '玩家').slice(0, 8); }
-  // 进入联机大厅：清空上次的房间号残留
+  // 进入联机大厅：清空上次房间号残留
   enter() {
     this.leave();
     this.els.lobby.classList.remove('hidden');
@@ -86,7 +89,6 @@ export class OnlineMode {
     this.els.msg.textContent = '';
     this.els.input.value = '';
   }
-  // 离开/断开（返回时调用）
   leave() {
     this._cleanupMatch();
     this.signal?.close();
@@ -98,10 +100,10 @@ export class OnlineMode {
     this.ready = false; this.enemyReady = false;
     this.randomPick = false;
     this.battleId = 'arena'; this.battleSelected = false;
+    this.stage = 'battle';
     this._resetReadyBtn();
     this.phase = 'idle';
   }
-  // ---- 创建房间 ----
   createRoom() {
     this.leave();
     this.els.input.value = '';
@@ -110,18 +112,16 @@ export class OnlineMode {
     this.signal = new Signal({
       onOpen: id => {
         this.els.code.textContent = id;
-        this.els.status.textContent = '等待对方加入…（可先选球）';
-        this._renderPick();
-        this._renderBattle();
+        this.els.status.textContent = '等待对方加入…（房主先选场地）';
+        this._renderStageBattle();
       },
-      onConnect: () => { this.els.status.textContent = '对方已加入！请选择你的球'; },
+      onConnect: () => { this.els.status.textContent = '对方已加入！请选择场地'; },
       onData: m => this._onData(m),
       onDisconnect: () => this._onDisconnect(),
       onError: err => this._onError(err),
     });
     this.signal.createRoom();
   }
-  // ---- 加入房间 ----
   joinRoom(code) {
     code = (code || '').trim();
     if (!isValidRoomCode(code)) { this.els.msg.textContent = '请输入5位数字房间号'; return; }
@@ -129,7 +129,10 @@ export class OnlineMode {
     this.isHost = false;
     this._enterWait('正在连接房间 ' + code + ' …');
     this.signal = new Signal({
-      onConnect: () => { this.els.status.textContent = '已连接！请选择你的球'; this._renderPick(); },
+      onConnect: () => {
+        this.els.status.textContent = '已连接！等待房主选择场地…';
+        this._renderStageBattle();
+      },
       onData: m => this._onData(m),
       onDisconnect: () => this._onDisconnect(),
       onError: err => this._onError(err),
@@ -140,22 +143,89 @@ export class OnlineMode {
     this.els.lobby.classList.add('hidden');
     this.els.wait.classList.remove('hidden');
     this.els.status.textContent = status;
+    this.stage = 'battle';
+    this.els.stageBattle.classList.remove('hidden');
+    this.els.stagePick.classList.add('hidden');
+    this.els.battleInfo.textContent = this.isHost ? '请选择场地' : '等待房主选择场地…';
+    this.els.btnBattleConfirm.classList.add('hidden');
+    this.els.battleCards.innerHTML = '';
     this.els.enemy.classList.add('hidden');
     this.els.enemyBall.style.background = 'none';
     this.els.enemyBall.textContent = '？';
     this.els.pick.classList.add('hidden');
     this.els.pickTabs.classList.add('hidden');
-    this.els.battleWrap.classList.add('hidden');
     this.els.pick.innerHTML = '';
     this.els.msg.textContent = '';
     this._resetReadyBtn();
   }
-  // ---- 选球（双列：左=对方球展示，右=我的分类列表；与单机相同分类+随机） ----
+  // ---- 阶段1：场地选择 ----
+  _renderStageBattle() {
+    this.els.battleCards.innerHTML = '';
+    const cards = [];
+    for (const map of BATTLE_FIELDS) {
+      const card = document.createElement('div');
+      card.className = 'battle-card stage-battle-card' + (map.id === this.battleId ? ' selected' : '');
+      const cv = document.createElement('canvas');
+      const name = document.createElement('div'); name.className = 'cname'; name.textContent = map.name;
+      const desc = document.createElement('div'); desc.className = 'cskill'; desc.textContent = map.desc;
+      card.appendChild(cv); card.appendChild(name); card.appendChild(desc);
+      this._drawBattlePreview(map, cv, 260, 100);
+      card.addEventListener('click', () => {
+        if (!this.isHost || this.stage !== 'battle') return;   // 客人只读
+        this.battleId = map.id;
+        cards.forEach(c => c.classList.toggle('selected', c === card));
+        this.els.battleInfo.textContent = '已选：' + map.name + '，点击确认下一步';
+      });
+      this.els.battleCards.appendChild(card);
+      cards.push(card);
+    }
+    if (this.isHost) {
+      this.els.btnBattleConfirm.classList.remove('hidden');
+      this.els.battleInfo.textContent = '请选择场地';
+    } else {
+      this.els.btnBattleConfirm.classList.add('hidden');
+      this.els.battleInfo.textContent = this.battleSelected
+        ? '房主已选：' + getBattleField(this.battleId).name + '，点击确认下一步'
+        : '等待房主选择场地…';
+      if (this.battleSelected) this.els.btnBattleConfirm.classList.remove('hidden');
+    }
+  }
+  _drawBattlePreview(map, canvas, w2 = 260, h2 = 100) {
+    const g = canvas.getContext('2d');
+    const { w, h } = CONFIG.FIELD;
+    canvas.width = w2; canvas.height = h2;
+    g.setTransform(w2 / w, 0, 0, h2 / h, 0, 0);
+    g.fillStyle = '#f7edd8';
+    g.fillRect(0, 0, w, h);
+    map.draw(g, 8, w, h);
+  }
+  _confirmBattle() {
+    if (this.stage !== 'battle') return;
+    if (this.isHost) {
+      // 房主：广播场地 → 进入选球
+      this.battleSelected = true;
+      this.signal.send(MSG.BATTLE, { battleId: this.battleId });
+      this._toPick();
+    } else {
+      // 客人：房主已确认后才能确认下一步
+      if (!this.battleSelected) {
+        this.els.battleInfo.textContent = '房主还没选好场地，请稍候…';
+        return;
+      }
+      this._toPick();
+    }
+  }
+  _toPick() {
+    this.stage = 'pick';
+    this.els.stageBattle.classList.add('hidden');
+    this.els.stagePick.classList.remove('hidden');
+    this.els.status.textContent = '请选择你的球，然后点击准备';
+    this._renderPick();
+  }
+  // ---- 阶段2：选球（双列：左=对方球展示，右=我的分类列表） ----
   _renderPick() {
     this.els.pickTabs.classList.remove('hidden');
     this.els.pick.classList.remove('hidden');
-    this.els.battleWrap.classList.remove('hidden');
-    if (this.isHost) this._renderBattle();
     this._renderPickCat(this.pickCat);
   }
   _renderPickCat(cat) {
@@ -171,7 +241,6 @@ export class OnlineMode {
       this.els.pickTabs.appendChild(tab);
     }
     if (cat === '随机') {
-      // 随机：单球轮播（准备时随机决定并 PICK）
       this.randomPick = true;
       const defs = getSelectableDefs();
       if (!defs.length) return;
@@ -207,45 +276,9 @@ export class OnlineMode {
     this.els.btnReady.classList.remove('hidden');
     this.signal.send(MSG.PICK, { classId, name: this.myName });
   }
-  // ---- 场地选择：房主选（点击广播 BATTLE），客人只读显示 ----
-  _renderBattle() {
-    this.els.battleTabs.innerHTML = '';
-    for (const map of BATTLE_FIELDS) {
-      const tab = document.createElement('button');
-      tab.className = 'cat-tab' + (map.id === this.battleId ? ' active' : '');
-      tab.textContent = map.name;
-      tab.addEventListener('click', () => {
-        if (!this.isHost) return;
-        this.battleId = map.id;
-        this.battleSelected = true;
-        this._renderBattle();
-        this.signal.send(MSG.BATTLE, { battleId: map.id });
-        this.els.status.textContent = this.picked && this.enemyPicked ? '已选场地，点击准备开始' : '场地已选，等待双方选球';
-      });
-      this.els.battleTabs.appendChild(tab);
-    }
-    this._renderBattlePreview();
-  }
-  _renderBattlePreview() {
-    const map = getBattleField(this.battleId);
-    const el = this.els.battlePreview;
-    el.innerHTML = '';
-    const cv = document.createElement('canvas');
-    el.appendChild(cv);
-    const g = cv.getContext('2d');
-    const { w, h } = CONFIG.FIELD;
-    cv.width = 260; cv.height = 90;
-    g.setTransform(260 / w, 0, 0, 90 / h, 0, 0);
-    g.fillStyle = '#f7edd8';
-    g.fillRect(0, 0, w, h);
-    map.draw(g, 8, w, h);
-    const label = document.createElement('span');
-    label.textContent = this.isHost ? '房主选择的场地：' + map.name : map.name;
-    el.appendChild(label);
-  }
   // ---- 准备 ----
   _ready() {
-    if (this.ready) return;
+    if (this.stage !== 'pick' || this.ready) return;
     if (!this.picked) {
       if (this.randomPick) {
         const defs = getSelectableDefs();
@@ -270,14 +303,13 @@ export class OnlineMode {
     this.els.btnReady.disabled = false;
     this.els.btnReady.classList.remove('on-cd');
   }
-  // ---- 消息处理（★ CMD/STATE/BATTLE 必须处理，否则联机失效） ----
+  // ---- 消息处理 ----
   _onData(m) {
     if (m.t === MSG.PICK) {
       this.enemyClass = m.d.classId;
       this.enemyName = m.d.name || '对手';
       this.enemyPicked = true;
       const def = getSkillDef(m.d.classId);
-      // 对方球展示（球图标 + 名字）
       this.els.enemyBall.style.background = `url('${ballIconDataURL(def, 100)}') center / cover no-repeat`;
       this.els.enemyBall.textContent = '';
       this.els.enemy.textContent = `${this.enemyName}（${def.name}）`;
@@ -287,11 +319,13 @@ export class OnlineMode {
         : '对方已选，请选择你的球';
       this._tryStart();
     } else if (m.t === MSG.BATTLE) {
-      // 房主广播场地：客人端显示
+      // 房主确认场地：客人更新 + 可确认下一步
       this.battleId = m.d.battleId || 'arena';
       this.battleSelected = true;
-      this._renderBattlePreview();
-      this.els.status.textContent = this.ready ? '房主已选场地，等待开局…' : `房主已选场地：${getBattleField(this.battleId).name}，请选球`;
+      if (this.stage === 'battle') {
+        this._renderStageBattle();   // 高亮房主所选 + 显示确认按钮
+        this.els.status.textContent = '房主已选场地，请点击确认下一步';
+      }
     } else if (m.t === MSG.READY) {
       this.enemyReady = true;
       this.els.status.textContent = this.ready
@@ -303,7 +337,6 @@ export class OnlineMode {
     } else if (m.t === MSG.STATE) {
       this.guest?.applyState(m.d);
     } else if (m.t === MSG.CMD) {
-      // ★ 客人技能/机动指令 → 主机执行（漏了=联机技能无反应）
       if (this.isHost) this.host?.handleCmd(m.d);
     } else if (m.t === MSG.RESULT) {
       this._showResult(m.d);
@@ -311,13 +344,9 @@ export class OnlineMode {
       if (this.isHost) this._begin();
     }
   }
-  // 主机在双方选球 + 双方准备 + 已选场地后广播开局
   _tryStart() {
     if (!this.isHost || !this.picked || !this.enemyPicked || !this.ready || !this.enemyReady) return;
-    if (!this.battleSelected) {
-      this.els.status.textContent = '请先选择场地再开始';
-      return;
-    }
+    if (!this.battleSelected) return;
     this._begin();
   }
   _begin() {
@@ -326,7 +355,6 @@ export class OnlineMode {
     this._startMatch({ hostClass: this.myClass, guestClass: this.enemyClass, hostName: this.myName, guestName: this.enemyName, wildId, battleId: this.battleId });
   }
   _startMatch(d) {
-    // 正式对局：暂停首页背景（防特效/伤害穿透 + 静音）
     this.ctx.events.emit('bg:run', false);
     this.myClass = d.hostClass;
     this.enemyClass = d.guestClass;
@@ -375,7 +403,7 @@ export class OnlineMode {
     b1.color = getSkillDef(d.hostClass).color;
     b2.color = getSkillDef(d.guestClass).color;
     this.balls = [b1, b2, ...this.wilds];
-    this.ctx.balls = [b1, b2];   // getEnemy 只看玩家球（战场球不干扰目标选择）
+    this.ctx.balls = [b1, b2];
     this.phase = 'countdown';
     this.countdown = 3;
     this.countdownShown = -1;
@@ -425,7 +453,6 @@ export class OnlineMode {
       },
     });
   }
-  // 主机端特效/伤害数字/瞄准线订阅（与单机一致；斩击扇形走 phantoms 无需订阅）
   _bindFx() {
     this._unsubs.forEach(fn => fn());
     this._unsubs = [];
@@ -507,7 +534,6 @@ export class OnlineMode {
     this.hud.tick();
   }
   render() { this.renderer.render(this.balls, this.loop.time, this.phantoms, this.battleMap); }
-  // ★ RESULT 视角：'host'/'guest'/'draw'，两端各自判断自己的输赢
   _showResult(d) {
     this.phase = 'ended';
     this.hud.hideMatchTimer();
@@ -533,7 +559,6 @@ export class OnlineMode {
     this.enter();
   }
   _onDisconnect() {
-    // 专属提示弹窗（不用浏览器 alert）
     if (typeof window.showAlert === 'function') window.showAlert('对方已离开，对局结束');
     this._backToOnline();
   }
@@ -562,7 +587,6 @@ export class OnlineMode {
     this.dashAim = null; this.skillAim = null;
     this.hud.hideMatchTimer();
     this.hud.hideResult();
-    // 离开对局：恢复首页背景（重开一局时 _startMatch 会再关闭）
     this.ctx.events.emit('bg:run', true);
   }
 }

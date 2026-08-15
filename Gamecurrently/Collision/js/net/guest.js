@@ -55,7 +55,12 @@ export class Guest {
       }
     });
     this._hpInited = true;
-    this.phantoms = d.phantoms.map(p => ({ ...p, radius: 20, isPhantom: true, speed: 0 }));
+    this.phantoms = d.phantoms.map(p => ({
+      ...p,
+      radius: p.isMinion ? 14 : 20,
+      isPhantom: true,
+      speed: 0,
+    }));
   }
   sendCmd(cmd) { this.signal.send(MSG.CMD, cmd); }
 }

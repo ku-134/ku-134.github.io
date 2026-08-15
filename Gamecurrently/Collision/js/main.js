@@ -12,6 +12,48 @@ import { OnlineMode } from './mode/onlineMode.js';
 import { bindTap } from './ui/input.js';
 import { renderCards } from './ui/cards.js';
 
+// ---- 音效：全局管理器（修复命中无音效） ----
+// 浏览器自动播放策略：Audio.play() 必须发生在用户手势（点击/按键）之后才允许出声。
+// 之前 knight.js 在技能触发（rAF 循环内）时才 new Audio().play()，首次必被拦截。
+// 方案：1) 首次用户交互时预加载音频 + 静音播放解锁；2) 命中事件复用已解锁实例播放。
+const SLASH_SFX = ['audio/slash1.ogg', 'audio/slash2.ogg'];
+let slashAudios = null;
+function ensureSlashAudios() {
+  if (slashAudios) return;
+  slashAudios = SLASH_SFX.map(src => {
+    const a = new Audio(src);
+    a.preload = 'auto';
+    a.load();
+    return a;
+  });
+}
+function playSlashSfx() {
+  try {
+    ensureSlashAudios();
+    const a = slashAudios[Math.random() < 0.5 ? 0 : 1];
+    a.currentTime = 0;
+    const p = a.play();
+    if (p && p.catch) p.catch(() => {});
+  } catch { }
+}
+// 首次用户手势：预加载 + 静音播放一次（授予播放权，之后命中即可出声）
+let sfxUnlocked = false;
+function unlockSfx() {
+  if (sfxUnlocked) return;
+  sfxUnlocked = true;
+  try {
+    ensureSlashAudios();
+    slashAudios.forEach(a => {
+      a.muted = true;
+      a.play().catch(() => {});
+      setTimeout(() => { a.muted = false; }, 200);
+    });
+  } catch { }
+}
+window.addEventListener('pointerdown', unlockSfx, { once: true });
+window.addEventListener('keydown', unlockSfx, { once: true });
+bus.on('fx:slashHit', playSlashSfx);
+
 // ---- 全局上下文：物理与技能共享的依赖注入 ----
 const effects = new EffectSystem();
 const ctx = {
@@ -33,8 +75,8 @@ const online = new OnlineMode(ctx, {
 });
 
 // ---- 首页背景：随机两个可选职业打一场（手绘涂鸦氛围） ----
-// ★ 背景与正式对战共用事件总线：正式对局开始必须暂停背景（bg:run 事件），
-//   否则背景技能的 fx:damage / collision 等特效会穿透到上层战场（老bug根因）
+// 背景与正式对战共用事件总线：正式对局开始必须暂停背景（bg:run 事件），
+// 否则背景技能的 fx:damage / collision 等特效会穿透到上层战场（老bug根因）
 const BG_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom', 'knight'];
 function randBgClasses() {
   const a = BG_CLASSES[Math.floor(Math.random() * BG_CLASSES.length)];
@@ -107,7 +149,7 @@ function showBestiaryDetail(d) {
   detailOrb.style.background = d.color;
   detailName.textContent = `${d.name} · ${d.skillName}`;
   detailDesc.textContent = d.desc;
-  detailDesc.scrollTop = 0;
+  document.getElementById('bestiary-detail').scrollTop = 0;
 }
 function renderBestiary(cat) {
   const defs = getDefsByCategory(cat);
@@ -167,7 +209,7 @@ renderAI(CATEGORIES[0]);
 
 // ---- 战场选择（单机）：确认出战前选战场，为后续新战场留位 ----
 const BATTLE_FIELDS = [
-  { id: 'arena', name: '经典角斗场', desc: '800×450 手绘角斗场。战场干扰球每局随机：巨人（基础）或魔王（剑与魔法）。', color: '#f7edd8' },
+  { id: 'arena', name: '经典角斗场', desc: '800x450 手绘角斗场。战场干扰球每局随机：巨人（基础）或魔王（剑与魔法）。', color: '#f7edd8' },
 ];
 let selectedBattle = BATTLE_FIELDS[0].id;
 const battleList = document.getElementById('battle-list');

@@ -39,8 +39,8 @@ const CONFIG = {
   DEMON: { scale: 1.5, summonInterval: [5, 8] },
   // 魔族：魔王眷属，只能由魔王召唤；游走1~4s后瞄准场上球冲刺撞击（10伤）
   MINION: { radius: 14, wanderSpeed: 60, dashSpeed: 480, life: [1, 4], damage: 10 },
-  // 方孔大圆场：大圆超出显示框（260 > 半高225）——由摄像机小幅度追踪自己球展示
-  RINGHOLE: { radius: 260, holeSize: 96, spin: 0.5 },
+  // 方孔大圆场：圆扩大至初始的1.7倍（357）——场地开阔，由摄像机缩放+追踪展示
+  RINGHOLE: { radius: 357, holeSize: 96, spin: 0.5 },
   // 战场干扰球（巨人）：hp 高到不会死
   WILD: { hp: 9999 },
   // AI

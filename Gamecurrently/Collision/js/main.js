@@ -1,7 +1,7 @@
 import CONFIG from './config.js';
 import { bus } from './core/eventBus.js';
 import { EffectSystem } from './entities/effectSystem.js';
-import { getSkillDefs, getSelectableDefs, createSkill } from './skills/skillRegistry.js';
+import { CATEGORIES, getSkillDefs, getDefsByCategory, createSkill } from './skills/skillRegistry.js';
 import { Ball } from './entities/ball.js';
 import { GameLoop } from './core/gameLoop.js';
 import { move, collideWalls, collideBalls } from './core/physics.js';
@@ -59,38 +59,64 @@ const bgLoop = new GameLoop(dt => {
 }, () => bg.render(bgBalls, bgLoop.time));
 bgLoop.start();
 
-// ---- 图鉴：左列表 + 右详情（含巨人=战场干扰球说明） ----
+// ---- 分类标签渲染（图鉴/选球共用） ----
+function renderCatTabs(container, cats, current, onSwitch) {
+  container.innerHTML = '';
+  for (const cat of cats) {
+    const tab = document.createElement('button');
+    tab.className = 'cat-tab' + (cat === current ? ' active' : '');
+    tab.textContent = cat;
+    tab.addEventListener('click', () => onSwitch?.(cat));
+    container.appendChild(tab);
+  }
+}
+
+// ---- 图鉴：分类切换 + 左列表 + 右详情（含巨人=战场干扰球说明） ----
 const bestiaryList = document.getElementById('bestiary-list');
+const bestiaryTabs = document.getElementById('cat-tabs-bestiary');
 const detailOrb = document.getElementById('detail-orb');
 const detailName = document.getElementById('detail-name');
 const detailDesc = document.getElementById('detail-desc');
-const bestiaryDefs = getSkillDefs();
 function showBestiaryDetail(d) {
   detailOrb.style.background = d.color;
   detailName.textContent = `${d.name} · ${d.skillName}`;
   detailDesc.textContent = d.desc;
 }
-renderCards(bestiaryList, bestiaryDefs, {
-  selectedId: bestiaryDefs[0].id,
-  onPick: (d, card) => {
-    bestiaryList.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    showBestiaryDetail(d);
-  },
-});
-showBestiaryDetail(bestiaryDefs[0]);
+function renderBestiary(cat) {
+  const defs = getDefsByCategory(cat);
+  renderCatTabs(bestiaryTabs, CATEGORIES, cat, c => {
+    renderBestiary(c);
+    showBestiaryDetail(getDefsByCategory(c)[0]);
+  });
+  renderCards(bestiaryList, defs, {
+    selectedId: defs[0]?.id,
+    onPick: (d, card) => {
+      bestiaryList.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      showBestiaryDetail(d);
+    },
+  });
+  if (defs[0]) showBestiaryDetail(defs[0]);
+}
+renderBestiary(CATEGORIES[0]);
 
-// ---- 选球（单机）：可选职业（巨人已转战场干扰球，不显示） ----
+// ---- 选球（单机）：分类切换 + 选球（巨人不可选） ----
 let selectedSkill = 'legion';
 const selectList = document.getElementById('select-list');
-renderCards(selectList, getSelectableDefs(), {
-  selectedId: selectedSkill,
-  onPick: (d, card) => {
-    selectedSkill = d.id;
-    selectList.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-  },
-});
+const selectTabs = document.getElementById('cat-tabs-select');
+function renderSelect(cat) {
+  const defs = getDefsByCategory(cat, { selectable: true });
+  renderCatTabs(selectTabs, CATEGORIES, cat, renderSelect);
+  renderCards(selectList, defs, {
+    selectedId: selectedSkill,
+    onPick: (d, card) => {
+      selectedSkill = d.id;
+      selectList.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+    },
+  });
+}
+renderSelect(CATEGORIES[0]);
 
 // ---- 导航（bindTap：click） ----
 bindTap(document.getElementById('btn-start'), () => ui.show('start'));

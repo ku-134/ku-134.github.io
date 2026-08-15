@@ -12,6 +12,7 @@ import { OnlineMode } from './mode/onlineMode.js';
 import { bindTap } from './ui/input.js';
 import { renderCards } from './ui/cards.js';
 import { playSfx, unlockSfx } from './audio/sfx.js';
+import { ballIconDataURL } from './ui/ballIcon.js';
 
 // ---- 音效事件接线：任何模块 emit('sfx:play', { name, throttle }) 即播放 ----
 // 首次用户交互解锁播放权（浏览器自动播放策略）
@@ -111,7 +112,7 @@ const detailOrb = document.getElementById('detail-orb');
 const detailName = document.getElementById('detail-name');
 const detailDesc = document.getElementById('detail-desc');
 function showBestiaryDetail(d) {
-  detailOrb.style.background = d.color;
+  detailOrb.style.background = `url('${ballIconDataURL(d, 150)}') center / cover no-repeat, ${d.color}`;
   detailName.textContent = `${d.name} · ${d.skillName}`;
   detailDesc.textContent = d.desc;
   document.getElementById('bestiary-detail').scrollTop = 0;
@@ -146,7 +147,7 @@ const aiList = document.getElementById('select-list-ai');
 const aiTabs = document.getElementById('cat-tabs-ai');
 let selectCat = CATEGORIES[0];
 let aiCat = CATEGORIES[0];
-// 随机轮播：只展示一个球，每150ms切换职业（纯预览，不可点击选择）
+// 随机轮播：只展示一个球（带装饰图标），每150ms切换职业（纯预览，不可点击选择）
 function makeRoulette(listEl) {
   let timer = null;
   let defs = [];
@@ -167,7 +168,7 @@ function makeRoulette(listEl) {
       idx = 0;
       const show = () => {
         const d = defs[idx];
-        orb.style.background = d.color;
+        orb.style.background = `url('${ballIconDataURL(d, 140)}') center / cover no-repeat, ${d.color}`;
         name.textContent = d.name;
         skill.textContent = d.skillName;
       };

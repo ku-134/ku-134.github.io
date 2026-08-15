@@ -30,7 +30,7 @@ const CONFIG = {
   KNIGHT: { cooldown: 4, range: 90, damage: 40 },
   // 法师【奥术飞弹】：8s循环 = 效果6s（前5s每秒蓄能1颗五角星 + 第6s全发射随机方向）
   // + 空窗2s（cooldown）；每颗飞弹命中敌球5伤（撞球/撞墙即消失）
-  MAGE: { cooldown: 2, chargeTime: 5, orbit: 46, missileSpeed: 420, missileDamage: 5 },
+  MAGE: { cooldown: 2, effectDuration: 6, chargeTime: 5, orbit: 46, missileSpeed: 420, missileDamage: 5 },
   // 牧师【治疗术】：主动14s冷却，发动后给自己加10~25血（不可突破上限）
   PRIEST: { cooldown: 14, healMin: 10, healMax: 25 },
   // 魔王【召唤魔族】：战场干扰球（剑与魔法分类，不可选择）

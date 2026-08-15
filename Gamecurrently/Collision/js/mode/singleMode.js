@@ -143,7 +143,11 @@ export class SingleMode {
   update(dt) {
     if (this.phase === 'countdown') {
       const n = Math.ceil(this.countdown);
-      if (n !== this.countdownShown) { this.countdownShown = n; this.hud.showCountdown(n); }
+      if (n !== this.countdownShown) {
+        this.countdownShown = n;
+        this.hud.showCountdown(n);
+        if (n > 0) this.ctx.events.emit('sfx:play', { name: 'count' });
+      }
       this.countdown -= dt;
       if (this.countdown <= 0) {
         this.phase = 'fight';
@@ -175,6 +179,7 @@ export class SingleMode {
     else if (p1.dead && !p2.dead) win = false;
     else win = p1.hp >= p2.hp;
     this.hud.showResult(win);
+    this.ctx.events.emit('sfx:play', { name: win ? 'win' : 'lose' });
     const again = document.getElementById('btn-again');
     const home = document.getElementById('btn-home2');
     again.onclick = () => { this.hud.hideResult(); this.start(this.curSkillId, this.curAISkillId, this.battleId); };

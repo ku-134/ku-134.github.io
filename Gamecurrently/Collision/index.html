@@ -49,7 +49,7 @@
     <button class="btn back corner-back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 设置面板（精简，音效收进弹窗；左下角返回固定） -->
+  <!-- 设置面板 -->
   <section id="panel-settings" class="panel right hidden settings-panel">
     <h2>设置</h2>
     <label class="set-row">联机昵称
@@ -116,7 +116,7 @@
     </div>
   </section>
 
-  <!-- 联机界面：大厅 + 房间（两个独立阶段：先场地选择，再选球） -->
+  <!-- 联机界面：大厅 + 房间（三个阶段独立界面：连接确认 → 场地选择 → 选球） -->
   <section id="screen-online" class="screen hidden">
     <h2>联机对战</h2>
     <div id="online-lobby" class="online-cols">
@@ -131,12 +131,16 @@
       </div>
     </div>
     <div id="online-wait" class="online-wait hidden">
-      <p>房间号</p>
-      <div id="room-code" class="room-code"></div>
-      <p id="room-status" class="tip"></p>
+      <!-- 阶段0：连接确认（房间号独占一屏，确认连接后继续） -->
+      <div id="stage-conn" class="stage">
+        <h3 class="col-title">连接房间</h3>
+        <div id="room-code" class="room-code"></div>
+        <p id="room-conn-status" class="tip">正在连接…</p>
+        <button id="btn-conn-confirm" class="btn wide hidden">确认连接</button>
+      </div>
 
-      <!-- 阶段1：场地选择（房主选+确认；客人只读查看，房主确认后才可确认下一步） -->
-      <div id="stage-battle" class="stage">
+      <!-- 阶段1：场地选择（房主选+确认；客人只读查看） -->
+      <div id="stage-battle" class="stage hidden">
         <h3 class="col-title">选择场地</h3>
         <div id="stage-battle-cards" class="battle-scroll stage-battle-cards"></div>
         <p id="stage-battle-info" class="tip">等待房主选择场地…</p>
@@ -211,7 +215,7 @@
     <div id="online-result" class="hidden"></div>
   </section>
 
-  <!-- 专属提示弹窗（替代浏览器 alert） -->
+  <!-- 专属提示弹窗 -->
   <div id="game-alert" class="hidden">
     <div class="modal-box alert-box">
       <p id="alert-msg"></p>

@@ -84,8 +84,7 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔）
-// 摄像机：ringHole 场地小幅度追踪自己球（按球离中心位置偏移显示框，战场仍是战场）
-// 装饰（魔王角/骑士剑/法师胡须/牧师十字架）必须画在球体填充之后，否则被球体盖住
+// 摄像机：ringHole 大圆场 = 缩放适配（完整展示大圆）+ 小幅度追踪自己球（球偏哪显示框往哪移）
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -160,16 +159,23 @@ export class Renderer {
     const { w, h } = CONFIG.FIELD;
     g.setTransform(this.dpr * this.cssScale, 0, 0, this.dpr * this.cssScale, 0, 0);
     g.fillStyle = PAPER;
-    g.fillRect(-56, -56, w + 112, h + 112);   // 纸底加大：容纳摄像机偏移
+    g.fillRect(-80, -80, w + 160, h + 160);   // 纸底加大：容纳缩放/偏移
     g.save();
     this.camera.update(t);
     this.camera.apply(g);
-    // ★ 方孔大圆场：摄像机小幅度追踪自己球（球偏哪，显示框往哪偏移，露出更大圆）
+    // ★ 方孔大圆场摄像机：缩放适配大圆 + 小幅度追踪自己球
     if (battleMap?.id === 'ringHole') {
+      const cx = w / 2, cy = h / 2;
+      // 缩放：圆直径+边距完整落入画布（受短边限制），战场整体缩小展示
+      const need = (battleMap.radius + 30) * 2;
+      const s = Math.min(1, Math.min(w, h) / need);
+      g.translate(cx, cy);
+      g.scale(s, s);
+      g.translate(-cx, -cy);
+      // 追踪自己球：球偏哪，显示框往哪移（小幅度）
       const me = balls.find(b => b.isPlayer);
       if (me) {
-        const cx = w / 2, cy = h / 2;
-        const maxShift = 34;
+        const maxShift = 22;
         g.translate(
           -((me.x - cx) / battleMap.radius) * maxShift,
           -((me.y - cy) / battleMap.radius) * maxShift

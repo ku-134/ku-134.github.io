@@ -65,24 +65,26 @@
     <button class="btn wide back" data-back="screen-home">返回</button>
   </section>
 
-  <!-- 选球界面（单机）：左上返回；左=AI对战球（贴左） 中=标题+确认（上下贴边） 右=玩家的球（贴右） -->
+  <!-- 选球界面（单机）：顶部一排（返回 | AI的球 | 选择你的球 | 你的球），下方左右对称选择器，底部确认 -->
   <section id="screen-select" class="screen hidden select-screen">
-    <button class="btn back select-back" data-back="panel-start">返回</button>
+    <div class="select-header">
+      <button class="btn back select-back" data-back="panel-start">返回</button>
+      <span class="col-title">AI 的球</span>
+      <h2 class="center-title">选择你的球</h2>
+      <span class="col-title">你的球</span>
+    </div>
     <div class="select-layout">
-      <div class="select-left">
-        <h3 class="col-title">AI 的球</h3>
+      <div class="select-col">
         <div id="cat-tabs-ai" class="cat-tabs"></div>
         <div id="select-list-ai" class="card-list"></div>
       </div>
-      <div class="select-center">
-        <h2 class="center-title">选择你的球</h2>
-        <button id="btn-select-confirm" class="btn big center-confirm">确认出战</button>
-      </div>
-      <div class="select-right">
-        <h3 class="col-title">你的球</h3>
+      <div class="select-col">
         <div id="cat-tabs-select" class="cat-tabs"></div>
         <div id="select-list" class="card-list"></div>
       </div>
+    </div>
+    <div class="select-confirm-wrap">
+      <button id="btn-select-confirm" class="btn big">确认出战</button>
     </div>
   </section>
 

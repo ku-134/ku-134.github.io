@@ -3,6 +3,7 @@ import { Ball } from '../entities/ball.js';
 import { GameLoop } from '../core/gameLoop.js';
 import { MatchSim } from '../core/matchSim.js';
 import { createSkill, createDashSkill, getSelectableDefs } from '../skills/skillRegistry.js';
+import { BATTLE_FIELDS, getBattleField, pickSpawns } from '../maps/index.js';
 import { AIController } from '../ai/aiController.js';
 import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
@@ -10,10 +11,10 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 
 // 单机模式：玩家选球 vs 玩家指定的 AI 职业，321 倒计时，观战 + 主动干涉
 // 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
-// 战场干扰球：每局随机一个——巨人（基础分类）或魔王（剑与魔法分类，召唤魔族），均为第三方，不参与胜负
+// 战场：由场地文件（js/maps/*）控制出生点/绘制/边界；battleId=null → 随机场地
+// 战场干扰球：每局随机一个（巨人 | 魔王），均为第三方，不参与胜负
 // ★ 随机选球：start 收到 null = 从可选职业随机（不含战场球）；再来一局时重新随机
-// ★ 对局开始暂停首页背景（bg:run false），返回时恢复——背景与正式对战共用事件总线，
-//   不暂停会导致背景技能的伤害/碰撞特效穿透到上层战场（老bug根因）
+// ★ 对局开始暂停首页背景（bg:run false），返回时恢复（背景无技能音效）
 const WILD_IDS = ['giant', 'demon'];
 
 // 随机职业池：全部可选职业（自动跟随注册表，不含战场球）
@@ -52,7 +53,9 @@ export class SingleMode {
     this.curAISkillId = 'legion';
     this.curPlayerRandom = false;   // 本局玩家是否随机选球
     this.curAIRandom = false;       // 本局 AI 是否随机选球
-    this.battleId = 'arena';
+    this.curBattleId = 'arena';
+    this.curBattleRandom = false;   // 本局是否随机场地
+    this.battleMap = null;
     this.balls = [];
     this.wilds = [];
     this.sim = null;
@@ -69,13 +72,19 @@ export class SingleMode {
     const aId = aiSkillId ?? pickRandom();
     this.curSkillId = pId;
     this.curAISkillId = aId;
-    this.battleId = battleId;
-    // 正式对局：暂停首页背景（防特效/伤害穿透）
+    // 随机场地：battleId=null → 随机（再来一局重新随机）；否则固定
+    this.curBattleRandom = battleId == null;
+    this.curBattleId = battleId ?? BATTLE_FIELDS[Math.floor(Math.random() * BATTLE_FIELDS.length)].id;
+    this.battleMap = getBattleField(this.curBattleId);
+    this.ctx.battleMap = this.battleMap;
+    // 正式对局：暂停首页背景（防特效/伤害穿透 + 静音）
     this.ctx.events.emit('bg:run', false);
     this.ctx.phantoms = [];
     const { w, h } = CONFIG.FIELD;
-    const p1 = new Ball({ x: w * 0.3, y: h / 2, angle: Math.PI * 0.9, name: '你' });
-    const p2 = new Ball({ x: w * 0.7, y: h / 2, angle: Math.PI * 0.1, name: 'AI' });
+    // 出生点：场地文件控制（玩家2球 + 战场球从 4 个对称点随机取 3 个）
+    const [s1, s2, sw] = pickSpawns(this.battleMap, 3);
+    const p1 = new Ball({ x: s1.x, y: s1.y, angle: Math.PI * 0.9, name: '你' });
+    const p2 = new Ball({ x: s2.x, y: s2.y, angle: Math.PI * 0.1, name: 'AI' });
     p1.skill = createSkill(pId, p1, this.ctx);
     p2.skill = createSkill(aId, p2, this.ctx);
     // 基础冲刺（全职业通用；兵团职业自动带30伤变体）
@@ -85,8 +94,10 @@ export class SingleMode {
     p1.color = p1.skill.def.color;
     p2.color = p2.skill.def.color;
     p1.isPlayer = true;
-    // 战场干扰球：每局随机一个（巨人 | 魔王）
-    this.wilds = [makeWildBall(WILD_IDS[Math.floor(Math.random() * WILD_IDS.length)], this.ctx, w, h)];
+    // 战场干扰球：每局随机一个（巨人 | 魔王），出生自场地点位
+    const wild = makeWildBall(WILD_IDS[Math.floor(Math.random() * WILD_IDS.length)], this.ctx, w, h);
+    wild.x = sw.x; wild.y = sw.y;
+    this.wilds = [wild];
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
     this.sim = new MatchSim(this.ctx, this.balls, this.wilds);
@@ -193,7 +204,7 @@ export class SingleMode {
   }
   render() {
     const all = [...this.balls, ...this.wilds];
-    this.renderer.render(all, this.loop.time, this.ctx.phantoms || []);
+    this.renderer.render(all, this.loop.time, this.ctx.phantoms || [], this.battleMap);
   }
   endMatch() {
     if (this.phase === 'end') return;
@@ -209,13 +220,13 @@ export class SingleMode {
     this.ctx.events.emit('sfx:play', { name: win ? 'win' : 'lose' });
     const again = document.getElementById('btn-again');
     const home = document.getElementById('btn-home2');
-    // 再来一局：随机选球的角色重新随机（null 触发）
+    // 再来一局：随机选球/随机场地的重新随机（null 触发）
     again.onclick = () => {
       this.hud.hideResult();
       this.start(
         this.curPlayerRandom ? null : this.curSkillId,
         this.curAIRandom ? null : this.curAISkillId,
-        this.battleId
+        this.curBattleRandom ? null : this.curBattleId
       );
     };
     home.onclick = () => { this.hud.hideResult(); this.stop(); this.onBack(); };

@@ -29,9 +29,9 @@ const CONFIG = {
   // 骑士【斩击】：每4s自动向敌球方向扇形斩击（范围90，命中40伤）
   KNIGHT: { cooldown: 4, range: 90, damage: 40 },
   // 法师【奥术飞弹】：8s循环 = 效果6s（前5s每秒蓄能1颗五角星，第5s集齐5颗展示1s
-  // 第6s（fireTime）向敌球方向±25°（共50°）散射发射）+ 空窗2s
-  // 每颗命中敌球5伤（撞球/撞墙即消失）
-  MAGE: { cooldown: 2, effectDuration: 6, chargeTime: 5, fireTime: 6, spread: Math.PI / 180 * 50, orbit: 46, missileSpeed: 420, missileDamage: 5 },
+  // 第6s（fireTime）向敌球方向±20°（共40°）散射发射）+ 空窗2s
+  // 每颗命中敌球7伤（全吃满35伤）；撞球/撞墙即消失
+  MAGE: { cooldown: 2, effectDuration: 6, chargeTime: 5, fireTime: 6, spread: Math.PI / 180 * 40, orbit: 46, missileSpeed: 420, missileDamage: 7 },
   // 牧师【治疗术】：主动14s冷却，发动后给自己加10~25血（不可突破上限）
   PRIEST: { cooldown: 14, healMin: 10, healMax: 25 },
   // 魔王【召唤魔族】：战场干扰球（剑与魔法分类，不可选择）

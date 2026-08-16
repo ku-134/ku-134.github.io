@@ -6,6 +6,8 @@ import CONFIG from '../config.js';
 // prefix：单机 ''，联机 'online-'；myIndex：自己球下标（房主=0，客人=1）
 // ★ 死灵术士：该侧 HP 条渲染为分段小管（各球血量/上限，段间有空隙），
 //   最前段=当前意识球（最深红），从者按顺序渐浅（多级红色深度）
+// ★ 每段宽度 = 该球当前血量 ÷ 总容量（ΣmaxHp）×100%——总和≤100%不溢出，
+//   召唤越多每段越窄（挤压），一眼看出总血量百分比
 // ★ 分段时原 fill 元素会被移出 bar——用 _necroBarCache 缓存 bar 引用，
 //   避免下一帧 fillEl.parentElement 为 null 抛异常卡死（已修）
 export class Hud {
@@ -110,7 +112,7 @@ export class Hud {
   tick() {
     if (!this.balls) return;
     const [p1, p2] = this.balls;
-    // 死灵术士：分段血条（各死灵球血量/上限小管，前段=当前球最深红；另一侧正常）
+    // 死灵术士：分段血条（各死灵球血量/总容量，前段=当前球最深红；另一侧正常）
     const necros = this.ctx?.necros || [];
     const hasNecro = necros.length && necros[0]?.skill?.def?.id === 'necromancer';
     if (hasNecro) {
@@ -139,8 +141,8 @@ export class Hud {
     this.updateDashUI(my);
     this.updateSkillUI(my);
   }
-  // 死灵术士分段血条：每段 = 一个死灵球（当前球最前段最深红，从者按顺序渐浅；段间空隙=空槽）
-  // ★ bar 引用缓存：fillEl 首次分段后被移出 DOM，后续用缓存 bar（防止 null 崩溃）
+  // 死灵术士分段血条：每段 = 一个死灵球，宽度 = 该球当前血量/总容量（ΣmaxHp）——
+  // 总和即总血量百分比，召唤越多各段挤压越窄，永不溢出；段间空隙=空槽
   renderNecroBar(fillEl, necros) {
     let bar = fillEl.parentElement || this._necroBarCache.get(fillEl);
     if (!bar) return;
@@ -156,11 +158,12 @@ export class Hud {
       bar.appendChild(d);
     }
     while (bar.children.length > segs.length) bar.removeChild(bar.lastChild);
+    const total = segs.reduce((s, n) => s + (n.maxHp || 0), 0) || 1;
     // 多级红色深度：当前球 #B3001B 最深 → 从者依次渐浅
     const shades = ['#B3001B', '#c62828', '#d95f6a', '#e57373', '#ef9a9a'];
     [...bar.children].forEach((el, i) => {
       const n = segs[i];
-      el.style.width = (Math.max(0, Math.min(1, n.hp / n.maxHp)) * 100) + '%';
+      el.style.width = (Math.max(0, Math.min(1, n.hp / total)) * 100) + '%';
       el.style.background = shades[Math.min(i, shades.length - 1)];
     });
   }

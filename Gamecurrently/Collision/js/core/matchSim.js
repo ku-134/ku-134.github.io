@@ -7,6 +7,8 @@ import { move, collideWalls, collideBalls } from './physics.js';
 //   否则冲刺冷却永不递减（用完卡死）、瞄准帧追踪失效
 // ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类，第三方）：
 //   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），hp 极高不会死
+// ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
+//   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
 // ★ 魔王：召唤魔族；法师：奥术飞弹飞行；骑士：斩击扇形（isSlashFx 实体随 phantoms 同步）
 // ★ 狂暴降临瞬间发 berserk 音效（sfx:play 事件 → 全局管理器）
 export class MatchSim {
@@ -27,7 +29,8 @@ export class MatchSim {
       b.update(dt);
       this.ctx.effects.update(b, dt);
       b.flash = Math.max(0, b.flash - dt * 3);
-      move(b, dt);
+      // 傀儡术冲刺期间：位移交给 _updateWildDash（避免与自主移动叠加）
+      if (!b.dash) move(b, dt);
       collideWalls(b, this.ctx, this.time);
       b.skill?.update(dt);      // 职业技能：冷却递减/瞄准帧追踪
       b.dashSkill?.update(dt);  // 基础冲刺：冷却递减/瞄准帧追踪（★勿漏）
@@ -38,6 +41,7 @@ export class MatchSim {
         collideBalls(all[i], all[j], this.ctx, this.time);
       }
     }
+    this._updateWildDash(dt);
     this._updateDemon(dt, all);
     this._updateArcane(dt, all);
     this._updateFx(dt);
@@ -59,6 +63,42 @@ export class MatchSim {
     return {
       over: this.balls.some(b => b.dead) || (this.berserk && this.berserkTime >= CONFIG.BERSERK.duration),
     };
+  }
+  // 傀儡术：干扰球基础冲刺（高速直线突进 → 撞敌球伤害 / 撞主人只停不伤 / 撞墙或超时结束）
+  _updateWildDash(dt) {
+    for (const w of this.wilds) {
+      if (!w.dash || w.dead) continue;
+      const d = w.dash;
+      d.t += dt;
+      w.x += Math.cos(d.dir) * d.speed * dt;
+      w.y += Math.sin(d.dir) * d.speed * dt;
+      // 撞玩家球：敌球受伤；主人只停不伤（方向已锁定敌球，路径保护）
+      if (!d.hit) {
+        for (const b of this.balls) {
+          if (b.dead) continue;
+          if (Math.hypot(b.x - w.x, b.y - w.y) <= b.radiusScaled + w.radiusScaled) {
+            d.hit = true;
+            if (b !== d.owner) {
+              b.takeDamage(d.damage, this.ctx, d.owner);
+              this.ctx.events.emit('fx:phantomHit', { x: w.x, y: w.y, color: w.color });
+            }
+            break;
+          }
+        }
+      }
+      // 撞墙即停（默认矩形边界；ringHole 用外圆边界）
+      if (!d.hit) {
+        const { w: W, h: H } = CONFIG.FIELD;
+        const map = this.ctx.battleMap;
+        if (map?.id === 'ringHole') {
+          const cx = W / 2, cy = H / 2;
+          if (Math.hypot(w.x - cx, w.y - cy) > map.radius - w.radiusScaled) d.hit = true;
+        } else if (w.x < w.radiusScaled || w.x > W - w.radiusScaled || w.y < w.radiusScaled || w.y > H - w.radiusScaled) {
+          d.hit = true;
+        }
+      }
+      if (d.hit || d.t >= d.duration) delete w.dash;
+    }
   }
   // 魔王：召唤魔族 + 魔族生命周期（游走 → 瞄准冲刺 → 撞击消失）
   _updateDemon(dt, all) {

@@ -1,0 +1,262 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-160 -160 320 320" width="100%" height="100%">
+  <defs>
+    <!-- 藤蔓渐变 -->
+    <linearGradient id="vine1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1B5E20" />
+      <stop offset="100%" stop-color="#388E3C" />
+    </linearGradient>
+    <linearGradient id="vine2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2E7D32" />
+      <stop offset="100%" stop-color="#43A047" />
+    </linearGradient>
+    <!-- 叶片渐变 -->
+    <radialGradient id="leafGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#81C784" />
+      <stop offset="60%" stop-color="#388E3C" />
+      <stop offset="100%" stop-color="#1B5E20" />
+    </radialGradient>
+    <!-- 阴影滤镜 -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="3" dy="5" stdDeviation="4" flood-color="#000" flood-opacity="0.2" />
+    </filter>
+    <!-- 叶片形状（单叶） -->
+    <g id="leaf">
+      <path d="M 0 0 C -6 -4, -12 -12, -8 -20 C -4 -28, 4 -28, 8 -20 C 12 -12, 6 -4, 0 0 Z" 
+            fill="url(#leafGrad)" 
+            stroke="#2E7D32" 
+            stroke-width="0.5" />
+      <!-- 叶脉 -->
+      <path d="M 0 0 Q 1 -10, 0 -18" fill="none" stroke="#1B5E20" stroke-width="0.6" opacity="0.5" />
+    </g>
+    <!-- 小叶片 -->
+    <g id="leafSmall">
+      <path d="M 0 0 C -4 -3, -8 -8, -5 -14 C -2 -20, 2 -20, 5 -14 C 8 -8, 4 -3, 0 0 Z" 
+            fill="url(#leafGrad)" 
+            stroke="#2E7D32" 
+            stroke-width="0.4" />
+    </g>
+    <!-- 卷须螺旋 -->
+    <path id="tendril" d="M 0 0 C 3 -5, 8 -3, 6 3 C 4 7, -2 6, -4 2 C -6 -2, -3 -7, 0 -6 C 2 -5, 2 -2, 0 -1" 
+          fill="none" stroke="#388E3C" stroke-width="1.2" stroke-linecap="round" />
+  </defs>
+
+  <!-- 背景晕光 -->
+  <circle cx="0" cy="0" r="140" fill="none" stroke="#A5D6A7" stroke-width="0.5" opacity="0.3" />
+  <circle cx="0" cy="0" r="120" fill="none" stroke="#A5D6A7" stroke-width="0.3" opacity="0.2" />
+
+  <!-- ====== 藤蔓缠绕主体 ====== -->
+  <g filter="url(#shadow)">
+    
+    <!-- === 藤蔓 1：从右下向左上缠绕（主藤蔓） === -->
+    <path d="M 100 70 
+             C 80 90, 50 100, 20 90
+             C -30 75, -70 50, -90 20
+             C -110 -20, -100 -60, -80 -85
+             C -60 -110, -20 -120, 20 -110
+             C 60 -100, 90 -70, 100 -30
+             C 110 10, 100 50, 80 80" 
+          fill="none" 
+          stroke="url(#vine1)" 
+          stroke-width="5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+    
+    <!-- 藤蔓 1 的分支 -->
+    <path d="M 20 90 C 10 110, -10 120, -30 115" 
+          fill="none" stroke="#2E7D32" stroke-width="3" stroke-linecap="round" />
+    <path d="M -80 -85 C -100 -95, -120 -85, -125 -65" 
+          fill="none" stroke="#2E7D32" stroke-width="3" stroke-linecap="round" />
+    <path d="M 100 -30 C 120 -20, 130 0, 125 25" 
+          fill="none" stroke="#2E7D32" stroke-width="3" stroke-linecap="round" />
+
+    <!-- === 藤蔓 2：从左下向右上缠绕 === -->
+    <path d="M -100 70 
+             C -80 95, -40 110, 0 100
+             C 50 85, 80 55, 95 20
+             C 110 -20, 100 -65, 70 -90
+             C 40 -115, -10 -120, -50 -105
+             C -90 -90, -115 -50, -110 -10
+             C -105 30, -85 60, -60 80" 
+          fill="none" 
+          stroke="url(#vine2)" 
+          stroke-width="4.5" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+    
+    <!-- 藤蔓 2 的分支 -->
+    <path d="M 0 100 C -15 120, -5 135, 15 130" 
+          fill="none" stroke="#388E3C" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M 95 20 C 115 30, 125 60, 115 80" 
+          fill="none" stroke="#388E3C" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M -50 -105 C -30 -125, -10 -130, 10 -120" 
+          fill="none" stroke="#388E3C" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- === 藤蔓 3：横向缠绕（赤道方向） === -->
+    <path d="M -120 -5 
+             C -90 -25, -50 -35, 0 -30
+             C 50 -25, 90 -10, 120 5
+             C 130 15, 125 35, 110 45
+             C 85 55, 45 60, 0 55
+             C -45 50, -85 40, -110 25
+             C -130 15, -130 -5, -120 -5 Z" 
+          fill="none" 
+          stroke="#1B5E20" 
+          stroke-width="4" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" 
+          opacity="0.7" />
+    
+    <!-- 横向藤蔓分支 -->
+    <path d="M 0 -30 C 5 -50, -10 -65, -30 -60" 
+          fill="none" stroke="#2E7D32" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M 0 55 C -5 75, 15 85, 35 80" 
+          fill="none" stroke="#2E7D32" stroke-width="2.5" stroke-linecap="round" />
+    <path d="M 120 5 C 135 0, 140 -15, 130 -30" 
+          fill="none" stroke="#2E7D32" stroke-width="2" stroke-linecap="round" />
+
+    <!-- === 藤蔓 4：纵向缠绕（经线方向） === -->
+    <path d="M -5 -120 
+             C -20 -90, -30 -55, -25 -20
+             C -20 15, -10 45, -5 80
+             C 0 110, 10 130, 15 140" 
+          fill="none" 
+          stroke="#2E7D32" 
+          stroke-width="3.5" 
+          stroke-linecap="round" 
+          opacity="0.6" />
+    
+    <path d="M 15 -120 
+             C 30 -85, 40 -50, 35 -15
+             C 30 20, 20 55, 15 90
+             C 10 115, 0 130, -5 140" 
+          fill="none" 
+          stroke="#388E3C" 
+          stroke-width="3" 
+          stroke-linecap="round" 
+          opacity="0.6" />
+
+    <!-- === 藤蔓 5：对角线缠绕（左上到右下） === -->
+    <path d="M -110 -80 
+             C -80 -100, -40 -110, 0 -100
+             C 40 -90, 75 -60, 95 -25
+             C 115 10, 120 50, 105 85
+             C 90 115, 60 135, 25 140" 
+          fill="none" 
+          stroke="#43A047" 
+          stroke-width="3.5" 
+          stroke-linecap="round" 
+          opacity="0.7" />
+
+    <!-- === 藤蔓 6：对角线缠绕（右上到左下） === -->
+    <path d="M 110 -80 
+             C 80 -105, 40 -115, 0 -105
+             C -40 -95, -75 -65, -95 -30
+             C -115 5, -120 45, -105 80
+             C -90 110, -60 130, -25 135" 
+          fill="none" 
+          stroke="#388E3C" 
+          stroke-width="3.5" 
+          stroke-linecap="round" 
+          opacity="0.7" />
+
+    <!-- === 细藤蔓 7：装饰性小藤蔓 === -->
+    <path d="M -60 -40 C -40 -50, -20 -55, 0 -50 C 20 -45, 40 -35, 60 -40" 
+          fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" opacity="0.5" />
+    <path d="M -50 60 C -30 70, -10 75, 10 70 C 30 65, 50 55, 70 60" 
+          fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" opacity="0.5" />
+
+    <!-- ====== 叶片分布 ====== -->
+    
+    <!-- 沿藤蔓 1 的叶片 -->
+    <use href="#leaf" x="80" y="80" transform="rotate(-40 80 80) scale(1.2)" />
+    <use href="#leaf" x="20" y="85" transform="rotate(30 20 85)" />
+    <use href="#leaf" x="-70" y="50" transform="rotate(-20 -70 50)" />
+    <use href="#leaf" x="-85" y="-80" transform="rotate(50 -85 -80)" />
+    <use href="#leaf" x="-20" y="-112" transform="rotate(-60 -20 -112) scale(1.1)" />
+    <use href="#leaf" x="95" y="-30" transform="rotate(70 95 -30)" />
+    <use href="#leaf" x="85" y="50" transform="rotate(-80 85 50)" />
+    
+    <!-- 沿藤蔓 2 的叶片 -->
+    <use href="#leaf" x="-90" y="70" transform="rotate(45 -90 70)" />
+    <use href="#leaf" x="-40" y="100" transform="rotate(-30 -40 100)" />
+    <use href="#leaf" x="50" y="70" transform="rotate(20 50 70)" />
+    <use href="#leaf" x="90" y="-60" transform="rotate(-50 90 -60) scale(1.1)" />
+    <use href="#leaf" x="30" y="-115" transform="rotate(80 30 -115)" />
+    <use href="#leaf" x="-80" y="-90" transform="rotate(-70 -80 -90)" />
+    <use href="#leaf" x="-105" y="-10" transform="rotate(40 -105 -10)" />
+
+    <!-- 沿藤蔓 3（横向）的叶片 -->
+    <use href="#leaf" x="-90" y="-20" transform="rotate(-15 -90 -20)" />
+    <use href="#leaf" x="-40" y="-32" transform="rotate(10 -40 -32)" />
+    <use href="#leaf" x="40" y="-28" transform="rotate(-10 40 -28)" />
+    <use href="#leaf" x="90" y="-5" transform="rotate(15 90 -5)" />
+    <use href="#leaf" x="110" y="30" transform="rotate(60 110 30)" />
+    <use href="#leaf" x="60" y="58" transform="rotate(-25 60 58)" />
+    <use href="#leaf" x="-60" y="45" transform="rotate(25 -60 45)" />
+
+    <!-- 沿对角线藤蔓的叶片 -->
+    <use href="#leaf" x="-80" y="-70" transform="rotate(35 -80 -70)" />
+    <use href="#leaf" x="-30" y="-105" transform="rotate(-45 -30 -105)" />
+    <use href="#leaf" x="70" y="-60" transform="rotate(55 70 -60)" />
+    <use href="#leaf" x="100" y="40" transform="rotate(-35 100 40)" />
+    <use href="#leaf" x="70" y="110" transform="rotate(65 70 110)" />
+    <use href="#leaf" x="-70" y="100" transform="rotate(-55 -70 100)" />
+    <use href="#leaf" x="-105" y="30" transform="rotate(40 -105 30)" />
+    <use href="#leaf" x="30" y="125" transform="rotate(-20 30 125)" />
+
+    <!-- 小叶片（点缀） -->
+    <use href="#leafSmall" x="10" y="-40" transform="rotate(30 10 -40)" />
+    <use href="#leafSmall" x="-15" y="40" transform="rotate(-60 -15 40)" />
+    <use href="#leafSmall" x="60" y="-10" transform="rotate(80 60 -10)" />
+    <use href="#leafSmall" x="-65" y="10" transform="rotate(-20 -65 10)" />
+    <use href="#leafSmall" x="45" y="35" transform="rotate(45 45 35)" />
+    <use href="#leafSmall" x="-45" y="-50" transform="rotate(-80 -45 -50)" />
+    <use href="#leafSmall" x="120" y="-50" transform="rotate(15 120 -50)" />
+    <use href="#leafSmall" x="-120" y="50" transform="rotate(-15 -120 50)" />
+    <use href="#leafSmall" x="0" y="-70" transform="rotate(90 0 -70)" />
+    <use href="#leafSmall" x="0" y="70" transform="rotate(-90 0 70)" />
+
+    <!-- ====== 卷须 ====== -->
+    
+    <!-- 沿藤蔓 1 的卷须 -->
+    <use href="#tendril" x="60" y="85" transform="rotate(-30 60 85)" />
+    <use href="#tendril" x="-40" y="65" transform="rotate(150 -40 65) scale(1.2)" />
+    <use href="#tendril" x="-65" y="-60" transform="rotate(200 -65 -60)" />
+    <use href="#tendril" x="50" y="-80" transform="rotate(-120 50 -80) scale(1.1)" />
+    <use href="#tendril" x="95" y="10" transform="rotate(80 95 10)" />
+    
+    <!-- 沿藤蔓 2 的卷须 -->
+    <use href="#tendril" x="-70" y="80" transform="rotate(45 -70 80)" />
+    <use href="#tendril" x="30" y="85" transform="rotate(-150 30 85) scale(1.2)" />
+    <use href="#tendril" x="80" y="-30" transform="rotate(-60 80 -30)" />
+    <use href="#tendril" x="-50" y="-100" transform="rotate(120 -50 -100)" />
+    <use href="#tendril" x="-100" y="30" transform="rotate(200 -100 30)" />
+
+    <!-- 额外卷须 -->
+    <use href="#tendril" x="-20" y="-80" transform="rotate(-90 -20 -80) scale(0.9)" />
+    <use href="#tendril" x="20" y="80" transform="rotate(90 20 80) scale(0.9)" />
+    <use href="#tendril" x="110" y="-10" transform="rotate(30 110 -10)" />
+    <use href="#tendril" x="-110" y="-10" transform="rotate(-30 -110 -10)" />
+    <use href="#tendril" x="0" y="120" transform="rotate(180 0 120)" />
+    <use href="#tendril" x="0" y="-120" transform="rotate(0 0 -120)" />
+
+    <!-- ====== 藤蔓节点（小果实/花苞） ====== -->
+    <circle cx="20" cy="90" r="3.5" fill="#C8E6C9" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="-80" cy="-85" r="3" fill="#A5D6A7" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="95" cy="20" r="3" fill="#C8E6C9" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="-40" cy="100" r="3.5" fill="#A5D6A7" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="90" cy="-60" r="3" fill="#C8E6C9" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="-105" cy="-10" r="3" fill="#A5D6A7" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="110" cy="30" r="2.5" fill="#C8E6C9" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="-60" cy="45" r="2.5" fill="#A5D6A7" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="70" cy="110" r="3" fill="#C8E6C9" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="-70" cy="100" r="3" fill="#A5D6A7" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="0" cy="-100" r="3.5" fill="#C8E6C9" stroke="#2E7D32" stroke-width="0.8" />
+    <circle cx="0" cy="110" r="3.5" fill="#A5D6A7" stroke="#2E7D32" stroke-width="0.8" />
+
+  </g>
+
+  <!-- ====== 装饰性光点 ====== -->
+  <circle cx="0" cy="0" r="2" fill="#C8E6C9" opacity="0.4" />
+  <circle cx="0" cy="0" r="1" fill="#E8F5E9" opacity="0.6" />
+</svg>

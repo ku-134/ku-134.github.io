@@ -8,6 +8,7 @@ import CONFIG from '../../config.js';
 export default {
   id: 'nahida',
   name: '纳西妲',
+  category: '剑与魔法',
   type: 'active',
   skillName: '草木逢生',
   desc: '主动【草木逢生】(冷却8秒)：点按即向敌球方向发射一颗【生命火种】（高速小弹）；命中后为敌球施加【缠绕】4秒——定身无法动弹、每0.5秒受到4点草木侵蚀（至多32伤），缠绕结束后恢复速度（方向始终不变）。游走控制生存！',

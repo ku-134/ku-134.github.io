@@ -14,13 +14,14 @@ import priest from './definitions/priest.js';
 import nahida from './definitions/nahida.js';
 import berserker from './definitions/berserker.js';
 import necromancer from './definitions/necromancer.js';
+import sun from './definitions/sun.js';
 import earth from './definitions/earth.js';
 import baseDash from './definitions/baseDash.js';
 
 // 职业分类（图鉴/选球顶部切换）
 export const CATEGORIES = ['基础', '剑与魔法', '星球'];
 
-// 全部职业定义（图鉴展示用，含战场球：巨人=基础第1位、魔王=剑与魔法第1位）
+// 全部职业定义（图鉴展示用，含战场球：巨人=基础第1位、魔王=剑与魔法第1位、太阳=星球第1位）
 // ★ experimental（测试角色）：仅作技术力展示——图鉴标注、联机禁选、随机不命中（未来当新模式BOSS）
 const defs = [
   { ...giant, category: '基础' },
@@ -37,10 +38,11 @@ const defs = [
   nahida,   // 剑与魔法：纳西妲（德鲁伊）
   berserker,  // 剑与魔法：狂战士
   { ...necromancer, experimental: true },  // 剑与魔法：死灵术士（测试角色）
+  sun,      // 星球：太阳（战场球，不可选择）
   earth,    // 星球：地球
 ];
-// 可选职业（选球/联机选球用）：战场球（巨人/魔王）剔除；死灵保留（单机手动可玩，联机/随机由 excludeExperimental 过滤）
-const selectableDefs = defs.filter(d => d.id !== 'giant' && d.id !== 'demon');
+// 可选职业（选球/联机选球用）：战场球（巨人/魔王/太阳）剔除；死灵保留（单机手动可玩，联机/随机由 excludeExperimental 过滤）
+const selectableDefs = defs.filter(d => d.id !== 'giant' && d.id !== 'demon' && d.id !== 'sun');
 // 全部定义（含基础冲刺：可创建但不展示在列表）
 const byId = Object.fromEntries(defs.map(d => [d.id, d]));
 byId[baseDash.id] = baseDash;

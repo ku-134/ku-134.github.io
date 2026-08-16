@@ -12,6 +12,7 @@ import knight from './definitions/knight.js';
 import mage from './definitions/mage.js';
 import priest from './definitions/priest.js';
 import nahida from './definitions/nahida.js';
+import berserker from './definitions/berserker.js';
 import necromancer from './definitions/necromancer.js';
 import baseDash from './definitions/baseDash.js';
 
@@ -33,6 +34,7 @@ const defs = [
   mage,     // 剑与魔法：法师
   priest,   // 剑与魔法：牧师
   nahida,   // 剑与魔法：纳西妲（德鲁伊）
+  berserker,  // 剑与魔法：狂战士
   { ...necromancer, experimental: true },  // 剑与魔法：死灵术士（测试角色）
 ];
 // 可选职业（选球/联机选球用）：战场球（巨人/魔王）剔除；死灵保留（单机手动可玩，联机/随机由 excludeExperimental 过滤）

@@ -19,6 +19,7 @@ import baseDash from './definitions/baseDash.js';
 export const CATEGORIES = ['基础', '剑与魔法'];
 
 // 全部职业定义（图鉴展示用，含战场球：巨人=基础第1位、魔王=剑与魔法第1位）
+// ★ experimental（测试角色）：仅作技术力展示——图鉴标注、联机禁选、随机不命中（未来当新模式BOSS）
 const defs = [
   { ...giant, category: '基础' },
   { ...legion, category: '基础' },
@@ -32,20 +33,24 @@ const defs = [
   mage,     // 剑与魔法：法师
   priest,   // 剑与魔法：牧师
   nahida,   // 剑与魔法：纳西妲（德鲁伊）
-  necromancer,  // 剑与魔法：死灵术士
+  { ...necromancer, experimental: true },  // 剑与魔法：死灵术士（测试角色）
 ];
-// 可选职业（选球/联机选球用）：战场球（巨人/魔王）剔除
+// 可选职业（选球/联机选球用）：战场球（巨人/魔王）剔除；死灵保留（单机手动可玩，联机/随机由 excludeExperimental 过滤）
 const selectableDefs = defs.filter(d => d.id !== 'giant' && d.id !== 'demon');
 // 全部定义（含基础冲刺：可创建但不展示在列表）
 const byId = Object.fromEntries(defs.map(d => [d.id, d]));
 byId[baseDash.id] = baseDash;
 
 export const getSkillDefs = () => defs;                    // 图鉴（全部，含战场球）
-export const getSelectableDefs = () => selectableDefs;     // 选球（不含战场球）
+export const getSelectableDefs = (opts = {}) => {          // 选球（不含战场球；excludeExperimental=排除测试角色）
+  const list = selectableDefs;
+  return opts.excludeExperimental ? list.filter(d => !d.experimental) : list;
+};
 export const getSkillDef = id => byId[id];
-// 分类：可选项是否含战场球由 selectable 参数控制
-export const getDefsByCategory = (cat, { selectable = false } = {}) => {
-  const pool = selectable ? selectableDefs : defs;
+// 分类：可选项是否含战场球由 selectable 控制；excludeExperimental 排除测试角色（联机禁选/随机不命中）
+export const getDefsByCategory = (cat, { selectable = false, excludeExperimental = false } = {}) => {
+  let pool = selectable ? selectableDefs : defs;
+  if (excludeExperimental) pool = pool.filter(d => !d.experimental);
   return pool.filter(d => d.category === cat);
 };
 

@@ -112,8 +112,8 @@
     <div id="battle-list" class="battle-scroll"></div>
     <div class="select-btns">
       <button id="btn-battle-confirm" class="btn big">确认开战</button>
-      <button class="btn back" data-back="screen-select">返回</button>
     </div>
+    <button class="btn back corner-back" data-back="screen-select">返回</button>
   </section>
 
   <!-- 联机界面：大厅 + 房间（三个阶段独立界面：连接确认 → 场地选择 → 选球） -->
@@ -147,21 +147,30 @@
         <button id="btn-battle-confirm-online" class="btn wide hidden">确认下一步</button>
       </div>
 
-      <!-- 阶段2：选球（右=我的分类列表，左=对方球展示；准备后进入战场） -->
+      <!-- 阶段2：选球（复刻单机选球三栏布局：左=对方球展示，右=你的球分类+列表，底部=准备） -->
       <div id="stage-pick" class="stage hidden">
-        <div class="online-pick-cols">
+        <div class="select-header">
+          <div class="select-header-left">
+            <span class="col-title">对方的球</span>
+            <button id="btn-online-pick-back" class="btn back">返回</button>
+          </div>
+          <h2 class="center-title">选择球</h2>
+          <span class="col-title select-header-right">你的球</span>
+        </div>
+        <div class="select-layout stage-pick-layout">
           <div class="select-col">
-            <h3 class="col-title">对方的球</h3>
-            <div id="online-enemy-ball" class="enemy-ball">？</div>
+            <div id="online-enemy-ball" class="enemy-ball big">？</div>
+            <p id="online-enemy-wait" class="tip">等待对方选球…</p>
             <p id="online-enemy" class="tip hidden"></p>
           </div>
           <div class="select-col">
-            <h3 class="col-title">你的球</h3>
             <div id="cat-tabs-online" class="cat-tabs hidden"></div>
             <div id="online-pick" class="card-list online-pick-list hidden"></div>
           </div>
         </div>
-        <button id="btn-ready" class="btn wide hidden">准备</button>
+        <div class="select-confirm-wrap">
+          <button id="btn-ready" class="btn big hidden">准备</button>
+        </div>
       </div>
     </div>
     <button id="btn-online-back" class="btn back corner-back" data-back="panel-start">返回</button>

@@ -7,7 +7,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 // 负责：球更新、碰撞、技能、狂暴倒计时与全场伤害、胜负判定
 // ★ 必须同时更新 skill（职业技能）与 dashSkill（基础冲刺）：
 //   否则冲刺冷却永不递减（用完卡死）、瞄准帧追踪失效
-// ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类 / 太阳=星球分类，第三方）：
+// ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类，第三方）：
 //   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），hp 极高不会死
 // ★ necros（死灵术士）：双侧阵营多球（0=balls[0]侧 / 1=balls[1]侧，可同时存在）：
 //   - 按 _necroSide 分组 necrosA/necrosB；每侧 necros[0] = 该侧当前意识球
@@ -21,6 +21,8 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 // ★ 狂战士【疯狂冲撞】：b.rage>0 期间强制 2.5x 速度（无可阻挡，无视缠绕/减速），
 //   碰撞循环内每次有效撞击对敌球 22 伤（0.4s 防抖；撞墙/撞球不打断，5s 固定时长）
 // ★ 太阳：触碰附着燃烧4s（每秒5~15伤，sun_burn effect）；每10~15s向随机球发射激光（±15）
+// ★ 有限太空：激光边界触碰5伤（0.5s防抖）；小陨石每秒3~4颗（≤10、高速横穿、撞玩家20伤）；
+//   大陨石3~4颗缓慢游荡（边界反弹、球撞被弹走）——_updateSpace
 // ★ 地球探测器（对外开拓）：isEarthProbe phantom 帧追踪敌球（每帧偏转角度），命中 17~25 伤
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
@@ -51,6 +53,25 @@ export class MatchSim {
     this.berserkTick = 0;
     this._demonTimer = CONFIG.DEMON.summonInterval[0];
     this._sunLaserTimer = CONFIG.SUN.laserInterval[0];
+    this._smallMeteorT = 0.5;
+    // 有限太空：初始化 3~4 颗大陨石（phantom 实体，两端同步）
+    if (ctx.battleMap?.id === 'finiteSpace') {
+      ctx.phantoms = ctx.phantoms || [];
+      const { w: FW, h: FH } = ctx.battleMap.size;
+      const n = 3 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < n; i++) {
+        ctx.phantoms.push({
+          isPhantom: true, isBigMeteor: true,
+          x: 200 + Math.random() * (FW - 400),
+          y: 200 + Math.random() * (FH - 400),
+          angle: Math.random() * Math.PI * 2,
+          speed: 30 + Math.random() * 40,
+          radius: 42 + Math.random() * 22,
+          noise: Math.floor(Math.random() * 100),
+          t: 0,
+        });
+      }
+    }
     this._seq = 0;
   }
   // 阵营归属：-1 无 / 0 仅0侧 / 1 仅1侧 / 2 双侧（兼容旧调用方）
@@ -84,7 +105,14 @@ export class MatchSim {
       b.flash = Math.max(0, b.flash - dt * 3);
       // 傀儡术冲刺期间：位移交给 _updateWildDash（避免与自主移动叠加）
       if (!b.dash) move(b, dt);
-      collideWalls(b, this.ctx, this.time);
+      const wallHit = collideWalls(b, this.ctx, this.time);
+      // ★ 有限太空：激光边界——每次触碰边界 5 伤（0.5s 防抖；战场球不受伤）
+      if (wallHit && this.ctx.battleMap?.id === 'finiteSpace' && !this.wilds.includes(b)
+          && this.time - (b._laserHitT ?? -Infinity) >= 0.5) {
+        b._laserHitT = this.time;
+        b.takeDamage(5, this.ctx, null, true);
+        this.ctx.events.emit('fx:laserHit', { x: b.x, y: b.y });
+      }
       b.skill?.update(dt);      // 职业技能/被动：冷却递减/瞄准帧追踪/被动召唤（★勿漏）
       b.dashSkill?.update(dt);  // 基础冲刺：冷却递减/瞄准帧追踪（★勿漏）
     }
@@ -118,6 +146,7 @@ export class MatchSim {
     this._updateSeed(dt, all);
     this._updateProbe(dt, all);
     this._updateSun(dt, all);
+    this._updateSpace(dt, all);
     this._updateFx(dt);
     this.time += dt;
     // 狂暴：30s 后进入，从 0 正数计时（无上限），每秒全场 5 伤（玩家球 + 死灵球；战场球不死无需）
@@ -420,7 +449,94 @@ export class MatchSim {
       }
     }
   }
-  // 斩击扇形（isSlashFx）/太阳激光（isSunLaser）生命周期：超时移除（随 phantoms 同步两端）
+  // 有限太空：小陨石群（每秒3~4颗、场上≤10、高速横穿、撞玩家20伤）+ 大陨石群（缓慢游荡、边界反弹、球撞被弹走）
+  _updateSpace(dt, all) {
+    const map = this.ctx.battleMap;
+    if (map?.id !== 'finiteSpace') return;
+    const { w: FW, h: FH } = map.size;
+    const ph = this.ctx.phantoms = this.ctx.phantoms || [];
+    // --- 小陨石：生成（每秒 3~4 颗，场上 ≤10）---
+    this._smallMeteorT -= dt;
+    const smallCount = ph.filter(m => m.isSmallMeteor).length;
+    if (this._smallMeteorT <= 0 && smallCount < 10) {
+      this._smallMeteorT = 1 / (3 + Math.random());
+      const margin = 60;
+      const edge = Math.floor(Math.random() * 4);
+      let x, y, angle;
+      if (edge === 0) {          // 上边 → 向下斜穿
+        x = -margin + Math.random() * (FW + margin * 2); y = -margin;
+        angle = 0.35 + Math.random() * (Math.PI - 0.7);
+      } else if (edge === 1) {   // 下边 → 向上斜穿
+        x = -margin + Math.random() * (FW + margin * 2); y = FH + margin;
+        angle = Math.PI + 0.35 + Math.random() * (Math.PI - 0.7);
+      } else if (edge === 2) {   // 左边 → 向右斜穿
+        x = -margin; y = -margin + Math.random() * (FH + margin * 2);
+        angle = -Math.PI / 2 + 0.35 + Math.random() * (Math.PI - 0.7);
+      } else {                   // 右边 → 向左斜穿
+        x = FW + margin; y = -margin + Math.random() * (FH + margin * 2);
+        angle = Math.PI / 2 + 0.35 + Math.random() * (Math.PI - 0.7);
+      }
+      ph.push({
+        isPhantom: true, isSmallMeteor: true,
+        x, y, angle,
+        speed: 700 + Math.random() * 300,
+        radius: 12 + Math.random() * 8,
+        noise: Math.floor(Math.random() * 100),
+        t: 0, life: 2.5 + Math.random() * 0.5,
+      });
+    }
+    // --- 小陨石：移动 / 越界或超时移除 / 撞玩家球 20 伤 ---
+    for (let i = ph.length - 1; i >= 0; i--) {
+      const m = ph[i];
+      if (!m.isSmallMeteor) continue;
+      m.t += dt;
+      m.x += Math.cos(m.angle) * m.speed * dt;
+      m.y += Math.sin(m.angle) * m.speed * dt;
+      if (m.t > m.life || m.x < -80 || m.x > FW + 80 || m.y < -80 || m.y > FH + 80) {
+        ph.splice(i, 1);
+        continue;
+      }
+      let hitBall = null;
+      for (const b of all) {
+        if (this.wilds.includes(b) || b.dead) continue;   // 战场球不算；玩家球/死灵从者都算
+        if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) { hitBall = b; break; }
+      }
+      if (hitBall) {
+        hitBall.takeDamage(20, this.ctx, null, true);
+        this.ctx.events.emit('fx:meteorHit', { x: m.x, y: m.y });
+        ph.splice(i, 1);
+      }
+    }
+    // --- 大陨石：缓慢游荡 + 边界反弹 + 球撞被弹走（陨石不动）---
+    for (const m of ph) {
+      if (!m.isBigMeteor) continue;
+      m.angle += (Math.random() - 0.5) * 0.3;
+      m.x += Math.cos(m.angle) * m.speed * dt;
+      m.y += Math.sin(m.angle) * m.speed * dt;
+      if (m.x < m.radius) { m.x = m.radius; m.angle = Math.PI - m.angle; }
+      else if (m.x > FW - m.radius) { m.x = FW - m.radius; m.angle = Math.PI - m.angle; }
+      if (m.y < m.radius) { m.y = m.radius; m.angle = -m.angle; }
+      else if (m.y > FH - m.radius) { m.y = FH - m.radius; m.angle = -m.angle; }
+      for (const b of all) {
+        if (b.dead) continue;
+        const dx = b.x - m.x, dy = b.y - m.y;
+        const d = Math.hypot(dx, dy) || 0.001;
+        const minD = b.radiusScaled + m.radius;
+        if (d < minD) {
+          const nx = dx / d, ny = dy / d;
+          b.x = m.x + nx * minD;
+          b.y = m.y + ny * minD;
+          const vn = b.vx * nx + b.vy * ny;
+          if (vn < 0) b.setAngle(Math.atan2(b.vy - vn * ny * 2, b.vx - vn * nx * 2));
+          if (this.time - (b._meteorBounceT ?? -Infinity) >= 0.3) {
+            b._meteorBounceT = this.time;
+            this.ctx.events.emit('fx:meteorBounce', { x: b.x, y: b.y });
+          }
+        }
+      }
+    }
+  }
+  // 斩击扇形（isSlashFx）生命周期：0.35s 后移除（随 phantoms 同步两端）
   _updateFx(dt) {
     const ph = this.ctx.phantoms = this.ctx.phantoms || [];
     for (let i = ph.length - 1; i >= 0; i--) {

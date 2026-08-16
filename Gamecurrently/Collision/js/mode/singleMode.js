@@ -13,7 +13,7 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 // 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
 // 战场：由场地文件（js/maps/*）控制出生点/绘制/边界；battleId=null → 随机场地
 // 战场干扰球：每局随机一个（巨人 | 魔王），均为第三方，不参与胜负
-// 死灵术士：necros 阵营（多球/意识转移/分段血条）——只支持单方死灵（优先玩家侧）
+// 死灵术士：双侧阵营都支持（玩家侧=necrosA / AI侧=necrosB）——双方都选死灵时各自召唤/转移/分段血条
 // ★ 随机选球：start 收到 null = 从可选职业随机（不含战场球）；再来一局时重新随机
 // ★ 对局开始暂停首页背景（bg:run false），返回时恢复（背景无技能音效）
 const WILD_IDS = ['giant', 'demon'];
@@ -60,6 +60,8 @@ export class SingleMode {
     this.balls = [];
     this.wilds = [];
     this.necros = [];
+    this.necrosA = [];
+    this.necrosB = [];
     this.sim = null;
     this.lastWinner = -1;
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
@@ -104,10 +106,15 @@ export class SingleMode {
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
     this.ctx.wilds = this.wilds;   // 暴露给技能（傀儡术操控干扰球）
-    // 死灵术士阵营（只支持单方死灵，优先玩家侧）
+    // 死灵术士：双侧阵营（玩家侧=0 / AI侧=1），双方都选死灵也各自独立运作
     this.necros = [];
-    if (p1.skill?.def.id === 'necromancer') this.necros.push(p1);
-    else if (p2.skill?.def.id === 'necromancer') this.necros.push(p2);
+    this.necrosA = [];
+    this.necrosB = [];
+    if (p1.skill?.def.id === 'necromancer') { p1._necroSide = 0; this.necrosA.push(p1); this.necros.push(p1); }
+    if (p2.skill?.def.id === 'necromancer') { p2._necroSide = 1; this.necrosB.push(p2); this.necros.push(p2); }
+    this.ctx.necros = this.necros;
+    this.ctx.necrosA = this.necrosA;
+    this.ctx.necrosB = this.necrosB;
     this.sim = new MatchSim(this.ctx, this.balls, this.wilds, this.necros);
     this.ai = new AIController(p2, this.ctx);
     this.unsubs.forEach(fn => fn());
@@ -161,7 +168,7 @@ export class SingleMode {
       this.renderer.particles.spawn(ball.x, ball.y, { color: '#fff', count: 30, speed: 200, size: 4 });
     }));
     // 双技能通道输入：冲刺（Space/左下按钮）+ 职业技能（J键/右下按钮）
-    // ★ 输入始终操作 balls[0]（死灵术士意识转移后自动跟随当前球）
+    // ★ 输入始终操作 balls[0]（玩家侧死灵意识转移后自动跟随当前球）
     this.unbindDash?.();
     this.unbindActive?.();
     this.unbindDash = bindHold({
@@ -205,13 +212,20 @@ export class SingleMode {
     }
     if (this.phase === 'end') return;
     const res = this.sim.step(dt);
-    // 死灵意识转移：同步 necros 引用 + balls 当前球指向 + AI 控制目标（阵营归属固定 necroSideIdx）
+    // 死灵意识转移（双侧）：同步引用 + 各侧当前球跟随（阵营归属固定 _necroSide）
     if (this.sim?.necros) {
       this.necros = this.sim.necros;
+      this.necrosA = this.sim.necrosA;
+      this.necrosB = this.sim.necrosB;
       this.ctx.necros = this.necros;
-      const side = this.sim.necroSideIdx ?? -1;
-      if (side === 0 && this.necros.length && this.balls[0] !== this.necros[0]) this.balls[0] = this.necros[0];
-      if (side === 1 && this.necros.length && this.balls[1] !== this.necros[0]) { this.balls[1] = this.necros[0]; this.ai?.setBall(this.balls[1]); }
+      this.ctx.necrosA = this.necrosA;
+      this.ctx.necrosB = this.necrosB;
+      // 玩家侧（side0）当前球 → balls[0]；AI侧（side1）当前球 → balls[1] + AI 控制目标
+      if (this.necrosA.length && this.balls[0] !== this.necrosA[0]) this.balls[0] = this.necrosA[0];
+      if (this.necrosB.length && this.balls[1] !== this.necrosB[0]) {
+        this.balls[1] = this.necrosB[0];
+        this.ai?.setBall(this.balls[1]);
+      }
     }
     this.ai?.update(dt);
     this.hud.showMatchTimer(this.sim.berserkLeft(), this.sim.berserk);

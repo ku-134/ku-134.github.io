@@ -135,6 +135,31 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
     g.restore();
     return;
   }
+  // 太阳：八道光芒射线 + 深橙日珥斑（3倍大战场球）
+  if (skillId === 'sun') {
+    g.save();
+    // 光芒（八道三角射线）
+    g.fillStyle = '#FFC300';
+    for (let i = 0; i < 8; i++) {
+      const a0 = i / 8 * Math.PI * 2;
+      g.beginPath();
+      g.moveTo(x + Math.cos(a0) * r * 1.02, y + Math.sin(a0) * r * 1.02);
+      g.lineTo(x + Math.cos(a0 + 0.13) * r * 1.55, y + Math.sin(a0 + 0.13) * r * 1.55);
+      g.lineTo(x + Math.cos(a0 + 0.26) * r * 1.02, y + Math.sin(a0 + 0.26) * r * 1.02);
+      g.closePath();
+      g.fill();
+    }
+    // 深橙日珥斑
+    g.fillStyle = '#E65100';
+    const spots = [[0.2, -0.25, 0.22], [-0.3, 0.12, 0.16], [0.25, 0.32, 0.15], [-0.1, -0.05, 0.1]];
+    for (const [dx, dy, sz] of spots) {
+      g.beginPath();
+      g.ellipse(x + dx * r, y + dy * r, sz * r, sz * r * 0.8, 0.3, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.restore();
+    return;
+  }
   // 地球：海洋色打底 + 绿色板块（球内固定位置，像大陆）
   if (skillId === 'earth') {
     g.save();
@@ -178,7 +203,7 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔）
 // 摄像机：ringHole 大圆场 = 小幅度追踪自己球（不缩放，保持原偏移观感）
-// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形（isSlashFx）/地球探测器（isEarthProbe）——两端渲染一致
+// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形/地球探测器/太阳激光——两端渲染一致
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -205,6 +230,8 @@ export class Renderer {
     bus.on('fx:vineTick', ({ x, y }) => this.particles.spawn(x, y, { color: '#7cb342', count: 6, speed: 60, size: 3 }));
     // 地球【文明】事件文字提示（生态修复/战争破坏/对外开拓/流浪地球）
     bus.on('fx:earthLabel', ({ x, y, text }) => this.addLabel(x, y, text));
+    // 太阳燃烧跳伤：橙红火星
+    bus.on('fx:sunBurn', ({ x, y }) => this.particles.spawn(x, y, { color: '#FF6D00', count: 8, speed: 70, size: 3 }));
   }
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -456,6 +483,23 @@ export class Renderer {
       g.restore();
       return;
     }
+    // 太阳激光：从太阳到目标的金色/橙红射线（0.4s 淡出；positive=补充能量金色 / 毁灭橙红）
+    if (ph.isSunLaser) {
+      const a = Math.max(0, 1 - (ph.t || 0) / 0.4);
+      g.save();
+      g.globalAlpha = a;
+      g.strokeStyle = ph.positive ? '#FFD93D' : '#FF6D00';
+      g.lineWidth = 6;
+      g.lineCap = 'round';
+      g.beginPath(); g.moveTo(ph.x, ph.y); g.lineTo(ph.tx, ph.ty); g.stroke();
+      g.strokeStyle = '#FFF3C4';
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(ph.x, ph.y); g.lineTo(ph.tx, ph.ty); g.stroke();
+      g.fillStyle = ph.positive ? '#FFD93D' : '#FF6D00';
+      g.beginPath(); g.arc(ph.tx, ph.ty, 8, 0, Math.PI * 2); g.fill();
+      g.restore();
+      return;
+    }
     // 魔族（魔王眷属）：深紫实心小眷属 + 双角，冲刺时带拖影
     if (ph.isMinion) {
       const r = ph.radius;
@@ -626,6 +670,19 @@ export class Renderer {
         g.beginPath();
         g.arc(b.x + Math.cos(a0) * (r + 3), b.y + Math.sin(a0) * (r + 3), 4, 0, Math.PI * 2);
         g.stroke();
+      }
+      g.restore();
+    }
+    // 燃烧（太阳）：橙红火焰粒子环绕（区别于毒液绿泡）
+    if (b.effects.has('sun_burn')) {
+      g.save();
+      g.fillStyle = '#FF6D00';
+      for (let i = 0; i < 6; i++) {
+        const a0 = i / 6 * Math.PI * 2 + performance.now() / 300;
+        const fl = r + 8 + Math.sin(performance.now() / 200 + i) * 4;
+        g.beginPath();
+        g.arc(b.x + Math.cos(a0) * fl, b.y + Math.sin(a0) * fl, 4 + Math.sin(performance.now() / 150 + i * 2) * 1.5, 0, Math.PI * 2);
+        g.fill();
       }
       g.restore();
     }

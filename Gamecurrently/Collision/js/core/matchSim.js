@@ -14,6 +14,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 //   - 并入 all 参与移动/碰撞/技能命中/狂暴；necros[0] = 当前意识球（转移后自动切换）
 //   - 召唤：仅当前球触发（守卫），开局先进入 10s 冷却（第一次不召唤）；从者用轻量 skill 不空转被动
 //   - 胜负：对方球死 或 死灵阵营全灭；当前死灵球死不算败（先转移）
+// ★ 狂暴：30s 后进入，从 0 开始正数计时（无上限），每秒全场 5 伤——直到一方倒下才结束
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
 // ★ 生命火种（纳西妲）：isSeed phantom 高速飞行，命中敌球施加缠绕效果（定身+持续伤害）
@@ -60,7 +61,7 @@ export class MatchSim {
     this._updateSeed(dt, all);
     this._updateFx(dt);
     this.time += dt;
-    // 狂暴：30s 后每秒全场 10 伤（玩家球 + 死灵球；战场球不死无需）
+    // 狂暴：30s 后进入，从 0 正数计时（无上限），每秒全场 5 伤（玩家球 + 死灵球；战场球不死无需）
     if (!this.berserk) {
       if (this.time >= CONFIG.BERSERK.delay) {
         this.berserk = true; this.berserkTime = 0; this.berserkTick = 0;
@@ -116,16 +117,16 @@ export class MatchSim {
     this.ctx.events.emit('fx:summon', { x: nb.x, y: nb.y });
     return nb;
   }
-  // 胜负：对方球死 / 死灵阵营全灭（当前死灵球死不算败，先转移）/ 狂暴结束
+  // 胜负：对方球死 / 死灵阵营全灭（当前死灵球死不算败，先转移）——狂暴无上限，直到一方倒下
   _isOver() {
     if (this.necroSideIdx >= 0) {
       const enemy = this.necroSideIdx === 0 ? this.balls[1] : this.balls[0];
       if (enemy.dead) return true;
       if (this.necros.length && this.necros.every(n => n.dead)) return true;
       if (!this.necros.length) return true;   // 阵营清空（转移后无球）= 全灭
-      return this.berserk && this.berserkTime >= CONFIG.BERSERK.duration;
+      return false;
     }
-    return this.balls.some(b => b.dead) || (this.berserk && this.berserkTime >= CONFIG.BERSERK.duration);
+    return this.balls.some(b => b.dead);
   }
   _winner() {
     const [a, b] = this.balls;
@@ -137,7 +138,7 @@ export class MatchSim {
     const myAlive = this.necros.filter(n => !n.dead);
     if (enemy.dead) return isSide0 ? 0 : 1;
     if (!myAlive.length) return isSide0 ? 1 : 0;
-    // 狂暴结束：死灵总血量 vs 对方血量
+    // 双方同时倒（罕见）：比总血量
     const myHp = myAlive.reduce((s, n) => s + Math.max(0, n.hp), 0);
     const better = myHp >= Math.max(0, enemy.hp);
     return isSide0 ? (better ? 0 : 1) : (better ? 1 : 0);
@@ -311,8 +312,8 @@ export class MatchSim {
       if (fx.t > 0.35) ph.splice(i, 1);
     }
   }
-  // 顶部倒计时剩余秒数（普通=距狂暴，狂暴=距结束）
+  // 顶部计时：普通=距狂暴剩余秒；狂暴=从0正数计时（无上限）
   berserkLeft() {
-    return Math.max(0, Math.ceil(this.berserk ? CONFIG.BERSERK.duration - this.berserkTime : CONFIG.BERSERK.delay - this.time));
+    return this.berserk ? Math.floor(this.berserkTime) : Math.max(0, Math.ceil(CONFIG.BERSERK.delay - this.time));
   }
 }

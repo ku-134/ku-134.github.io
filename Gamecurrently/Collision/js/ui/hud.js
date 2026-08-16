@@ -4,11 +4,15 @@ import CONFIG from '../config.js';
 // 触屏：dash-btn（左下，全职业）+ active-btn（右下，仅主动职业）
 // 电脑：dash-cd-bar（左下）+ cd-bar（职业，主动冷却/被动进度）
 // prefix：单机 ''，联机 'online-'；myIndex：自己球下标（房主=0，客人=1）
-// ★ 死灵术士：该侧 HP 条渲染为分段小管（各球血量/上限，段间有空隙），最前段=当前意识球（深红）
+// ★ 死灵术士：该侧 HP 条渲染为分段小管（各球血量/上限，段间有空隙），
+//   最前段=当前意识球（最深红），从者按顺序渐浅（多级红色深度）
+// ★ 分段时原 fill 元素会被移出 bar——用 _necroBarCache 缓存 bar 引用，
+//   避免下一帧 fillEl.parentElement 为 null 抛异常卡死（已修）
 export class Hud {
   constructor(prefix = '') {
     this.prefix = prefix;
     this.ctx = null;
+    this._necroBarCache = new Map();  // fillEl -> bar（分段后 fillEl 被移出 DOM，缓存恢复用）
     this.el = {
       p1name: document.getElementById(prefix + 'p1-name'),
       p1hp: document.getElementById(prefix + 'p1-hp'),
@@ -106,7 +110,7 @@ export class Hud {
   tick() {
     if (!this.balls) return;
     const [p1, p2] = this.balls;
-    // 死灵术士：分段血条（各死灵球血量/上限小管，前段=当前球深红；另一侧正常）
+    // 死灵术士：分段血条（各死灵球血量/上限小管，前段=当前球最深红；另一侧正常）
     const necros = this.ctx?.necros || [];
     const hasNecro = necros.length && necros[0]?.skill?.def?.id === 'necromancer';
     if (hasNecro) {
@@ -135,33 +139,39 @@ export class Hud {
     this.updateDashUI(my);
     this.updateSkillUI(my);
   }
-  // 死灵术士分段血条：每段 = 一个死灵球（当前球最前段深红，从者浅红；段间空隙=空血槽）
+  // 死灵术士分段血条：每段 = 一个死灵球（当前球最前段最深红，从者按顺序渐浅；段间空隙=空槽）
+  // ★ bar 引用缓存：fillEl 首次分段后被移出 DOM，后续用缓存 bar（防止 null 崩溃）
   renderNecroBar(fillEl, necros) {
-    const bar = fillEl.parentElement;
-    const segs = necros.filter(n => !n.dead);
+    let bar = fillEl.parentElement || this._necroBarCache.get(fillEl);
+    if (!bar) return;
     if (!bar.classList.contains('segmented')) {
+      this._necroBarCache.set(fillEl, bar);
       bar.classList.add('segmented');
       bar.innerHTML = '';
     }
+    const segs = necros.filter(n => !n.dead);
     while (bar.children.length < segs.length) {
       const d = document.createElement('div');
       d.className = 'hp-seg';
       bar.appendChild(d);
     }
     while (bar.children.length > segs.length) bar.removeChild(bar.lastChild);
+    // 多级红色深度：当前球 #B3001B 最深 → 从者依次渐浅
+    const shades = ['#B3001B', '#c62828', '#d95f6a', '#e57373', '#ef9a9a'];
     [...bar.children].forEach((el, i) => {
       const n = segs[i];
       el.style.width = (Math.max(0, Math.min(1, n.hp / n.maxHp)) * 100) + '%';
-      el.style.background = i === 0 ? '#B3001B' : '#e57373';
+      el.style.background = shades[Math.min(i, shades.length - 1)];
     });
   }
   // 恢复单条血条（非死灵对局 / 对局切换时）
   resetBar(fillEl) {
-    const bar = fillEl.parentElement;
-    if (bar.classList.contains('segmented')) {
+    const bar = fillEl.parentElement || this._necroBarCache.get(fillEl);
+    if (bar && bar.classList.contains('segmented')) {
       bar.classList.remove('segmented');
       bar.innerHTML = '';
       bar.appendChild(fillEl);
+      this._necroBarCache.delete(fillEl);
     }
   }
   // 基础冲刺按钮/冷却条（全职业）

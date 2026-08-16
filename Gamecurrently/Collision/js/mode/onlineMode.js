@@ -18,7 +18,7 @@ import { makeWildBall } from './singleMode.js';
 // 房间内分三个阶段独立界面（互不挤占）：
 //   阶段0 连接确认：房间号独占一屏，连接成功后双方点【确认连接】才继续
 //   阶段1 场地选择：房主选→确认（BATTLE 广播）；客人只读查看，房主确认后才可确认下一步
-//   阶段2 选球：右=我的分类列表（可随机），左=对方球展示；准备后进入战场
+//   阶段2 选球：复刻单机三栏布局（左=对方球展示，右=我的分类列表，底部=准备）
 // 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
 // ★ 客人端 HP 升降本地监测数字；_onData 必须处理 MSG.CMD（老bug）
 export class OnlineMode {
@@ -75,15 +75,18 @@ export class OnlineMode {
       pickTabs: document.getElementById('cat-tabs-online'),
       enemyBall: document.getElementById('online-enemy-ball'),
       enemy: document.getElementById('online-enemy'),
+      enemyWait: document.getElementById('online-enemy-wait'),
       msg: document.getElementById('room-msg'),
       input: document.getElementById('room-input'),
       btnReady: document.getElementById('btn-ready'),
+      btnPickBack: document.getElementById('btn-online-pick-back'),
       dashBtn: document.getElementById('online-dash-btn'),
       activeBtn: document.getElementById('online-active-btn'),
     };
     bindTap(this.els.btnReady, () => this._ready());
     bindTap(this.els.btnBattleConfirm, () => this._confirmBattle());
     bindTap(this.els.btnConnConfirm, () => this._confirmConn());
+    bindTap(this.els.btnPickBack, () => this._backToOnline());
   }
   get myName() { return (localStorage.getItem('collision.nick') || '玩家').slice(0, 8); }
   enter() {
@@ -161,6 +164,7 @@ export class OnlineMode {
     this.els.btnConnConfirm.classList.add('hidden');
     this.els.battleCards.innerHTML = '';
     this.els.enemy.classList.add('hidden');
+    this.els.enemyWait.classList.remove('hidden');
     this.els.enemyBall.style.background = 'none';
     this.els.enemyBall.textContent = '？';
     this.els.pick.classList.add('hidden');
@@ -238,9 +242,10 @@ export class OnlineMode {
     this.els.stageBattle.classList.add('hidden');
     this.els.stagePick.classList.remove('hidden');
     this.els.status = '请选择你的球，然后点击准备';
+    if (this.enemyPicked) this.els.enemyWait.classList.add('hidden');
     this._renderPick();
   }
-  // ---- 阶段2：选球 ----
+  // ---- 阶段2：选球（复刻单机三栏布局） ----
   _renderPick() {
     this.els.pickTabs.classList.remove('hidden');
     this.els.pick.classList.remove('hidden');
@@ -326,8 +331,9 @@ export class OnlineMode {
       this.enemyName = m.d.name || '对手';
       this.enemyPicked = true;
       const def = getSkillDef(m.d.classId);
-      this.els.enemyBall.style.background = `url('${ballIconDataURL(def, 100)}') center / cover no-repeat`;
+      this.els.enemyBall.style.background = `url('${ballIconDataURL(def, 150)}') center / cover no-repeat`;
       this.els.enemyBall.textContent = '';
+      this.els.enemyWait.classList.add('hidden');
       this.els.enemy.textContent = `${this.enemyName}（${def.name}）`;
       this.els.enemy.classList.remove('hidden');
       this.els.status = this.picked

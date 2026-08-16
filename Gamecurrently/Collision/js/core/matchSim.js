@@ -16,7 +16,10 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 //   - 召唤：仅每侧当前球触发（按侧守卫）；开局先进入 10s 冷却（第一次不召唤）；从者轻量 skill
 //   - 意识转移：每侧独立（当前球死 → 移交该侧下一个活着的；dead 从者随时清理）
 //   - 胜负：任意一侧全灭（含其 balls 主球）即结束；死灵侧当前球死不算败（先转移）
-// ★ 狂暴：30s 后进入，从 0 开始正数计时（无上限），每秒全场 5 伤——直到一方倒下才结束
+// ★ 狂暴：30s 后进入，从 0 开始正数计时（无上限），每秒全场 5 伤——直到一方倒下才结束；
+//   ★ hp ≤30 的球豁免狂暴扣血（残血极限拉扯）
+// ★ 狂战士【疯狂冲撞】：b.rage>0 期间强制 2.5x 速度（无可阻挡，无视缠绕/减速），
+//   碰撞循环内每次有效撞击对敌球 22 伤（0.4s 防抖；撞墙/撞球不打断，5s 固定时长）
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
 // ★ 生命火种（纳西妲）：isSeed phantom 高速飞行，命中敌球施加缠绕效果（定身+持续伤害）
@@ -68,6 +71,13 @@ export class MatchSim {
     for (const b of all) {
       b.update(dt);
       this.ctx.effects.update(b, dt);
+      // ★ 狂战士【疯狂冲撞】：疯狂期间 2.5x 速度且无可阻挡（在效果系统之后强制覆盖，无视缠绕定身/减速）；
+      //   撞墙/撞球不打断（5s 固定时长，碰撞反弹照常但不终止疯狂）
+      if (b.rage > 0) {
+        b.rage -= dt;
+        b.speed = b.baseSpeed * CONFIG.BERSERKER.speedMul;
+        if (b.rage <= 0) { b.rage = 0; b.speed = b.baseSpeed; }
+      }
       b.flash = Math.max(0, b.flash - dt * 3);
       // 傀儡术冲刺期间：位移交给 _updateWildDash（避免与自主移动叠加）
       if (!b.dash) move(b, dt);
@@ -78,7 +88,19 @@ export class MatchSim {
     // 两两碰撞（玩家vs玩家 + 玩家vs战场球 + 死灵球之间 + 战场球之间）
     for (let i = 0; i < all.length; i++) {
       for (let j = i + 1; j < all.length; j++) {
-        collideBalls(all[i], all[j], this.ctx, this.time);
+        const hit = collideBalls(all[i], all[j], this.ctx, this.time);
+        // ★ 狂战士疯狂撞击：每次有效撞击（0.4s 防抖）对敌球造成 22 伤（撞战场球/死灵从者同样生效）
+        if (hit) {
+          const a = all[i], b = all[j];
+          if (a.rage > 0 && !b.dead && this.time - (a._rageHitT ?? -Infinity) >= CONFIG.COLLIDE_COOLDOWN) {
+            a._rageHitT = this.time; b.takeDamage(CONFIG.BERSERKER.hitDamage, this.ctx, a);
+            this.ctx.events.emit('fx:phantomHit', { x: b.x, y: b.y, color: '#B89FEA' });
+          }
+          if (b.rage > 0 && !a.dead && this.time - (b._rageHitT ?? -Infinity) >= CONFIG.COLLIDE_COOLDOWN) {
+            b._rageHitT = this.time; a.takeDamage(CONFIG.BERSERKER.hitDamage, this.ctx, b);
+            this.ctx.events.emit('fx:phantomHit', { x: a.x, y: a.y, color: '#B89FEA' });
+          }
+        }
       }
     }
     this._updateWildDash(dt);
@@ -88,6 +110,7 @@ export class MatchSim {
     this._updateFx(dt);
     this.time += dt;
     // 狂暴：30s 后进入，从 0 正数计时（无上限），每秒全场 5 伤（玩家球 + 死灵球；战场球不死无需）
+    // ★ 豁免：hp ≤30 的球不再受狂暴扣血
     if (!this.berserk) {
       if (this.time >= CONFIG.BERSERK.delay) {
         this.berserk = true; this.berserkTime = 0; this.berserkTick = 0;
@@ -99,7 +122,7 @@ export class MatchSim {
       if (this.berserkTick >= 1) {
         this.berserkTick -= 1;
         const targets = [...new Set([...this.balls, ...this.necros])];
-        for (const b of targets) if (!b.dead) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true);
+        for (const b of targets) if (!b.dead && b.hp > CONFIG.BERSERK.exemptHp) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true);
       }
     }
     // 意识转移（双侧独立）：当前球阵亡 → 移交该侧下一个活着的；dead 从者随时清理

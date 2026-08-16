@@ -9,6 +9,7 @@ import { move, collideWalls, collideBalls } from './physics.js';
 //   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），hp 极高不会死
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
+// ★ 生命火种（纳西妲）：isSeed phantom 高速飞行，命中敌球施加缠绕效果（定身+持续伤害）
 // ★ 魔王：召唤魔族；法师：奥术飞弹飞行；骑士：斩击扇形（isSlashFx 实体随 phantoms 同步）
 // ★ 狂暴降临瞬间发 berserk 音效（sfx:play 事件 → 全局管理器）
 export class MatchSim {
@@ -44,6 +45,7 @@ export class MatchSim {
     this._updateWildDash(dt);
     this._updateDemon(dt, all);
     this._updateArcane(dt, all);
+    this._updateSeed(dt, all);
     this._updateFx(dt);
     this.time += dt;
     // 狂暴：30s 后每秒全场 10 伤（只对玩家球；战场球不死无需）
@@ -186,6 +188,37 @@ export class MatchSim {
         if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
           if (!b.skill?.def?.type?.startsWith?.('wild')) b.takeDamage(m.damage, this.ctx, null, true);
           this.ctx.events.emit('fx:missileHit', { x: m.x, y: m.y, color: m.color });
+          ph.splice(i, 1);
+          break;
+        }
+      }
+    }
+  }
+  // 纳西妲：生命火种飞行（高速小弹；命中敌球 → 施加缠绕 effect；战场球只挡弹；撞墙消失）
+  _updateSeed(dt, all) {
+    const ph = this.ctx.phantoms = this.ctx.phantoms || [];
+    for (let i = ph.length - 1; i >= 0; i--) {
+      const m = ph[i];
+      if (!m.isSeed) continue;
+      m.t += dt;
+      m.x += Math.cos(m.angle) * m.speed * dt;
+      m.y += Math.sin(m.angle) * m.speed * dt;
+      // 撞边界即消失
+      const map = this.ctx.battleMap;
+      if (map?.id === 'ringHole') {
+        const cx = CONFIG.FIELD.w / 2, cy = CONFIG.FIELD.h / 2;
+        if (Math.hypot(m.x - cx, m.y - cy) > map.radius - m.radius) { ph.splice(i, 1); continue; }
+      } else if (m.x < m.radius || m.x > CONFIG.FIELD.w - m.radius || m.y < m.radius || m.y > CONFIG.FIELD.h - m.radius) {
+        ph.splice(i, 1);
+        continue;
+      }
+      // 命中玩家球（非发射者=敌球）→ 施加缠绕；战场球只挡弹
+      for (const b of all) {
+        if (b === m.owner || b.dead) continue;
+        if (b.skill?.def?.type?.startsWith?.('wild')) continue;
+        if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
+          this.ctx.effects.apply(b, 'vine_wrap', { source: m.owner });
+          this.ctx.events.emit('fx:seedHit', { x: m.x, y: m.y, color: m.color });
           ph.splice(i, 1);
           break;
         }

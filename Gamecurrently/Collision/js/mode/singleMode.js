@@ -12,11 +12,11 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 // 单机模式：玩家选球 vs 玩家指定的 AI 职业，321 倒计时，观战 + 主动干涉
 // 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
 // 战场：由场地文件（js/maps/*）控制出生点/绘制/边界；battleId=null → 随机场地
-// 战场干扰球：每局随机一个（巨人 | 魔王），均为第三方，不参与胜负
+// 战场干扰球：每局随机一个（巨人 | 魔王 | 太阳），均为第三方，不参与胜负
 // 死灵术士：双侧阵营都支持（玩家侧=necrosA / AI侧=necrosB）——双方都选死灵时各自召唤/转移/分段血条
 // ★ 随机选球：start 收到 null = 从可选职业随机（不含战场球与测试角色死灵）；再来一局时重新随机
 // ★ 对局开始暂停首页背景（bg:run false），返回时恢复（背景无技能音效）
-const WILD_IDS = ['giant', 'demon'];
+const WILD_IDS = ['giant', 'demon', 'sun'];
 
 // 随机职业池：全部可选职业（自动跟随注册表，不含战场球；★排除测试角色死灵术士）
 const randomPool = () => getSelectableDefs().filter(d => !d.experimental).map(d => d.id);
@@ -25,16 +25,20 @@ const pickRandom = () => {
   return pool[Math.floor(Math.random() * pool.length)];
 };
 
-// 创建战场干扰球（巨人 r=20 红色暴怒 / 魔王 r=30 紫色召唤）
+// 创建战场干扰球（巨人 r=20 红色暴怒 / 魔王 r=30 紫色召唤 / 太阳 r=60 橙色光芒）
 export function makeWildBall(id, ctx, w, h) {
   const isDemon = id === 'demon';
+  const isSun = id === 'sun';
   const b = new Ball({
-    x: w * 0.5, y: isDemon ? h * 0.65 : h * 0.35,
+    x: w * 0.5, y: isDemon ? h * 0.65 : isSun ? h * 0.5 : h * 0.35,
     angle: Math.random() * Math.PI * 2,
     hp: CONFIG.WILD.hp,
-    radius: isDemon ? CONFIG.BALL.radius * CONFIG.DEMON.scale : undefined,
-    name: isDemon ? '战场魔王' : '战场巨人',
+    radius: isDemon ? CONFIG.BALL.radius * CONFIG.DEMON.scale
+      : isSun ? CONFIG.BALL.radius * CONFIG.SUN.scale : undefined,
+    name: isDemon ? '战场魔王' : isSun ? '战场太阳' : '战场巨人',
   });
+  // 太阳：移动速度仅基础球 1/4（baseSpeed 同步改，效果恢复也一致）
+  if (isSun) { b.baseSpeed = CONFIG.BALL.speed * CONFIG.SUN.speedMul; b.speed = b.baseSpeed; }
   b.skill = createSkill(id, b, ctx);
   b.color = b.skill.def.color;
   return b;
@@ -99,7 +103,7 @@ export class SingleMode {
     p1.color = p1.skill.def.color;
     p2.color = p2.skill.def.color;
     p1.isPlayer = true;
-    // 战场干扰球：每局随机一个（巨人 | 魔王），出生自场地点位
+    // 战场干扰球：每局随机一个（巨人 | 魔王 | 太阳），出生自场地点位
     const wild = makeWildBall(WILD_IDS[Math.floor(Math.random() * WILD_IDS.length)], this.ctx, w, h);
     wild.x = sw.x; wild.y = sw.y;
     this.wilds = [wild];

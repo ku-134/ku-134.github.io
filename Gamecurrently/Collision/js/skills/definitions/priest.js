@@ -10,7 +10,7 @@ export default {
   type: 'active',
   category: '剑与魔法',
   skillName: '治疗术',
-  desc: '主动【治疗术】(冷却14秒)：发动后为自己恢复10~25点生命（随机，不可突破上限）；治疗时身体闪绿光并跳出绿色加血数字。躲避耐活，把血线奶住就是胜利。',
+  desc: '主动【治疗术】(冷却14秒)：发动后为自己恢复10~25点生命（随机，不可突破上限）；治疗时身体闪绿光并跳出绿色加血数字。',
   color: '#F5D600',
   active: {
     cooldown: CONFIG.PRIEST.cooldown,

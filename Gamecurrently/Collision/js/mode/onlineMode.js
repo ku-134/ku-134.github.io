@@ -19,7 +19,8 @@ import { makeWildBall } from './singleMode.js';
 //   阶段0 连接确认：房间号独占一屏，连接成功后双方点【确认连接】才继续
 //   阶段1 场地选择：房主选→确认（BATTLE 广播）；客人端只读——中央一张未选卡片，房主选择后填充
 //   阶段2 选球：三栏布局（左=对方球展示，右=我的分类列表，底部=准备）
-// 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
+// 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族/地球探测器/太阳激光——两端渲染一致）
+// 战场干扰球：巨人 | 魔王 | 太阳 三选一
 // 再来一局：双方各自点【再来一局】确认，双方都确认后房主才重开（REMATCH）
 // ★ 死灵术士（experimental 测试角色）：联机禁选——分类列表不显示 + 随机不命中（未来当新模式BOSS）
 // ★ 意识转移（双侧）：房主侧 balls[0] 跟随 sim.necrosA[0]、balls[1] 跟随 sim.necrosB[0]；客人侧按 _necroSide 跟随
@@ -401,7 +402,7 @@ export class OnlineMode {
     this._begin();
   }
   _begin() {
-    const wildId = Math.random() < 0.5 ? 'giant' : 'demon';
+    const wildId = ['giant', 'demon', 'sun'][Math.floor(Math.random() * 3)];
     this.signal.send(MSG.START, { hostClass: this.myClass, guestClass: this.enemyClass, hostName: this.myName, guestName: this.enemyName, wildId, battleId: this.battleId });
     this._startMatch({ hostClass: this.myClass, guestClass: this.enemyClass, hostName: this.myName, guestName: this.enemyName, wildId, battleId: this.battleId });
   }

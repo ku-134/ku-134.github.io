@@ -2,6 +2,7 @@ import CONFIG from '../config.js';
 import { Camera } from './camera.js';
 import { Particles } from './particles.js';
 import { rayHitRect } from '../core/math.js';
+import { bus } from '../core/eventBus.js';
 
 const INK = '#1f1a17';
 const PAPER = '#f7edd8';

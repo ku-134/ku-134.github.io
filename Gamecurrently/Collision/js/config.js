@@ -8,8 +8,8 @@ const CONFIG = {
   TURN_INTERVAL: [1.2, 3.0],  // 球自主随机转向间隔（秒）
   TURN_ANGLE: 0.35,           // 单次随机转向最大弧度
   CAMERA: { amp: 8, freq: [0.5, 1.2] },
-  // 狂暴机制：30s后进入狂暴，每秒全场10伤，20s=200血必分胜负
-  BERSERK: { delay: 30, duration: 20, dps: 10 },
+  // 狂暴机制：30s后进入狂暴，从0开始正数计时（无上限，直到一方倒下），每秒5伤
+  BERSERK: { delay: 30, dps: 5 },
   // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带30伤）
   BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
   // 巨人【暴怒】：战场干扰球（第三方，不可选择），只保留愤怒机制

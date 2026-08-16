@@ -14,12 +14,12 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 // 战场：由场地文件（js/maps/*）控制出生点/绘制/边界；battleId=null → 随机场地
 // 战场干扰球：每局随机一个（巨人 | 魔王），均为第三方，不参与胜负
 // 死灵术士：双侧阵营都支持（玩家侧=necrosA / AI侧=necrosB）——双方都选死灵时各自召唤/转移/分段血条
-// ★ 随机选球：start 收到 null = 从可选职业随机（不含战场球）；再来一局时重新随机
+// ★ 随机选球：start 收到 null = 从可选职业随机（不含战场球与测试角色死灵）；再来一局时重新随机
 // ★ 对局开始暂停首页背景（bg:run false），返回时恢复（背景无技能音效）
 const WILD_IDS = ['giant', 'demon'];
 
-// 随机职业池：全部可选职业（自动跟随注册表，不含战场球）
-const randomPool = () => getSelectableDefs().map(d => d.id);
+// 随机职业池：全部可选职业（自动跟随注册表，不含战场球；★排除测试角色死灵术士）
+const randomPool = () => getSelectableDefs().filter(d => !d.experimental).map(d => d.id);
 const pickRandom = () => {
   const pool = randomPool();
   return pool[Math.floor(Math.random() * pool.length)];

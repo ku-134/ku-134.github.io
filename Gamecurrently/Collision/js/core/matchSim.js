@@ -9,11 +9,13 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 //   否则冲刺冷却永不递减（用完卡死）、瞄准帧追踪失效
 // ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类，第三方）：
 //   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），hp 极高不会死
-// ★ necros（死灵术士）：场上所有死灵球（阵营多球，常驻可叠加）：
-//   - necroSideIdx：阵营归属（0=balls[0]侧 / 1=balls[1]侧 / -1 无死灵）——构造时定死，转移不变
-//   - 并入 all 参与移动/碰撞/技能命中/狂暴；necros[0] = 当前意识球（转移后自动切换）
-//   - 召唤：仅当前球触发（守卫），开局先进入 10s 冷却（第一次不召唤）；从者用轻量 skill 不空转被动
-//   - 胜负：对方球死 或 死灵阵营全灭；当前死灵球死不算败（先转移）
+// ★ necros（死灵术士）：双侧阵营多球（0=balls[0]侧 / 1=balls[1]侧，可同时存在）：
+//   - 按 _necroSide 分组 necrosA/necrosB；每侧 necros[0] = 该侧当前意识球
+//   - 全部并入 all 参与移动/碰撞/技能命中/狂暴（★all 必须去重：死灵球同时在 balls 与 necros，
+//     不去重会双倍更新 → 速度×2 / 召唤冷却×2（10s 变 5s）/ 转向×2——必须用 Set 去重）
+//   - 召唤：仅每侧当前球触发（按侧守卫）；开局先进入 10s 冷却（第一次不召唤）；从者轻量 skill
+//   - 意识转移：每侧独立（当前球死 → 移交该侧下一个活着的；dead 从者随时清理）
+//   - 胜负：任意一侧全灭（含其 balls 主球）即结束；死灵侧当前球死不算败（先转移）
 // ★ 狂暴：30s 后进入，从 0 开始正数计时（无上限），每秒全场 5 伤——直到一方倒下才结束
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
@@ -26,9 +28,17 @@ export class MatchSim {
     this.balls = balls;
     this.wilds = Array.isArray(wilds) ? wilds : (wilds ? [wilds] : []);
     this.necros = Array.isArray(necros) ? necros : (necros ? [necros] : []);
-    // 阵营归属固定：necros[0] 初始属于哪一侧（转移/重排不变）
-    this.necroSideIdx = this.necros.length ? (this.necros.includes(balls[0]) ? 0 : 1) : -1;
+    // 双侧死灵分组：按 _necroSide（0=balls[0]侧 / 1=balls[1]侧），未标记的按归属推断
+    this.necrosA = [];
+    this.necrosB = [];
+    for (const n of this.necros) {
+      if (n._necroSide === undefined) n._necroSide = n === balls[0] ? 0 : 1;
+      (n._necroSide === 0 ? this.necrosA : this.necrosB).push(n);
+    }
+    this.necroSides = [0, 1].filter(s => (s === 0 ? this.necrosA : this.necrosB).length);
     ctx.necros = this.necros;
+    ctx.necrosA = this.necrosA;
+    ctx.necrosB = this.necrosB;
     ctx.sim = this;
     this.time = 0;
     this.berserk = false;
@@ -37,8 +47,24 @@ export class MatchSim {
     this._demonTimer = CONFIG.DEMON.summonInterval[0];
     this._seq = 0;
   }
+  // 阵营归属：-1 无 / 0 仅0侧 / 1 仅1侧 / 2 双侧（兼容旧调用方）
+  get necroSideIdx() {
+    if (this.necrosA.length && this.necrosB.length) return 2;
+    if (this.necrosA.length) return 0;
+    if (this.necrosB.length) return 1;
+    return -1;
+  }
+  // 去重合并：死灵球同时在 balls 与 necros，必须只更新一次
+  _all() {
+    const seen = new Set();
+    const all = [];
+    for (const b of [...this.balls, ...this.wilds, ...this.necros]) {
+      if (!seen.has(b)) { seen.add(b); all.push(b); }
+    }
+    return all;
+  }
   step(dt) {
-    const all = [...this.balls, ...this.wilds, ...this.necros];
+    const all = this._all();
     for (const b of all) {
       b.update(dt);
       this.ctx.effects.update(b, dt);
@@ -72,11 +98,11 @@ export class MatchSim {
       this.berserkTick += dt;
       if (this.berserkTick >= 1) {
         this.berserkTick -= 1;
-        const targets = [...this.balls, ...this.necros];
+        const targets = [...new Set([...this.balls, ...this.necros])];
         for (const b of targets) if (!b.dead) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true);
       }
     }
-    // 意识转移：当前死灵球阵亡 → 移交给下一个活着的（dead 球移出阵营）
+    // 意识转移（双侧独立）：当前球阵亡 → 移交该侧下一个活着的；dead 从者随时清理
     this._updateNecroTransfer();
     return {
       over: this._isOver(),
@@ -85,18 +111,21 @@ export class MatchSim {
   }
   // 死灵阵营所属侧（构造时定死，转移不变）
   necroSide() { return this.necroSideIdx; }
-  // 意识转移：当前球（index 0）阵亡 → 移到下一个活着的；全灭则清空
+  // 意识转移：每侧独立——当前球（index 0）阵亡 → 移交该侧下一个活着的；
+  // 非当前球的 dead 从者也会被清理（列表始终只含存活球）
   _updateNecroTransfer() {
-    if (!this.necros.length) return;
-    if (!this.necros[0].dead) return;
-    const alive = this.necros.filter(n => !n.dead);
-    if (alive.length) {
-      this.necros = [alive[0], ...alive.slice(1)];
-    } else {
-      this.necros = [];
+    for (const side of [0, 1]) {
+      const list = side === 0 ? this.necrosA : this.necrosB;
+      if (!list.length) continue;
+      const alive = list.filter(n => !n.dead);
+      if (alive.length !== list.length) {
+        list.length = 0;
+        list.push(...alive);
+      }
     }
+    this.necros = [...this.necrosA, ...this.necrosB];
   }
-  // 召唤一个 50 血死灵球（由当前球触发；开局第一次进入冷却不召唤）
+  // 召唤一个 50 血死灵球（由当前球触发；开局第一次进入冷却不召唤；按侧归组）
   summonNecro(owner) {
     const { w, h } = CONFIG.FIELD;
     const a = Math.random() * Math.PI * 2;
@@ -113,35 +142,30 @@ export class MatchSim {
     // 轻量 skill：只有 def 供渲染（尸斑装饰），无被动空转（避免从者重复召唤/计时混乱）
     nb.skill = { def: getSkillDef('necromancer'), update() {}, state: {}, cooldownLeft: 0 };
     nb.isNecro = true;
-    this.necros.push(nb);
+    nb._necroSide = owner._necroSide ?? 0;
+    (nb._necroSide === 0 ? this.necrosA : this.necrosB).push(nb);
+    this.necros = [...this.necrosA, ...this.necrosB];
     this.ctx.events.emit('fx:summon', { x: nb.x, y: nb.y });
     return nb;
   }
-  // 胜负：对方球死 / 死灵阵营全灭（当前死灵球死不算败，先转移）——狂暴无上限，直到一方倒下
+  // 胜负：任意一侧全灭（含其 balls 主球）即结束——狂暴无上限，直到一方倒下
   _isOver() {
-    if (this.necroSideIdx >= 0) {
-      const enemy = this.necroSideIdx === 0 ? this.balls[1] : this.balls[0];
-      if (enemy.dead) return true;
-      if (this.necros.length && this.necros.every(n => n.dead)) return true;
-      if (!this.necros.length) return true;   // 阵营清空（转移后无球）= 全灭
-      return false;
-    }
-    return this.balls.some(b => b.dead);
+    const aSide = [this.balls[0], ...this.necrosA];
+    const bSide = [this.balls[1], ...this.necrosB];
+    return !aSide.some(x => !x.dead) || !bSide.some(x => !x.dead);
   }
   _winner() {
-    const [a, b] = this.balls;
-    const side = this.necroSideIdx;
-    // 非死灵对局：a=balls[0]侧，b=balls[1]侧
-    if (side === -1) return a.dead && b.dead ? -1 : a.dead ? 1 : 0;
-    const isSide0 = side === 0;
-    const enemy = isSide0 ? b : a;
-    const myAlive = this.necros.filter(n => !n.dead);
-    if (enemy.dead) return isSide0 ? 0 : 1;
-    if (!myAlive.length) return isSide0 ? 1 : 0;
+    const aSide = [this.balls[0], ...this.necrosA];
+    const bSide = [this.balls[1], ...this.necrosB];
+    const aAlive = aSide.filter(x => !x.dead);
+    const bAlive = bSide.filter(x => !x.dead);
+    if (!aAlive.length && !bAlive.length) return -1;
+    if (!aAlive.length) return 1;
+    if (!bAlive.length) return 0;
     // 双方同时倒（罕见）：比总血量
-    const myHp = myAlive.reduce((s, n) => s + Math.max(0, n.hp), 0);
-    const better = myHp >= Math.max(0, enemy.hp);
-    return isSide0 ? (better ? 0 : 1) : (better ? 1 : 0);
+    const aHp = aAlive.reduce((s, x) => s + Math.max(0, x.hp), 0);
+    const bHp = bAlive.reduce((s, x) => s + Math.max(0, x.hp), 0);
+    return aHp >= bHp ? 0 : 1;
   }
   // 傀儡术：干扰球基础冲刺（高速直线突进 → 撞敌球伤害 / 撞主人只停不伤 / 撞墙或超时结束）
   _updateWildDash(dt) {

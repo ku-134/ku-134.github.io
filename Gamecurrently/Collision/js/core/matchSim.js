@@ -7,7 +7,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 // 负责：球更新、碰撞、技能、狂暴倒计时与全场伤害、胜负判定
 // ★ 必须同时更新 skill（职业技能）与 dashSkill（基础冲刺）：
 //   否则冲刺冷却永不递减（用完卡死）、瞄准帧追踪失效
-// ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类，第三方）：
+// ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类 / 太阳=星球分类，第三方）：
 //   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），hp 极高不会死
 // ★ necros（死灵术士）：双侧阵营多球（0=balls[0]侧 / 1=balls[1]侧，可同时存在）：
 //   - 按 _necroSide 分组 necrosA/necrosB；每侧 necros[0] = 该侧当前意识球
@@ -20,6 +20,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 //   ★ hp ≤30 的球豁免狂暴扣血（残血极限拉扯）
 // ★ 狂战士【疯狂冲撞】：b.rage>0 期间强制 2.5x 速度（无可阻挡，无视缠绕/减速），
 //   碰撞循环内每次有效撞击对敌球 22 伤（0.4s 防抖；撞墙/撞球不打断，5s 固定时长）
+// ★ 太阳：触碰附着燃烧4s（每秒5~15伤，sun_burn effect）；每10~15s向随机球发射激光（±15）
 // ★ 地球探测器（对外开拓）：isEarthProbe phantom 帧追踪敌球（每帧偏转角度），命中 17~25 伤
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
@@ -49,6 +50,7 @@ export class MatchSim {
     this.berserkTime = 0;
     this.berserkTick = 0;
     this._demonTimer = CONFIG.DEMON.summonInterval[0];
+    this._sunLaserTimer = CONFIG.SUN.laserInterval[0];
     this._seq = 0;
   }
   // 阵营归属：-1 无 / 0 仅0侧 / 1 仅1侧 / 2 双侧（兼容旧调用方）
@@ -90,6 +92,12 @@ export class MatchSim {
     for (let i = 0; i < all.length; i++) {
       for (let j = i + 1; j < all.length; j++) {
         const hit = collideBalls(all[i], all[j], this.ctx, this.time);
+        // ★ 太阳燃烧：任何球碰到太阳 → 附着燃烧4秒（每秒5~15伤）
+        if (hit) {
+          const A = all[i], B = all[j];
+          if (A.skill?.def?.id === 'sun' && !B.dead) this.ctx.effects.apply(B, 'sun_burn', {});
+          if (B.skill?.def?.id === 'sun' && !A.dead) this.ctx.effects.apply(A, 'sun_burn', {});
+        }
         // ★ 狂战士疯狂撞击：每次有效撞击（0.4s 防抖）对敌球造成 22 伤（撞战场球/死灵从者同样生效）
         if (hit) {
           const a = all[i], b = all[j];
@@ -109,6 +117,7 @@ export class MatchSim {
     this._updateArcane(dt, all);
     this._updateSeed(dt, all);
     this._updateProbe(dt, all);
+    this._updateSun(dt, all);
     this._updateFx(dt);
     this.time += dt;
     // 狂暴：30s 后进入，从 0 正数计时（无上限），每秒全场 5 伤（玩家球 + 死灵球；战场球不死无需）
@@ -387,14 +396,38 @@ export class MatchSim {
       }
     }
   }
-  // 斩击扇形（isSlashFx）生命周期：0.35s 后移除（随 phantoms 同步两端）
+  // 太阳：每10~15秒向随机球发射激光（±15：补充能量+15 / 毁灭-15）
+  // 激光以 isSunLaser phantom 广播（两端渲染一致）；燃烧由 sun_burn effect 管理（碰撞触发）
+  _updateSun(dt, all) {
+    for (const w of this.wilds) {
+      if (w.skill?.def?.id !== 'sun' || w.dead) continue;
+      this._sunLaserTimer -= dt;
+      if (this._sunLaserTimer <= 0) {
+        this._sunLaserTimer = CONFIG.SUN.laserInterval[0]
+          + Math.random() * (CONFIG.SUN.laserInterval[1] - CONFIG.SUN.laserInterval[0]);
+        const targets = all.filter(b => b !== w && !b.dead);
+        if (!targets.length) return;
+        const t = targets[Math.floor(Math.random() * targets.length)];
+        const positive = Math.random() < 0.5;   // 50% 补充能量 / 50% 毁灭
+        if (positive) t.heal(CONFIG.SUN.laserDamage, this.ctx);
+        else t.takeDamage(CONFIG.SUN.laserDamage, this.ctx, w, true);
+        this.ctx.phantoms = this.ctx.phantoms || [];
+        this.ctx.phantoms.push({
+          isSunLaser: true, isPhantom: true,
+          x: w.x, y: w.y, tx: t.x, ty: t.y, positive, t: 0,
+        });
+        this.ctx.events.emit('sfx:play', { name: 'slash' });
+      }
+    }
+  }
+  // 斩击扇形（isSlashFx）/太阳激光（isSunLaser）生命周期：超时移除（随 phantoms 同步两端）
   _updateFx(dt) {
     const ph = this.ctx.phantoms = this.ctx.phantoms || [];
     for (let i = ph.length - 1; i >= 0; i--) {
       const fx = ph[i];
-      if (!fx.isSlashFx) continue;
+      if (!fx.isSlashFx && !fx.isSunLaser) continue;
       fx.t += dt;
-      if (fx.t > 0.35) ph.splice(i, 1);
+      if (fx.t > (fx.isSunLaser ? 0.4 : 0.35)) ph.splice(i, 1);
     }
   }
   // 顶部计时：普通=距狂暴剩余秒；狂暴=从0正数计时（无上限）

@@ -131,6 +131,7 @@ function renderCatTabs(container, cats, current, onSwitch) {
 }
 
 // ---- 图鉴：分类切换 + 左列表 + 右详情（含战场球：巨人/魔王说明） ----
+// ★ 测试角色（experimental）：详情顶部红色标注【测试角色】说明
 const bestiaryList = document.getElementById('bestiary-list');
 const bestiaryTabs = document.getElementById('cat-tabs-bestiary');
 const detailOrb = document.getElementById('detail-orb');
@@ -139,7 +140,9 @@ const detailDesc = document.getElementById('detail-desc');
 function showBestiaryDetail(d) {
   detailOrb.style.background = `url('${ballIconDataURL(d, 150)}') center / cover no-repeat`;
   detailName.textContent = `${d.name} · ${d.skillName}`;
-  detailDesc.textContent = d.desc;
+  detailDesc.innerHTML = d.experimental
+    ? '<span style="color:#B3001B;font-weight:bold">【测试角色】仅作技术力展示：联机暂不可选、随机不命中；未来当新模式 BOSS 启用。</span><br>' + d.desc
+    : d.desc;
   document.getElementById('bestiary-detail').scrollTop = 0;
 }
 function renderBestiary(cat) {
@@ -171,6 +174,7 @@ const aiTabs = document.getElementById('cat-tabs-ai');
 let selectCat = CATEGORIES[0];
 let aiCat = CATEGORIES[0];
 // 随机轮播：只展示一个球（带装饰图标），每150ms切换职业（纯预览，不可点击选择）
+// ★ 随机池排除测试角色死灵术士（与战场干扰球同理：不命中）
 function makeRoulette(listEl) {
   let timer = null;
   let defs = [];
@@ -208,7 +212,7 @@ function renderSelect(cat) {
   renderCatTabs(selectTabs, SELECT_CATS, cat, renderSelect);
   if (cat === '随机') {
     selectedSkill = null;          // 随机：确认时从可选职业随机决定
-    selectRoulette.start(getSelectableDefs());
+    selectRoulette.start(getSelectableDefs({ excludeExperimental: true }));
     return;
   }
   selectRoulette.stop();
@@ -227,7 +231,7 @@ function renderAI(cat) {
   renderCatTabs(aiTabs, SELECT_CATS, cat, renderAI);
   if (cat === '随机') {
     selectedAISkill = null;
-    aiRoulette.start(getSelectableDefs());
+    aiRoulette.start(getSelectableDefs({ excludeExperimental: true }));
     return;
   }
   aiRoulette.stop();

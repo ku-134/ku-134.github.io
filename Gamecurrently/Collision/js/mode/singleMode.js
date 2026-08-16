@@ -100,6 +100,7 @@ export class SingleMode {
     this.wilds = [wild];
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
+    this.ctx.wilds = this.wilds;   // 暴露给技能（傀儡术操控干扰球）
     this.sim = new MatchSim(this.ctx, this.balls, this.wilds);
     this.ai = new AIController(p2, this.ctx);
     this.unsubs.forEach(fn => fn());

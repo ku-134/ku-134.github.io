@@ -13,6 +13,7 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 // 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
 // 战场：由场地文件（js/maps/*）控制出生点/绘制/边界；battleId=null → 随机场地
 // 战场干扰球：每局随机一个（巨人 | 魔王），均为第三方，不参与胜负
+// 死灵术士：necros 阵营（多球/意识转移/分段血条）——只支持单方死灵（优先玩家侧）
 // ★ 随机选球：start 收到 null = 从可选职业随机（不含战场球）；再来一局时重新随机
 // ★ 对局开始暂停首页背景（bg:run false），返回时恢复（背景无技能音效）
 const WILD_IDS = ['giant', 'demon'];
@@ -58,7 +59,9 @@ export class SingleMode {
     this.battleMap = null;
     this.balls = [];
     this.wilds = [];
+    this.necros = [];
     this.sim = null;
+    this.lastWinner = -1;
     this.loop = new GameLoop(dt => this.update(dt), () => this.render());
     this.unsubs = [];
     this.unbindDash = null;
@@ -83,8 +86,8 @@ export class SingleMode {
     const { w, h } = CONFIG.FIELD;
     // 出生点：场地文件控制（玩家2球 + 战场球从 4 个对称点随机取 3 个）
     const [s1, s2, sw] = pickSpawns(this.battleMap, 3);
-    const p1 = new Ball({ x: s1.x, y: s1.y, angle: Math.PI * 0.9, name: '你' });
-    const p2 = new Ball({ x: s2.x, y: s2.y, angle: Math.PI * 0.1, name: 'AI' });
+    const p1 = new Ball({ x: s1.x, y: s1.y, angle: Math.PI * 0.9, name: '你', hp: pId === 'necromancer' ? CONFIG.NECRO.hp : CONFIG.MAX_HP });
+    const p2 = new Ball({ x: s2.x, y: s2.y, angle: Math.PI * 0.1, name: 'AI', hp: aId === 'necromancer' ? CONFIG.NECRO.hp : CONFIG.MAX_HP });
     p1.skill = createSkill(pId, p1, this.ctx);
     p2.skill = createSkill(aId, p2, this.ctx);
     // 基础冲刺（全职业通用；兵团职业自动带30伤变体）
@@ -101,7 +104,11 @@ export class SingleMode {
     this.balls = [p1, p2];
     this.ctx.balls = this.balls;
     this.ctx.wilds = this.wilds;   // 暴露给技能（傀儡术操控干扰球）
-    this.sim = new MatchSim(this.ctx, this.balls, this.wilds);
+    // 死灵术士阵营（只支持单方死灵，优先玩家侧）
+    this.necros = [];
+    if (p1.skill?.def.id === 'necromancer') this.necros.push(p1);
+    else if (p2.skill?.def.id === 'necromancer') this.necros.push(p2);
+    this.sim = new MatchSim(this.ctx, this.balls, this.wilds, this.necros);
     this.ai = new AIController(p2, this.ctx);
     this.unsubs.forEach(fn => fn());
     this.unsubs = [];
@@ -154,24 +161,25 @@ export class SingleMode {
       this.renderer.particles.spawn(ball.x, ball.y, { color: '#fff', count: 30, speed: 200, size: 4 });
     }));
     // 双技能通道输入：冲刺（Space/左下按钮）+ 职业技能（J键/右下按钮）
+    // ★ 输入始终操作 balls[0]（死灵术士意识转移后自动跟随当前球）
     this.unbindDash?.();
     this.unbindActive?.();
     this.unbindDash = bindHold({
       el: document.getElementById('dash-btn'),
       isTouch: this.isTouch,
       key: 'Space',
-      onPress: () => p1.dashSkill?.startAim(),
-      onRelease: () => p1.dashSkill?.releaseAim(),
+      onPress: () => this.balls[0]?.dashSkill?.startAim(),
+      onRelease: () => this.balls[0]?.dashSkill?.releaseAim(),
     });
     const key = 'Key' + (localStorage.getItem('collision.key') || 'J');
     this.unbindActive = bindHold({
       el: document.getElementById('active-btn'),
       isTouch: this.isTouch,
       key,
-      onPress: () => p1.skill?.startAim(),
-      onRelease: () => p1.skill?.releaseAim(),
+      onPress: () => this.balls[0]?.skill?.startAim(),
+      onRelease: () => this.balls[0]?.skill?.releaseAim(),
     });
-    this.hud.bind(this.balls, { isTouch: this.isTouch, key });
+    this.hud.bind(this.balls, { isTouch: this.isTouch, key, ctx: this.ctx });
     this.hud.hideResult();
     this.hud.hideMatchTimer();
     this.phase = 'countdown';
@@ -197,26 +205,39 @@ export class SingleMode {
     }
     if (this.phase === 'end') return;
     const res = this.sim.step(dt);
+    // 死灵意识转移：同步 necros 引用 + balls 当前球指向 + AI 控制目标
+    if (this.sim?.necros) {
+      this.necros = this.sim.necros;
+      this.ctx.necros = this.necros;
+      if (this.necros.length && !this.necros.includes(this.balls[1])) {
+        // 玩家侧死灵：balls[0] 指向当前球
+        if (this.balls[0] !== this.necros[0]) this.balls[0] = this.necros[0];
+      } else if (this.necros.length) {
+        // AI 侧死灵：balls[1] 指向当前球，AI 跟随
+        if (this.balls[1] !== this.necros[0]) { this.balls[1] = this.necros[0]; this.ai?.setBall(this.balls[1]); }
+      }
+    }
     this.ai?.update(dt);
     this.hud.showMatchTimer(this.sim.berserkLeft(), this.sim.berserk);
     this.renderer.update(dt);
     this.hud.tick();
-    if (res.over) this.endMatch();
+    if (res.over) { this.lastWinner = res.winner; this.endMatch(); }
   }
   render() {
-    const all = [...this.balls, ...this.wilds];
+    // 渲染列表：对方球 + 战场球 + 全部死灵球（避免当前球重复）
+    const others = this.balls.filter(b => !this.necros.includes(b));
+    const all = [...others, ...this.wilds, ...this.necros];
     this.renderer.render(all, this.loop.time, this.ctx.phantoms || [], this.battleMap);
   }
   endMatch() {
     if (this.phase === 'end') return;
     this.phase = 'end';
     this.hud.hideMatchTimer();
-    const [p1, p2] = this.balls;
+    // winner：0=玩家侧赢 / 1=AI侧赢 / -1=平局兜底比血
     let win;
-    if (p1.dead && p2.dead) win = p1.hp >= p2.hp;
-    else if (!p1.dead && p2.dead) win = true;
-    else if (p1.dead && !p2.dead) win = false;
-    else win = p1.hp >= p2.hp;
+    if (this.lastWinner === 0) win = true;
+    else if (this.lastWinner === 1) win = false;
+    else win = this.balls[0].hp >= this.balls[1].hp;
     this.hud.showResult(win);
     this.ctx.events.emit('sfx:play', { name: win ? 'win' : 'lose' });
     const again = document.getElementById('btn-again');

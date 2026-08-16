@@ -20,6 +20,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 //   ★ hp ≤30 的球豁免狂暴扣血（残血极限拉扯）
 // ★ 狂战士【疯狂冲撞】：b.rage>0 期间强制 2.5x 速度（无可阻挡，无视缠绕/减速），
 //   碰撞循环内每次有效撞击对敌球 22 伤（0.4s 防抖；撞墙/撞球不打断，5s 固定时长）
+// ★ 地球探测器（对外开拓）：isEarthProbe phantom 帧追踪敌球（每帧偏转角度），命中 17~25 伤
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
 // ★ 生命火种（纳西妲）：isSeed phantom 高速飞行，命中敌球施加缠绕效果（定身+持续伤害）
@@ -107,6 +108,7 @@ export class MatchSim {
     this._updateDemon(dt, all);
     this._updateArcane(dt, all);
     this._updateSeed(dt, all);
+    this._updateProbe(dt, all);
     this._updateFx(dt);
     this.time += dt;
     // 狂暴：30s 后进入，从 0 正数计时（无上限），每秒全场 5 伤（玩家球 + 死灵球；战场球不死无需）
@@ -343,6 +345,42 @@ export class MatchSim {
         if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
           this.ctx.effects.apply(b, 'vine_wrap', { source: m.owner });
           this.ctx.events.emit('fx:seedHit', { x: m.x, y: m.y, color: m.color });
+          ph.splice(i, 1);
+          break;
+        }
+      }
+    }
+  }
+  // 地球探测器（对外开拓）：帧追踪敌球（每帧偏转角度朝敌球——发射后仍主动追踪）
+  // 命中玩家球（非发射者=敌球）→ 伤害；战场球/死灵从者只挡弹；撞墙消失
+  _updateProbe(dt, all) {
+    const ph = this.ctx.phantoms = this.ctx.phantoms || [];
+    for (let i = ph.length - 1; i >= 0; i--) {
+      const m = ph[i];
+      if (!m.isEarthProbe) continue;
+      // 帧追踪：角度持续指向敌球（getEnemy 兼容死灵阵营）
+      const enemy = m.owner ? this.ctx.getEnemy(m.owner) : null;
+      if (enemy && !enemy.dead) {
+        m.angle = Math.atan2(enemy.y - m.y, enemy.x - m.x);
+      }
+      m.x += Math.cos(m.angle) * m.speed * dt;
+      m.y += Math.sin(m.angle) * m.speed * dt;
+      // 撞边界即消失（矩形默认；ringHole 用外圆边界）
+      const map = this.ctx.battleMap;
+      if (map?.id === 'ringHole') {
+        const cx = CONFIG.FIELD.w / 2, cy = CONFIG.FIELD.h / 2;
+        if (Math.hypot(m.x - cx, m.y - cy) > map.radius - m.radius) { ph.splice(i, 1); continue; }
+      } else if (m.x < m.radius || m.x > CONFIG.FIELD.w - m.radius || m.y < m.radius || m.y > CONFIG.FIELD.h - m.radius) {
+        ph.splice(i, 1);
+        continue;
+      }
+      // 命中玩家球（非发射者=敌球）→ 伤害；战场球/死灵从者只挡弹
+      for (const b of all) {
+        if (b === m.owner || b.dead) continue;
+        if (this.wilds.includes(b) || this.necros.includes(b)) continue;
+        if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
+          b.takeDamage(m.damage, this.ctx, m.owner);
+          this.ctx.events.emit('fx:missileHit', { x: m.x, y: m.y, color: m.color });
           ph.splice(i, 1);
           break;
         }

@@ -17,9 +17,10 @@ import { makeWildBall } from './singleMode.js';
 // 联机模式：创建/加入房间（5位纯数字 + PeerJS）
 // 房间内分三个阶段独立界面（互不挤占）：
 //   阶段0 连接确认：房间号独占一屏，连接成功后双方点【确认连接】才继续
-//   阶段1 场地选择：房主选→确认（BATTLE 广播）；客人只读查看，房主确认后才可确认下一步
-//   阶段2 选球：复刻单机三栏布局（左=对方球展示，右=我的分类列表，底部=准备）
+//   阶段1 场地选择：房主选→确认（BATTLE 广播）；客人端只读——中央一张未选卡片，房主选择后填充
+//   阶段2 选球：三栏布局（左=对方球展示，右=我的分类列表，底部=准备）
 // 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
+// 再来一局：双方各自点【再来一局】确认，双方都确认后房主才重开（REMATCH）
 // ★ 客人端 HP 升降本地监测数字；_onData 必须处理 MSG.CMD（老bug）
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
@@ -48,6 +49,8 @@ export class OnlineMode {
     this.ready = false;
     this.enemyReady = false;
     this.randomPick = false;
+    this.rematch = false;
+    this.enemyRematch = false;
     this.phase = 'idle';
     this.countdown = 0;
     this.countdownShown = -1;
@@ -79,14 +82,12 @@ export class OnlineMode {
       msg: document.getElementById('room-msg'),
       input: document.getElementById('room-input'),
       btnReady: document.getElementById('btn-ready'),
-      btnPickBack: document.getElementById('btn-online-pick-back'),
       dashBtn: document.getElementById('online-dash-btn'),
       activeBtn: document.getElementById('online-active-btn'),
     };
     bindTap(this.els.btnReady, () => this._ready());
     bindTap(this.els.btnBattleConfirm, () => this._confirmBattle());
     bindTap(this.els.btnConnConfirm, () => this._confirmConn());
-    bindTap(this.els.btnPickBack, () => this._backToOnline());
   }
   get myName() { return (localStorage.getItem('collision.nick') || '玩家').slice(0, 8); }
   enter() {
@@ -107,6 +108,7 @@ export class OnlineMode {
     this.picked = false; this.enemyPicked = false;
     this.ready = false; this.enemyReady = false;
     this.randomPick = false;
+    this.rematch = false; this.enemyRematch = false;
     this.battleId = 'arena'; this.battleSelected = false;
     this.stage = 'conn';
     this._resetReadyBtn();
@@ -182,9 +184,34 @@ export class OnlineMode {
     this.els.status = this.isHost ? '请选择场地' : '等待房主选择场地…';
     this._renderStageBattle();
   }
-  // ---- 阶段1：场地选择 ----
+  // ---- 阶段1：场地选择（房主滑动选；客人中央单卡片，房主选择后填充） ----
   _renderStageBattle() {
     this.els.battleCards.innerHTML = '';
+    if (!this.isHost) {
+      // 客人端：只渲染中央一张卡片（未选=❓等待，房主选择后=填充预览）
+      const card = document.createElement('div');
+      card.className = 'battle-card rnd stage-battle-card' + (this.battleSelected ? ' selected' : '');
+      if (this.battleSelected) {
+        const map = getBattleField(this.battleId);
+        const cv = document.createElement('canvas');
+        const name = document.createElement('div'); name.className = 'cname'; name.textContent = map.name;
+        const desc = document.createElement('div'); desc.className = 'cskill'; desc.textContent = map.desc;
+        card.appendChild(cv); card.appendChild(name); card.appendChild(desc);
+        this._drawBattlePreview(map, cv, 260, 100);
+      } else {
+        const pv = document.createElement('div'); pv.className = 'battle-preview'; pv.textContent = '❓';
+        const name = document.createElement('div'); name.className = 'cname'; name.textContent = '等待房主选择…';
+        card.appendChild(pv); card.appendChild(name);
+      }
+      this.els.battleCards.appendChild(card);
+      this.els.battleInfo.textContent = this.battleSelected
+        ? '房主已选：' + getBattleField(this.battleId).name + '，点击确认下一步'
+        : '等待房主选择场地…';
+      if (this.battleSelected) this.els.btnBattleConfirm.classList.remove('hidden');
+      else this.els.btnBattleConfirm.classList.add('hidden');
+      return;
+    }
+    // 房主端：全部场地滑动选择
     const cards = [];
     for (const map of BATTLE_FIELDS) {
       const card = document.createElement('div');
@@ -203,16 +230,8 @@ export class OnlineMode {
       this.els.battleCards.appendChild(card);
       cards.push(card);
     }
-    if (this.isHost) {
-      this.els.btnBattleConfirm.classList.remove('hidden');
-      this.els.battleInfo.textContent = '请选择场地';
-    } else {
-      this.els.btnBattleConfirm.classList.add('hidden');
-      this.els.battleInfo.textContent = this.battleSelected
-        ? '房主已选：' + getBattleField(this.battleId).name + '，点击确认下一步'
-        : '等待房主选择场地…';
-      if (this.battleSelected) this.els.btnBattleConfirm.classList.remove('hidden');
-    }
+    this.els.btnBattleConfirm.classList.remove('hidden');
+    this.els.battleInfo.textContent = '请选择场地';
   }
   _drawBattlePreview(map, canvas, w2 = 260, h2 = 100) {
     const g = canvas.getContext('2d');
@@ -245,7 +264,7 @@ export class OnlineMode {
     if (this.enemyPicked) this.els.enemyWait.classList.add('hidden');
     this._renderPick();
   }
-  // ---- 阶段2：选球（复刻单机三栏布局） ----
+  // ---- 阶段2：选球（三栏布局） ----
   _renderPick() {
     this.els.pickTabs.classList.remove('hidden');
     this.els.pick.classList.remove('hidden');
@@ -362,7 +381,9 @@ export class OnlineMode {
     } else if (m.t === MSG.RESULT) {
       this._showResult(m.d);
     } else if (m.t === MSG.REMATCH) {
-      if (this.isHost) this._begin();
+      // 双方确认再来一局：房主收到且自己也确认过才重开
+      this.enemyRematch = true;
+      if (this.isHost && this.rematch) this._begin();
     }
   }
   _tryStart() {
@@ -383,6 +404,8 @@ export class OnlineMode {
     this.battleId = d.battleId || 'arena';
     this.battleMap = getBattleField(this.battleId);
     this.ctx.battleMap = this.battleMap;
+    this.rematch = false;
+    this.enemyRematch = false;
     this.hud.hideResult();
     this.hud.hideMatchTimer();
     this.ctx.phantoms = [];
@@ -561,10 +584,16 @@ export class OnlineMode {
     const isWin = d.win === 'draw' ? false : this.isHost ? d.win === 'host' : d.win === 'guest';
     this.hud.showResult(isWin);
     this.ctx.events.emit('sfx:play', { name: isWin ? 'win' : 'lose' });
-    document.getElementById('online-btn-again').onclick = () => {
-      this.hud.hideResult();
-      if (this.isHost) this._begin();
-      else this.signal.send(MSG.REMATCH, {});
+    const btnAgain = document.getElementById('online-btn-again');
+    btnAgain.textContent = '再来一局';
+    btnAgain.disabled = false;
+    btnAgain.onclick = () => {
+      if (this.rematch) return;
+      this.rematch = true;
+      btnAgain.textContent = '等待对方…';
+      btnAgain.disabled = true;
+      this.signal.send(MSG.REMATCH, {});
+      if (this.isHost && this.enemyRematch) this._begin();
     };
     document.getElementById('online-btn-home2').onclick = () => {
       this.hud.hideResult();

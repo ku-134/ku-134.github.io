@@ -22,6 +22,7 @@ import { makeWildBall } from './singleMode.js';
 // 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
 // 再来一局：双方各自点【再来一局】确认，双方都确认后房主才重开（REMATCH）
 // ★ 死灵术士：necros 阵营随 STATE 广播（[0]=当前意识球），房主 sim 跑、客人端重建渲染+分段血条
+// ★ 意识转移：房主侧 balls[0] 跟随 sim.necros[0]（necroSideIdx 固定）；客人侧按 myClass 判定
 // ★ 客人端 HP 升降本地监测数字；_onData 必须处理 MSG.CMD（老bug）；STATE/CMD 处理加 try-catch 防异常卡死
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
@@ -581,17 +582,16 @@ export class OnlineMode {
       this.host.update(dt);
       this.hud.showMatchTimer(this.host.berserkLeft, this.host.berserk);
       this.phantoms = this.ctx.phantoms || [];
-      // 死灵意识转移：房主侧当前球跟随 sim
-      if (this.necros.length && !this.necros.includes(this.balls[1])) {
-        if (this.balls[0] !== this.necros[0]) this.balls[0] = this.necros[0];
-      }
+      // 死灵意识转移：房主侧当前球跟随 sim（阵营归属固定 necroSideIdx）
+      const side = this.host?.sim?.necroSideIdx ?? -1;
+      if (side === 0 && this.necros.length && this.balls[0] !== this.necros[0]) this.balls[0] = this.necros[0];
     } else {
       // 防御：guest 未就绪时跳过，避免 undefined 抛错导致渲染循环中断（卡死）
       if (!this.guest) return;
-      // 客人端：同步死灵渲染列表 → ctx.necros（HUD/瞄准）+ 自己侧当前球
+      // 客人端：同步死灵渲染列表 → ctx.necros（HUD/瞄准）+ 自己侧当前球（按 myClass 判定）
       const gN = this.guest.necros || [];
       if (gN !== this.necros) { this.necros = gN; this.ctx.necros = gN; }
-      if (this.necros.length && !this.necros.includes(this.balls[1])) {
+      if (this.myClass === 'necromancer' && this.necros.length && this.balls[1] !== this.necros[0]) {
         this.balls[1] = this.necros[0];
       }
       const bs = this.guest.berserk || { left: 0, active: false };

@@ -13,7 +13,7 @@ export default {
   type: 'passive',
   category: '剑与魔法',
   skillName: '斩击',
-  desc: '被动【斩击】(每4秒自动)：自动向最近的敌球方向挥出半透明白色扇形斩击（延伸90范围），命中造成40点伤害并播放命中音效；腰间佩剑的剑身始终对准敌球。范围近战，贴身就是输出。',
+  desc: '被动【斩击】(每4秒自动)：自动向最近的敌球方向挥出半透明白色扇形斩击（延伸90范围），命中造成40点伤害；腰间佩剑的剑身始终对准敌球。',
   color: '#4A4A4A',
   passive: {
     cooldown: CONFIG.KNIGHT.cooldown,

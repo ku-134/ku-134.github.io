@@ -2,16 +2,13 @@ import CONFIG from '../config.js';
 import { Camera } from './camera.js';
 import { Particles } from './particles.js';
 import { rayHitRect } from '../core/math.js';
-import { bus } from '../core/eventBus.js';
 
 const INK = '#1f1a17';
 const PAPER = '#f7edd8';
 const DMG = '#e63946';
 const HEAL = '#06d6a0';
 
-// 纳西妲资源：四叶草装饰 + 缠绕特效（svg 预加载，complete 后绘制）
-const cloverImg = new Image();
-cloverImg.src = 'assets/clover.svg';
+// 缠绕特效（assets/vine.svg 预加载；四叶草装饰用手绘 canvas，不依赖图片加载，电脑/手机一致）
 const vineImg = new Image();
 vineImg.src = 'assets/vine.svg';
 
@@ -87,14 +84,36 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
     g.stroke();
     g.restore();
   }
-  // 纳西妲：四叶草（球中央偏左上，固定不动）
+  // 纳西妲：四叶草（球中央偏左上，固定不动）——canvas 手绘，不依赖 SVG 加载（电脑/手机一致）
   if (skillId === 'nahida') {
-    if (cloverImg.complete) {
-      const s = r * 0.95;
+    g.save();
+    const s = r * 0.5;
+    const cx = x - r * 0.28, cy = y - r * 0.42;
+    // 叶茎
+    g.strokeStyle = '#2E7D32';
+    g.lineWidth = Math.max(2, r * 0.1);
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(cx, cy + s * 0.28);
+    g.lineTo(cx + s * 0.14, cy + s * 0.95);
+    g.stroke();
+    // 四片叶子（旋转 90° 分布）
+    for (let i = 0; i < 4; i++) {
       g.save();
-      g.drawImage(cloverImg, x - s * 0.5 - r * 0.28, y - s * 0.5 - r * 0.42, s, s);
+      g.translate(cx, cy);
+      g.rotate(i * Math.PI / 2);
+      g.fillStyle = '#2E7D32';
+      g.beginPath();
+      g.ellipse(0, -s * 0.34, s * 0.28, s * 0.42, 0, 0, Math.PI * 2);
+      g.fill();
       g.restore();
     }
+    // 花心
+    g.fillStyle = '#1B5E20';
+    g.beginPath(); g.arc(cx, cy, s * 0.17, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#81C784';
+    g.beginPath(); g.arc(cx, cy, s * 0.09, 0, Math.PI * 2); g.fill();
+    g.restore();
     return;
   }
 }
@@ -184,12 +203,12 @@ export class Renderer {
     g.save();
     this.camera.update(t);
     this.camera.apply(g);
-    // ★ 方孔大圆场摄像机：小幅度追踪自己球（不缩放）
+    // ★ 方孔大圆场摄像机：跟随自己球（幅度 65，不缩放）
     if (battleMap?.id === 'ringHole') {
       const me = balls.find(b => b.isPlayer);
       if (me) {
         const cx = w / 2, cy = h / 2;
-        const maxShift = 34;
+        const maxShift = 65;
         g.translate(
           -((me.x - cx) / battleMap.radius) * maxShift,
           -((me.y - cy) / battleMap.radius) * maxShift

@@ -4,9 +4,11 @@ import CONFIG from '../config.js';
 // 触屏：dash-btn（左下，全职业）+ active-btn（右下，仅主动职业）
 // 电脑：dash-cd-bar（左下）+ cd-bar（职业，主动冷却/被动进度）
 // prefix：单机 ''，联机 'online-'；myIndex：自己球下标（房主=0，客人=1）
+// ★ 死灵术士：该侧 HP 条渲染为分段小管（各球血量/上限，段间有空隙），最前段=当前意识球（深红）
 export class Hud {
   constructor(prefix = '') {
     this.prefix = prefix;
+    this.ctx = null;
     this.el = {
       p1name: document.getElementById(prefix + 'p1-name'),
       p1hp: document.getElementById(prefix + 'p1-hp'),
@@ -38,10 +40,11 @@ export class Hud {
     this.isTouch = false;
     this.myIndex = 0;
   }
-  bind(balls, { isTouch, key, dashKey = 'Space', myIndex = 0 }) {
+  bind(balls, { isTouch, key, dashKey = 'Space', myIndex = 0, ctx = null }) {
     this.balls = balls;
     this.isTouch = isTouch;
     this.myIndex = myIndex;
+    this.ctx = ctx;
     const [p1, p2] = balls;
     this.el.p1name.textContent = `你 · ${p1.skill?.def.name ?? '无'}`;
     this.el.p2name.textContent = `对方 · ${p2.skill?.def.name ?? '无'}`;
@@ -103,8 +106,24 @@ export class Hud {
   tick() {
     if (!this.balls) return;
     const [p1, p2] = this.balls;
-    this.setBar(this.el.p1hp, p1.hp / p1.maxHp);
-    this.setBar(this.el.p2hp, p2.hp / p2.maxHp);
+    // 死灵术士：分段血条（各死灵球血量/上限小管，前段=当前球深红；另一侧正常）
+    const necros = this.ctx?.necros || [];
+    const hasNecro = necros.length && necros[0]?.skill?.def?.id === 'necromancer';
+    if (hasNecro) {
+      const side0 = necros.includes(p1);
+      if (side0) {
+        this.renderNecroBar(this.el.p1hp, necros);
+        this.setBar(this.el.p2hp, p2.hp / p2.maxHp);
+      } else {
+        this.renderNecroBar(this.el.p2hp, necros);
+        this.setBar(this.el.p1hp, p1.hp / p1.maxHp);
+      }
+    } else {
+      this.resetBar(this.el.p1hp);
+      this.resetBar(this.el.p2hp);
+      this.setBar(this.el.p1hp, p1.hp / p1.maxHp);
+      this.setBar(this.el.p2hp, p2.hp / p2.maxHp);
+    }
     const st1 = this.skillState(p1);
     const st2 = this.skillState(p2);
     this.el.p1passive.classList.toggle('blue', st1.isCd);
@@ -115,6 +134,35 @@ export class Hud {
     const my = this.balls[this.myIndex] || p1;
     this.updateDashUI(my);
     this.updateSkillUI(my);
+  }
+  // 死灵术士分段血条：每段 = 一个死灵球（当前球最前段深红，从者浅红；段间空隙=空血槽）
+  renderNecroBar(fillEl, necros) {
+    const bar = fillEl.parentElement;
+    const segs = necros.filter(n => !n.dead);
+    if (!bar.classList.contains('segmented')) {
+      bar.classList.add('segmented');
+      bar.innerHTML = '';
+    }
+    while (bar.children.length < segs.length) {
+      const d = document.createElement('div');
+      d.className = 'hp-seg';
+      bar.appendChild(d);
+    }
+    while (bar.children.length > segs.length) bar.removeChild(bar.lastChild);
+    [...bar.children].forEach((el, i) => {
+      const n = segs[i];
+      el.style.width = (Math.max(0, Math.min(1, n.hp / n.maxHp)) * 100) + '%';
+      el.style.background = i === 0 ? '#B3001B' : '#e57373';
+    });
+  }
+  // 恢复单条血条（非死灵对局 / 对局切换时）
+  resetBar(fillEl) {
+    const bar = fillEl.parentElement;
+    if (bar.classList.contains('segmented')) {
+      bar.classList.remove('segmented');
+      bar.innerHTML = '';
+      bar.appendChild(fillEl);
+    }
   }
   // 基础冲刺按钮/冷却条（全职业）
   updateDashUI(ball) {

@@ -37,6 +37,9 @@ const CONFIG = {
   // 纳西妲（德鲁伊）【草木逢生】：主动8s冷却，发射生命火种（780速高速小弹=奥术飞弹1.5倍）
   // 命中施加缠绕4s：定身+锁方向 + 每0.5s 4伤（8跳=32伤），结束恢复速度（方向不变）
   NAHIDA: { cooldown: 8, seedSpeed: 780, seedRadius: 9, wrapDuration: 4, wrapTick: 0.5, wrapDamage: 4, maxTicks: 8 },
+  // 死灵术士【亡者复苏】：被动每10秒召唤一个50血的死灵球（常驻可叠加）
+  // 本体生命上限仅75；狂暴同样对死灵球生效；总血条=分段小管（当前球段+各从者段）
+  NECRO: { color: '#B3001B', hp: 75, minionHp: 50, summonInterval: 10 },
   // 魔王【召唤魔族】：战场干扰球（剑与魔法分类，不可选择）
   // 体型恒为基础球1.5倍；每5~8秒召唤一只魔族眷属
   DEMON: { scale: 1.5, summonInterval: [5, 8] },

@@ -86,7 +86,6 @@
     <div class="select-header">
       <div class="select-header-left">
         <span class="col-title">AI 的球</span>
-        <button class="btn back" data-back="panel-start">返回</button>
       </div>
       <h2 class="center-title">选择球</h2>
       <span class="col-title select-header-right">你的球</span>
@@ -104,6 +103,7 @@
     <div class="select-confirm-wrap">
       <button id="btn-select-confirm" class="btn big">确认出战</button>
     </div>
+    <button class="btn back corner-back" data-back="panel-start">返回</button>
   </section>
 
   <!-- 战场选择界面（单机） -->
@@ -139,7 +139,7 @@
         <button id="btn-conn-confirm" class="btn wide hidden">确认连接</button>
       </div>
 
-      <!-- 阶段1：场地选择（房主选+确认；客人只读查看） -->
+      <!-- 阶段1：场地选择（房主选+确认；客人只读查看，房主确认后才可确认下一步） -->
       <div id="stage-battle" class="stage hidden">
         <h3 class="col-title">选择场地</h3>
         <div id="stage-battle-cards" class="battle-scroll stage-battle-cards"></div>
@@ -147,12 +147,11 @@
         <button id="btn-battle-confirm-online" class="btn wide hidden">确认下一步</button>
       </div>
 
-      <!-- 阶段2：选球（复刻单机选球三栏布局：左=对方球展示，右=你的球分类+列表，底部=准备） -->
+      <!-- 阶段2：选球（三栏布局：左=对方球展示，右=你的球分类+列表，底部=准备） -->
       <div id="stage-pick" class="stage hidden">
         <div class="select-header">
           <div class="select-header-left">
             <span class="col-title">对方的球</span>
-            <button id="btn-online-pick-back" class="btn back">返回</button>
           </div>
           <h2 class="center-title">选择球</h2>
           <span class="col-title select-header-right">你的球</span>

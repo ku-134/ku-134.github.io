@@ -9,7 +9,11 @@ const CONFIG = {
   TURN_ANGLE: 0.35,           // 单次随机转向最大弧度
   CAMERA: { amp: 8, freq: [0.5, 1.2] },
   // 狂暴机制：30s后进入狂暴，从0开始正数计时（无上限，直到一方倒下），每秒5伤
-  BERSERK: { delay: 30, dps: 5 },
+  // ★ 豁免：血量 ≤30 的球不再受狂暴每秒扣血影响（残血极限拉扯）
+  BERSERK: { delay: 30, dps: 5, exemptHp: 30 },
+  // 狂战士【疯狂冲撞】：主动7s冷却，发动后5s无可阻挡的2.5倍速度冲刺（撞墙/撞球不打断），
+  //   疯狂期间每次撞击敌球22伤；循环：疯狂5s → 冷却7s → 疯狂5s（cooldownStartsAfter 使冷却在疯狂结束后才计时）
+  BERSERKER: { cooldown: 7, duration: 5, speedMul: 2.5, hitDamage: 22 },
   // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带30伤）
   BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
   // 巨人【暴怒】：战场干扰球（第三方，不可选择），只保留愤怒机制
@@ -38,7 +42,7 @@ const CONFIG = {
   // 命中施加缠绕4s：定身+锁方向 + 每0.5s 4伤（8跳=32伤），结束恢复速度（方向不变）
   NAHIDA: { cooldown: 8, seedSpeed: 780, seedRadius: 9, wrapDuration: 4, wrapTick: 0.5, wrapDamage: 4, maxTicks: 8 },
   // 死灵术士【亡者复苏】：被动每10秒召唤一个50血的死灵球（常驻可叠加）
-  // 本体生命上限仅75；狂暴同样对死灵球生效；总血条=分段小管（当前球段+各从者段）
+  // 本体生命上限仅75；狂暴同样对死灵球生效（≤30 豁免）；总血条=分段小管（当前球段+各从者段）
   NECRO: { color: '#B3001B', hp: 75, minionHp: 50, summonInterval: 10 },
   // 魔王【召唤魔族】：战场干扰球（剑与魔法分类，不可选择）
   // 体型恒为基础球1.5倍；每5~8秒召唤一只魔族眷属

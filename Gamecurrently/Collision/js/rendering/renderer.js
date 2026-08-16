@@ -117,6 +117,25 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
     g.restore();
     return;
   }
+  // 死灵术士：球内深红色尸斑（大小不一、固定位置、不超出球体）
+  if (skillId === 'necromancer') {
+    g.save();
+    g.fillStyle = '#7a0f1e';
+    const spots = [
+      [0.12, -0.32, 0.24],
+      [-0.28, 0.08, 0.18],
+      [0.28, 0.26, 0.14],
+      [-0.08, -0.02, 0.10],
+      [0.02, 0.34, 0.12],
+    ];
+    for (const [dx, dy, sz] of spots) {
+      g.beginPath();
+      g.ellipse(x + dx * r, y + dy * r, sz * r, sz * r * 0.78, 0.5, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.restore();
+    return;
+  }
 }
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
@@ -467,7 +486,7 @@ export class Renderer {
   }
   drawBall(g, b) {
     const r = b.radiusScaled;
-    // 自己的球：头顶持续显示黑色倒三角标记
+    // 自己的球：头顶持续显示黑色倒三角标记（死灵术士=当前意识球）
     if (b.isPlayer) {
       g.save();
       const bob = Math.sin(performance.now() / 280) * 3;

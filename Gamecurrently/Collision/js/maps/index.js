@@ -2,8 +2,9 @@
 // 场地文件职责：id/name/desc/spawnPoints（出生点）+ draw（绘制）+ collide（物理边界）
 import arena from './arena.js';
 import ringHole from './ringHole.js';
+import finiteSpace from './finiteSpace.js';
 
-export const BATTLE_FIELDS = [arena, ringHole];
+export const BATTLE_FIELDS = [arena, ringHole, finiteSpace];
 
 // 按 id 取场地（默认角斗场）
 export const getBattleField = id => BATTLE_FIELDS.find(f => f.id === id) || arena;

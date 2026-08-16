@@ -24,8 +24,8 @@ const CONFIG = {
   PHANTOM: { cooldown: 8, duration: 6, damage: 15, speedMul: 0.8, count: 3 },
   // 毒液【腐蚀】
   POISON: { duration: 3.5, tick: 0.5, tickDamage: 3 },
-  // 傀儡【置换】：末影珍珠弹道（冷却7s），命中触发换位+18伤+0.6s惊滞
-  PUPPET: { cooldown: 7, damage: 18, stunDuration: 0.6, pearlSpeedMul: 1.6 },
+  // 傀儡【傀儡术】：主动5s冷却，无需瞄准——操控战场干扰球向敌球方向基础冲刺（突进撞25伤）
+  PUPPET: { cooldown: 5, dash: { duration: 0.5, speed: 560, damage: 25 } },
   // 骑士【斩击】：每4s自动向敌球方向扇形斩击（范围90，命中40伤）
   KNIGHT: { cooldown: 4, range: 90, damage: 40 },
   // 法师【奥术飞弹】：8s循环 = 效果6s（前5s每秒蓄能1颗五角星，第5s集齐5颗展示1s

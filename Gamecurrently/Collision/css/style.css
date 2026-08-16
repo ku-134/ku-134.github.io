@@ -131,7 +131,7 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .battle-card.rnd .battle-preview { width: 100%; height: 146px; border: 3px solid var(--ink); border-radius: 10px 3px 10px 3px \/ 3px 10px 3px 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-size: 3.4rem; background: var(--yellow); }
 
 /* 联机：三个独立阶段界面 */
-.online-cols { display: flex; gap: 40px; align-items: flex-start; justify-content: space-between; width: 100%; padding: 0 44px; }
+.online-cols { display: flex; gap: 48px; align-items: flex-start; justify-content: center; width: 100%; }
 .col { display: flex; flex-direction: column; gap: 14px; align-items: center; min-width: 200px; }
 .room-input { background: #fff; border: 3px solid var(--ink); color: var(--ink); padding: 12px; border-radius: 12px 4px 12px 4px \/ 4px 12px 4px 12px; font-size: 1.6rem; letter-spacing: 0.5em; text-align: center; width: 220px; font-family: inherit; }
 .room-code { font-size: 3.2rem; letter-spacing: 0.3em; color: var(--red); text-shadow: 3px 3px 0 var(--ink); }
@@ -139,8 +139,8 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 /* 阶段容器：同一时刻只显示一个；每个阶段都可滚动（保险） */
 .stage { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 100%; overflow-y: auto; }
 .stage > .col-title, .stage > h3 { align-self: center; }
-/* 阶段0：阅读内容（房间号）居中，操作按钮在角落层 */
-.stage-conn { justify-content: center; min-height: 42vh; align-items: center; }
+/* 阶段0：房间号等阅读内容真居中（撑满剩余空间） */
+.stage-conn { flex: 1; justify-content: center; align-items: center; }
 .stage-battle-cards { padding: 8px 14px 12px; }
 .stage-battle-cards .battle-card { width: 240px; }
 .stage-battle-cards .battle-card canvas { max-height: 92px; }

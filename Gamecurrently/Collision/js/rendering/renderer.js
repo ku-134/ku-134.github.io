@@ -201,9 +201,9 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
 }
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
-// 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔）
-// 摄像机：ringHole 大圆场 = 小幅度追踪自己球（不缩放，保持原偏移观感）
-// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形/地球探测器/太阳激光——两端渲染一致
+// 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔 / finiteSpace 超大太空）
+// 摄像机：ringHole 小幅度追踪；finiteSpace 随玩家离中心越远逐渐放大
+// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形/地球探测器/太阳激光/陨石——两端渲染一致
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -232,6 +232,10 @@ export class Renderer {
     bus.on('fx:earthLabel', ({ x, y, text }) => this.addLabel(x, y, text));
     // 太阳燃烧跳伤：橙红火星
     bus.on('fx:sunBurn', ({ x, y }) => this.particles.spawn(x, y, { color: '#FF6D00', count: 8, speed: 70, size: 3 }));
+    // 有限太空：陨石撞击 / 激光边界 / 球撞大陨石
+    bus.on('fx:meteorHit', ({ x, y }) => this.particles.spawn(x, y, { color: '#b0b0b0', count: 16, speed: 180, size: 4 }));
+    bus.on('fx:laserHit', ({ x, y }) => this.particles.spawn(x, y, { color: '#e8f4ff', count: 10, speed: 120, size: 2 }));
+    bus.on('fx:meteorBounce', ({ x, y }) => this.particles.spawn(x, y, { color: '#9a9a9a', count: 8, speed: 100, size: 3 }));
   }
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -308,6 +312,17 @@ export class Renderer {
         );
       }
     }
+    // ★ 有限太空摄像机：随玩家球离中心越远逐渐放大（中心视野 1600×900，角落聚焦 800×450）
+    if (battleMap?.id === 'finiteSpace') {
+      const me = balls.find(b => b.isPlayer);
+      const { w: FW, h: FH } = battleMap.size;
+      const cx = FW / 2, cy = FH / 2;
+      const maxD = Math.hypot(FW / 2, FH / 2);
+      const d = me ? Math.hypot(me.x - cx, me.y - cy) : 0;
+      const zoom = 0.5 + (d / maxD) * 0.5;
+      g.translate(w / 2 - (me ? me.x : cx) * zoom, h / 2 - (me ? me.y : cy) * zoom);
+      g.scale(zoom, zoom);
+    }
     // 骑士佩剑方向：剑身指向最近的敌球
     for (let i = 0; i < balls.length; i++) {
       const b = balls[i];
@@ -321,7 +336,7 @@ export class Renderer {
         b._swordAngle = other ? Math.atan2(other.y - b.y, other.x - b.x) : b.angle;
       }
     }
-    // 场地绘制：battleMap.draw（arena/ringHole）或默认矩形
+    // 场地绘制：battleMap.draw（arena/ringHole/finiteSpace）或默认矩形
     if (battleMap?.draw) battleMap.draw(g, t, w, h);
     else this.drawField(g, w, h);
     for (const a of this.aimLines) this.drawAim(g, a);
@@ -497,6 +512,34 @@ export class Renderer {
       g.beginPath(); g.moveTo(ph.x, ph.y); g.lineTo(ph.tx, ph.ty); g.stroke();
       g.fillStyle = ph.positive ? '#FFD93D' : '#FF6D00';
       g.beginPath(); g.arc(ph.tx, ph.ty, 8, 0, Math.PI * 2); g.fill();
+      g.restore();
+      return;
+    }
+    // 陨石（有限太空）：灰色不规则球体（边缘凹凸、整体仍是圆）
+    if (ph.isSmallMeteor || ph.isBigMeteor) {
+      const r = ph.radius || 14;
+      const noise = ph.noise || 0;
+      g.save();
+      g.fillStyle = '#8a8a8a';
+      g.beginPath();
+      const n = 12;
+      for (let i = 0; i <= n; i++) {
+        const a = i / n * Math.PI * 2;
+        const rr = r * (0.85 + ((i * 7 + noise) % 5) / 10);
+        const px = ph.x + Math.cos(a) * rr;
+        const py = ph.y + Math.sin(a) * rr;
+        if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+      }
+      g.closePath();
+      g.fill();
+      g.strokeStyle = '#4a4a4a';
+      g.lineWidth = 2.5;
+      g.stroke();
+      // 陨石坑斑点
+      g.fillStyle = '#5c5c5c';
+      g.beginPath(); g.arc(ph.x - r * 0.25, ph.y - r * 0.2, r * 0.22, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#6e6e6e';
+      g.beginPath(); g.arc(ph.x + r * 0.3, ph.y + r * 0.25, r * 0.16, 0, Math.PI * 2); g.fill();
       g.restore();
       return;
     }

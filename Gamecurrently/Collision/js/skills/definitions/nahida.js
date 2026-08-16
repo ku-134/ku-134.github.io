@@ -4,6 +4,8 @@ import CONFIG from '../../config.js';
 // 施放：向敌球方向发射一颗【生命火种】（绿色高速小弹，比奥术飞弹更快）
 // 命中：为敌球施加【缠绕】4秒——定身无法动弹 + 每0.5秒4点伤害（至多32伤）
 // 缠绕期间锁定方向（无法转向），结束后恢复速度（方向不变）
+// ★ 效果系统：onApply 收到 params、onUpdate 收到 st（st.params===params）——
+//   状态读写必须统一走 st.params，否则 lockAngle 为 undefined → 球坐标 NaN → 全屏清场（已修）
 // 缠绕特效/四叶草装饰用 assets/*.svg（渲染器预加载绘制）
 export default {
   id: 'nahida',
@@ -44,23 +46,22 @@ export default {
       ctx.effects.remove(b, 'dash');
       b.speed = 0;
       p.lockAngle = b.angle;   // 锁定方向（缠绕期间无法转向）
-      p.t = 0;
       p.tickT = 0;
       p.count = 0;
     },
     onUpdate(b, dt, st, ctx) {
-      st.t += dt;
-      st.tickT += dt;
-      b.angle = st.lockAngle;  // 保持方向不变
+      const p = st.params;     // ★ onApply 写入的字段都在 params 里
+      p.tickT += dt;
+      b.angle = p.lockAngle;   // 保持方向不变（勿直接写 NaN）
       // 每 0.5s 一跳，最多 8 跳（4s × 2 = 32 伤，不缺段）
-      while (st.tickT >= CONFIG.NAHIDA.wrapTick && st.count < CONFIG.NAHIDA.maxTicks) {
-        st.tickT -= CONFIG.NAHIDA.wrapTick;
-        st.count++;
-        b.takeDamage(CONFIG.NAHIDA.wrapDamage, ctx, st.source);
+      while (p.tickT >= CONFIG.NAHIDA.wrapTick && p.count < CONFIG.NAHIDA.maxTicks) {
+        p.tickT -= CONFIG.NAHIDA.wrapTick;
+        p.count++;
+        b.takeDamage(CONFIG.NAHIDA.wrapDamage, ctx, p.source);
         ctx.events.emit('fx:vineTick', { x: b.x, y: b.y });
       }
       // 到时或跳满 → 解除
-      if (st.t >= CONFIG.NAHIDA.wrapDuration || st.count >= CONFIG.NAHIDA.maxTicks) {
+      if (st.t >= CONFIG.NAHIDA.wrapDuration || p.count >= CONFIG.NAHIDA.maxTicks) {
         ctx.effects.remove(b, 'vine_wrap');
       }
     },

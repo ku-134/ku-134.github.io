@@ -5,7 +5,7 @@ const STATE_HZ = 30;
 
 // 主机权威：跑完整对战模拟 + 30Hz 状态广播 + 处理客人技能指令（dash=基础冲刺 / skill=职业技能）
 // wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类），随状态广播给客户端渲染
-// necros（死灵术士）：阵营多球数组，随 STATE.necros 广播（[0]=当前意识球）
+// necros（死灵术士）：双侧阵营多球（A=房主侧 / B=客人侧），随 STATE.necros 合并广播
 // RESULT.win 语义：'host'=房主赢 / 'guest'=客人赢 / 'draw'=平局（明确视角，两端各自判断）
 export class Host {
   constructor({ signal, ctx, balls, wilds = [], necros = [], onResult }) {
@@ -44,11 +44,11 @@ export class Host {
     }
   }
   // 客人技能指令；slot: dash=基础冲刺 / skill=职业技能
-  // ★ 客人侧死灵术士：指令作用于当前意识球（necros[0]）
+  // ★ 客人侧死灵术士：指令作用于客人侧当前意识球（necrosB[0]，转移后自动跟随）
   handleCmd(cmd) {
     let gBall = this.balls[1];
-    const n = this.sim?.necros || [];
-    if (n.length && !n.includes(this.balls[0])) gBall = n[0];
+    const nb = this.sim?.necrosB || [];
+    if (nb.length) gBall = nb[0];
     const s = cmd.slot === 'dash' ? gBall?.dashSkill : gBall?.skill;
     if (!s || !s.def?.active) return;
     if (cmd.type === 'aim') s.startAim();

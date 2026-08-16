@@ -453,6 +453,7 @@ export class OnlineMode {
     b2.color = getSkillDef(d.guestClass).color;
     this.balls = [b1, b2, ...this.wilds];
     this.ctx.balls = [b1, b2];
+    this.ctx.wilds = this.wilds;   // 暴露给技能（傀儡术操控干扰球）
     this.phase = 'countdown';
     this.countdown = 3;
     this.countdownShown = -1;

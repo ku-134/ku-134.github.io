@@ -205,17 +205,13 @@ export class SingleMode {
     }
     if (this.phase === 'end') return;
     const res = this.sim.step(dt);
-    // 死灵意识转移：同步 necros 引用 + balls 当前球指向 + AI 控制目标
+    // 死灵意识转移：同步 necros 引用 + balls 当前球指向 + AI 控制目标（阵营归属固定 necroSideIdx）
     if (this.sim?.necros) {
       this.necros = this.sim.necros;
       this.ctx.necros = this.necros;
-      if (this.necros.length && !this.necros.includes(this.balls[1])) {
-        // 玩家侧死灵：balls[0] 指向当前球
-        if (this.balls[0] !== this.necros[0]) this.balls[0] = this.necros[0];
-      } else if (this.necros.length) {
-        // AI 侧死灵：balls[1] 指向当前球，AI 跟随
-        if (this.balls[1] !== this.necros[0]) { this.balls[1] = this.necros[0]; this.ai?.setBall(this.balls[1]); }
-      }
+      const side = this.sim.necroSideIdx ?? -1;
+      if (side === 0 && this.necros.length && this.balls[0] !== this.necros[0]) this.balls[0] = this.necros[0];
+      if (side === 1 && this.necros.length && this.balls[1] !== this.necros[0]) { this.balls[1] = this.necros[0]; this.ai?.setBall(this.balls[1]); }
     }
     this.ai?.update(dt);
     this.hud.showMatchTimer(this.sim.berserkLeft(), this.sim.berserk);

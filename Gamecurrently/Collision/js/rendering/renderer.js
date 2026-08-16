@@ -8,6 +8,12 @@ const PAPER = '#f7edd8';
 const DMG = '#e63946';
 const HEAL = '#06d6a0';
 
+// 纳西妲资源：四叶草装饰 + 缠绕特效（svg 预加载，complete 后绘制）
+const cloverImg = new Image();
+cloverImg.src = 'assets/clover.svg';
+const vineImg = new Image();
+vineImg.src = 'assets/vine.svg';
+
 // ★ 职业装饰：必须在球体填充之后绘制（否则被球色盖住——老bug）
 // 供对战 drawBall 与卡片图标（ui/ballIcon.js）共用：技能id + 骑士剑方向
 export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
@@ -79,6 +85,16 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
     g.moveTo(cx - r * 0.35, cy - r * 0.12); g.lineTo(cx + r * 0.35, cy - r * 0.12);
     g.stroke();
     g.restore();
+  }
+  // 纳西妲：四叶草（球中央偏左上，固定不动）
+  if (skillId === 'nahida') {
+    if (cloverImg.complete) {
+      const s = r * 0.95;
+      g.save();
+      g.drawImage(cloverImg, x - s * 0.5 - r * 0.28, y - s * 0.5 - r * 0.42, s, s);
+      g.restore();
+    }
+    return;
   }
 }
 
@@ -311,6 +327,27 @@ export class Renderer {
       g.restore();
       return;
     }
+    // 生命火种（纳西妲）：绿色高速小弹 + 光晕拖影
+    if (ph.isSeed) {
+      const r = ph.radius || 9;
+      g.save();
+      g.globalAlpha = 0.3;
+      g.fillStyle = ph.color;
+      g.beginPath(); g.arc(ph.x - Math.cos(ph.angle) * r * 2.2, ph.y - Math.sin(ph.angle) * r * 2.2, r * 0.7, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 0.35;
+      g.fillStyle = '#a7e8c5';
+      g.beginPath(); g.arc(ph.x, ph.y, r * 1.9, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 1;
+      g.fillStyle = ph.color;
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#1f5c3a';
+      g.lineWidth = 2;
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,0.85)';
+      g.beginPath(); g.arc(ph.x - r * 0.25, ph.y - r * 0.25, r * 0.35, 0, Math.PI * 2); g.fill();
+      g.restore();
+      return;
+    }
     // 魔族（魔王眷属）：深紫实心小眷属 + 双角，冲刺时带拖影
     if (ph.isMinion) {
       const r = ph.radius;
@@ -490,6 +527,15 @@ export class Renderer {
     g.restore();
     // ★ 职业装饰：必须在球体填充之后绘制（否则被球色盖住——老bug）
     drawBallDeco(g, b.x, b.y, r, b.skill?.def?.id, b._swordAngle);
+    // 缠绕（纳西妲）：藤蔓环绕 + 缓慢旋转（随 effects 同步两端）
+    if (b.effects.has('vine_wrap') && vineImg.complete) {
+      g.save();
+      g.globalAlpha = 0.9;
+      g.translate(b.x, b.y);
+      g.rotate(performance.now() / 1400);
+      g.drawImage(vineImg, -r * 2.1, -r * 2.1, r * 4.2, r * 4.2);
+      g.restore();
+    }
     // 受击闪白 / 加血闪绿（叠在球体+装饰上）
     g.save();
     if (b.flash > 0) {

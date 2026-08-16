@@ -10,6 +10,7 @@ import { move, collideWalls, collideBalls } from './physics.js';
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
 // ★ 生命火种（纳西妲）：isSeed phantom 高速飞行，命中敌球施加缠绕效果（定身+持续伤害）
+//   战场球判定用 this.wilds.includes(b)（giant/demon 的 def.type 不是 'wild'，勿用 startsWith）
 // ★ 魔王：召唤魔族；法师：奥术飞弹飞行；骑士：斩击扇形（isSlashFx 实体随 phantoms 同步）
 // ★ 狂暴降临瞬间发 berserk 音效（sfx:play 事件 → 全局管理器）
 export class MatchSim {
@@ -186,7 +187,7 @@ export class MatchSim {
       for (const b of all) {
         if (b === m.owner || b.dead) continue;
         if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
-          if (!b.skill?.def?.type?.startsWith?.('wild')) b.takeDamage(m.damage, this.ctx, null, true);
+          if (!this.wilds.includes(b)) b.takeDamage(m.damage, this.ctx, null, true);
           this.ctx.events.emit('fx:missileHit', { x: m.x, y: m.y, color: m.color });
           ph.splice(i, 1);
           break;
@@ -212,10 +213,10 @@ export class MatchSim {
         ph.splice(i, 1);
         continue;
       }
-      // 命中玩家球（非发射者=敌球）→ 施加缠绕；战场球只挡弹
+      // 命中玩家球（非发射者=敌球）→ 施加缠绕；战场球只挡弹（this.wilds 判定）
       for (const b of all) {
         if (b === m.owner || b.dead) continue;
-        if (b.skill?.def?.type?.startsWith?.('wild')) continue;
+        if (this.wilds.includes(b)) continue;
         if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
           this.ctx.effects.apply(b, 'vine_wrap', { source: m.owner });
           this.ctx.events.emit('fx:seedHit', { x: m.x, y: m.y, color: m.color });

@@ -41,7 +41,8 @@ export function unpack(raw) {
 // 主机 → 客户端：状态快照（渲染 + HUD 最小集）
 // hp 保留 1 位小数：客人端本地监测 HP 差值生成伤害/加血数字（不额外占信道）
 // phantoms：幻影分身/末影珍珠/魔族/奥术飞弹/斩击扇形（isSlashFx）——两端渲染一致
-// necros（死灵术士）：阵营多球（顺序=[0]当前意识球），客人端重建渲染 + 分段血条
+// necros（死灵术士）：双侧阵营合并广播（顺序=A侧当前球+从者, B侧当前球+从者）
+//   side=阵营（0=房主侧 / 1=客人侧），isPlayer=该侧当前意识球（顶部三角标记）
 export function encodeState(sim, balls, phantoms) {
   return {
     seq: ++sim._seq,
@@ -64,6 +65,10 @@ export function encodeState(sim, balls, phantoms) {
       x: +n.x.toFixed(1), y: +n.y.toFixed(1),
       hp: +Math.max(0, n.hp).toFixed(1),
       maxHp: +n.maxHp.toFixed(1),
+      side: n._necroSide ?? 0,
+      isPlayer: (n._necroSide ?? 0) === 0
+        ? n === (sim.necrosA?.[0])
+        : n === (sim.necrosB?.[0]),
     })),
     phantoms: (phantoms || []).map(p => ({
       x: +p.x.toFixed(1), y: +p.y.toFixed(1), angle: +p.angle.toFixed(3), color: p.color,

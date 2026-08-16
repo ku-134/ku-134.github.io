@@ -142,10 +142,12 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .stage-battle-cards { padding: 8px 14px 12px; }
 .stage-battle-cards .battle-card { width: 240px; }
 .stage-battle-cards .battle-card canvas { max-height: 92px; }
-.online-pick-cols { display: flex; gap: 24px; justify-content: space-between; width: 100%; padding: 6px 36px 0; }
-.online-pick-cols .select-col { flex: 1; max-width: 380px; }
-.online-pick-cols .card-list { max-height: 28vh; max-width: none; width: 100%; }
+/* 联机选球：复刻单机三栏布局（select-header + select-layout + confirm-wrap） */
+.stage-pick-layout { flex: 1; padding: 6px 44px 0; }
+.stage-pick-layout .card-list { max-height: 30vh; width: 100%; max-width: 320px; }
 .enemy-ball { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; box-shadow: 4px 4px 0 rgba(31,26,17,0.7); display: flex; align-items: center; justify-content: center; font-size: 2.4rem; color: rgba(31,26,23,0.5); }
+.enemy-ball.big { width: 150px; height: 150px; font-size: 3rem; border-width: 4px; }
+.stage-pick .select-confirm-wrap { padding: 12px 0 26px; }
 
 /* 选球/联机/战场：不透明底 */
 #screen-select, #screen-online, #screen-battle { background: var(--paper); }

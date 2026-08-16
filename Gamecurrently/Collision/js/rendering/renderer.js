@@ -117,6 +117,24 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
     g.restore();
     return;
   }
+  // 狂战士：6块腹肌（球中央偏下，固定不动；颜色比球体更深）
+  if (skillId === 'berserker') {
+    g.save();
+    g.fillStyle = '#000000';
+    const cx = x, cy = y + r * 0.22;
+    const w = r * 0.15, h = r * 0.12, gapX = r * 0.14, gapY = r * 0.04;
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 2; col++) {
+        const bx = cx + (col === 0 ? -gapX / 2 - w / 2 : gapX / 2 + w / 2);
+        const by = cy + (row - 1) * (h + gapY);
+        g.beginPath();
+        g.roundRect(bx - w / 2, by - h / 2, w, h, h * 0.4);
+        g.fill();
+      }
+    }
+    g.restore();
+    return;
+  }
   // 死灵术士：球内深红色尸斑（大小不一、固定位置、不超出球体）
   if (skillId === 'necromancer') {
     g.save();

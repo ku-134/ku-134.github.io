@@ -34,9 +34,9 @@ const CONFIG = {
   MAGE: { cooldown: 2, effectDuration: 6, chargeTime: 5, fireTime: 6, spread: Math.PI / 180 * 40, orbit: 46, missileSpeed: 420, missileDamage: 7 },
   // 牧师【治疗术】：主动14s冷却，发动后给自己加10~25血（不可突破上限）
   PRIEST: { cooldown: 14, healMin: 10, healMax: 25 },
-  // 纳西妲（德鲁伊）【草木逢生】：主动8s冷却，发射生命火种（520速高速小弹）
+  // 纳西妲（德鲁伊）【草木逢生】：主动8s冷却，发射生命火种（780速高速小弹=奥术飞弹1.5倍）
   // 命中施加缠绕4s：定身+锁方向 + 每0.5s 4伤（8跳=32伤），结束恢复速度（方向不变）
-  NAHIDA: { cooldown: 8, seedSpeed: 520, seedRadius: 9, wrapDuration: 4, wrapTick: 0.5, wrapDamage: 4, maxTicks: 8 },
+  NAHIDA: { cooldown: 8, seedSpeed: 780, seedRadius: 9, wrapDuration: 4, wrapTick: 0.5, wrapDamage: 4, maxTicks: 8 },
   // 魔王【召唤魔族】：战场干扰球（剑与魔法分类，不可选择）
   // 体型恒为基础球1.5倍；每5~8秒召唤一只魔族眷属
   DEMON: { scale: 1.5, summonInterval: [5, 8] },

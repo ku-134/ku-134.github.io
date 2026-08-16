@@ -16,7 +16,7 @@ export function makeHudSkill(def) {
 
 // 客户端：接收主机状态 → 更新渲染对象（球/幻影/死灵球/HUD状态） → 转发输入指令
 // 本地监测：HP 下降 → 红色伤害数字；HP 上升 → 绿色加血数字（均不占用信道）
-// necros：死灵术士阵营渲染占位（[0]=当前意识球，isPlayer 标记），随 STATE 重建
+// necros：死灵术士双侧阵营渲染占位（side=0房主侧 / 1客人侧；isPlayer=该侧当前意识球），随 STATE 重建
 export class Guest {
   constructor({ signal, onResult, onLocalDamage, onLocalHeal }) {
     this.signal = signal;
@@ -24,7 +24,7 @@ export class Guest {
     this.onLocalDamage = onLocalDamage;   // (x, y, amount) 本地渲染伤害数字
     this.onLocalHeal = onLocalHeal;       // (x, y, amount) 本地渲染加血数字
     this.balls = null;
-    this.necros = [];                     // 死灵渲染占位列表
+    this.necros = [];                     // 死灵渲染占位列表（双侧合并）
     this.phantoms = [];
     this.berserk = { active: false, left: 0 };
     this._hpInited = false;               // 首帧只记录 HP，不生成数字（避免初始差值误报）
@@ -61,7 +61,7 @@ export class Guest {
         b.skill.passiveTimer = s.cd.passiveTimer;
       }
     });
-    // 死灵术士阵营：渲染占位重建（[0]=当前意识球）
+    // 死灵术士双侧阵营：渲染占位重建（side=0房主侧 / 1客人侧；isPlayer=该侧当前意识球）
     if (Array.isArray(d.necros)) {
       while (this.necros.length < d.necros.length) {
         this.necros.push(this._makeNecroPlaceholder());
@@ -72,7 +72,8 @@ export class Guest {
         b.x = s.x; b.y = s.y;
         b.hp = s.hp; b.maxHp = s.maxHp;
         b.dead = s.hp <= 0;
-        b.isPlayer = i === 0;   // 当前意识球（顶部三角标记）
+        b._necroSide = s.side ?? 0;   // 阵营：0=房主侧 / 1=客人侧
+        b.isPlayer = !!s.isPlayer;    // 该侧当前意识球（顶部三角标记）
       });
     }
     this._hpInited = true;
@@ -95,6 +96,7 @@ export class Guest {
       dead: false,
       isPlayer: false,
       isNecro: true,
+      _necroSide: 0,
       flash: 0,
       healFlash: 0,
       dashing: false,

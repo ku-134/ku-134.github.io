@@ -2,6 +2,7 @@ import CONFIG from '../config.js';
 import { Camera } from './camera.js';
 import { Particles } from './particles.js';
 import { rayHitRect } from '../core/math.js';
+import { bus } from '../core/eventBus.js';
 
 const INK = '#1f1a17';
 const PAPER = '#f7edd8';
@@ -122,6 +123,9 @@ export class Renderer {
       canvas.width = CONFIG.FIELD.w; canvas.height = CONFIG.FIELD.h;
       this.dpr = 1; this.cssScale = 1;
     }
+    // 纳西妲粒子（火种命中爆裂 / 缠绕跳伤绿叶）：单机+房主端；客人端靠 phantoms/effects 同步渲染
+    bus.on('fx:seedHit', ({ x, y, color }) => this.particles.spawn(x, y, { color: color || '#44A785', count: 14, speed: 150, size: 3 }));
+    bus.on('fx:vineTick', ({ x, y }) => this.particles.spawn(x, y, { color: '#7cb342', count: 6, speed: 60, size: 3 }));
   }
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);

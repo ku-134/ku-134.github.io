@@ -21,7 +21,7 @@ import { makeWildBall } from './singleMode.js';
 //   阶段2 选球：三栏布局（左=对方球展示，右=我的分类列表，底部=准备）
 // 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
 // 再来一局：双方各自点【再来一局】确认，双方都确认后房主才重开（REMATCH）
-// ★ 客人端 HP 升降本地监测数字；_onData 必须处理 MSG.CMD（老bug）
+// ★ 客人端 HP 升降本地监测数字；_onData 必须处理 MSG.CMD（老bug）；STATE/CMD 处理加 try-catch 防异常卡死
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
@@ -284,6 +284,8 @@ export class OnlineMode {
     }
     if (cat === '随机') {
       this.randomPick = true;
+      // 随机=确认时随机定球：准备按钮直接可用（否则按钮不出现，无法下一步）
+      this.els.btnReady.classList.remove('hidden');
       const defs = getSelectableDefs();
       if (!defs.length) return;
       this.els.pick.innerHTML = '';
@@ -306,6 +308,8 @@ export class OnlineMode {
       return;
     }
     this.randomPick = false;
+    // 非随机分类：没选球时隐藏准备按钮（选了才出现）
+    if (!this.picked) this.els.btnReady.classList.add('hidden');
     renderCards(this.els.pick, getDefsByCategory(cat, { selectable: true }), {
       onPick: d => this._pick(d.id),
     });
@@ -375,9 +379,10 @@ export class OnlineMode {
     } else if (m.t === MSG.START) {
       this._startMatch(m.d);
     } else if (m.t === MSG.STATE) {
-      this.guest?.applyState(m.d);
+      // try-catch：单次 STATE 异常不中断后续（否则画面静止卡死）
+      try { this.guest?.applyState(m.d); } catch (e) { console.error('[online] STATE err', e); }
     } else if (m.t === MSG.CMD) {
-      if (this.isHost) this.host?.handleCmd(m.d);
+      if (this.isHost) { try { this.host?.handleCmd(m.d); } catch (e) { console.error('[online] CMD err', e); } }
     } else if (m.t === MSG.RESULT) {
       this._showResult(m.d);
     } else if (m.t === MSG.REMATCH) {
@@ -569,15 +574,18 @@ export class OnlineMode {
       this.hud.showMatchTimer(this.host.berserkLeft, this.host.berserk);
       this.phantoms = this.ctx.phantoms || [];
     } else {
-      this.hud.showMatchTimer(this.guest.berserk.left, this.guest.berserk.active);
-      this.phantoms = this.guest.phantoms;
+      // 防御：guest 未就绪时跳过，避免 undefined 抛错导致渲染循环中断（卡死）
+      if (!this.guest) return;
+      const bs = this.guest.berserk || { left: 0, active: false };
+      this.hud.showMatchTimer(bs.left, bs.active);
+      this.phantoms = this.guest.phantoms || [];
       this._aimUpdate(this.dashAim);
       this._aimUpdate(this.skillAim);
     }
     this.renderer.update(dt);
     this.hud.tick();
   }
-  render() { this.renderer.render(this.balls, this.loop.time, this.phantoms, this.battleMap); }
+  render() { this.renderer.render(this.balls || [], this.loop.time, this.phantoms || [], this.battleMap); }
   _showResult(d) {
     this.phase = 'ended';
     this.hud.hideMatchTimer();

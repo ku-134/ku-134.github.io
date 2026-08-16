@@ -21,8 +21,7 @@ import { makeWildBall } from './singleMode.js';
 //   阶段2 选球：三栏布局（左=对方球展示，右=我的分类列表，底部=准备）
 // 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
 // 再来一局：双方各自点【再来一局】确认，双方都确认后房主才重开（REMATCH）
-// ★ 死灵术士：necros 双侧阵营随 STATE 合并广播（side=0房主侧/1客人侧，isPlayer=各侧当前球），
-//   房主 sim 跑、客人端重建渲染+分段血条；两侧各自召唤/转移，互不干扰
+// ★ 死灵术士（experimental 测试角色）：联机禁选——分类列表不显示 + 随机不命中（未来当新模式BOSS）
 // ★ 意识转移（双侧）：房主侧 balls[0] 跟随 sim.necrosA[0]、balls[1] 跟随 sim.necrosB[0]；客人侧按 _necroSide 跟随
 // ★ 客人端 HP 升降本地监测数字；_onData 必须处理 MSG.CMD（老bug）；STATE/CMD 处理加 try-catch 防异常卡死
 export class OnlineMode {
@@ -290,7 +289,7 @@ export class OnlineMode {
       this.randomPick = true;
       // 随机=确认时随机定球：准备按钮直接可用（否则按钮不出现，无法下一步）
       this.els.btnReady.classList.remove('hidden');
-      const defs = getSelectableDefs();
+      const defs = getSelectableDefs({ excludeExperimental: true });
       if (!defs.length) return;
       this.els.pick.innerHTML = '';
       const card = document.createElement('div');
@@ -312,9 +311,9 @@ export class OnlineMode {
       return;
     }
     this.randomPick = false;
-    // 非随机分类：没选球时隐藏准备按钮（选了才出现）
+    // 非随机分类：没选球时隐藏准备按钮（选了才出现）；★联机禁选死灵（excludeExperimental）
     if (!this.picked) this.els.btnReady.classList.add('hidden');
-    renderCards(this.els.pick, getDefsByCategory(cat, { selectable: true }), {
+    renderCards(this.els.pick, getDefsByCategory(cat, { selectable: true, excludeExperimental: true }), {
       onPick: d => this._pick(d.id),
     });
   }
@@ -330,7 +329,8 @@ export class OnlineMode {
     if (this.stage !== 'pick' || this.ready) return;
     if (!this.picked) {
       if (this.randomPick) {
-        const defs = getSelectableDefs();
+        // 随机定球：排除测试角色死灵术士
+        const defs = getSelectableDefs({ excludeExperimental: true });
         const d = defs[Math.floor(Math.random() * defs.length)];
         this._pick(d.id);
       } else {
@@ -431,7 +431,7 @@ export class OnlineMode {
       b2.dashSkill = createDashSkill(b2, this.ctx, d.guestClass);
       this.wilds = [makeWildBall(wildId, this.ctx, w, h)];
       this.wilds[0].x = sw.x; this.wilds[0].y = sw.y;
-      // 死灵阵营：双侧支持（房主侧=0 / 客人侧=1），双方都选死灵也各自独立
+      // 死灵阵营（联机已禁选，此处保留兼容防御）
       if (d.hostClass === 'necromancer') { b1._necroSide = 0; this.necros.push(b1); }
       if (d.guestClass === 'necromancer') { b2._necroSide = 1; this.necros.push(b2); }
       this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], wilds: this.wilds, necros: this.necros, onResult: r => this._showResult(r) });

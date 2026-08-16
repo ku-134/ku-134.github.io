@@ -1,7 +1,7 @@
 import CONFIG from '../config.js';
 import { move, collideWalls, collideBalls } from './physics.js';
 import { Ball } from '../entities/ball.js';
-import { createSkill } from '../skills/skillRegistry.js';
+import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 
 // 公共对战模拟：单机模式与联机主机共用（保证逻辑一致）
 // 负责：球更新、碰撞、技能、狂暴倒计时与全场伤害、胜负判定
@@ -10,9 +10,10 @@ import { createSkill } from '../skills/skillRegistry.js';
 // ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类，第三方）：
 //   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），hp 极高不会死
 // ★ necros（死灵术士）：场上所有死灵球（阵营多球，常驻可叠加）：
+//   - necroSideIdx：阵营归属（0=balls[0]侧 / 1=balls[1]侧 / -1 无死灵）——构造时定死，转移不变
 //   - 并入 all 参与移动/碰撞/技能命中/狂暴；necros[0] = 当前意识球（转移后自动切换）
-//   - 召唤：仅当前球触发（necromancer 被动守卫），每10s 一个 50 血死灵球
-//   - 胜负：对方球死 或 死灵阵营全灭；狂暴结束比总血量
+//   - 召唤：仅当前球触发（守卫），开局先进入 10s 冷却（第一次不召唤）；从者用轻量 skill 不空转被动
+//   - 胜负：对方球死 或 死灵阵营全灭；当前死灵球死不算败（先转移）
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
 // ★ 生命火种（纳西妲）：isSeed phantom 高速飞行，命中敌球施加缠绕效果（定身+持续伤害）
@@ -24,6 +25,8 @@ export class MatchSim {
     this.balls = balls;
     this.wilds = Array.isArray(wilds) ? wilds : (wilds ? [wilds] : []);
     this.necros = Array.isArray(necros) ? necros : (necros ? [necros] : []);
+    // 阵营归属固定：necros[0] 初始属于哪一侧（转移/重排不变）
+    this.necroSideIdx = this.necros.length ? (this.necros.includes(balls[0]) ? 0 : 1) : -1;
     ctx.necros = this.necros;
     ctx.sim = this;
     this.time = 0;
@@ -72,18 +75,15 @@ export class MatchSim {
         for (const b of targets) if (!b.dead) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true);
       }
     }
-    // 意识转移：当前死灵球阵亡 → 移交给下一个活着的
+    // 意识转移：当前死灵球阵亡 → 移交给下一个活着的（dead 球移出阵营）
     this._updateNecroTransfer();
     return {
       over: this._isOver(),
       winner: this._winner(),
     };
   }
-  // 死灵阵营所属侧（0=balls[0]侧 / 1=balls[1]侧）；无死灵返回 -1
-  necroSide() {
-    if (!this.necros.length) return -1;
-    return this.necros.includes(this.balls[0]) ? 0 : 1;
-  }
+  // 死灵阵营所属侧（构造时定死，转移不变）
+  necroSide() { return this.necroSideIdx; }
   // 意识转移：当前球（index 0）阵亡 → 移到下一个活着的；全灭则清空
   _updateNecroTransfer() {
     if (!this.necros.length) return;
@@ -95,7 +95,7 @@ export class MatchSim {
       this.necros = [];
     }
   }
-  // 召唤一个 50 血死灵球（由当前球触发；转移后新当前球继承召唤职责）
+  // 召唤一个 50 血死灵球（由当前球触发；开局第一次进入冷却不召唤）
   summonNecro(owner) {
     const { w, h } = CONFIG.FIELD;
     const a = Math.random() * Math.PI * 2;
@@ -109,21 +109,27 @@ export class MatchSim {
       color: CONFIG.NECRO.color,
       name: '死灵·从者',
     });
-    nb.skill = createSkill('necromancer', nb, this.ctx);  // 被动守卫：非当前球不召唤
+    // 轻量 skill：只有 def 供渲染（尸斑装饰），无被动空转（避免从者重复召唤/计时混乱）
+    nb.skill = { def: getSkillDef('necromancer'), update() {}, state: {}, cooldownLeft: 0 };
     nb.isNecro = true;
     this.necros.push(nb);
     this.ctx.events.emit('fx:summon', { x: nb.x, y: nb.y });
     return nb;
   }
-  // 胜负：对方球死 / 死灵阵营全灭 / 狂暴结束比总血量
+  // 胜负：对方球死 / 死灵阵营全灭（当前死灵球死不算败，先转移）/ 狂暴结束
   _isOver() {
-    if (this.balls.some(b => b.dead)) return true;
-    if (this.necros.length && this.necros.every(n => n.dead)) return true;
-    return this.berserk && this.berserkTime >= CONFIG.BERSERK.duration;
+    if (this.necroSideIdx >= 0) {
+      const enemy = this.necroSideIdx === 0 ? this.balls[1] : this.balls[0];
+      if (enemy.dead) return true;
+      if (this.necros.length && this.necros.every(n => n.dead)) return true;
+      if (!this.necros.length) return true;   // 阵营清空（转移后无球）= 全灭
+      return this.berserk && this.berserkTime >= CONFIG.BERSERK.duration;
+    }
+    return this.balls.some(b => b.dead) || (this.berserk && this.berserkTime >= CONFIG.BERSERK.duration);
   }
   _winner() {
     const [a, b] = this.balls;
-    const side = this.necroSide();
+    const side = this.necroSideIdx;
     // 非死灵对局：a=balls[0]侧，b=balls[1]侧
     if (side === -1) return a.dead && b.dead ? -1 : a.dead ? 1 : 0;
     const isSide0 = side === 0;

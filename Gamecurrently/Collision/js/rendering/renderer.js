@@ -135,6 +135,25 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
     g.restore();
     return;
   }
+  // 地球：海洋色打底 + 绿色板块（球内固定位置，像大陆）
+  if (skillId === 'earth') {
+    g.save();
+    g.fillStyle = '#3E8E41';
+    const plates = [
+      [0.18, -0.30, 0.30],
+      [-0.30, 0.05, 0.22],
+      [0.30, 0.30, 0.18],
+      [-0.05, 0.32, 0.14],
+      [0.10, 0.02, 0.10],
+    ];
+    for (const [dx, dy, sz] of plates) {
+      g.beginPath();
+      g.ellipse(x + dx * r, y + dy * r, sz * r, sz * r * 0.72, 0.4, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.restore();
+    return;
+  }
   // 死灵术士：球内深红色尸斑（大小不一、固定位置、不超出球体）
   if (skillId === 'necromancer') {
     g.save();
@@ -159,7 +178,7 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔）
 // 摄像机：ringHole 大圆场 = 小幅度追踪自己球（不缩放，保持原偏移观感）
-// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形（isSlashFx）——两端渲染一致
+// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形（isSlashFx）/地球探测器（isEarthProbe）——两端渲染一致
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -172,6 +191,7 @@ export class Renderer {
     this.dmgNums = [];
     this.healNums = [];
     this.slashFx = [];
+    this.labels = [];
     this.autoResize = autoResize;
     if (autoResize) {
       this.resize();
@@ -183,6 +203,8 @@ export class Renderer {
     // 纳西妲粒子（火种命中爆裂 / 缠绕跳伤绿叶）：单机+房主端；客人端靠 phantoms/effects 同步渲染
     bus.on('fx:seedHit', ({ x, y, color }) => this.particles.spawn(x, y, { color: color || '#44A785', count: 14, speed: 150, size: 3 }));
     bus.on('fx:vineTick', ({ x, y }) => this.particles.spawn(x, y, { color: '#7cb342', count: 6, speed: 60, size: 3 }));
+    // 地球【文明】事件文字提示（生态修复/战争破坏/对外开拓/流浪地球）
+    bus.on('fx:earthLabel', ({ x, y, text }) => this.addLabel(x, y, text));
   }
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -203,6 +225,7 @@ export class Renderer {
   addDmgNum(x, y, amount) { this.dmgNums.push({ x, y, amount, t: 0 }); }
   addHealNum(x, y, amount) { this.healNums.push({ x, y, amount, t: 0 }); }
   addSlashFx(x, y, dir, r, hit) { this.slashFx.push({ x, y, dir, r, hit, t: 0 }); }
+  addLabel(x, y, text) { this.labels.push({ x, y, text, t: 0 }); }
   update(dt) {
     this.particles.update(dt);
     for (let i = this.lineFx.length - 1; i >= 0; i--) {
@@ -229,6 +252,11 @@ export class Renderer {
       const fx = this.slashFx[i];
       fx.t += dt;
       if (fx.t > 0.35) this.slashFx.splice(i, 1);
+    }
+    for (let i = this.labels.length - 1; i >= 0; i--) {
+      const d = this.labels[i];
+      d.t += dt;
+      if (d.t > 0.9) this.labels.splice(i, 1);
     }
   }
   // render(balls, t, phantoms, battleMap)：battleMap 提供场地绘制（js/maps/*）
@@ -280,6 +308,7 @@ export class Renderer {
     for (const b of balls) this.drawBall(g, b);
     for (const d of this.dmgNums) this.drawNum(g, d, DMG, '');
     for (const d of this.healNums) this.drawNum(g, d, HEAL, '+');
+    for (const d of this.labels) this.drawLabel(g, d);
     this.particles.draw(g);
     g.restore();
   }
@@ -409,6 +438,24 @@ export class Renderer {
       g.restore();
       return;
     }
+    // 地球探测器（对外开拓）：绿色追踪弹 + 光晕（帧追踪由 host sim 驱动）
+    if (ph.isEarthProbe) {
+      const r = ph.radius || 9;
+      g.save();
+      g.globalAlpha = 0.35;
+      g.fillStyle = '#a7e8c5';
+      g.beginPath(); g.arc(ph.x, ph.y, r * 1.8, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 1;
+      g.fillStyle = ph.color;
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#1f5c3a';
+      g.lineWidth = 2;
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,0.85)';
+      g.beginPath(); g.arc(ph.x - r * 0.25, ph.y - r * 0.25, r * 0.35, 0, Math.PI * 2); g.fill();
+      g.restore();
+      return;
+    }
     // 魔族（魔王眷属）：深紫实心小眷属 + 双角，冲刺时带拖影
     if (ph.isMinion) {
       const r = ph.radius;
@@ -481,6 +528,24 @@ export class Renderer {
     g.arc(fx.x, fx.y, R, fx.dir - Math.PI / 2, fx.dir + Math.PI / 2);
     g.closePath();
     g.stroke();
+    g.restore();
+  }
+  // 文字提示（地球文明事件名）：与加减血数字同款描边样式，缓慢上飘淡出
+  drawLabel(g, d) {
+    const a = Math.max(0, 1 - d.t / 0.9);
+    const y = d.y - d.t * 30;
+    g.save();
+    g.globalAlpha = a;
+    g.font = "bold 16px 'ZCOOL KuaiLe', 'Comic Sans MS', sans-serif";
+    g.textAlign = 'center';
+    g.lineWidth = 4;
+    g.strokeStyle = '#fff';
+    g.strokeText(d.text, d.x, y);
+    g.strokeStyle = INK;
+    g.lineWidth = 2;
+    g.strokeText(d.text, d.x, y);
+    g.fillStyle = INK;
+    g.fillText(d.text, d.x, y);
     g.restore();
   }
   // 数字：prefix 区分加减血（减血无符号，加血带 +）

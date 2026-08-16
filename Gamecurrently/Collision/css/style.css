@@ -108,7 +108,7 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .set-row input { background: #fff; border: 3px solid var(--ink); color: var(--ink); padding: 8px 12px; border-radius: 10px 4px 10px 4px \/ 4px 10px 4px 10px; font-family: inherit; font-size: 1rem; }
 .set-row input[type="checkbox"] { width: 26px; height: 26px; margin-left: auto; accent-color: var(--orange); border: 3px solid var(--ink); border-radius: 6px; cursor: pointer; }
 
-/* 选球界面（单机） */
+/* 选球界面（单机/联机统一三栏模板） */
 .select-screen { justify-content: flex-start; padding: 0; }
 .select-header { display: flex; align-items: center; width: 100%; padding: 16px 26px 10px; gap: 16px; }
 .select-header-left { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
@@ -130,19 +130,21 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .battle-card .cskill { font-size: 0.85rem; opacity: 0.8; line-height: 1.5; }
 .battle-card.rnd .battle-preview { width: 100%; height: 146px; border: 3px solid var(--ink); border-radius: 10px 3px 10px 3px \/ 3px 10px 3px 10px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-size: 3.4rem; background: var(--yellow); }
 
-/* 联机：三个独立阶段界面 */
-.online-cols { display: flex; gap: 40px; align-items: flex-start; }
+/* 联机：三个独立阶段界面（边缘布局，元素随分辨率贴边） */
+.online-cols { display: flex; gap: 40px; align-items: flex-start; justify-content: space-between; width: 100%; padding: 0 44px; }
 .col { display: flex; flex-direction: column; gap: 14px; align-items: center; min-width: 200px; }
 .room-input { background: #fff; border: 3px solid var(--ink); color: var(--ink); padding: 12px; border-radius: 12px 4px 12px 4px \/ 4px 12px 4px 12px; font-size: 1.6rem; letter-spacing: 0.5em; text-align: center; width: 220px; font-family: inherit; }
 .room-code { font-size: 3.2rem; letter-spacing: 0.3em; color: var(--red); text-shadow: 3px 3px 0 var(--ink); }
-.online-wait { display: flex; flex-direction: column; align-items: center; gap: 10px; max-height: 100%; }
+.online-wait { display: flex; flex-direction: column; align-items: stretch; gap: 10px; width: 100%; flex: 1; min-height: 0; }
 /* 阶段容器：同一时刻只显示一个；每个阶段都可滚动（保险） */
-.stage { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; overflow-y: auto; }
-.stage-conn { justify-content: center; min-height: 42vh; }
+.stage { display: flex; flex-direction: column; align-items: stretch; gap: 12px; width: 100%; overflow-y: auto; }
+.stage > .col-title, .stage > h3 { align-self: center; }
+.stage-conn { justify-content: center; min-height: 42vh; align-items: center; }
 .stage-battle-cards { padding: 8px 14px 12px; }
 .stage-battle-cards .battle-card { width: 240px; }
 .stage-battle-cards .battle-card canvas { max-height: 92px; }
-/* 联机选球：复刻单机三栏布局（select-header + select-layout + confirm-wrap） */
+.stage-battle-cards .battle-card.rnd .battle-preview { height: 92px; font-size: 2.6rem; }
+/* 联机选球：三栏布局（select-header + select-layout + confirm-wrap） */
 .stage-pick-layout { flex: 1; padding: 6px 44px 0; }
 .stage-pick-layout .card-list { max-height: 30vh; width: 100%; max-width: 320px; }
 .enemy-ball { width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--ink); background: #fff; box-shadow: 4px 4px 0 rgba(31,26,17,0.7); display: flex; align-items: center; justify-content: center; font-size: 2.4rem; color: rgba(31,26,23,0.5); }
@@ -151,8 +153,9 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 
 /* 选球/联机/战场：不透明底 */
 #screen-select, #screen-online, #screen-battle { background: var(--paper); }
-/* 联机整屏可滚动（保险），返回按钮固定不随滚动 */
-#screen-online { justify-content: flex-start; overflow-y: auto; padding: 24px 0 40px; }
+/* 联机整屏边缘布局（元素贴边、自适应分辨率）+ 可滚动，返回按钮固定不随滚动 */
+#screen-online { justify-content: flex-start; align-items: stretch; overflow-y: auto; padding: 0 0 40px; }
+#screen-online > h2 { margin: 20px auto 10px; }
 #screen-online .corner-back { position: fixed; }
 
 /* 对战 */

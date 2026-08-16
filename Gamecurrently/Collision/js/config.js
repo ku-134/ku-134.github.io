@@ -14,6 +14,9 @@ const CONFIG = {
   // 狂战士【疯狂冲撞】：主动7s冷却，发动后5s无可阻挡的2.5倍速度冲刺（撞墙/撞球不打断），
   //   疯狂期间每次撞击敌球22伤；循环：疯狂5s → 冷却7s → 疯狂5s（cooldownStartsAfter 使冷却在疯狂结束后才计时）
   BERSERKER: { cooldown: 7, duration: 5, speedMul: 2.5, hitDamage: 22 },
+  // 地球【文明】：被动每5秒随机触发四种事件之一（每次触发球旁文字提示效果名）——
+  //   生态修复(+10~20血) / 战争破坏(-10~15血) / 对外开拓(追踪探测器17~25伤，帧追踪敌球) / 流浪地球(随机方向基础冲刺)
+  EARTH: { interval: 5, healMin: 10, healMax: 20, damageMin: 10, damageMax: 15, probeMin: 17, probeMax: 25, probeSpeed: 340 },
   // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带30伤）
   BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
   // 巨人【暴怒】：战场干扰球（第三方，不可选择），只保留愤怒机制

@@ -21,8 +21,9 @@ import { makeWildBall } from './singleMode.js';
 //   阶段2 选球：三栏布局（左=对方球展示，右=我的分类列表，底部=准备）
 // 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
 // 再来一局：双方各自点【再来一局】确认，双方都确认后房主才重开（REMATCH）
-// ★ 死灵术士：necros 阵营随 STATE 广播（[0]=当前意识球），房主 sim 跑、客人端重建渲染+分段血条
-// ★ 意识转移：房主侧 balls[0] 跟随 sim.necros[0]（necroSideIdx 固定）；客人侧按 myClass 判定
+// ★ 死灵术士：necros 双侧阵营随 STATE 合并广播（side=0房主侧/1客人侧，isPlayer=各侧当前球），
+//   房主 sim 跑、客人端重建渲染+分段血条；两侧各自召唤/转移，互不干扰
+// ★ 意识转移（双侧）：房主侧 balls[0] 跟随 sim.necrosA[0]、balls[1] 跟随 sim.necrosB[0]；客人侧按 _necroSide 跟随
 // ★ 客人端 HP 升降本地监测数字；_onData 必须处理 MSG.CMD（老bug）；STATE/CMD 处理加 try-catch 防异常卡死
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
@@ -430,9 +431,9 @@ export class OnlineMode {
       b2.dashSkill = createDashSkill(b2, this.ctx, d.guestClass);
       this.wilds = [makeWildBall(wildId, this.ctx, w, h)];
       this.wilds[0].x = sw.x; this.wilds[0].y = sw.y;
-      // 死灵阵营（只支持单方，优先房主侧）
-      if (d.hostClass === 'necromancer') this.necros.push(b1);
-      else if (d.guestClass === 'necromancer') this.necros.push(b2);
+      // 死灵阵营：双侧支持（房主侧=0 / 客人侧=1），双方都选死灵也各自独立
+      if (d.hostClass === 'necromancer') { b1._necroSide = 0; this.necros.push(b1); }
+      if (d.guestClass === 'necromancer') { b2._necroSide = 1; this.necros.push(b2); }
       this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], wilds: this.wilds, necros: this.necros, onResult: r => this._showResult(r) });
       b1.isPlayer = true;
       this._bindFx();
@@ -582,18 +583,27 @@ export class OnlineMode {
       this.host.update(dt);
       this.hud.showMatchTimer(this.host.berserkLeft, this.host.berserk);
       this.phantoms = this.ctx.phantoms || [];
-      // 死灵意识转移：房主侧当前球跟随 sim（阵营归属固定 necroSideIdx）
-      const side = this.host?.sim?.necroSideIdx ?? -1;
-      if (side === 0 && this.necros.length && this.balls[0] !== this.necros[0]) this.balls[0] = this.necros[0];
+      // 死灵意识转移（双侧）：各侧当前球跟随 sim 分组（房主侧=necrosA / 客人侧=necrosB）
+      const sim = this.host?.sim;
+      if (sim) {
+        this.necros = sim.necros;
+        this.ctx.necros = sim.necros;
+        this.ctx.necrosA = sim.necrosA;
+        this.ctx.necrosB = sim.necrosB;
+        if (sim.necrosA.length && this.balls[0] !== sim.necrosA[0]) this.balls[0] = sim.necrosA[0];
+        if (sim.necrosB.length && this.balls[1] !== sim.necrosB[0]) this.balls[1] = sim.necrosB[0];
+      }
     } else {
       // 防御：guest 未就绪时跳过，避免 undefined 抛错导致渲染循环中断（卡死）
       if (!this.guest) return;
       // 客人端：同步死灵渲染列表 → ctx.necros（HUD/瞄准）+ 自己侧当前球（按 myClass 判定）
       const gN = this.guest.necros || [];
       if (gN !== this.necros) { this.necros = gN; this.ctx.necros = gN; }
-      if (this.myClass === 'necromancer' && this.necros.length && this.balls[1] !== this.necros[0]) {
-        this.balls[1] = this.necros[0];
-      }
+      // 自己侧（客人=side1）当前球 + 对方（房主=side0）当前球跟随（双侧）
+      const mine = this.necros.find(n => n._necroSide === 1);
+      const theirs = this.necros.find(n => n._necroSide === 0);
+      if (mine && this.balls[1] !== mine) this.balls[1] = mine;
+      if (theirs && this.balls[0] !== theirs) this.balls[0] = theirs;
       const bs = this.guest.berserk || { left: 0, active: false };
       this.hud.showMatchTimer(bs.left, bs.active);
       this.phantoms = this.guest.phantoms || [];

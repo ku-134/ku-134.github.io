@@ -32,12 +32,32 @@ window.addEventListener('keydown', unlockSfx, { once: true });
 bus.on('sfx:play', ({ name, throttle }) => playSfx(name, { throttle }));
 
 // ---- 全局上下文：物理与技能共享的依赖注入 ----
+// ★ 死灵术士多球：ctx.necros = 死灵阵营（[0]=当前意识球）；getEnemy 支持阵营瞄准
 const effects = new EffectSystem();
 const ctx = {
   events: bus,
   effects,
   balls: [],
-  getEnemy(ball) { return this.balls.find(b => b !== ball && !b.dead) || this.balls.find(b => b !== ball); },
+  necros: [],
+  sim: null,
+  getEnemy(ball) {
+    const necros = this.necros || [];
+    // 死灵球：敌人 = 对方阵营球（非 necro 的玩家球）
+    if (necros.includes(ball)) {
+      return this.balls.find(b => !necros.includes(b) && !b.dead) || this.balls.find(b => !necros.includes(b));
+    }
+    // 对方球：目标 = 最近活着的死灵球（若存在死灵阵营）
+    if (necros.length) {
+      let best = null, bd = Infinity;
+      for (const n of necros) {
+        if (n.dead) continue;
+        const d = Math.hypot(n.x - ball.x, n.y - ball.y);
+        if (d < bd) { bd = d; best = n; }
+      }
+      return best || necros.find(n => !n.dead) || necros[0];
+    }
+    return this.balls.find(b => b !== ball && !b.dead) || this.balls.find(b => b !== ball);
+  },
 };
 effects.setCtx(ctx);
 

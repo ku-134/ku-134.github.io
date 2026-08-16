@@ -8,6 +8,7 @@ import CONFIG from '../config.js';
 //   最前段=当前意识球（最深红），从者按顺序渐浅（多级红色深度）
 // ★ 每段宽度 = 该球当前血量 ÷ 总容量（ΣmaxHp）×100%——总和≤100%不溢出，
 //   召唤越多每段越窄（挤压），一眼看出总血量百分比
+// ★ 双侧阵营：自己侧/对方侧各自独立分段（按 _necroSide 过滤），互不干扰
 // ★ 分段时原 fill 元素会被移出 bar——用 _necroBarCache 缓存 bar 引用，
 //   避免下一帧 fillEl.parentElement 为 null 抛异常卡死（已修）
 export class Hud {
@@ -74,7 +75,7 @@ export class Hud {
     if (p1Text) this.el.p1name.textContent = p1Text;
     if (p2Text) this.el.p2name.textContent = p2Text;
   }
-  // 狂暴倒计时：顶部中间，red=true 时为狂暴阶段
+  // 狂暴计时：顶部中间，red=true 时为狂暴阶段（正数计时）
   showMatchTimer(sec, red) {
     const el = this.el.matchTimer;
     el.textContent = red ? `狂暴 ${sec}` : sec;
@@ -112,24 +113,21 @@ export class Hud {
   tick() {
     if (!this.balls) return;
     const [p1, p2] = this.balls;
-    // 死灵术士：分段血条（各死灵球血量/总容量，前段=当前球最深红；另一侧正常）
+    // 死灵术士：按侧分段血条（自己侧/对方侧各自渲染：各死灵球血量/总容量，前段=当前球最深红）
+    // ★ 双侧阵营：自己（myIndex 球）若死灵 → 自己侧分段；对方侧同理；互不干扰
     const necros = this.ctx?.necros || [];
-    const hasNecro = necros.length && necros[0]?.skill?.def?.id === 'necromancer';
-    if (hasNecro) {
-      const side0 = necros.includes(p1);
-      if (side0) {
-        this.renderNecroBar(this.el.p1hp, necros);
-        this.setBar(this.el.p2hp, p2.hp / p2.maxHp);
-      } else {
-        this.renderNecroBar(this.el.p2hp, necros);
-        this.setBar(this.el.p1hp, p1.hp / p1.maxHp);
-      }
-    } else {
-      this.resetBar(this.el.p1hp);
-      this.resetBar(this.el.p2hp);
-      this.setBar(this.el.p1hp, p1.hp / p1.maxHp);
-      this.setBar(this.el.p2hp, p2.hp / p2.maxHp);
-    }
+    const my = this.balls[this.myIndex] || p1;
+    const enemy = my === p1 ? p2 : p1;
+    const myFill = my === p1 ? this.el.p1hp : this.el.p2hp;
+    const enemyFill = enemy === p1 ? this.el.p1hp : this.el.p2hp;
+    const mySide = my._necroSide;
+    const enemySide = mySide !== undefined ? (mySide === 0 ? 1 : 0) : enemy._necroSide;
+    const myNecros = mySide !== undefined ? necros.filter(n => n._necroSide === mySide) : [];
+    const enemyNecros = enemySide !== undefined ? necros.filter(n => n._necroSide === enemySide) : [];
+    if (myNecros.length) this.renderNecroBar(myFill, myNecros);
+    else { this.resetBar(myFill); this.setBar(myFill, my.hp / my.maxHp); }
+    if (enemyNecros.length) this.renderNecroBar(enemyFill, enemyNecros);
+    else { this.resetBar(enemyFill); this.setBar(enemyFill, enemy.hp / enemy.maxHp); }
     const st1 = this.skillState(p1);
     const st2 = this.skillState(p2);
     this.el.p1passive.classList.toggle('blue', st1.isCd);
@@ -137,9 +135,9 @@ export class Hud {
     this.setBar(this.el.p1passive, st1.ratio);
     this.setBar(this.el.p2passive, st2.ratio);
     // 双通道：只显示自己的球（房主=0，客人=1）
-    const my = this.balls[this.myIndex] || p1;
-    this.updateDashUI(my);
-    this.updateSkillUI(my);
+    const myBall = this.balls[this.myIndex] || p1;
+    this.updateDashUI(myBall);
+    this.updateSkillUI(myBall);
   }
   // 死灵术士分段血条：每段 = 一个死灵球，宽度 = 该球当前血量/总容量（ΣmaxHp）——
   // 总和即总血量百分比，召唤越多各段挤压越窄，永不溢出；段间空隙=空槽

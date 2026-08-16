@@ -14,8 +14,9 @@ export function makeHudSkill(def) {
   };
 }
 
-// 客户端：接收主机状态 → 更新渲染对象（球/幻影/HUD状态） → 转发输入指令
+// 客户端：接收主机状态 → 更新渲染对象（球/幻影/死灵球/HUD状态） → 转发输入指令
 // 本地监测：HP 下降 → 红色伤害数字；HP 上升 → 绿色加血数字（均不占用信道）
+// necros：死灵术士阵营渲染占位（[0]=当前意识球，isPlayer 标记），随 STATE 重建
 export class Guest {
   constructor({ signal, onResult, onLocalDamage, onLocalHeal }) {
     this.signal = signal;
@@ -23,6 +24,7 @@ export class Guest {
     this.onLocalDamage = onLocalDamage;   // (x, y, amount) 本地渲染伤害数字
     this.onLocalHeal = onLocalHeal;       // (x, y, amount) 本地渲染加血数字
     this.balls = null;
+    this.necros = [];                     // 死灵渲染占位列表
     this.phantoms = [];
     this.berserk = { active: false, left: 0 };
     this._hpInited = false;               // 首帧只记录 HP，不生成数字（避免初始差值误报）
@@ -59,6 +61,20 @@ export class Guest {
         b.skill.passiveTimer = s.cd.passiveTimer;
       }
     });
+    // 死灵术士阵营：渲染占位重建（[0]=当前意识球）
+    if (Array.isArray(d.necros)) {
+      while (this.necros.length < d.necros.length) {
+        this.necros.push(this._makeNecroPlaceholder());
+      }
+      while (this.necros.length > d.necros.length) this.necros.pop();
+      d.necros.forEach((s, i) => {
+        const b = this.necros[i];
+        b.x = s.x; b.y = s.y;
+        b.hp = s.hp; b.maxHp = s.maxHp;
+        b.dead = s.hp <= 0;
+        b.isPlayer = i === 0;   // 当前意识球（顶部三角标记）
+      });
+    }
     this._hpInited = true;
     // 幻影/飞弹/斩击扇形：保留类型字段，两端渲染一致
     this.phantoms = d.phantoms.map(p => ({
@@ -67,6 +83,24 @@ export class Guest {
       isPhantom: true,
       speed: 0,
     }));
+  }
+  // 死灵渲染占位（供 drawBall：尸斑装饰/三角标记/分段血条数据）
+  _makeNecroPlaceholder() {
+    return {
+      x: 0, y: 0, angle: 0,
+      hp: 50, maxHp: 50,
+      color: '#B3001B',
+      radiusScaled: 20,
+      scale: 1,
+      dead: false,
+      isPlayer: false,
+      isNecro: true,
+      flash: 0,
+      healFlash: 0,
+      dashing: false,
+      effects: new Map(),
+      skill: { def: { id: 'necromancer', name: '死灵术士' } },
+    };
   }
   sendCmd(cmd) { this.signal.send(MSG.CMD, cmd); }
 }

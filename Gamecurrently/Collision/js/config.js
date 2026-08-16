@@ -17,6 +17,9 @@ const CONFIG = {
   // 地球【文明】：被动每5秒随机触发四种事件之一（每次触发球旁文字提示效果名）——
   //   生态修复(+10~20血) / 战争破坏(-10~15血) / 对外开拓(追踪探测器17~25伤，帧追踪敌球) / 流浪地球(随机方向基础冲刺)
   EARTH: { interval: 5, healMin: 10, healMax: 20, damageMin: 10, damageMax: 15, probeMin: 17, probeMax: 25, probeSpeed: 340 },
+  // 太阳（战场干扰球·星球分类）：体型3倍、速度1/4；触碰附着燃烧4s（每秒5~15伤）；
+  //   每10~15s向随机球发射激光（±15：+15补充能量 / -15毁灭）
+  SUN: { scale: 3, speedMul: 0.25, burnDuration: 4, burnMin: 5, burnMax: 15, laserInterval: [10, 15], laserDamage: 15 },
   // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带30伤）
   BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
   // 巨人【暴怒】：战场干扰球（第三方，不可选择），只保留愤怒机制
@@ -45,7 +48,7 @@ const CONFIG = {
   // 命中施加缠绕4s：定身+锁方向 + 每0.5s 4伤（8跳=32伤），结束恢复速度（方向不变）
   NAHIDA: { cooldown: 8, seedSpeed: 780, seedRadius: 9, wrapDuration: 4, wrapTick: 0.5, wrapDamage: 4, maxTicks: 8 },
   // 死灵术士【亡者复苏】：被动每10秒召唤一个50血的死灵球（常驻可叠加）
-  // 本体生命上限仅75；狂暴同样对死灵球生效（≤30 豁免）；总血条=分段小管（当前球段+各从者段）
+  // 本体生命上限仅75；狂暴同样对死灵球生效；总血条=分段小管（当前球段+各从者段）
   NECRO: { color: '#B3001B', hp: 75, minionHp: 50, summonInterval: 10 },
   // 魔王【召唤魔族】：战场干扰球（剑与魔法分类，不可选择）
   // 体型恒为基础球1.5倍；每5~8秒召唤一只魔族眷属

@@ -21,6 +21,7 @@ import { makeWildBall } from './singleMode.js';
 //   阶段2 选球：三栏布局（左=对方球展示，右=我的分类列表，底部=准备）
 // 对战：主机权威，STATE 广播（phantoms 含斩击扇形/飞弹/魔族——两端渲染一致）
 // 再来一局：双方各自点【再来一局】确认，双方都确认后房主才重开（REMATCH）
+// ★ 死灵术士：necros 阵营随 STATE 广播（[0]=当前意识球），房主 sim 跑、客人端重建渲染+分段血条
 // ★ 客人端 HP 升降本地监测数字；_onData 必须处理 MSG.CMD（老bug）；STATE/CMD 处理加 try-catch 防异常卡死
 export class OnlineMode {
   constructor(ctx, { canvas, onBack }) {
@@ -35,6 +36,7 @@ export class OnlineMode {
     this.balls = [];
     this.phantoms = [];
     this.wilds = [];
+    this.necros = [];
     this.battleId = 'arena';
     this.battleMap = getBattleField('arena');
     this.battleSelected = false;
@@ -414,10 +416,11 @@ export class OnlineMode {
     this.hud.hideResult();
     this.hud.hideMatchTimer();
     this.ctx.phantoms = [];
+    this.necros = [];
     const { w, h } = CONFIG.FIELD;
     const [s1, s2, sw] = pickSpawns(this.battleMap, 3);
-    const b1 = new Ball({ x: s1.x, y: s1.y, angle: Math.PI * 0.9, name: '你' });
-    const b2 = new Ball({ x: s2.x, y: s2.y, angle: Math.PI * 0.1, name: '对方' });
+    const b1 = new Ball({ x: s1.x, y: s1.y, angle: Math.PI * 0.9, name: '你', hp: d.hostClass === 'necromancer' ? CONFIG.NECRO.hp : CONFIG.MAX_HP });
+    const b2 = new Ball({ x: s2.x, y: s2.y, angle: Math.PI * 0.1, name: '对方', hp: d.guestClass === 'necromancer' ? CONFIG.NECRO.hp : CONFIG.MAX_HP });
     const wildId = d.wildId || 'giant';
     if (this.isHost) {
       b1.skill = createSkill(d.hostClass, b1, this.ctx);
@@ -426,7 +429,10 @@ export class OnlineMode {
       b2.dashSkill = createDashSkill(b2, this.ctx, d.guestClass);
       this.wilds = [makeWildBall(wildId, this.ctx, w, h)];
       this.wilds[0].x = sw.x; this.wilds[0].y = sw.y;
-      this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], wilds: this.wilds, onResult: r => this._showResult(r) });
+      // 死灵阵营（只支持单方，优先房主侧）
+      if (d.hostClass === 'necromancer') this.necros.push(b1);
+      else if (d.guestClass === 'necromancer') this.necros.push(b2);
+      this.host = new Host({ signal: this.signal, ctx: this.ctx, balls: [b1, b2], wilds: this.wilds, necros: this.necros, onResult: r => this._showResult(r) });
       b1.isPlayer = true;
       this._bindFx();
     } else {
@@ -444,21 +450,22 @@ export class OnlineMode {
         onLocalDamage: (x, y, amount) => this.renderer.addDmgNum(x, y, amount),
         onLocalHeal: (x, y, amount) => this.renderer.addHealNum(x, y, amount),
       });
-      this.guest.setRenderBalls([b1, b2, ...this.wilds]);
+      this.guest.setRenderBalls([b1, b2]);
       b2.isPlayer = true;
       this.dashAim = { owner: b2, aimDir: 0 };
       this.skillAim = { owner: b2, aimDir: 0 };
     }
     b1.color = getSkillDef(d.hostClass).color;
     b2.color = getSkillDef(d.guestClass).color;
-    this.balls = [b1, b2, ...this.wilds];
-    this.ctx.balls = [b1, b2];
+    this.balls = [b1, b2];
+    this.ctx.balls = this.balls;
     this.ctx.wilds = this.wilds;   // 暴露给技能（傀儡术操控干扰球）
+    this.ctx.necros = this.necros;
     this.phase = 'countdown';
     this.countdown = 3;
     this.countdownShown = -1;
     const key = 'Key' + (localStorage.getItem('collision.key') || 'J');
-    this.hud.bind(this.balls, { isTouch: this.isTouch, key, myIndex: this.isHost ? 0 : 1 });
+    this.hud.bind(this.balls, { isTouch: this.isTouch, key, myIndex: this.isHost ? 0 : 1, ctx: this.ctx });
     const hostName = this.isHost ? '你' : this.enemyName;
     const guestName = this.isHost ? this.enemyName : '你';
     this.hud.setNames(`${hostName} · ${getSkillDef(d.hostClass).name}`, `${guestName} · ${getSkillDef(d.guestClass).name}`);
@@ -481,11 +488,11 @@ export class OnlineMode {
       isTouch: this.isTouch,
       key: 'Space',
       onPress: () => {
-        if (this.isHost) this.balls[0].dashSkill?.startAim();
+        if (this.isHost) this.balls[0]?.dashSkill?.startAim();
         else { this._aimUpdate(this.dashAim); this.renderer.setAim(this.dashAim, true); this.guest.sendCmd({ type: 'aim', slot: 'dash' }); }
       },
       onRelease: () => {
-        if (this.isHost) this.balls[0].dashSkill?.releaseAim();
+        if (this.isHost) this.balls[0]?.dashSkill?.releaseAim();
         else { this.renderer.setAim(this.dashAim, false); this.guest.sendCmd({ type: 'release', slot: 'dash' }); }
       },
     });
@@ -494,11 +501,11 @@ export class OnlineMode {
       isTouch: this.isTouch,
       key,
       onPress: () => {
-        if (this.isHost) this.balls[0].skill?.startAim();
+        if (this.isHost) this.balls[0]?.skill?.startAim();
         else { this._aimUpdate(this.skillAim); this.renderer.setAim(this.skillAim, true); this.guest.sendCmd({ type: 'aim', slot: 'skill' }); }
       },
       onRelease: () => {
-        if (this.isHost) this.balls[0].skill?.releaseAim();
+        if (this.isHost) this.balls[0]?.skill?.releaseAim();
         else { this.renderer.setAim(this.skillAim, false); this.guest.sendCmd({ type: 'release', slot: 'skill' }); }
       },
     });
@@ -574,9 +581,19 @@ export class OnlineMode {
       this.host.update(dt);
       this.hud.showMatchTimer(this.host.berserkLeft, this.host.berserk);
       this.phantoms = this.ctx.phantoms || [];
+      // 死灵意识转移：房主侧当前球跟随 sim
+      if (this.necros.length && !this.necros.includes(this.balls[1])) {
+        if (this.balls[0] !== this.necros[0]) this.balls[0] = this.necros[0];
+      }
     } else {
       // 防御：guest 未就绪时跳过，避免 undefined 抛错导致渲染循环中断（卡死）
       if (!this.guest) return;
+      // 客人端：同步死灵渲染列表 → ctx.necros（HUD/瞄准）+ 自己侧当前球
+      const gN = this.guest.necros || [];
+      if (gN !== this.necros) { this.necros = gN; this.ctx.necros = gN; }
+      if (this.necros.length && !this.necros.includes(this.balls[1])) {
+        this.balls[1] = this.necros[0];
+      }
       const bs = this.guest.berserk || { left: 0, active: false };
       this.hud.showMatchTimer(bs.left, bs.active);
       this.phantoms = this.guest.phantoms || [];
@@ -586,7 +603,11 @@ export class OnlineMode {
     this.renderer.update(dt);
     this.hud.tick();
   }
-  render() { this.renderer.render(this.balls || [], this.loop.time, this.phantoms || [], this.battleMap); }
+  render() {
+    // 渲染列表：对方球 + 战场球 + 全部死灵球（避免当前球重复）
+    const others = this.balls.filter(b => !this.necros.includes(b));
+    this.renderer.render([...others, ...this.wilds, ...this.necros], this.loop.time, this.phantoms || [], this.battleMap);
+  }
   _showResult(d) {
     this.phase = 'ended';
     this.hud.hideMatchTimer();
@@ -641,7 +662,7 @@ export class OnlineMode {
     this._unsubs = [];
     this.host = null; this.guest = null;
     this.balls = []; this.phantoms = [];
-    this.wilds = [];
+    this.wilds = []; this.necros = [];
     this.ctx.phantoms = [];
     this.dashAim = null; this.skillAim = null;
     this.hud.hideMatchTimer();

@@ -40,7 +40,7 @@ export function unpack(raw) {
 
 // 主机 → 客户端：状态快照（渲染 + HUD 最小集）
 // hp 保留 1 位小数：客人端本地监测 HP 差值生成伤害/加血数字（不额外占信道）
-// phantoms：幻影分身/末影珍珠/魔族/奥术飞弹/斩击扇形/地球探测器/太阳激光/陨石（isSmallMeteor|isBigMeteor）——两端渲染一致
+// phantoms：幻影分身/末影珍珠/魔族/奥术飞弹/斩击扇形/地球探测器/太阳激光/陨石/沙尘暴（isDustStorm）——两端渲染一致
 // necros（死灵术士）：双侧阵营合并广播（顺序=A侧当前球+从者, B侧当前球+从者）
 //   side=阵营（0=房主侧 / 1=客人侧），isPlayer=该侧当前意识球（顶部三角标记）
 export function encodeState(sim, balls, phantoms) {
@@ -77,6 +77,7 @@ export function encodeState(sim, balls, phantoms) {
       isEarthProbe: !!p.isEarthProbe,
       isSunLaser: !!p.isSunLaser, tx: +(p.tx ?? 0).toFixed(1), ty: +(p.ty ?? 0).toFixed(1), positive: !!p.positive,
       isSmallMeteor: !!p.isSmallMeteor, isBigMeteor: !!p.isBigMeteor, noise: +(p.noise ?? 0),
+      isDustStorm: !!p.isDustStorm, hiding: !!p.hiding, hideT: +(p.hideT ?? 0).toFixed(2),
       isSlashFx: !!p.isSlashFx, dir: +(p.dir ?? 0).toFixed(3), r: +(p.r ?? 90).toFixed(1), hit: !!p.hit, t: +(p.t ?? 0).toFixed(2),
     })),
   };

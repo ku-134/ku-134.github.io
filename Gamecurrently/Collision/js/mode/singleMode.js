@@ -15,6 +15,7 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 // 战场干扰球：每局随机一个（巨人 | 魔王 | 太阳），均为第三方，不参与胜负
 // 死灵术士：双侧阵营都支持（玩家侧=necrosA / AI侧=necrosB）——双方都选死灵时各自召唤/转移/分段血条
 // ★ 随机选球：start 收到 null = 从可选职业随机（不含战场球与测试角色死灵）；再来一局时重新随机
+// ★ 战绩系统：至少一方随机选球才启用（statsEnabled）——胜负结算记录连胜，惜败清空，最高连胜保留（localStorage）
 // ★ 对局开始暂停首页背景（bg:run false），返回时恢复（背景无技能音效）
 const WILD_IDS = ['giant', 'demon', 'sun'];
 
@@ -58,6 +59,7 @@ export class SingleMode {
     this.curAISkillId = 'legion';
     this.curPlayerRandom = false;   // 本局玩家是否随机选球
     this.curAIRandom = false;       // 本局 AI 是否随机选球
+    this.statsEnabled = false;      // ★ 战绩启用：随机选球（玩家或 AI 至少一方随机）
     this.curBattleId = 'arena';
     this.curBattleRandom = false;   // 本局是否随机场地
     this.battleMap = null;
@@ -77,6 +79,7 @@ export class SingleMode {
     // 随机选球：null = 此刻随机决定（再来一局重新随机）
     this.curPlayerRandom = playerSkillId == null;
     this.curAIRandom = aiSkillId == null;
+    this.statsEnabled = this.curPlayerRandom || this.curAIRandom;   // ★ 战绩系统：至少一方随机才启用
     const pId = playerSkillId ?? pickRandom();
     const aId = aiSkillId ?? pickRandom();
     this.curSkillId = pId;
@@ -252,7 +255,18 @@ export class SingleMode {
     if (this.lastWinner === 0) win = true;
     else if (this.lastWinner === 1) win = false;
     else win = this.balls[0].hp >= this.balls[1].hp;
-    this.hud.showResult(win);
+    // ★ 战绩系统：随机选球对局自动记录（连胜 / 最高连胜，惜败清空，localStorage 持久化）
+    let statsText = '';
+    if (this.statsEnabled) {
+      let streak = +(localStorage.getItem('collision.streak') || 0);
+      let best = +(localStorage.getItem('collision.bestStreak') || 0);
+      if (win) { streak++; if (streak > best) best = streak; }
+      else streak = 0;
+      localStorage.setItem('collision.streak', String(streak));
+      localStorage.setItem('collision.bestStreak', String(best));
+      statsText = `<div class="stats-line">🔥 当前连胜 <b>${streak}</b> · 最高连胜 <b>${best}</b></div>`;
+    }
+    this.hud.showResult(win, statsText);
     this.ctx.events.emit('sfx:play', { name: win ? 'win' : 'lose' });
     const again = document.getElementById('btn-again');
     const home = document.getElementById('btn-home2');

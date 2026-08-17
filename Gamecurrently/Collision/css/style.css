@@ -207,4 +207,10 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 #result .rwin, #online-result .rwin { color: var(--green); text-shadow: 2px 2px 0 var(--ink); }
 #result .rlose, #online-result .rlose { color: var(--red); text-shadow: 2px 2px 0 var(--ink); }
 .stats-line { font-size: 1.1rem; background: #ffe8b0; border: 3px solid var(--ink); border-radius: 12px; padding: 6px 18px; }
-.tutorial-list { text-align: left; font-size: 1rem; line-height: 2; max-height: 46vh; overflow-y: auto; }
+.tutorial-list { text-align: left; font-size: 0.95rem; line-height: 1.9; max-height: 46vh; overflow-y: auto; min-width: 300px; max-width: 420px; }
+.tutorial-list h3 { color: var(--red); letter-spacing: 0.08em; font-size: 1.05rem; margin: 12px 0 4px; border-bottom: 2px dashed rgba(31,26,23,0.35); padding-bottom: 3px; }
+.tutorial-list h3:first-child { margin-top: 0; }
+.tutorial-list p { margin: 4px 0; }
+.tutorial-list ul { margin: 4px 0 4px 18px; }
+.tutorial-list li { margin: 2px 0; }
+.tutorial-list b { color: var(--red); }

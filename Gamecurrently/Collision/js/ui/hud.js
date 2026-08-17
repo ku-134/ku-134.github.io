@@ -11,6 +11,7 @@ import CONFIG from '../config.js';
 // ★ 双侧阵营：自己侧/对方侧各自独立分段（按 _necroSide 过滤），互不干扰
 // ★ 分段时原 fill 元素会被移出 bar——用 _necroBarCache 缓存 bar 引用，
 //   避免下一帧 fillEl.parentElement 为 null 抛异常卡死（已修）
+// ★ showResult(win, extra)：extra 为战绩等附加信息行（插在按钮前）
 export class Hud {
   constructor(prefix = '') {
     this.prefix = prefix;
@@ -229,12 +230,12 @@ export class Hud {
   setBar(el, ratio) {
     el.style.width = Math.max(0, Math.min(100, ratio * 100)) + '%';
   }
-  showResult(win) {
+  showResult(win, extra = '') {
     const el = document.getElementById(this.prefix + 'result');
     el.classList.remove('hidden');
-    el.innerHTML = win
-      ? '<div class="rwin">🎉 胜利！</div><button id="' + this.prefix + 'btn-again" class="btn big">再来一局</button><button id="' + this.prefix + 'btn-home2" class="btn">返回大厅</button>'
-      : '<div class="rlose">💥 惜败…</div><button id="' + this.prefix + 'btn-again" class="btn big">再来一局</button><button id="' + this.prefix + 'btn-home2" class="btn">返回大厅</button>';
+    el.innerHTML = (win ? '<div class="rwin">🎉 胜利！</div>' : '<div class="rlose">💥 惜败…</div>')
+      + extra
+      + '<button id="' + this.prefix + 'btn-again" class="btn big">再来一局</button><button id="' + this.prefix + 'btn-home2" class="btn">返回大厅</button>';
   }
   hideResult() { document.getElementById(this.prefix + 'result').classList.add('hidden'); }
   showCountdown(n) {

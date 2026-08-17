@@ -38,6 +38,9 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-i
 .sfx-modal { padding: 26px 40px; gap: 13px; max-height: 86vh; overflow-y: auto; }
 .sfx-modal .set-row { min-width: 260px; }
 
+/* 教程弹窗 */
+#panel-tutorial { position: fixed; inset: 0; z-index: 10; background: rgba(31,26,23,0.55); border: none; box-shadow: none; border-radius: 0; }
+
 /* 专属提示弹窗 */
 #game-alert { position: fixed; inset: 0; z-index: 90; background: rgba(31,26,23,0.55); display: flex; align-items: center; justify-content: center; }
 .alert-box { max-width: 420px; text-align: center; }
@@ -56,6 +59,7 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-i
 .btn.wide { min-width: 260px; }
 .btn.back { font-size: 1rem; padding: 8px 24px; background: var(--yellow); }
 .btn.gear { position: absolute; right: 24px; bottom: 24px; font-size: 1.7rem; padding: 8px 14px; border-radius: 50%; background: var(--blue); }
+.btn.gear.tutorial { right: 88px; background: var(--green); font-weight: bold; }
 #btn-start { background: var(--orange); }
 #btn-bestiary { background: var(--blue); }
 #btn-single { background: var(--green); }
@@ -202,3 +206,5 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 #result, #online-result { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: rgba(247,237,216,0.93); z-index: 8; font-size: 2.4rem; }
 #result .rwin, #online-result .rwin { color: var(--green); text-shadow: 2px 2px 0 var(--ink); }
 #result .rlose, #online-result .rlose { color: var(--red); text-shadow: 2px 2px 0 var(--ink); }
+.stats-line { font-size: 1.1rem; background: #ffe8b0; border: 3px solid var(--ink); border-radius: 12px; padding: 6px 18px; }
+.tutorial-list { text-align: left; font-size: 1rem; line-height: 2; max-height: 46vh; overflow-y: auto; }

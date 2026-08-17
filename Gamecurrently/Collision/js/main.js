@@ -293,6 +293,7 @@ renderBattles();
 // ---- 导航（bindTap：click） ----
 bindTap(document.getElementById('btn-start'), () => ui.show('start'));
 bindTap(document.getElementById('btn-bestiary'), () => ui.show('bestiary'));
+bindTap(document.getElementById('btn-tutorial'), () => ui.show('tutorial'));
 bindTap(document.getElementById('btn-settings'), () => ui.show('settings'));
 bindTap(document.getElementById('btn-sfx'), () => ui.show('sfx'));
 bindTap(document.getElementById('btn-single'), () => ui.show('select'));

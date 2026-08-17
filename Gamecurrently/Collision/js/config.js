@@ -20,6 +20,9 @@ const CONFIG = {
   // 太阳（战场干扰球·星球分类）：体型3倍、速度1/4；触碰附着燃烧4s（每秒5~15伤）；
   //   每10~15s向随机球发射激光（±15：+15补充能量 / -15毁灭）
   SUN: { scale: 3, speedMul: 0.25, burnDuration: 4, burnMin: 5, burnMax: 15, laserInterval: [10, 15], laserDamage: 15 },
+  // 火星【周期风暴】：特性奥林匹斯之巅（生命越低伤害越高，最多+150%）；铁锈沙尘暴周期出现
+  //   （游走4~9s → 渐影消失5s → 再现）；范围基础球3~4倍；场内球每0.5s受5基础伤害（本体免疫）
+  MARS: { boostMax: 1.5, appearMin: 4, appearMax: 9, hideDuration: 5, stormScaleMin: 3, stormScaleMax: 4, tick: 0.5, baseDamage: 5 },
   // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带30伤）
   BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
   // 巨人【暴怒】：战场干扰球（第三方，不可选择），只保留愤怒机制

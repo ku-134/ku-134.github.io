@@ -179,18 +179,14 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
     g.restore();
     return;
   }
-  // 火星：橘红底 + 表面暗斑 + 南极白色极冠
+  // 火星：橘红底 + 三个陨石坑（无极冠）
   if (skillId === 'mars') {
     g.save();
-    // 表面暗色斑块
     g.fillStyle = '#8a2e0a';
-    g.beginPath(); g.ellipse(x - r * 0.25, y - r * 0.3, r * 0.28, r * 0.2, 0.4, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.ellipse(x + r * 0.3, y + r * 0.05, r * 0.22, r * 0.16, -0.3, 0, Math.PI * 2); g.fill();
-    // 南极白色极冠（球底部帽状）
-    g.fillStyle = '#f0e6d2';
-    g.beginPath();
-    g.ellipse(x, y + r * 0.55, r * 0.75, r * 0.35, 0, 0, Math.PI * 2);
-    g.fill();
+    // 三个陨石坑（左上 / 右中 / 右下）
+    g.beginPath(); g.ellipse(x - r * 0.28, y - r * 0.3, r * 0.24, r * 0.17, 0.4, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(x + r * 0.3, y + r * 0.02, r * 0.2, r * 0.14, -0.3, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(x + r * 0.05, y + r * 0.38, r * 0.16, r * 0.12, 0.2, 0, Math.PI * 2); g.fill();
     g.restore();
     return;
   }
@@ -270,7 +266,7 @@ export class Renderer {
   }
   addLineFx(ball, hit) { this.lineFx.push({ x0: ball.x, y0: ball.y, hit, t: 0 }); }
   addSwapFx(a, b) { this.swapFx.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, t: 0 }); }
-  addDmgNum(x, y, amount) { this.dmgNums.push({ x, y, amount, t: 0 }); }
+  addDmgNum(x, y, amount) { this.dmgNums.push({ x, y, amount: Math.round(amount), t: 0 }); }
   addHealNum(x, y, amount) { this.healNums.push({ x, y, amount, t: 0 }); }
   addSlashFx(x, y, dir, r, hit) { this.slashFx.push({ x, y, dir, r, hit, t: 0 }); }
   addLabel(x, y, text) { this.labels.push({ x, y, text, t: 0 }); }

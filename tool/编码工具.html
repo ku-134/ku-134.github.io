@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编码工具 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-header .nav-links a.active { opacity: 1; font-weight: 600; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-sections { display: flex; flex-direction: column; gap: 1.1rem; }
+        .tool-section { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 1.2rem; padding: 1.1rem 1.2rem; }
+        .section-head { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1.02rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
+        .section-tag { font-size: 0.75rem; font-weight: 400; opacity: 0.5; }
+        .field-label { display: block; font-size: 0.78rem; opacity: 0.6; margin-bottom: 0.35rem; }
+        .field-textarea { width: 100%; min-height: 120px; padding: 0.6rem 0.9rem; background: rgba(0,0,0,0.18); border: 1px solid rgba(128,128,128,0.22); border-radius: 0.8rem; color: inherit; font-family: 'Cascadia Mono', Consolas, Menlo, monospace; font-size: 0.88rem; line-height: 1.5; outline: none; resize: vertical; box-sizing: border-box; transition: border-color 0.2s; }
+        .field-textarea:focus { border-color: #66bb6a; }
+        .field-textarea.output { background: rgba(102,187,106,0.05); }
+        .select-input { padding: 0.45rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; font-size: 0.85rem; outline: none; transition: border-color 0.2s; }
+        .select-input:focus { border-color: #66bb6a; }
+        .method-desc { font-size: 0.78rem; opacity: 0.55; margin-top: 0.5rem; line-height: 1.6; }
+        .meta-line { font-size: 0.72rem; opacity: 0.45; margin-top: 0.4rem; }
+        .btn-row { display: flex; gap: 0.6rem; margin-top: 0.8rem; flex-wrap: wrap; align-items: center; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.16); font-weight: 600; }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .error-msg { color: #f5a623; background: rgba(245,166,35,0.12); padding: 0.6rem 0.9rem; border-radius: 0.6rem; margin-top: 0.8rem; font-size: 0.85rem; display: none; }
+        .error-msg.show { display: block; }
+        .direction-hint { font-size: 0.78rem; color: #66bb6a; margin-left: 0.3rem; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🔤 编码工具</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">支持 Base64、Base64 URL、URL 编码、HTML 实体、十六进制、二进制、Unicode 转义、ROT13、摩尔斯电码共 9 种编码与解码。全程本地处理，内容不会上传。</div>
+
+            <div class="tool-sections">
+                <section class="tool-section">
+                    <div class="section-head">📥 输入<span class="section-tag">输入要编码或解码的内容</span></div>
+                    <textarea class="field-textarea" id="inputText" placeholder="在此输入文本..."></textarea>
+                    <div class="meta-line" id="inputMeta">字符 0 ｜ 字节 0</div>
+                </section>
+
+                <section class="tool-section">
+                    <div class="section-head">⚙️ 编码方式与方向<span class="section-tag">选择格式，然后执行编码或解码</span></div>
+                    <select class="select-input" id="methodSelect">
+                        <option value="base64">Base64</option>
+                        <option value="base64url">Base64 URL 安全</option>
+                        <option value="url">URL 编码</option>
+                        <option value="html">HTML 实体</option>
+                        <option value="hex">十六进制 (Hex)</option>
+                        <option value="binary">二进制 (Binary)</option>
+                        <option value="unicode">Unicode 转义</option>
+                        <option value="rot13">ROT13</option>
+                        <option value="morse">摩尔斯电码</option>
+                    </select>
+                    <div class="method-desc" id="methodDesc"></div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary active" id="encodeBtn">🔐 编码</button>
+                        <button class="btn" id="decodeBtn">🔓 解码</button>
+                        <button class="btn" id="swapBtn">⇄ 交换</button>
+                        <button class="btn" id="clearBtn">🗑️ 清空</button>
+                        <span class="direction-hint" id="directionHint">当前：编码</span>
+                    </div>
+                </section>
+
+                <section class="tool-section">
+                    <div class="section-head">📤 输出<span class="section-tag">编码或解码结果</span></div>
+                    <textarea class="field-textarea output" id="outputText" placeholder="结果将显示在这里..." readonly></textarea>
+                    <div class="meta-line" id="outputMeta">字符 0</div>
+                    <div class="btn-row">
+                        <button class="btn" id="copyBtn">📋 复制结果</button>
+                    </div>
+                    <div class="error-msg" id="errorMsg"></div>
+                </section>
+            </div>
+
+            <div class="tool-foot">所有编解码均在本地浏览器完成。Base64 等编码不是加密，仅用于数据表示与传输，请勿用于保护敏感信息。</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var inputText = document.getElementById('inputText');
+        var outputText = document.getElementById('outputText');
+        var methodSelect = document.getElementById('methodSelect');
+        var methodDesc = document.getElementById('methodDesc');
+        var inputMeta = document.getElementById('inputMeta');
+        var outputMeta = document.getElementById('outputMeta');
+        var encodeBtn = document.getElementById('encodeBtn');
+        var decodeBtn = document.getElementById('decodeBtn');
+        var swapBtn = document.getElementById('swapBtn');
+        var clearBtn = document.getElementById('clearBtn');
+        var copyBtn = document.getElementById('copyBtn');
+        var errorMsg = document.getElementById('errorMsg');
+        var directionHint = document.getElementById('directionHint');
+
+        var mode = 'encode';
+
+        // ========== 基础工具 ==========
+        function utf8Bytes(str) {
+            return new TextEncoder().encode(str);
+        }
+        function utf8FromBytes(bytes) {
+            return new TextDecoder().decode(bytes);
+        }
+        function bytesToBinString(bytes) {
+            var s = '';
+            for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+            return s;
+        }
+        function binStringToBytes(s) {
+            var bytes = new Uint8Array(s.length);
+            for (var i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+            return bytes;
+        }
+
+        // ========== 编码方法表 ==========
+        var METHODS = {
+            base64: {
+                name: 'Base64',
+                desc: '最常见的二进制文本编码，用于在文本协议中传输数据。支持中文与 emoji（UTF-8 安全）。',
+                encode: function (str) { return btoa(bytesToBinString(utf8Bytes(str))); },
+                decode: function (str) { return utf8FromBytes(binStringToBytes(atob(str.trim().replace(/\s+/g, '')))); }
+            },
+            base64url: {
+                name: 'Base64 URL 安全',
+                desc: 'URL 友好的 Base64：+ / 替换为 - _，省略填充 =。常用于 JWT、URL 参数。',
+                encode: function (str) { return btoa(bytesToBinString(utf8Bytes(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); },
+                decode: function (str) {
+                    var s = str.trim().replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+                    while (s.length % 4) s += '=';
+                    return utf8FromBytes(binStringToBytes(atob(s)));
+                }
+            },
+            url: {
+                name: 'URL 编码',
+                desc: '将特殊字符与中文转换为 %XX 形式，用于 URL 参数传递。',
+                encode: function (str) { return encodeURIComponent(str); },
+                decode: function (str) { return decodeURIComponent(str); }
+            },
+            html: {
+                name: 'HTML 实体',
+                desc: '将 & < > " \' 转换为 HTML 实体，防止内容被当作标签解析。',
+                encode: function (str) {
+                    return str.replace(/[&<>"']/g, function (c) {
+                        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '"', "'": '&#39;' }[c];
+                    });
+                },
+                decode: function (str) {
+                    var ta = document.createElement('textarea');
+                    ta.innerHTML = str;
+                    return ta.value;
+                }
+            },
+            hex: {
+                name: '十六进制 (Hex)',
+                desc: '将文本按字节转换为十六进制，每字节 2 位，空格分隔。解码支持连续或带空格格式。',
+                encode: function (str) {
+                    var bytes = utf8Bytes(str);
+                    var out = [];
+                    for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(16).padStart(2, '0'));
+                    return out.join(' ');
+                },
+                decode: function (str) {
+                    var s = str.replace(/\s+/g, '');
+                    if (s.length % 2 !== 0) throw new Error('十六进制长度必须为偶数');
+                    var bytes = new Uint8Array(s.length / 2);
+                    for (var i = 0; i < s.length; i += 2) {
+                        var b = parseInt(s.substr(i, 2), 16);
+                        if (isNaN(b)) throw new Error('包含非法十六进制字符');
+                        bytes[i / 2] = b;
+                    }
+                    return utf8FromBytes(bytes);
+                }
+            },
+            binary: {
+                name: '二进制 (Binary)',
+                desc: '将文本按字节转换为 8 位二进制串，空格分隔。解码支持连续或带空格格式。',
+                encode: function (str) {
+                    var bytes = utf8Bytes(str);
+                    var out = [];
+                    for (var i = 0; i < bytes.length; i++) out.push(bytes[i].toString(2).padStart(8, '0'));
+                    return out.join(' ');
+                },
+                decode: function (str) {
+                    var s = str.replace(/\s+/g, '');
+                    if (s.length % 8 !== 0) throw new Error('二进制长度必须为 8 的倍数');
+                    var bytes = new Uint8Array(s.length / 8);
+                    for (var i = 0; i < s.length; i += 8) {
+                        var b = parseInt(s.substr(i, 8), 2);
+                        if (isNaN(b)) throw new Error('包含非法二进制字符');
+                        bytes[i / 8] = b;
+                    }
+                    return utf8FromBytes(bytes);
+                }
+            },
+            unicode: {
+                name: 'Unicode 转义',
+                desc: '将字符转换为 \\uXXXX 转义序列，中文与 emoji 均可转换（emoji 显示为代理对）。',
+                encode: function (str) {
+                    var out = [];
+                    for (var i = 0; i < str.length; i++) {
+                        var c = str.charCodeAt(i);
+                        out.push('\\u' + c.toString(16).padStart(4, '0'));
+                    }
+                    return out.join('');
+                },
+                decode: function (str) {
+                    return str.replace(/\\u([0-9a-fA-F]{4})/g, function (m, h) { return String.fromCharCode(parseInt(h, 16)); });
+                }
+            },
+            rot13: {
+                name: 'ROT13',
+                desc: '凯撒密码的一种：字母旋转 13 位（a↔n）。常用于隐藏文本内容，编码与解码相同。',
+                encode: function (str) {
+                    return str.replace(/[a-zA-Z]/g, function (c) {
+                        var code = c.charCodeAt(0);
+                        var base = c <= 'Z' ? 65 : 97;
+                        return String.fromCharCode((code - base + 13) % 26 + base);
+                    });
+                },
+                decode: function (str) {
+                    return METHODS.rot13.encode(str);
+                }
+            },
+            morse: {
+                name: '摩尔斯电码',
+                desc: '经典电报码：字母与数字用 . 和 - 表示，字母间空格分隔，单词间用 / 分隔。',
+                encode: function (str) {
+                    var out = [];
+                    var words = str.toUpperCase().split(/\s+/);
+                    for (var w = 0; w < words.length; w++) {
+                        if (!words[w]) continue;
+                        var letters = [];
+                        for (var i = 0; i < words[w].length; i++) {
+                            var m = MORSE[words[w].charAt(i)];
+                            if (!m) throw new Error('摩尔斯电码不支持字符：' + words[w].charAt(i));
+                            letters.push(m);
+                        }
+                        out.push(letters.join(' '));
+                    }
+                    return out.join(' / ');
+                },
+                decode: function (str) {
+                    var rev = {};
+                    for (var k in MORSE) rev[MORSE[k]] = k;
+                    var out = [];
+                    var words = str.split('/');
+                    for (var w = 0; w < words.length; w++) {
+                        var letters = words[w].trim().split(/\s+/);
+                        var word = '';
+                        for (var i = 0; i < letters.length; i++) {
+                            if (!letters[i]) continue;
+                            var ch = rev[letters[i]];
+                            if (!ch) throw new Error('无法识别的摩尔斯码：' + letters[i]);
+                            word += ch;
+                        }
+                        out.push(word);
+                    }
+                    return out.join(' ');
+                }
+            }
+        };
+
+        var MORSE = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.', 'G': '--.', 'H': '....',
+            'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---', 'P': '.--.',
+            'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..',
+            '0': '-----', '1': '.----', '2': '..---', '3': '...--', '4': '....-', '5': '.....',
+            '6': '-....', '7': '--...', '8': '---..', '9': '----.',
+            '.': '.-.-.-', ',': '--..--', '?': '..--..', '!': '-.-.--', "'": '.----.', '(': '-.--.', ')': '-.--.-',
+            '&': '.-...', ':': '---...', ';': '-.-.-.', '=': '-...-', '+': '.-.-.', '-': '-....-',
+            '_': '..--.-', '"': '.-..-.', '$': '...-..-', '@': '.--.-.'
+        };
+
+        // ========== 执行 ==========
+        function getMethod() {
+            return METHODS[methodSelect.value] || METHODS.base64;
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('show');
+        }
+        function hideError() {
+            errorMsg.classList.remove('show');
+        }
+
+        function process() {
+            var method = getMethod();
+            var src = inputText.value;
+            hideError();
+            if (!src) {
+                outputText.value = '';
+                updateMeta();
+                return;
+            }
+            try {
+                if (mode === 'encode') {
+                    outputText.value = method.encode(src);
+                } else {
+                    outputText.value = method.decode(src);
+                }
+            } catch (e) {
+                outputText.value = '';
+                showError('处理失败：' + (e && e.message ? e.message : e));
+            }
+            updateMeta();
+        }
+
+        function updateMeta() {
+            var src = inputText.value;
+            inputMeta.textContent = '字符 ' + src.length + ' ｜ 字节 ' + utf8Bytes(src).length;
+            var out = outputText.value;
+            outputMeta.textContent = '字符 ' + out.length + ' ｜ 字节 ' + utf8Bytes(out).length;
+        }
+
+        function setMode(m) {
+            mode = m;
+            encodeBtn.classList.toggle('active', m === 'encode');
+            decodeBtn.classList.toggle('active', m === 'decode');
+            directionHint.textContent = '当前：' + (m === 'encode' ? '编码' : '解码');
+            process();
+        }
+
+        function refreshDesc() {
+            var method = getMethod();
+            methodDesc.textContent = method.name + '：' + method.desc;
+        }
+
+        // ========== 事件 ==========
+        inputText.addEventListener('input', process);
+        methodSelect.addEventListener('change', function () { refreshDesc(); process(); });
+        encodeBtn.addEventListener('click', function () { setMode('encode'); });
+        decodeBtn.addEventListener('click', function () { setMode('decode'); });
+        swapBtn.addEventListener('click', function () {
+            inputText.value = outputText.value;
+            outputText.value = '';
+            process();
+        });
+        clearBtn.addEventListener('click', function () {
+            inputText.value = '';
+            outputText.value = '';
+            hideError();
+            updateMeta();
+            inputText.focus();
+        });
+        copyBtn.addEventListener('click', function () {
+            if (!outputText.value) return;
+            function done(ok) {
+                copyBtn.textContent = ok ? '✅ 已复制' : '📋 复制结果';
+                setTimeout(function () { copyBtn.textContent = '📋 复制结果'; }, 2000);
+            }
+            function fallback() {
+                try {
+                    outputText.select();
+                    var ok = document.execCommand('copy');
+                    done(ok);
+                } catch (e) { done(false); }
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(outputText.value).then(function () { done(true); }, fallback);
+            } else { fallback(); }
+        });
+
+        refreshDesc();
+        updateMeta();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

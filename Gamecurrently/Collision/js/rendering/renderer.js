@@ -179,6 +179,21 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
     g.restore();
     return;
   }
+  // 火星：橘红底 + 表面暗斑 + 南极白色极冠
+  if (skillId === 'mars') {
+    g.save();
+    // 表面暗色斑块
+    g.fillStyle = '#8a2e0a';
+    g.beginPath(); g.ellipse(x - r * 0.25, y - r * 0.3, r * 0.28, r * 0.2, 0.4, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(x + r * 0.3, y + r * 0.05, r * 0.22, r * 0.16, -0.3, 0, Math.PI * 2); g.fill();
+    // 南极白色极冠（球底部帽状）
+    g.fillStyle = '#f0e6d2';
+    g.beginPath();
+    g.ellipse(x, y + r * 0.55, r * 0.75, r * 0.35, 0, 0, Math.PI * 2);
+    g.fill();
+    g.restore();
+    return;
+  }
   // 死灵术士：球内深红色尸斑（大小不一、固定位置、不超出球体）
   if (skillId === 'necromancer') {
     g.save();
@@ -203,7 +218,7 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
 // 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔 / finiteSpace 超大太空）
 // 摄像机：ringHole 小幅度追踪；finiteSpace 随玩家离中心越远逐渐放大
-// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形/地球探测器/太阳激光/陨石——两端渲染一致
+// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形/地球探测器/太阳激光/陨石/沙尘暴——两端渲染一致
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -236,6 +251,8 @@ export class Renderer {
     bus.on('fx:meteorHit', ({ x, y }) => this.particles.spawn(x, y, { color: '#b0b0b0', count: 16, speed: 180, size: 4 }));
     bus.on('fx:laserHit', ({ x, y }) => this.particles.spawn(x, y, { color: '#e8f4ff', count: 10, speed: 120, size: 2 }));
     bus.on('fx:meteorBounce', ({ x, y }) => this.particles.spawn(x, y, { color: '#9a9a9a', count: 8, speed: 100, size: 3 }));
+    // 火星沙尘伤害：橘红沙粒
+    bus.on('fx:dustTick', ({ x, y }) => this.particles.spawn(x, y, { color: '#f5a35c', count: 6, speed: 50, size: 2 }));
   }
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -512,6 +529,30 @@ export class Renderer {
       g.beginPath(); g.moveTo(ph.x, ph.y); g.lineTo(ph.tx, ph.ty); g.stroke();
       g.fillStyle = ph.positive ? '#FFD93D' : '#FF6D00';
       g.beginPath(); g.arc(ph.tx, ph.ty, 8, 0, Math.PI * 2); g.fill();
+      g.restore();
+      return;
+    }
+    // 铁锈沙尘暴（火星）：红橙半透明旋转云 + 颗粒（渐影阶段 alpha 1→0）
+    if (ph.isDustStorm) {
+      const r = ph.radius || 70;
+      const alpha = ph.hiding ? Math.max(0, 1 - (ph.hideT || 0) / 5) : 0.85;
+      g.save();
+      g.globalAlpha = alpha * 0.45;
+      g.fillStyle = '#e0772a';
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = alpha;
+      g.fillStyle = '#f5a35c';
+      for (let i = 0; i < 22; i++) {
+        const a0 = i / 22 * Math.PI * 2 + (ph.t || 0) * 1.5;
+        const rr = r * (0.25 + ((i * 13 + (ph.noise || 0)) % 10) / 12);
+        g.beginPath();
+        g.arc(ph.x + Math.cos(a0) * rr, ph.y + Math.sin(a0) * rr * 0.85, 3 + ((i * 7) % 3), 0, Math.PI * 2);
+        g.fill();
+      }
+      g.strokeStyle = 'rgba(200,90,30,0.7)';
+      g.lineWidth = 3;
+      g.setLineDash([6, 6]);
+      g.beginPath(); g.arc(ph.x, ph.y, r, 0, Math.PI * 2); g.stroke();
       g.restore();
       return;
     }

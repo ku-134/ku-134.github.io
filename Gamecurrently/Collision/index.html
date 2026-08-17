@@ -22,6 +22,7 @@
       <button id="btn-start" class="btn big">开始</button>
       <button id="btn-bestiary" class="btn big">图鉴</button>
     </div>
+    <button id="btn-tutorial" class="btn gear tutorial" title="教程">i</button>
     <button id="btn-settings" class="btn gear" title="设置">⚙</button>
   </section>
 
@@ -216,6 +217,24 @@
     <div id="online-result" class="hidden"></div>
   </section>
 
+  <!-- 教程弹窗 -->
+  <section id="panel-tutorial" class="panel hidden">
+    <div class="modal-box">
+      <h2>📖 玩法教程</h2>
+      <p class="tip">观战 · 干涉 · 决胜——你的球自动游走，你通过技能影响战局</p>
+      <ul class="tutorial-list">
+        <li><b>移动</b>：球自动移动/转向，你是观战者 + 操控者</li>
+        <li><b>基础冲刺</b>：按 <b>SPACE</b>（触屏左下按钮）向瞄准方向突进</li>
+        <li><b>职业技能</b>：按 <b>J</b>（触屏右下按钮）释放职业专属技能（冷却见 HUD）</li>
+        <li><b>选球</b>：基础 / 剑与魔法 / 星球 三分类，可随机</li>
+        <li><b>战场干扰球</b>：每局随机巨人 / 魔王 / 太阳 之一搅局</li>
+        <li><b>狂暴</b>：30 秒后全场每秒扣血（≤30 血豁免）</li>
+        <li><b>战绩</b>：随机选球的对局自动记录连胜，惜败清空，最高连胜保留</li>
+        <li><b>测试角色</b>：死灵术士为技术力展示，联机暂不可选</li>
+      </ul>
+      <button class="btn wide back" data-back="home">知道了</button>
+    </div>
+  </section>
   <!-- 专属提示弹窗 -->
   <div id="game-alert" class="hidden">
     <div class="modal-box alert-box">

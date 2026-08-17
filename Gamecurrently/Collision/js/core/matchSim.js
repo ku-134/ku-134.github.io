@@ -24,7 +24,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 // ★ 有限太空：激光边界触碰5伤（0.5s防抖）；小陨石每秒3~4颗（≤10、高速横穿、撞玩家20伤）；
 //   大陨石3~4颗缓慢游荡（边界反弹、球撞被弹走）——_updateSpace
 // ★ 火星【周期风暴】：铁锈沙尘暴周期出现（游走4~9s → 渐影消失5s → 再现），
-//   范围基础球3~4倍、每0.5s对范围内球造成5×(1+加成)伤（本体免疫；生命越低加成越高最多+150%）——_updateMars
+//   范围基础球3~8倍、每0.5s对范围内球造成5×(1+加成)伤（取整；本体免疫；生命越低加成越高最多+150%）——_updateMars
 // ★ 地球探测器（对外开拓）：isEarthProbe phantom 帧追踪敌球（每帧偏转角度），命中 17~25 伤
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
@@ -580,13 +580,13 @@ export class MatchSim {
       else if (storm.y > FH - storm.radius) { storm.y = FH - storm.radius; storm.angle = -storm.angle; }
       // 游走时间到 → 渐影消失阶段（5s）
       if (storm.t >= storm.appearLeft) { storm.hiding = true; storm.hideT = 0; }
-      // 领域伤害：每 0.5s 对范围内球造成 5×(1+加成) 基础伤害（本体免疫；战场球不受）
+      // 领域伤害：每 0.5s 对范围内球造成 5×(1+加成) 基础伤害（取整；本体免疫；战场球不受）
       storm.tickT += dt;
       if (storm.tickT >= CONFIG.MARS.tick) {
         storm.tickT -= CONFIG.MARS.tick;
         const ratio = Math.max(0, Math.min(1, owner.hp / owner.maxHp));
         const boost = (1 - ratio) * CONFIG.MARS.boostMax;
-        const dmg = CONFIG.MARS.baseDamage * (1 + boost);
+        const dmg = Math.round(CONFIG.MARS.baseDamage * (1 + boost));   // 取整：伤害数字不出现小数尾巴
         for (const b of all) {
           if (b === owner || b.dead || this.wilds.includes(b)) continue;
           if (Math.hypot(b.x - storm.x, b.y - storm.y) <= storm.radius + b.radiusScaled) {

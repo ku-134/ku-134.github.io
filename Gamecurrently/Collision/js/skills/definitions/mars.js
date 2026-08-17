@@ -9,7 +9,7 @@ import CONFIG from '../../config.js';
 export default {
   id: 'mars',
   name: '火星',
-  category: '宇宙',
+  category: '星球',
   type: 'passive',
   skillName: '周期风暴',
   desc: '特性【奥林匹斯之巅】：生命越低伤害越高（最多+150%）。被动【铁锈风暴】：红橙沙尘暴周期出现（游走4~9秒→渐影消失5秒→再现），范围为基础球3~4倍，场内球每0.5秒受5基础伤害，本体免疫。',

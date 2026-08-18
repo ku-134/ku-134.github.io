@@ -24,6 +24,7 @@ export class Ball {
     this.dashing = false;
     this.dead = false;
     this.isPlayer = false;
+    this.crystal = 0;   // 土星【凝固】冰晶积累（自主积累≤50，吃冰晶块可超）
   }
   get vx() { return Math.cos(this.angle) * this.speed; }
   get vy() { return Math.sin(this.angle) * this.speed; }
@@ -33,6 +34,26 @@ export class Ball {
   takeDamage(dmg, ctx, source = null, noReflect = false) {
     if (this.dead) return;
     let final = dmg;
+    // ★ 土星【冰晶光环】：每5点冰晶抵挡1点伤害（保留余数、减伤不超过受伤量）——
+    //   触发时从受伤位置随机方向飞出一块冰晶块（菱形弹幕）；受伤音效被碎冰音效覆盖
+    let iceAbsorbed = false;
+    if (this.skill?.def?.id === 'saturn' && this.crystal > 0) {
+      const absorb = Math.min(Math.floor(this.crystal / CONFIG.SATURN.shieldPer), dmg);
+      if (absorb > 0) {
+        this.crystal -= absorb * CONFIG.SATURN.shieldPer;
+        final -= absorb;
+        iceAbsorbed = true;
+        if (ctx?.phantoms) {
+          const a = Math.random() * Math.PI * 2;
+          ctx.phantoms.push({
+            isPhantom: true, isIceShard: true,
+            x: this.x, y: this.y, angle: a,
+            speed: CONFIG.SATURN.shardSpeed, fly: CONFIG.SATURN.shardFly,
+            t: 0, owner: this, radius: 9, noise: Math.floor(Math.random() * 100),
+          });
+        }
+      }
+    }
     const shield = this.effects.get('shield');
     if (shield && !noReflect) {
       final = Math.floor(dmg * CONFIG.SHIELD.mitigation);
@@ -47,9 +68,10 @@ export class Ball {
     // 受伤数字（受击球头顶弹出，持续0.5s）
     if (final > 0) {
       ctx.events.emit('fx:damage', { x: this.x, y: this.y - this.radiusScaled - 10, amount: final });
-      // 通用命中音效（150ms 全局节流，防磁铁电疗等高频刷屏）
-      ctx.events.emit('sfx:play', { name: 'hit', throttle: 150 });
+      // 通用命中音效（150ms 全局节流，防磁铁电疗等高频刷屏）；土星减伤时覆盖为碎冰音效
+      if (!iceAbsorbed) ctx.events.emit('sfx:play', { name: 'hit', throttle: 150 });
     }
+    if (iceAbsorbed) ctx.events.emit('sfx:play', { name: 'icebreak' });
     ctx.events.emit('ball:hp', { ball: this });
     if (this.hp <= 0) { this.dead = true; ctx.events.emit('ball:die', { ball: this }); }
   }

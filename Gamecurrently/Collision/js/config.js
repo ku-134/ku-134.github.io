@@ -21,8 +21,12 @@ const CONFIG = {
   //   每10~15s向随机球发射激光（±15：+15补充能量 / -15毁灭）
   SUN: { scale: 3, speedMul: 0.25, burnDuration: 4, burnMin: 5, burnMax: 15, laserInterval: [10, 15], laserDamage: 15 },
   // 火星【周期风暴】：特性奥林匹斯之巅（生命越低伤害越高，最多+150%）；铁锈沙尘暴周期出现
-  //   （游走4~9s → 渐影消失5s → 再现）；范围基础球3~8倍；场内球每0.5s受5基础伤害（本体免疫，伤害取整）
+  //   （游走4~9s → 渐影消失5s → 再现）；范围基础球3~8倍；场内球每0.5s受5基础伤害（本体免疫）
   MARS: { boostMax: 1.5, appearMin: 4, appearMax: 9, hideDuration: 5, stormScaleMin: 3, stormScaleMax: 8, tick: 0.5, baseDamage: 5 },
+  // 土星【冰晶光环】：特性凝固（每0.1s +1冰晶，自主积累≤50停，吃冰晶块可超50）；
+  //   每5点冰晶抵挡1点伤害（保留余数、减伤不超过受伤量）；触发减伤时飞出一块冰晶块
+  //   （菱形弹幕：飞行一小段后停住不消失；敌球碰10伤 / 自己碰+10冰晶且50%回1~10血）；光环厚度随冰晶增厚
+  SATURN: { gainRate: 0.1, autoCap: 50, shieldPer: 5, shardDamage: 10, shardReturn: 10, shardHealChance: 0.5, shardHealMin: 1, shardHealMax: 10, shardSpeed: 260, shardFly: 0.5 },
   // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带30伤）
   BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
   // 巨人【暴怒】：战场干扰球（第三方，不可选择），只保留愤怒机制

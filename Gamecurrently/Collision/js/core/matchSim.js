@@ -16,16 +16,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 //   - 召唤：仅每侧当前球触发（按侧守卫）；开局先进入 10s 冷却（第一次不召唤）；从者轻量 skill
 //   - 意识转移：每侧独立（当前球死 → 移交该侧下一个活着的；dead 从者随时清理）
 //   - 胜负：任意一侧全灭（含其 balls 主球）即结束；死灵侧当前球死不算败（先转移）
-// ★ 狂暴：30s 后进入，从 0 开始正数计时（无上限），每秒全场 5 伤——直到一方倒下才结束；
-//   ★ hp ≤30 的球豁免狂暴扣血（残血极限拉扯）
-// ★ 狂战士【疯狂冲撞】：b.rage>0 期间强制 2.5x 速度（无可阻挡，无视缠绕/减速），
-//   碰撞循环内每次有效撞击对敌球 22 伤（0.4s 防抖；撞墙/撞球不打断，5s 固定时长）
-// ★ 太阳：触碰附着燃烧4s（每秒5~15伤，sun_burn effect）；每10~15s向随机球发射激光（±15）
-// ★ 有限太空：激光边界触碰5伤（0.5s防抖）；小陨石每秒3~4颗（≤10、高速横穿、撞玩家20伤）；
-//   大陨石3~4颗缓慢游荡（边界反弹、球撞被弹走）——_updateSpace
-// ★ 火星【周期风暴】：铁锈沙尘暴周期出现（游走4~9s → 渐影消失5s → 再现），
-//   范围基础球3~8倍、每0.5s对范围内球造成5×(1+加成)伤（取整；本体免疫；生命越低加成越高最多+150%）——_updateMars
-// ★ 地球探测器（对外开拓）：isEarthProbe phantom 帧追踪敌球（每帧偏转角度），命中 17~25 伤
+// ★ 狂暴：30s 后进入，从 0 开始正数计时（无上限），每秒全场 5 伤——直到一方倒下才结束
 // ★ wild.dash（傀儡术）：干扰球被操控执行基础冲刺——dash 期间跳过自主移动，
 //   由 _updateWildDash 驱动高速位移 + 撞击伤害（撞敌球25伤/撞主人只停不伤/撞墙或超时结束）
 // ★ 生命火种（纳西妲）：isSeed phantom 高速飞行，命中敌球施加缠绕效果（定身+持续伤害）
@@ -128,7 +119,7 @@ export class MatchSim {
           if (A.skill?.def?.id === 'sun' && !B.dead) this.ctx.effects.apply(B, 'sun_burn', {});
           if (B.skill?.def?.id === 'sun' && !A.dead) this.ctx.effects.apply(A, 'sun_burn', {});
         }
-        // ★ 狂战士疯狂撞击：每次有效撞击（0.4s 防抖）对敌球造成 22 伤（撞战场球/死灵从者同样生效）
+        // ★ 狂战士疯狂撞击：每次有效撞击（0.4s 防抖）对敌球造成 22 伤（撞墙/撞从者同样生效）
         if (hit) {
           const a = all[i], b = all[j];
           if (a.rage > 0 && !b.dead && this.time - (a._rageHitT ?? -Infinity) >= CONFIG.COLLIDE_COOLDOWN) {
@@ -150,10 +141,10 @@ export class MatchSim {
     this._updateSun(dt, all);
     this._updateSpace(dt, all);
     this._updateMars(dt, all);
+    this._updateSaturn(dt, all);
     this._updateFx(dt);
     this.time += dt;
     // 狂暴：30s 后进入，从 0 正数计时（无上限），每秒全场 5 伤（玩家球 + 死灵球；战场球不死无需）
-    // ★ 豁免：hp ≤30 的球不再受狂暴扣血
     if (!this.berserk) {
       if (this.time >= CONFIG.BERSERK.delay) {
         this.berserk = true; this.berserkTime = 0; this.berserkTick = 0;
@@ -580,7 +571,7 @@ export class MatchSim {
       else if (storm.y > FH - storm.radius) { storm.y = FH - storm.radius; storm.angle = -storm.angle; }
       // 游走时间到 → 渐影消失阶段（5s）
       if (storm.t >= storm.appearLeft) { storm.hiding = true; storm.hideT = 0; }
-      // 领域伤害：每 0.5s 对范围内球造成 5×(1+加成) 基础伤害（取整；本体免疫；战场球不受）
+      // 领域伤害：每 0.5s 对范围内球造成 5×(1+加成) 基础伤害（本体免疫；战场球不受）
       storm.tickT += dt;
       if (storm.tickT >= CONFIG.MARS.tick) {
         storm.tickT -= CONFIG.MARS.tick;
@@ -601,6 +592,51 @@ export class MatchSim {
       if (storm.hideT >= CONFIG.MARS.hideDuration) {
         const idx = ph.indexOf(storm);
         if (idx >= 0) ph.splice(idx, 1);
+      }
+    }
+  }
+  // 土星【冰晶光环】：特性凝固（每0.1s +1冰晶，自主积累≤50停）；冰晶块生命周期与碰撞
+  // （飞行一小段后停住不消失；敌球碰10伤 / 自己碰+10冰晶且50%回1~10血）——减伤在 Ball.takeDamage 钩子
+  _updateSaturn(dt, all) {
+    const ph = this.ctx.phantoms = this.ctx.phantoms || [];
+    // 找土星本体（无本体则已有冰晶块留存不更新）
+    let owner = null;
+    for (const b of all) {
+      if (b.skill?.def?.id === 'saturn' && !b.dead) { owner = b; break; }
+    }
+    if (!owner) return;
+    // 特性·凝固：每 0.1s +1 冰晶（自主积累 <50 才进行；吃冰晶块可突破 50）
+    if (owner.crystal < CONFIG.SATURN.autoCap) {
+      owner._crystalT = (owner._crystalT || 0) + dt;
+      while (owner._crystalT >= CONFIG.SATURN.gainRate && owner.crystal < CONFIG.SATURN.autoCap) {
+        owner._crystalT -= CONFIG.SATURN.gainRate;
+        owner.crystal++;
+      }
+    }
+    // 冰晶块：飞行 fly 秒后停住（不消失）；敌球碰 10 伤 / 自己碰 +10 冰晶且 50% 回血（各 0.5s 防抖）
+    for (const sh of ph) {
+      if (!sh.isIceShard) continue;
+      if (sh.t < sh.fly) { sh.t += dt; sh.x += Math.cos(sh.angle) * sh.speed * dt; sh.y += Math.sin(sh.angle) * sh.speed * dt; }
+      for (const b of all) {
+        if (b.dead || this.wilds.includes(b)) continue;
+        if (Math.hypot(b.x - sh.x, b.y - sh.y) <= b.radiusScaled + sh.radius) {
+          if (b === sh.owner) {
+            if (this.time - (sh._ownT ?? -Infinity) >= 0.5) {
+              sh._ownT = this.time;
+              b.crystal += CONFIG.SATURN.shardReturn;
+              if (Math.random() < CONFIG.SATURN.shardHealChance) {
+                b.heal(CONFIG.SATURN.shardHealMin + Math.floor(Math.random() * (CONFIG.SATURN.shardHealMax - CONFIG.SATURN.shardHealMin + 1)), this.ctx);
+              }
+              this.ctx.events.emit('fx:icePick', { x: sh.x, y: sh.y });
+            }
+          } else {
+            if (this.time - (sh._hitT ?? -Infinity) >= 0.5) {
+              sh._hitT = this.time;
+              b.takeDamage(CONFIG.SATURN.shardDamage, this.ctx, sh.owner);
+              this.ctx.events.emit('fx:iceShardHit', { x: sh.x, y: sh.y });
+            }
+          }
+        }
       }
     }
   }

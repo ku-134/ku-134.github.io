@@ -212,9 +212,9 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
 }
 
 // Canvas 渲染：手绘涂鸦风（米色纸 + 黑描边 + 纯色块）
-// 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔 / finiteSpace 超大太空）
-// 摄像机：ringHole 小幅度追踪；finiteSpace 随玩家离中心越远逐渐放大
-// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形/地球探测器/太阳激光/陨石/沙尘暴——两端渲染一致
+// 场地：由 battleMap（js/maps/*）绘制（arena 矩形 / ringHole 外圆+旋转方孔）
+// 摄像机：ringHole 大圆场 = 小幅度追踪自己球（不缩放，保持原偏移观感）
+// 特效实体（phantoms 随 STATE 同步）：奥术飞弹/魔族/斩击扇形（isSlashFx）——两端渲染一致
 export class Renderer {
   constructor(canvas, { autoResize = true } = {}) {
     this.canvas = canvas;
@@ -249,6 +249,9 @@ export class Renderer {
     bus.on('fx:meteorBounce', ({ x, y }) => this.particles.spawn(x, y, { color: '#9a9a9a', count: 8, speed: 100, size: 3 }));
     // 火星沙尘伤害：橘红沙粒
     bus.on('fx:dustTick', ({ x, y }) => this.particles.spawn(x, y, { color: '#f5a35c', count: 6, speed: 50, size: 2 }));
+    // 土星冰晶：敌球被冰晶块砸中 / 自己拾取冰晶块
+    bus.on('fx:iceShardHit', ({ x, y }) => this.particles.spawn(x, y, { color: '#b8e0ff', count: 12, speed: 140, size: 3 }));
+    bus.on('fx:icePick', ({ x, y }) => this.particles.spawn(x, y, { color: '#e0f4ff', count: 8, speed: 70, size: 2 }));
   }
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -349,7 +352,7 @@ export class Renderer {
         b._swordAngle = other ? Math.atan2(other.y - b.y, other.x - b.x) : b.angle;
       }
     }
-    // 场地绘制：battleMap.draw（arena/ringHole/finiteSpace）或默认矩形
+    // 场地绘制：battleMap.draw（arena/ringHole）或默认矩形
     if (battleMap?.draw) battleMap.draw(g, t, w, h);
     else this.drawField(g, w, h);
     for (const a of this.aimLines) this.drawAim(g, a);
@@ -525,6 +528,24 @@ export class Renderer {
       g.beginPath(); g.moveTo(ph.x, ph.y); g.lineTo(ph.tx, ph.ty); g.stroke();
       g.fillStyle = ph.positive ? '#FFD93D' : '#FF6D00';
       g.beginPath(); g.arc(ph.tx, ph.ty, 8, 0, Math.PI * 2); g.fill();
+      g.restore();
+      return;
+    }
+    // 冰晶块（土星）：冰蓝菱形弹幕（缓慢旋转；飞行后停住原地）
+    if (ph.isIceShard) {
+      const s2 = 9;
+      g.save();
+      g.translate(ph.x, ph.y);
+      g.rotate((ph.t || 0) * 2 + (ph.noise || 0));
+      g.fillStyle = 'rgba(160,215,255,0.92)';
+      g.beginPath();
+      g.moveTo(0, -s2); g.lineTo(s2, 0); g.lineTo(0, s2); g.lineTo(-s2, 0);
+      g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(70,140,220,0.85)';
+      g.lineWidth = 2;
+      g.stroke();
+      g.fillStyle = 'rgba(255,255,255,0.7)';
+      g.beginPath(); g.arc(-s2 * 0.2, -s2 * 0.2, s2 * 0.25, 0, Math.PI * 2); g.fill();
       g.restore();
       return;
     }
@@ -790,6 +811,22 @@ export class Renderer {
     g.restore();
     // ★ 职业装饰：必须在球体填充之后绘制（否则被球色盖住——老bug）
     drawBallDeco(g, b.x, b.y, r, b.skill?.def?.id, b._swordAngle);
+    // 土星：冰蓝渐变光环（不紧贴球、留空；厚度随冰晶数量增厚）
+    if (b.skill?.def?.id === 'saturn') {
+      const cr = b.crystal || 0;
+      const thick = 3 + Math.min(1, cr / CONFIG.SATURN.autoCap) * 7;
+      g.save();
+      const grad = g.createRadialGradient(b.x, b.y, r + 8, b.x, b.y, r + 8 + thick * 2);
+      grad.addColorStop(0, 'rgba(170,215,255,0.9)');
+      grad.addColorStop(0.5, 'rgba(135,206,235,0.45)');
+      grad.addColorStop(1, 'rgba(135,206,235,0)');
+      g.fillStyle = grad;
+      g.beginPath(); g.arc(b.x, b.y, r + 8 + thick * 2, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = 'rgba(190,230,255,0.95)';
+      g.lineWidth = thick;
+      g.beginPath(); g.arc(b.x, b.y, r + 8 + thick / 2, 0, Math.PI * 2); g.stroke();
+      g.restore();
+    }
     // 缠绕（纳西妲）：藤蔓环绕 + 缓慢旋转（随 effects 同步两端）
     if (b.effects.has('vine_wrap') && vineImg.complete) {
       g.save();

@@ -31,13 +31,14 @@ export class Ball {
   get radiusScaled() { return this.radius * this.scale; }
   // 受击：荆棘盾期间承受50%伤害，并将伤害的80%返回敌球（无需来源）
   // noReflect 防止双方盾互相反弹形成死循环
-  takeDamage(dmg, ctx, source = null, noReflect = false) {
+  takeDamage(dmg, ctx, source = null, noReflect = false, noIce = false) {
     if (this.dead) return;
     let final = dmg;
     // ★ 土星【冰晶光环】：每5点冰晶抵挡1点伤害（保留余数、减伤不超过受伤量）——
     //   触发时从受伤位置随机方向飞出一块冰晶块（菱形弹幕）；受伤音效被碎冰音效覆盖
+    //   noIce=true（黑名单：狂暴等机制伤害）不触发冰晶减伤/不吐块
     let iceAbsorbed = false;
-    if (this.skill?.def?.id === 'saturn' && this.crystal > 0) {
+    if (this.skill?.def?.id === 'saturn' && this.crystal > 0 && !noIce) {
       const absorb = Math.min(Math.floor(this.crystal / CONFIG.SATURN.shieldPer), dmg);
       if (absorb > 0) {
         this.crystal -= absorb * CONFIG.SATURN.shieldPer;

@@ -156,7 +156,7 @@ export class MatchSim {
       if (this.berserkTick >= 1) {
         this.berserkTick -= 1;
         const targets = [...new Set([...this.balls, ...this.necros])];
-        for (const b of targets) if (!b.dead && b.hp > CONFIG.BERSERK.exemptHp) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true);
+        for (const b of targets) if (!b.dead && b.hp > CONFIG.BERSERK.exemptHp) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true, true);  // noIce：狂暴伤害不触发冰晶减伤/吐块
       }
     }
     // 意识转移（双侧独立）：当前球阵亡 → 移交该侧下一个活着的；dead 从者随时清理
@@ -613,10 +613,13 @@ export class MatchSim {
         owner.crystal++;
       }
     }
-    // 冰晶块：飞行 fly 秒后停住（不消失）；敌球碰 10 伤 / 自己碰 +10 冰晶且 50% 回血（各 0.5s 防抖）
-    for (const sh of ph) {
+    // 冰晶块：飞行 fly 秒期间不判定任何碰撞（飞出去停住后才有效果）；
+    //   停住后敌球碰 10 伤 / 自己碰 +10 冰晶且 50% 回血（0.5s 防抖）；触碰生效后块消失（防止全场冰晶刷效果）
+    for (let i = ph.length - 1; i >= 0; i--) {
+      const sh = ph[i];
       if (!sh.isIceShard) continue;
-      if (sh.t < sh.fly) { sh.t += dt; sh.x += Math.cos(sh.angle) * sh.speed * dt; sh.y += Math.sin(sh.angle) * sh.speed * dt; }
+      if (sh.t < sh.fly) { sh.t += dt; sh.x += Math.cos(sh.angle) * sh.speed * dt; sh.y += Math.sin(sh.angle) * sh.speed * dt; continue; }
+      let consumed = false;
       for (const b of all) {
         if (b.dead || this.wilds.includes(b)) continue;
         if (Math.hypot(b.x - sh.x, b.y - sh.y) <= b.radiusScaled + sh.radius) {
@@ -628,16 +631,21 @@ export class MatchSim {
                 b.heal(CONFIG.SATURN.shardHealMin + Math.floor(Math.random() * (CONFIG.SATURN.shardHealMax - CONFIG.SATURN.shardHealMin + 1)), this.ctx);
               }
               this.ctx.events.emit('fx:icePick', { x: sh.x, y: sh.y });
+              consumed = true;
+              break;
             }
           } else {
             if (this.time - (sh._hitT ?? -Infinity) >= 0.5) {
               sh._hitT = this.time;
               b.takeDamage(CONFIG.SATURN.shardDamage, this.ctx, sh.owner);
               this.ctx.events.emit('fx:iceShardHit', { x: sh.x, y: sh.y });
+              consumed = true;
+              break;
             }
           }
         }
       }
+      if (consumed) ph.splice(i, 1);
     }
   }
   // 斩击扇形（isSlashFx）生命周期：0.35s 后移除（随 phantoms 同步两端）

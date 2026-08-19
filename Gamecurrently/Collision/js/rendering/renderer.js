@@ -797,21 +797,7 @@ export class Renderer {
       }
       g.restore();
     }
-    // 球体基础：填充 + 高光 + 描边
-    g.save();
-    g.fillStyle = b.color;
-    g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.fill();
-    g.fillStyle = 'rgba(255,255,255,0.5)';
-    g.beginPath(); g.arc(b.x - r * 0.3, b.y - r * 0.35, r * 0.2, 0, Math.PI * 2); g.fill();
-    const giant = b.effects.has('giant_form');
-    g.lineWidth = giant ? 5 : 3;
-    g.strokeStyle = giant ? '#ffb703' : INK;
-    if (giant && Math.random() < 0.3) g.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
-    g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.stroke();
-    g.restore();
-    // ★ 职业装饰：必须在球体填充之后绘制（否则被球色盖住——老bug）
-    drawBallDeco(g, b.x, b.y, r, b.skill?.def?.id, b._swordAngle);
-    // 土星：冰蓝渐变光环（不紧贴球、留空；厚度随冰晶数量增厚）
+    // 土星：冰蓝渐变光环（画在球体之下——先画光环再画球，球体盖住光环内侧，只露出外圈，不遮挡球）
     if (b.skill?.def?.id === 'saturn') {
       const cr = b.crystal || 0;
       const thick = 3 + Math.min(1, cr / CONFIG.SATURN.autoCap) * 7;
@@ -827,6 +813,20 @@ export class Renderer {
       g.beginPath(); g.arc(b.x, b.y, r + 8 + thick / 2, 0, Math.PI * 2); g.stroke();
       g.restore();
     }
+    // 球体基础：填充 + 高光 + 描边
+    g.save();
+    g.fillStyle = b.color;
+    g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.5)';
+    g.beginPath(); g.arc(b.x - r * 0.3, b.y - r * 0.35, r * 0.2, 0, Math.PI * 2); g.fill();
+    const giant = b.effects.has('giant_form');
+    g.lineWidth = giant ? 5 : 3;
+    g.strokeStyle = giant ? '#ffb703' : INK;
+    if (giant && Math.random() < 0.3) g.translate((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 3);
+    g.beginPath(); g.arc(b.x, b.y, r, 0, Math.PI * 2); g.stroke();
+    g.restore();
+    // ★ 职业装饰：必须在球体填充之后绘制（否则被球色盖住——老bug）
+    drawBallDeco(g, b.x, b.y, r, b.skill?.def?.id, b._swordAngle);
     // 缠绕（纳西妲）：藤蔓环绕 + 缓慢旋转（随 effects 同步两端）
     if (b.effects.has('vine_wrap') && vineImg.complete) {
       g.save();

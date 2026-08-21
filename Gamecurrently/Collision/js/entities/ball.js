@@ -39,19 +39,24 @@ export class Ball {
     //   noIce=true（黑名单：狂暴等机制伤害）不触发冰晶减伤/不吐块
     let iceAbsorbed = false;
     if (this.skill?.def?.id === 'saturn' && this.crystal > 0 && !noIce) {
-      const absorb = Math.min(Math.floor(this.crystal / CONFIG.SATURN.shieldPer), dmg);
-      if (absorb > 0) {
-        this.crystal -= absorb * CONFIG.SATURN.shieldPer;
-        final -= absorb;
-        iceAbsorbed = true;
-        if (ctx?.phantoms) {
-          const a = Math.random() * Math.PI * 2;
-          ctx.phantoms.push({
-            isPhantom: true, isIceShard: true,
-            x: this.x, y: this.y, angle: a,
-            speed: CONFIG.SATURN.shardSpeed, fly: CONFIG.SATURN.shardFly,
-            t: 0, owner: this, radius: 9, noise: Math.floor(Math.random() * 100),
-          });
+      // ★ 减伤触发 CD（shieldCd 0.5s）：CD 期间不触发减伤、不吐块（防高频伤害瞬间耗光冰晶）
+      const now = ctx?.sim?.time ?? 0;
+      if (now - (this._iceCdT ?? -Infinity) >= CONFIG.SATURN.shieldCd) {
+        const absorb = Math.min(Math.floor(this.crystal / CONFIG.SATURN.shieldPer), dmg);
+        if (absorb > 0) {
+          this._iceCdT = now;
+          this.crystal -= absorb * CONFIG.SATURN.shieldPer;
+          final -= absorb;
+          iceAbsorbed = true;
+          if (ctx?.phantoms) {
+            const a = Math.random() * Math.PI * 2;
+            ctx.phantoms.push({
+              isPhantom: true, isIceShard: true,
+              x: this.x, y: this.y, angle: a,
+              speed: CONFIG.SATURN.shardSpeed, fly: CONFIG.SATURN.shardFly,
+              t: 0, owner: this, radius: 9, noise: Math.floor(Math.random() * 100),
+            });
+          }
         }
       }
     }

@@ -38,9 +38,6 @@ body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-i
 .sfx-modal { padding: 26px 40px; gap: 13px; max-height: 86vh; overflow-y: auto; }
 .sfx-modal .set-row { min-width: 260px; }
 
-/* 教程弹窗 */
-#panel-tutorial { position: fixed; inset: 0; z-index: 10; background: rgba(31,26,23,0.55); border: none; box-shadow: none; border-radius: 0; }
-
 /* 专属提示弹窗 */
 #game-alert { position: fixed; inset: 0; z-index: 90; background: rgba(31,26,23,0.55); display: flex; align-items: center; justify-content: center; }
 .alert-box { max-width: 420px; text-align: center; }
@@ -74,7 +71,13 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 #btn-select-confirm, #btn-battle-confirm, #btn-battle-confirm-online { background: var(--orange); }
 
 /* 分类标签 */
-.cat-tabs { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; }
+/* 分类选择栏：固定上下宽度 + 左右滑动点击（不换行不挤占主区域，溢出横向滚动） */
+.cat-tabs { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; justify-content: flex-start;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
+  height: 50px; flex-shrink: 0; padding: 4px 6px; scrollbar-width: thin; }
+.cat-tabs::-webkit-scrollbar { height: 6px; }
+.cat-tabs::-webkit-scrollbar-thumb { background: rgba(31,26,17,0.4); border-radius: 3px; }
+.cat-tab { flex-shrink: 0; scroll-snap-align: center; white-space: nowrap; }
 .cat-tab { cursor: pointer; font-family: inherit; border: 3px solid var(--ink); background: #fff; color: var(--ink); padding: 6px 20px; font-size: 1rem; border-radius: 20px 6px 20px 6px \/ 6px 20px 6px 20px; box-shadow: 3px 3px 0 rgba(31,26,17,0.7); transition: transform 0.1s; }
 .cat-tab:hover { transform: rotate(-1deg); }
 .cat-tab.active { background: var(--yellow); transform: rotate(-1.5deg) scale(1.05); }

@@ -614,11 +614,38 @@ export class MatchSim {
       }
     }
     // 冰晶块：飞行 fly 秒期间不判定任何碰撞（飞出去停住后才有效果）；
-    //   停住后敌球碰 10 伤 / 自己碰 +10 冰晶且 50% 回血（0.5s 防抖）；触碰生效后块消失（防止全场冰晶刷效果）
+    //   飞行中碰到边界反弹（不飞出场地）；停住后敌球碰 10 伤 / 自己碰 +10 冰晶且 50% 回血（0.5s 防抖）；触碰生效后块消失
     for (let i = ph.length - 1; i >= 0; i--) {
       const sh = ph[i];
       if (!sh.isIceShard) continue;
-      if (sh.t < sh.fly) { sh.t += dt; sh.x += Math.cos(sh.angle) * sh.speed * dt; sh.y += Math.sin(sh.angle) * sh.speed * dt; continue; }
+      if (sh.t < sh.fly) {
+        sh.t += dt;
+        sh.x += Math.cos(sh.angle) * sh.speed * dt;
+        sh.y += Math.sin(sh.angle) * sh.speed * dt;
+        // 边界反弹：不飞出场地（矩形默认 / ringHole 外圆 / 有限太空大矩形）
+        const map = this.ctx.battleMap;
+        if (map?.id === 'ringHole') {
+          const cx = CONFIG.FIELD.w / 2, cy = CONFIG.FIELD.h / 2;
+          const d0 = Math.hypot(sh.x - cx, sh.y - cy);
+          const rMax = map.radius - sh.radius;
+          if (d0 > rMax) {
+            sh.x = cx + (sh.x - cx) / d0 * rMax;
+            sh.y = cy + (sh.y - cy) / d0 * rMax;
+            const nx = (sh.x - cx) / rMax, ny = (sh.y - cy) / rMax;
+            const vx = Math.cos(sh.angle), vy = Math.sin(sh.angle);
+            const dot = vx * nx + vy * ny;
+            sh.angle = Math.atan2(vy - 2 * dot * ny, vx - 2 * dot * nx);
+          }
+        } else {
+          const FW = map?.id === 'finiteSpace' ? map.size.w : CONFIG.FIELD.w;
+          const FH = map?.id === 'finiteSpace' ? map.size.h : CONFIG.FIELD.h;
+          if (sh.x < sh.radius) { sh.x = sh.radius; sh.angle = Math.PI - sh.angle; }
+          else if (sh.x > FW - sh.radius) { sh.x = FW - sh.radius; sh.angle = Math.PI - sh.angle; }
+          if (sh.y < sh.radius) { sh.y = sh.radius; sh.angle = -sh.angle; }
+          else if (sh.y > FH - sh.radius) { sh.y = FH - sh.radius; sh.angle = -sh.angle; }
+        }
+        continue;
+      }
       let consumed = false;
       for (const b of all) {
         if (b.dead || this.wilds.includes(b)) continue;

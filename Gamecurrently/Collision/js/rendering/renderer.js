@@ -269,8 +269,9 @@ export class Renderer {
   }
   addLineFx(ball, hit) { this.lineFx.push({ x0: ball.x, y0: ball.y, hit, t: 0 }); }
   addSwapFx(a, b) { this.swapFx.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, t: 0 }); }
-  addDmgNum(x, y, amount) { this.dmgNums.push({ x, y, amount: Math.round(amount), t: 0 }); }
-  addHealNum(x, y, amount) { this.healNums.push({ x, y, amount, t: 0 }); }
+  // 特效数字保留 1 位小数（磁铁 1.5 高频伤害不再被四舍五入成 2）
+  addDmgNum(x, y, amount) { this.dmgNums.push({ x, y, amount: Math.round(amount * 10) / 10, t: 0 }); }
+  addHealNum(x, y, amount) { this.healNums.push({ x, y, amount: Math.round(amount * 10) / 10, t: 0 }); }
   addSlashFx(x, y, dir, r, hit) { this.slashFx.push({ x, y, dir, r, hit, t: 0 }); }
   addLabel(x, y, text) { this.labels.push({ x, y, text, t: 0 }); }
   update(dt) {

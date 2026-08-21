@@ -26,7 +26,8 @@ const CONFIG = {
   // 土星【冰晶光环】：特性凝固（每0.1s +1冰晶，自主积累≤50停，吃冰晶块可超50）；
   //   每5点冰晶抵挡1点伤害（保留余数、减伤不超过受伤量）；触发减伤时飞出一块冰晶块
   //   （菱形弹幕：飞行一小段后停住不消失；敌球碰10伤 / 自己碰+10冰晶且50%回1~10血）；光环厚度随冰晶增厚
-  SATURN: { gainRate: 0.1, autoCap: 50, shieldPer: 5, shardDamage: 10, shardReturn: 10, shardHealChance: 0.5, shardHealMin: 1, shardHealMax: 10, shardSpeed: 260, shardFly: 0.5 },
+  // 土星【冰晶光环】：减伤触发 CD 0.5s（shieldCd）——防高频伤害瞬间耗光冰晶；冰晶块飞行中不判定、边界反弹
+  SATURN: { gainRate: 0.1, autoCap: 50, shieldPer: 5, shieldCd: 0.5, shardDamage: 10, shardReturn: 10, shardHealChance: 0.5, shardHealMin: 1, shardHealMax: 10, shardSpeed: 260, shardFly: 0.5 },
   // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带30伤）
   BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
   // 巨人【暴怒】：战场干扰球（第三方，不可选择），只保留愤怒机制

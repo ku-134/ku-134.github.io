@@ -124,7 +124,9 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 .select-header-right { flex-shrink: 0; margin-left: auto; }
 .col-title { color: var(--ink); letter-spacing: 0.12em; font-size: 1.15rem; background: #fff; border: 3px solid var(--ink); border-radius: 16px 5px 16px 5px \/ 5px 16px 5px 16px; box-shadow: 3px 3px 0 rgba(31,26,17,0.6); padding: 6px 22px; }
 .select-layout { flex: 1; display: flex; justify-content: space-between; width: 100%; min-height: 0; padding: 6px 44px 0; gap: 48px; }
-.select-col { flex: 1; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 0; }
+.select-col { flex: 1; min-width: 0; max-width: 400px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 0; }
+/* 并列双分类栏：固定 100% 列宽——内容超出时触发横向滚动（配合 min-width:0 允许列收缩） */
+.select-col .cat-tabs, .stage-pick-layout .cat-tabs { width: 100%; }
 .select-col .card-list { flex: 1; max-height: none; width: 100%; max-width: 320px; justify-content: flex-start; align-content: flex-start; overflow-y: auto; }
 .select-col .card { width: 130px; }
 

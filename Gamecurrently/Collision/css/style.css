@@ -71,10 +71,10 @@ h2 { color: var(--ink); letter-spacing: 0.15em; transform: rotate(-1deg); }
 #btn-select-confirm, #btn-battle-confirm, #btn-battle-confirm-online { background: var(--orange); }
 
 /* 分类标签 */
-/* 分类选择栏：固定上下宽度 + 左右滑动点击（不换行不挤占主区域，溢出横向滚动） */
+/* 分类选择栏：固定上下宽度 + 左右滑动点击（不换行不挤占主区域，溢出横向滚动；max-width 100% 保证并列双栏各自不超出列宽） */
 .cat-tabs { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; justify-content: flex-start;
   overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
-  height: 50px; flex-shrink: 0; padding: 4px 6px; scrollbar-width: thin; }
+  height: 50px; flex-shrink: 0; max-width: 100%; padding: 4px 6px; scrollbar-width: thin; }
 .cat-tabs::-webkit-scrollbar { height: 6px; }
 .cat-tabs::-webkit-scrollbar-thumb { background: rgba(31,26,17,0.4); border-radius: 3px; }
 .cat-tab { flex-shrink: 0; scroll-snap-align: center; white-space: nowrap; }

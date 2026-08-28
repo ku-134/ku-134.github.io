@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户名侦探 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .text-input {
+            flex: 1; min-width: 200px; padding: 0.55rem 1.1rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.92rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .text-input:focus { border-color: #66bb6a; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .stat-bar { font-size: 0.82rem; opacity: 0.65; margin-left: auto; white-space: nowrap; }
+        .loading { display: none; text-align: center; padding: 1.2rem; opacity: 0.6; }
+        .loading.show { display: block; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,128,128,0.3); border-top-color: #66bb6a; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -3px; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .result-list { display: flex; flex-direction: column; gap: 0.45rem; margin-top: 0.4rem; }
+        .result-row {
+            display: flex; align-items: center; gap: 0.7rem; padding: 0.55rem 0.9rem;
+            border-radius: 0.8rem; border: 1px solid rgba(128,128,128,0.1);
+            background: rgba(128,128,128,0.03); font-size: 0.88rem;
+            animation: fadeIn 0.3s ease both;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        .result-row .r-icon { font-size: 1.15rem; width: 1.8rem; text-align: center; flex-shrink: 0; }
+        .result-row .r-name { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .result-row .r-badge { margin-left: auto; flex-shrink: 0; font-size: 0.76rem; padding: 0.15rem 0.7rem; border-radius: 2rem; }
+        .result-row .r-badge.ok { background: rgba(102,187,106,0.16); color: #66bb6a; }
+        .result-row .r-badge.no { background: rgba(128,128,128,0.1); color: inherit; opacity: 0.55; }
+        .result-row .r-badge.unk { background: rgba(245,166,35,0.16); color: #f5a623; }
+        .result-row .r-link { flex-shrink: 0; text-decoration: none; font-size: 0.78rem; padding: 0.2rem 0.7rem; border-radius: 2rem; border: 1px solid rgba(102,187,106,0.45); color: #66bb6a; transition: all 0.2s; }
+        .result-row .r-link:hover { background: rgba(102,187,106,0.14); }
+        .result-row.pending .r-badge { background: rgba(128,128,128,0.08); opacity: 0.6; }
+        .result-empty { text-align: center; padding: 2rem 0; opacity: 0.45; font-size: 0.9rem; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">👽 用户名侦探</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">输入用户名，在 20+ 主流平台（GitHub、Reddit、YouTube、npm、PyPI…）中探测是否存在同名账号。纯前端静态探测：优先调用各平台开放 API，辅以 oembed 与图片探测，无需后端、数据不出浏览器。</div>
+            <div class="tool-toolbar">
+                <input type="text" class="text-input" id="userInput" placeholder="输入用户名，如 torvalds" maxlength="64" spellcheck="false" autocomplete="off">
+                <button class="btn btn-primary" id="searchBtn">🔍 开始搜索</button>
+                <button class="btn" id="clearBtn">🧹 清空</button>
+                <span class="stat-bar" id="statBar"></span>
+            </div>
+            <div class="loading" id="loading"><span class="spinner"></span>正在探测各平台…</div>
+            <div class="result-list" id="resultList"></div>
+            <div class="tool-foot">⚠️ 受浏览器跨域限制，本页仅覆盖开放接口的平台（精简版）；全量 840+ 平台需搭配代理方案。结果仅供参考，不构成任何隐私结论。</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var PLATFORMS = [
+            { id: 'github',   icon: '🐙', name: 'GitHub',        kind: 'api',    api: 'https://api.github.com/users/{u}',                    page: 'https://github.com/{u}',            judge: null },
+            { id: 'reddit',   icon: '👽', name: 'Reddit',        kind: 'api',    api: 'https://www.reddit.com/user/{u}/about.json',           page: 'https://www.reddit.com/user/{u}',    judge: null },
+            { id: 'gitlab',   icon: '🦊', name: 'GitLab',        kind: 'api',    api: 'https://gitlab.com/api/v4/users?username={u}',        page: 'https://gitlab.com/{u}',             judge: function (j) { return Array.isArray(j) && j.length > 0; } },
+            { id: 'gitee',    icon: '🇨🇳', name: 'Gitee 码云',    kind: 'api',    api: 'https://gitee.com/api/v5/users/{u}',                   page: 'https://gitee.com/{u}',              judge: null },
+            { id: 'npm',      icon: '📦', name: 'npm',           kind: 'api',    api: 'https://registry.npmjs.org/-/user/org.couchdb.user:{u}', page: 'https://www.npmjs.com/~{u}',       judge: null },
+            { id: 'pypi',     icon: '🐍', name: 'PyPI',          kind: 'img',    img: 'https://pypi.org/avatar/{u}',                        page: 'https://pypi.org/user/{u}/',         judge: null },
+            { id: 'docker',   icon: '🐳', name: 'Docker Hub',    kind: 'api',    api: 'https://hub.docker.com/v2/users/{u}',                page: 'https://hub.docker.com/u/{u}',       judge: null },
+            { id: 'keybase',  icon: '🔑', name: 'Keybase',       kind: 'api',    api: 'https://keybase.io/_/api/1.0/user/lookup.json?username={u}', page: 'https://keybase.io/{u}', judge: function (j) { return j && j.status && j.status.name === 'OK'; } },
+            { id: 'hn',       icon: '🔥', name: 'Hacker News',   kind: 'api',    api: 'https://hacker-news.firebaseio.com/v0/user/{u}.json', page: 'https://news.ycombinator.com/user?id={u}', judge: function (j) { return j !== null; } },
+            { id: 'cf',       icon: '💪', name: 'Codeforces',    kind: 'api',    api: 'https://codeforces.com/api/user.info?handles={u}',    page: 'https://codeforces.com/profile/{u}', judge: function (j) { return j && j.status === 'OK' && j.result && j.result.length > 0; } },
+            { id: 'so',       icon: '🧠', name: 'Stack Overflow', kind: 'api',   api: 'https://api.stackexchange.com/2.3/users?inname={u}&site=stackoverflow', page: null, judge: function (j, u) { if (!j || !j.items) return null; for (var i = 0; i < j.items.length; i++) { if (String(j.items[i].display_name).toLowerCase() === String(u).toLowerCase()) { window.__so_last = j.items[i]; return true; } } return false; } },
+            { id: 'wiki',     icon: '📖', name: '维基百科',      kind: 'api',    api: 'https://zh.wikipedia.org/w/api.php?action=query&list=users&ususers={u}&format=json&origin=*', page: 'https://zh.wikipedia.org/wiki/User:{u}', judge: function (j) { return j && j.query && j.query.users && j.query.users[0] && !j.query.users[0].missing; } },
+            { id: 'youtube',  icon: '▶️', name: 'YouTube',       kind: 'oembed', api: 'https://www.youtube.com/oembed?url=https://www.youtube.com/@{u}&format=json', page: 'https://www.youtube.com/@{u}', judge: null },
+            { id: 'codepen',  icon: '🖊️', name: 'CodePen',       kind: 'oembed', api: 'https://codepen.io/api/oembed?url=https://codepen.io/{u}', page: 'https://codepen.io/{u}', judge: null },
+            { id: 'jsfiddle', icon: '🧪', name: 'jsFiddle',      kind: 'oembed', api: 'https://jsfiddle.net/api/oembed?url=https://jsfiddle.net/user/{u}/', page: 'https://jsfiddle.net/user/{u}/', judge: null },
+            { id: 'soundcloud', icon: '🎵', name: 'SoundCloud',  kind: 'oembed', api: 'https://soundcloud.com/oembed?url=https://soundcloud.com/{u}&format=json', page: 'https://soundcloud.com/{u}', judge: null },
+            { id: 'vimeo',    icon: '🎬', name: 'Vimeo',         kind: 'oembed', api: 'https://vimeo.com/api/oembed.json?url=https://vimeo.com/{u}', page: 'https://vimeo.com/{u}', judge: null },
+            { id: 'tumblr',   icon: '🟦', name: 'Tumblr',        kind: 'jsonp',  api: 'https://{u}.tumblr.com/api/read/json',               page: 'https://{u}.tumblr.com',            judge: null }
+        ];
+
+        var input = document.getElementById('userInput');
+        var searchBtn = document.getElementById('searchBtn');
+        var clearBtn = document.getElementById('clearBtn');
+        var loading = document.getElementById('loading');
+        var resultList = document.getElementById('resultList');
+        var statBar = document.getElementById('statBar');
+        var running = false;
+
+        function esc(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '"');
+        }
+
+        function renderRow(p, status, link) {
+            var row = document.createElement('div');
+            row.className = 'result-row';
+            var badge = status === 'ok' ? '<span class="r-badge ok">✅ 存在</span>'
+                : status === 'no' ? '<span class="r-badge no">❌ 未找到</span>'
+                : '<span class="r-badge unk">⏳ 未知</span>';
+            var lk = (status === 'ok' && link) ? '<a class="r-link" href="' + esc(link) + '" target="_blank" rel="noopener">打开 →</a>' : '';
+            row.innerHTML = '<span class="r-icon">' + p.icon + '</span><span class="r-name">' + esc(p.name) + '</span>' + badge + lk;
+            resultList.appendChild(row);
+        }
+
+        function detectOne(p, u) {
+            return new Promise(function (resolve) {
+                var timer = setTimeout(function () { resolve('unk'); }, 8000);
+                var done = function (s) { clearTimeout(timer); resolve(s); };
+                var url = (p.api || p.img || '').replace(/\{u\}/g, encodeURIComponent(u));
+                if (p.kind === 'api' || p.kind === 'oembed') {
+                    fetch(url).then(function (r) {
+                        if (!r.ok) { done('no'); return; }
+                        return r.json().then(function (j) {
+                            if (p.judge) { var s = p.judge(j, u); done(s === null ? 'unk' : (s ? 'ok' : 'no')); }
+                            else { done('ok'); }
+                        }).catch(function () { done('unk'); });
+                    }).catch(function () { done('unk'); });
+                } else if (p.kind === 'img') {
+                    var im = new Image();
+                    im.onload = function () { done('ok'); };
+                    im.onerror = function () { done('no'); };
+                    im.src = url;
+                } else if (p.kind === 'jsonp') {
+                    var cbName = '__ae_cb_' + p.id + '_' + Date.now();
+                    var s = document.createElement('script');
+                    s.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + cbName;
+                    var fired = false;
+                    window[cbName] = function () { fired = true; done('ok'); };
+                    s.onerror = function () { if (!fired) done('no'); };
+                    document.head.appendChild(s);
+                    setTimeout(function () { if (!fired) { try { delete window[cbName]; } catch (e) {} document.head.removeChild(s); } }, 7500);
+                }
+            });
+        }
+
+        function updateStat(stats, total) {
+            statBar.textContent = '共 ' + total + ' 平台 · ✅ ' + stats.ok + ' · ❌ ' + stats.no + ' · ⏳ ' + stats.unk;
+        }
+
+        function run(u) {
+            running = true;
+            searchBtn.disabled = true;
+            loading.classList.add('show');
+            resultList.innerHTML = '';
+            statBar.textContent = '';
+            var stats = { ok: 0, no: 0, unk: 0 };
+            var idx = 0;
+            var links = {};
+            function next() {
+                if (idx >= PLATFORMS.length) {
+                    loading.classList.remove('show');
+                    searchBtn.disabled = false;
+                    running = false;
+                    updateStat(stats, PLATFORMS.length);
+                    return;
+                }
+                var batch = [];
+                for (var n = 0; n < 4 && idx < PLATFORMS.length; n++, idx++) batch.push(PLATFORMS[idx]);
+                Promise.all(batch.map(function (p) {
+                    return detectOne(p, u).then(function (s) {
+                        stats[s]++;
+                        var link = null;
+                        if (s === 'ok' && p.page) {
+                            link = p.page.replace(/\{u\}/g, encodeURIComponent(u));
+                            if (p.id === 'so' && window.__so_last && window.__so_last._so) {
+                                link = 'https://stackoverflow.com/users/' + window.__so_last._so.user_id;
+                            }
+                        }
+                        renderRow(p, s, link);
+                    });
+                })).then(next);
+            }
+            next();
+        }
+
+        searchBtn.addEventListener('click', function () {
+            var u = input.value.trim();
+            if (!u || running) return;
+            if (!/^[\w.\-]{2,64}$/.test(u)) {
+                statBar.textContent = '⚠️ 用户名需为 2-64 位字母/数字/._-';
+                return;
+            }
+            run(u);
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') searchBtn.click();
+        });
+        clearBtn.addEventListener('click', function () {
+            if (running) return;
+            input.value = '';
+            resultList.innerHTML = '';
+            statBar.textContent = '';
+        });
+        resultList.addEventListener('click', function (e) {
+            var a = e.target.closest('.r-link');
+            if (a) e.stopPropagation();
+        });
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

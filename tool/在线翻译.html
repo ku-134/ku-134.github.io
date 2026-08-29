@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线翻译 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .select-input {
+            padding: 0.5rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25);
+            background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; font-size: 0.88rem;
+            outline: none; transition: border-color 0.2s;
+        }
+        .select-input:focus { border-color: #66bb6a; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .btn-sm { padding: 0.3rem 0.85rem; font-size: 0.78rem; }
+        .loading { display: none; text-align: center; padding: 1rem; opacity: 0.6; }
+        .loading.show { display: block; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,128,128,0.3); border-top-color: #66bb6a; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -3px; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+        @media (max-width: 640px) { .io-grid { grid-template-columns: 1fr; } }
+        .io-box { display: flex; flex-direction: column; }
+        .io-label { font-size: 0.78rem; opacity: 0.55; margin-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: center; }
+        .io-box textarea {
+            min-height: 170px; padding: 0.7rem 0.9rem; border-radius: 0.9rem; resize: vertical;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.92rem; outline: none; line-height: 1.6;
+            transition: border-color 0.2s;
+        }
+        .io-box textarea:focus { border-color: #66bb6a; }
+        .io-box .io-actions { display: flex; gap: 0.35rem; margin-top: 0.45rem; flex-wrap: wrap; }
+        .hist-title { font-size: 0.85rem; font-weight: 700; opacity: 0.65; margin: 1.1rem 0 0.5rem; }
+        .hist-list { display: flex; flex-direction: column; gap: 0.4rem; }
+        .hist-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.8rem; border-radius: 0.8rem; background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.1); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+        .hist-item:hover { border-color: rgba(102,187,106,0.4); }
+        .hist-item .h-src { flex: 1; opacity: 0.6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hist-item .h-dst { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hist-item .h-lang { font-size: 0.7rem; opacity: 0.4; flex-shrink: 0; }
+        .hist-item .h-del { border: none; background: none; color: inherit; opacity: 0.35; cursor: pointer; font-size: 0.9rem; flex-shrink: 0; }
+        .hist-item .h-del:hover { opacity: 1; color: #ff7777; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🈶 在线翻译</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">免费文本翻译，支持中英日韩等 10+ 语种。译文可一键朗读（浏览器 TTS），历史记录本地留存，一键回填。</div>
+
+            <div class="tool-toolbar">
+                <select class="select-input" id="srcLang"></select>
+                <button class="btn btn-sm" id="swapLang" title="互换语言">⇄</button>
+                <select class="select-input" id="dstLang"></select>
+                <button class="btn btn-primary" id="transBtn">🔄 翻译</button>
+                <span id="charCount" style="font-size:0.78rem;opacity:0.5;margin-left:auto;">0 字</span>
+            </div>
+            <div class="loading" id="loading"><span class="spinner"></span>翻译中…</div>
+
+            <div class="io-grid">
+                <div class="io-box">
+                    <div class="io-label"><span>✍️ 原文</span><button class="btn btn-sm" id="clearBtn">清空</button></div>
+                    <textarea id="srcText" placeholder="输入要翻译的文本…（单次建议 ≤ 450 字）"></textarea>
+                </div>
+                <div class="io-box">
+                    <div class="io-label"><span>✅ 译文</span><span id="dstStat"></span></div>
+                    <textarea id="dstText" readonly placeholder="译文将显示在这里"></textarea>
+                    <div class="io-actions">
+                        <button class="btn btn-sm" id="speakBtn">🔊 朗读译文</button>
+                        <button class="btn btn-sm" id="copyBtn">📋 复制译文</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hist-title">🕘 翻译历史（点击回填）</div>
+            <div class="hist-list" id="histList"></div>
+
+            <div class="tool-foot">数据源：MyMemory 免费翻译 API · 历史记录仅存本地浏览器 · 朗读使用系统语音</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var LANGS = [
+            ['zh-CN', '中文（简体）'], ['en', '英语'], ['ja', '日语'], ['ko', '韩语'],
+            ['fr', '法语'], ['de', '德语'], ['es', '西班牙语'], ['ru', '俄语'],
+            ['it', '意大利语'], ['pt', '葡萄牙语'], ['th', '泰语'], ['vi', '越南语'], ['ar', '阿拉伯语']
+        ];
+        var HIST_KEY = 'transHist';
+        var srcSel = document.getElementById('srcLang');
+        var dstSel = document.getElementById('dstLang');
+        LANGS.forEach(function (l) {
+            srcSel.insertAdjacentHTML('beforeend', '<option value="' + l[0] + '">' + l[1] + '</option>');
+            dstSel.insertAdjacentHTML('beforeend', '<option value="' + l[0] + '">' + l[1] + '</option>');
+        });
+        srcSel.value = 'zh-CN'; dstSel.value = 'en';
+
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        function loadHist() {
+            try { return JSON.parse(localStorage.getItem(HIST_KEY)) || []; } catch (e) { return []; }
+        }
+        function saveHist(h) {
+            try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 20))); } catch (e) { }
+        }
+        function renderHist() {
+            var h = loadHist();
+            var box = document.getElementById('histList');
+            if (!h.length) { box.innerHTML = '<div style="opacity:0.4;font-size:0.85rem;">暂无历史记录</div>'; return; }
+            box.innerHTML = h.map(function (it, i) {
+                return '<div class="hist-item" data-i="' + i + '"><span class="h-lang">' + esc(it.sl) + '→' + esc(it.tl) + '</span>' +
+                    '<span class="h-src">' + esc(it.src) + '</span><span class="h-dst">' + esc(it.dst) + '</span>' +
+                    '<button class="h-del" data-del="' + i + '" title="删除">✕</button></div>';
+            }).join('');
+        }
+        document.getElementById('histList').addEventListener('click', function (e) {
+            var del = e.target.closest('.h-del');
+            if (del) {
+                e.stopPropagation();
+                var h = loadHist();
+                h.splice(+del.getAttribute('data-del'), 1);
+                saveHist(h);
+                renderHist();
+                return;
+            }
+            var item = e.target.closest('.hist-item');
+            if (!item) return;
+            var h = loadHist();
+            var it = h[+item.getAttribute('data-i')];
+            if (!it) return;
+            document.getElementById('srcText').value = it.src;
+            document.getElementById('dstText').value = it.dst;
+            document.getElementById('dstStat').textContent = '已回填历史';
+        });
+
+        function translate() {
+            var src = document.getElementById('srcText').value.trim();
+            if (!src) return;
+            var sl = srcSel.value, tl = dstSel.value;
+            if (sl === tl) { document.getElementById('dstText').value = src; return; }
+            var loading = document.getElementById('loading');
+            var transBtn = document.getElementById('transBtn');
+            loading.classList.add('show');
+            transBtn.disabled = true;
+            var url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(src.slice(0, 450)) + '&langpair=' + encodeURIComponent(sl + '|' + tl);
+            fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+                var t = j && j.responseData && j.responseData.translatedText;
+                if (!t || j.responseStatus !== 200) throw new Error('bad');
+                document.getElementById('dstText').value = t;
+                document.getElementById('dstStat').textContent = '';
+                var h = loadHist();
+                h.unshift({ sl: sl, tl: tl, src: src.slice(0, 120), dst: t.slice(0, 120) });
+                saveHist(h);
+                renderHist();
+            }).catch(function () {
+                document.getElementById('dstStat').textContent = '⚠ 翻译失败，请稍后重试';
+            }).then(function () {
+                loading.classList.remove('show');
+                transBtn.disabled = false;
+            });
+        }
+
+        document.getElementById('transBtn').addEventListener('click', translate);
+        document.getElementById('swapLang').addEventListener('click', function () {
+            var tmp = srcSel.value; srcSel.value = dstSel.value; dstSel.value = tmp;
+        });
+        document.getElementById('srcText').addEventListener('input', function () {
+            document.getElementById('charCount').textContent = document.getElementById('srcText').value.length + ' 字';
+        });
+        document.getElementById('clearBtn').addEventListener('click', function () {
+            document.getElementById('srcText').value = '';
+            document.getElementById('dstText').value = '';
+            document.getElementById('charCount').textContent = '0 字';
+        });
+        document.getElementById('copyBtn').addEventListener('click', function () {
+            var t = document.getElementById('dstText').value;
+            if (!t) return;
+            if (navigator.clipboard) navigator.clipboard.writeText(t);
+            var b = this; b.textContent = '✅ 已复制';
+            setTimeout(function () { b.textContent = '📋 复制译文'; }, 1200);
+        });
+        document.getElementById('speakBtn').addEventListener('click', function () {
+            var t = document.getElementById('dstText').value;
+            if (!t) return;
+            if (!('speechSynthesis' in window)) { alert('当前浏览器不支持语音朗读'); return; }
+            speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance(t);
+            u.lang = dstSel.value;
+            var b = this; b.textContent = '🔊 朗读中…';
+            u.onend = function () { b.textContent = '🔊 朗读译文'; };
+            u.onerror = function () { b.textContent = '🔊 朗读译文'; };
+            speechSynthesis.speak(u);
+        });
+
+        renderHist();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

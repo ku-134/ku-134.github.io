@@ -5,6 +5,7 @@ import { MatchSim } from '../core/matchSim.js';
 import { createSkill, createDashSkill, getSelectableDefs } from '../skills/skillRegistry.js';
 import { BATTLE_FIELDS, getBattleField, pickSpawns } from '../maps/index.js';
 import { AIController } from '../ai/aiController.js';
+import { ProAI } from '../ai/proAI.js';
 import { Renderer } from '../rendering/renderer.js';
 import { Hud } from '../ui/hud.js';
 import { isTouchDevice, bindHold } from '../ui/input.js';
@@ -16,6 +17,7 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 // 死灵术士：双侧阵营都支持（玩家侧=necrosA / AI侧=necrosB）——双方都选死灵时各自召唤/转移/分段血条
 // ★ 随机选球：start 收到 null = 从可选职业随机（不含战场球与测试角色死灵）；再来一局时重新随机
 // ★ 对局开始暂停首页背景（bg:run false），返回时恢复（背景无技能音效）
+// ★ 高难度 AI（设置 collision.hardAI）：开启后 AI 对手使用专属职业 AI（ProAI，死灵除外）
 const WILD_IDS = ['giant', 'demon', 'sun'];
 
 // 随机职业池：全部可选职业（自动跟随注册表，不含战场球；★排除测试角色死灵术士）
@@ -127,7 +129,9 @@ export class SingleMode {
     this.ctx.necrosA = this.necrosA;
     this.ctx.necrosB = this.necrosB;
     this.sim = new MatchSim(this.ctx, this.balls, this.wilds, this.necros);
-    this.ai = new AIController(p2, this.ctx);
+    // ★ 高难度 AI（单机设置 collision.hardAI）：开启后 AI 对手使用专属职业 AI（死灵术士除外，保持通用 AI）
+    const hardAI = localStorage.getItem('collision.hardAI') === '1';
+    this.ai = hardAI && aId !== 'necromancer' ? new ProAI(p2, this.ctx) : new AIController(p2, this.ctx);
     this.unsubs.forEach(fn => fn());
     this.unsubs = [];
     this.unsubs.push(this.ctx.events.on('collision', e => {

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泄露检测 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .text-input {
+            flex: 1; min-width: 220px; padding: 0.55rem 1.1rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.92rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .text-input:focus { border-color: #66bb6a; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .type-tag { font-size: 0.8rem; padding: 0.2rem 0.8rem; border-radius: 2rem; background: rgba(102,187,106,0.14); color: #66bb6a; border: 1px solid rgba(102,187,106,0.35); white-space: nowrap; }
+        .loading { display: none; text-align: center; padding: 1.2rem; opacity: 0.6; }
+        .loading.show { display: block; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,128,128,0.3); border-top-color: #66bb6a; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -3px; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .result-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.6rem; margin: 0.4rem 0 0.9rem; }
+        .result-head .rh-title { font-size: 1.02rem; font-weight: 700; }
+        .src-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.9rem; }
+        .src-chip { font-size: 0.78rem; padding: 0.22rem 0.8rem; border-radius: 2rem; background: rgba(245,166,35,0.12); color: #f5a623; border: 1px solid rgba(245,166,35,0.3); }
+        .field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem; }
+        .field-card { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 0.9rem; padding: 0.7rem 0.9rem; animation: fadeIn 0.3s ease both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        .field-card .fc-label { font-size: 0.75rem; opacity: 0.55; margin-bottom: 0.3rem; letter-spacing: 1px; }
+        .field-card .fc-values { display: flex; flex-direction: column; gap: 0.2rem; }
+        .field-card .fc-value { font-size: 0.9rem; font-weight: 600; word-break: break-all; }
+        .field-card .fc-value.masked { font-family: 'Courier New', monospace; color: #f5a623; }
+        .empty-box { text-align: center; padding: 2.2rem 1rem; opacity: 0.55; }
+        .empty-box .eb-icon { font-size: 2.4rem; display: block; margin-bottom: 0.5rem; }
+        .notice {
+            margin-top: 1.1rem; padding: 0.7rem 1rem; border-radius: 0.9rem; font-size: 0.8rem; line-height: 1.7;
+            background: rgba(245,166,35,0.08); border: 1px solid rgba(245,166,35,0.25); color: #f5a623;
+        }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🚨 泄露检测</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">输入手机号 / QQ / 邮箱 / 身份证，检测该信息是否出现在公开流传的泄露数据库中。接口直连公开服务，返回结果已全面脱敏（打码），仅显示泄漏来源与字段关联情况。</div>
+
+            <div class="tool-toolbar">
+                <input type="text" class="text-input" id="queryInput" placeholder="输入手机号 / QQ / 邮箱 / 身份证" maxlength="64" spellcheck="false" autocomplete="off">
+                <button class="btn btn-primary" id="searchBtn">🔍 检测</button>
+                <span class="type-tag" id="typeTag">等待输入</span>
+            </div>
+
+            <div class="loading" id="loading"><span class="spinner"></span>正在查询泄露数据库…</div>
+            <div id="resultArea" style="display:none;"></div>
+
+            <div class="notice">⚠️ <strong>合规提示</strong>：本工具<strong>仅建议用于查询本人信息</strong>，判断自己的数据是否处于泄露状态。请勿输入他人信息用于非法用途；查询行为经由第三方公开接口完成，本工具不保存任何查询记录。</div>
+
+            <div class="tool-foot">数据源：leak-check（嘉林数据公开接口）· 结果含打码处理 · 未命中则显示无记录</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var input = document.getElementById('queryInput');
+        var searchBtn = document.getElementById('searchBtn');
+        var typeTag = document.getElementById('typeTag');
+        var loading = document.getElementById('loading');
+        var resultArea = document.getElementById('resultArea');
+        var running = false;
+
+        var FIELD_NAMES = {
+            id: '身份证号', name: '姓名', receiver: '收款人', nickname: '昵称',
+            phone: '手机号', address: '地址', car: '车辆信息', email: '邮箱',
+            qq: 'QQ', weibo: '微博', contact: '联系方式', company: '公司'
+        };
+        var MASKED_FIELDS = ['id', 'phone', 'qq', 'email', 'address', 'car', 'weibo', 'contact'];
+
+        function detectType(q) {
+            q = q.trim();
+            if (/^[0-9a-zA-Z.!#$%&'*+/=?^_`{|}~-]+@[0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)+$/.test(q)) return 'email';
+            if (/^\d{17}[\dXx]$/.test(q)) return 'id';
+            if (/^1\d{10}$/.test(q)) return 'phone';
+            if (/^\d{5,11}$/.test(q)) return 'qq';
+            return '';
+        }
+        var TYPE_NAMES = { phone: '📱 手机号', qq: '💬 QQ', email: '📧 邮箱', id: '🪪 身份证' };
+
+        input.addEventListener('input', function () {
+            var t = detectType(input.value);
+            typeTag.textContent = t ? TYPE_NAMES[t] : (input.value.trim() ? '❓ 无法识别' : '等待输入');
+        });
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '"');
+        }
+
+        function render(data, q) {
+            resultArea.style.display = '';
+            var total = 0;
+            var srcs = data.source || [];
+            var cards = '';
+            Object.keys(FIELD_NAMES).forEach(function (k) {
+                var v = data[k];
+                if (!v) return;
+                var list = Array.isArray(v) ? v : [v];
+                if (!list.length) return;
+                total += list.length;
+                var masked = MASKED_FIELDS.indexOf(k) >= 0;
+                var vals = list.map(function (x) {
+                    return '<div class="fc-value' + (masked ? ' masked' : '') + '">' + esc(x) + '</div>';
+                }).join('');
+                cards += '<div class="field-card"><div class="fc-label">' + FIELD_NAMES[k] + '</div><div class="fc-values">' + vals + '</div></div>';
+            });
+            var head = '<div class="result-head"><span class="rh-title">' +
+                (total > 0 ? '🔎 检测到 <b style="color:#f5a623;">' + total + '</b> 条关联记录' : '🔎 检测结果') +
+                '</span><span class="type-tag">' + (TYPE_NAMES[detectType(q)] || '') + '</span></div>';
+            var chips = srcs.length ? '<div class="src-chips">' + srcs.map(function (s) {
+                return '<span class="src-chip">📦 ' + esc(s) + '</span>';
+            }).join('') + '</div>' : '';
+            if (total === 0) {
+                resultArea.innerHTML = head + '<div class="empty-box"><span class="eb-icon">✅</span>未在该数据库中检索到相关记录</div>';
+            } else {
+                resultArea.innerHTML = head + chips + '<div class="field-grid">' + cards + '</div>';
+            }
+        }
+
+        searchBtn.addEventListener('click', function () {
+            var q = input.value.trim();
+            if (running) return;
+            var t = detectType(q);
+            if (!t) {
+                typeTag.textContent = '❌ 无法识别，请检查格式';
+                return;
+            }
+            running = true;
+            searchBtn.disabled = true;
+            loading.classList.add('show');
+            resultArea.style.display = 'none';
+            fetch('https://api.garinasset.com/leak-check/dig/masking', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: t, q: q })
+            }).then(function (r) {
+                return r.json();
+            }).then(function (data) {
+                render(data, q);
+            }).catch(function () {
+                resultArea.style.display = '';
+                resultArea.innerHTML = '<div class="empty-box"><span class="eb-icon">⚠️</span>查询失败：接口不可达或网络异常，请稍后重试</div>';
+            }).then(function () {
+                loading.classList.remove('show');
+                searchBtn.disabled = false;
+                running = false;
+            });
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') searchBtn.click();
+        });
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

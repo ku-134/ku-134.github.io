@@ -11,7 +11,7 @@ import { SingleMode } from './mode/singleMode.js';
 import { OnlineMode } from './mode/onlineMode.js';
 import { bindTap } from './ui/input.js';
 import { renderCards } from './ui/cards.js';
-import { playSfx, unlockSfx, setSfxToggle, getSfxToggle } from './audio/sfx.js';
+import { playSfx, unlockSfx, setSfxToggle, getSfxToggle, setBattleMuted } from './audio/sfx.js';
 import { ballIconDataURL } from './ui/ballIcon.js';
 import { BATTLE_FIELDS } from './maps/index.js';
 
@@ -71,7 +71,8 @@ const online = new OnlineMode(ctx, {
   onBack: () => ui.show('home'),
 });
 
-// ---- 首页背景：随机两个可选职业打一场（手绘涂鸦氛围，不运行技能=静音） ----
+// ---- 首页背景：随机两个可选职业打一场（手绘涂鸦氛围） ----
+// ★ 恢复活力：球自动执行冲刺/技能（视觉热闹）；战斗音效由 battleMuted 强制静音（对局未开始）
 const BG_CLASSES = ['legion', 'poison', 'thorn', 'magnet', 'puppet', 'phantom', 'knight'];
 function randBgClasses() {
   const a = BG_CLASSES[Math.floor(Math.random() * BG_CLASSES.length)];
@@ -100,9 +101,18 @@ function setupBg() {
       b.update(dt);
       effects.update(b, dt);
       b.flash = Math.max(0, b.flash - dt * 3);
+      // ★ 背景活力：技能/冲刺冷却运转 + 自动释放（视觉热闹；战斗音效被 battleMuted 静音）
+      b.skill?.update?.(dt);
+      b.dashSkill?.update?.(dt);
+      const bgEnemy = bgCtx.getEnemy(b);
+      if (bgEnemy && bgLoop.time - (b._bgAct ?? 0) > 1.2 + Math.random() * 2.2) {
+        b._bgAct = bgLoop.time;
+        const bgDir = Math.atan2(bgEnemy.y - b.y, bgEnemy.x - b.x) + (Math.random() - 0.5) * 0.6;
+        if (Math.random() < 0.45 && b.dashSkill?.canUse?.()) b.dashSkill.forceUse(bgDir);
+        else if (b.skill?.canUse?.()) b.skill.forceUse(bgDir);
+      }
       move(b, dt);
       collideWalls(b, bgCtx, bgLoop.time);
-      // ★ 背景不打技能：技能 update 跳过 → 无技能音效/特效穿透（静音）
     }
     collideBalls(bgBalls[0], bgBalls[1], bgCtx, bgLoop.time);
     bg.update(dt);
@@ -116,6 +126,7 @@ bus.on('bg:run', run => {
   bgRunning = !!run;
   if (bgRunning && bgLoop) { bgLoop.start(); bgLoop.time = 0; }
   else bgLoop?.stop();
+  setBattleMuted(bgRunning);   // ★ 背景运行=对局未开始：强制静音战斗音效；对局开始恢复（不干扰设置项）
 });
 
 // ---- 分类标签渲染（图鉴/选球/联机共用） ----
@@ -349,6 +360,10 @@ const updateMercyRow = () => { document.getElementById('mercy-row').style.opacit
 mercyInput.addEventListener('change', () => { updateMercyRow(); saveMercy(); });
 percentInput.addEventListener('change', saveMercy);
 updateMercyRow();
+// ---- 设置：高难度 AI（单机）——开启后 AI 对手使用专属职业 AI（死灵术士除外） ----
+const hardAIInput = document.getElementById('hard-ai');
+hardAIInput.checked = localStorage.getItem('collision.hardAI') === '1';
+hardAIInput.addEventListener('change', () => localStorage.setItem('collision.hardAI', hardAIInput.checked ? '1' : '0'));
 // ---- 设置：音效开关（分类独立，localStorage 持久化） ----
 document.querySelectorAll('.sfx-toggle').forEach(cb => {
   const key = cb.id.replace('sfx-', '');

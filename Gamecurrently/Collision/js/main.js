@@ -332,6 +332,23 @@ keyInput.addEventListener('change', () => {
   localStorage.setItem('collision.key', k || 'J');
 });
 
+// ---- 设置：狂暴留手（单人模式）——是=血量低于 x% 时狂暴停手；否=狂暴扣到对局结束 ----
+const mercyInput = document.getElementById('berserk-mercy');
+const percentInput = document.getElementById('berserk-percent');
+let mercyCfg = { enabled: true, percent: 15 };
+try { mercyCfg = JSON.parse(localStorage.getItem('collision.mercy') || '{"enabled":true,"percent":15}'); }
+catch { mercyCfg = { enabled: true, percent: 15 }; }
+mercyInput.checked = !!mercyCfg.enabled;
+percentInput.value = mercyCfg.percent;
+const saveMercy = () => {
+  const pct = Math.max(1, Math.min(50, parseInt(percentInput.value, 10) || 15));
+  percentInput.value = pct;
+  localStorage.setItem('collision.mercy', JSON.stringify({ enabled: mercyInput.checked, percent: pct }));
+};
+const updateMercyRow = () => { document.getElementById('mercy-row').style.opacity = mercyInput.checked ? 1 : 0.45; };
+mercyInput.addEventListener('change', () => { updateMercyRow(); saveMercy(); });
+percentInput.addEventListener('change', saveMercy);
+updateMercyRow();
 // ---- 设置：音效开关（分类独立，localStorage 持久化） ----
 document.querySelectorAll('.sfx-toggle').forEach(cb => {
   const key = cb.id.replace('sfx-', '');

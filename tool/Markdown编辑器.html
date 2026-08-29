@@ -48,6 +48,7 @@
             min-height: 440px; padding: 0.8rem 0.95rem; border-radius: 0.9rem;
             border: 1px solid rgba(128,128,128,0.15); background: rgba(128,128,128,0.03);
             font-size: 0.9rem; line-height: 1.75; overflow: auto; word-break: break-word;
+            overflow-wrap: break-word; word-break: break-word; max-width: 100%;
         }
         .md-preview h1, .md-preview h2, .md-preview h3 { margin: 0.9em 0 0.45em; line-height: 1.35; }
         .md-preview h1 { font-size: 1.45rem; border-bottom: 1px solid rgba(128,128,128,0.15); padding-bottom: 0.3em; }
@@ -248,7 +249,7 @@
                 alert('内容过大，无法预览（超出本地存储限制）');
                 return;
             }
-            window.open('article.html?file=__editor__', '_blank');
+            window.open('/article.html?file=__editor__', '_blank');
         });
 
         /* 加载 marked */

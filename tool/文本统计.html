@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本统计 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .io-row { display: flex; gap: 0.8rem; }
+        @media (max-width: 640px) { .io-row { flex-direction: column; } }
+        .io-box { flex: 1; display: flex; flex-direction: column; }
+        .io-label { font-size: 0.78rem; opacity: 0.55; margin-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: center; }
+        .io-box textarea {
+            min-height: 260px; padding: 0.7rem 0.9rem; border-radius: 0.9rem; resize: vertical;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.05);
+            color: inherit; font-family: inherit; font-size: 0.92rem; outline: none; line-height: 1.65;
+            transition: border-color 0.2s;
+        }
+        .io-box textarea:focus { border-color: #66bb6a; }
+        .btn {
+            padding: 0.4rem 1.1rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.85rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.35rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-sm { padding: 0.28rem 0.8rem; font-size: 0.76rem; }
+        .text-input {
+            padding: 0.45rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25);
+            background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; font-size: 0.85rem;
+            outline: none; transition: border-color 0.2s; flex: 1; min-width: 120px;
+        }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.55rem; margin: 1rem 0; }
+        .stat-card { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 0.9rem; padding: 0.7rem 0.9rem; text-align: center; animation: fadeIn 0.3s ease both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        .stat-card .sc-num { font-size: 1.5rem; font-weight: 800; color: #66bb6a; font-family: 'Courier New', monospace; }
+        .stat-card .sc-label { font-size: 0.75rem; opacity: 0.55; margin-top: 0.2rem; }
+        .panel { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 1rem; padding: 0.9rem 1rem; margin-bottom: 0.8rem; }
+        .panel .p-title { font-size: 0.78rem; opacity: 0.55; margin-bottom: 0.6rem; letter-spacing: 1px; }
+        .freq-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.22rem 0; font-size: 0.85rem; }
+        .freq-row .f-word { width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; text-align: right; flex-shrink: 0; }
+        .freq-row .f-bar { flex: 1; height: 12px; border-radius: 6px; background: rgba(128,128,128,0.08); overflow: hidden; }
+        .freq-row .f-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #66bb6a, #f5a623); transition: width 0.4s; }
+        .freq-row .f-num { width: 34px; text-align: right; font-family: 'Courier New', monospace; opacity: 0.6; flex-shrink: 0; }
+        .kw-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .kw-result { font-size: 0.85rem; padding: 0.2rem 0.8rem; border-radius: 2rem; background: rgba(102,187,106,0.12); color: #66bb6a; }
+        .tool-foot { margin-top: 1.4rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">📊 文本统计</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">粘贴即统计：字数/词数/段落/阅读时长，词频 Top 排行条形图，关键词出现次数与高亮，全实时本地计算。</div>
+
+            <div class="io-row">
+                <div class="io-box">
+                    <div class="io-label"><span>✍️ 输入文本</span><button class="btn btn-sm" id="clearBtn">清空</button></div>
+                    <textarea id="textArea" placeholder="粘贴或输入文本，实时统计…（可先点下面的示例按钮）"></textarea>
+                </div>
+            </div>
+            <div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <button class="btn btn-sm" data-demo="1">📄 示例：新闻</button>
+                <button class="btn btn-sm" data-demo="2">📜 示例：文言</button>
+                <button class="btn btn-sm" data-demo="3">🌐 示例：中英混合</button>
+            </div>
+
+            <div class="stat-grid" id="statGrid"></div>
+
+            <div class="panel">
+                <div class="p-title">🏆 词频 Top 10</div>
+                <div id="freqList"></div>
+            </div>
+            <div class="panel">
+                <div class="p-title">🔍 关键词统计</div>
+                <div class="kw-row">
+                    <input type="text" class="text-input" id="kwInput" placeholder="输入关键词（支持空格分隔多个）" spellcheck="false">
+                    <button class="btn" id="kwBtn">统计</button>
+                    <span class="kw-result" id="kwResult" style="display:none;"></span>
+                </div>
+                <div id="kwPreview" style="font-size:0.85rem;line-height:1.8;opacity:0.75;max-height:180px;overflow:auto;"></div>
+            </div>
+
+            <div class="tool-foot">全部统计在本地完成，文本不上传 · 词频对中文按字符切分、英文按单词切分</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var textArea = document.getElementById('textArea');
+        var statGrid = document.getElementById('statGrid');
+        var freqList = document.getElementById('freqList');
+
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        function analyze() {
+            var t = textArea.value;
+            var chars = t.length;
+            var charsNoSpace = t.replace(/\s/g, '').length;
+            var hanzi = (t.match(/[\u4e00-\u9fff]/g) || []).length;
+            var words = (t.match(/[a-zA-Z]+(?:['-][a-zA-Z]+)*/g) || []).length;
+            var digits = (t.match(/[0-9]/g) || []).length;
+            var punct = (t.match(/[^\w\s\u4e00-\u9fff]/g) || []).length;
+            var lines = t ? t.split(/\n/).length : 0;
+            var paras = t.split(/\n\s*\n/).filter(function (p) { return p.trim().length > 0; }).length;
+            var readMin = Math.max(1, Math.round((hanzi + words) / 300));
+            var speakMin = Math.max(1, Math.round((hanzi + words) / 200));
+            var cards = [
+                ['总字符', chars], ['不含空格', charsNoSpace], ['汉字', hanzi], ['英文单词', words],
+                ['数字', digits], ['标点', punct], ['行数', lines], ['段落', paras],
+                ['阅读约', readMin + ' 分'], ['朗读约', speakMin + ' 分']
+            ];
+            statGrid.innerHTML = cards.map(function (c) {
+                return '<div class="stat-card"><div class="sc-num">' + c[1] + '</div><div class="sc-label">' + c[0] + '</div></div>';
+            }).join('');
+
+            /* 词频：中文按 1-2 字窗口？简化：汉字单字 + 英文单词 */
+            var freq = {};
+            var han = t.match(/[\u4e00-\u9fff]/g) || [];
+            han.forEach(function (c) { freq[c] = (freq[c] || 0) + 1; });
+            (t.match(/[a-zA-Z]+(?:['-][a-zA-Z]+)*/g) || []).forEach(function (w) {
+                var k = w.toLowerCase();
+                freq[k] = (freq[k] || 0) + 1;
+            });
+            var top = Object.keys(freq).filter(function (k) { return k.length > 0; })
+                .sort(function (a, b) { return freq[b] - freq[a]; }).slice(0, 10);
+            var max = top.length ? freq[top[0]] : 1;
+            if (!top.length) {
+                freqList.innerHTML = '<div style="opacity:0.4;font-size:0.85rem;">暂无词频数据</div>';
+            } else {
+                freqList.innerHTML = top.map(function (k) {
+                    var pct = Math.round(freq[k] / max * 100);
+                    return '<div class="freq-row"><span class="f-word">' + esc(k) + '</span><div class="f-bar"><i style="width:' + pct + '%"></i></div><span class="f-num">' + freq[k] + '</span></div>';
+                }).join('');
+            }
+            kwStats(t);
+        }
+
+        /* 关键词统计 + 高亮 */
+        function kwStats(t) {
+            var kw = document.getElementById('kwInput').value.trim();
+            var res = document.getElementById('kwResult');
+            var prev = document.getElementById('kwPreview');
+            if (!kw) { res.style.display = 'none'; prev.textContent = ''; return; }
+            var kws = kw.split(/\s+/).filter(Boolean);
+            var total = 0;
+            var html = esc(t);
+            kws.forEach(function (k) {
+                var re = new RegExp(k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                var m = t.match(re);
+                total += m ? m.length : 0;
+                html = html.split(k).join('<mark style="background:rgba(245,166,35,0.35);color:inherit;border-radius:3px;padding:0 2px;">' + esc(k) + '</mark>');
+            });
+            res.style.display = '';
+            res.textContent = '共出现 ' + total + ' 次';
+            prev.innerHTML = html || '（无内容）';
+        }
+
+        textArea.addEventListener('input', function () {
+            analyze();
+            clearTimeout(window.__kwTimer);
+            window.__kwTimer = setTimeout(function () { kwStats(textArea.value); }, 300);
+        });
+        document.getElementById('kwInput').addEventListener('input', function () { analyze(); });
+        document.getElementById('kwBtn').addEventListener('click', function () { analyze(); });
+        document.getElementById('clearBtn').addEventListener('click', function () {
+            textArea.value = '';
+            analyze();
+        });
+        document.querySelectorAll('[data-demo]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var i = b.getAttribute('data-demo');
+                var demos = {
+                    1: '2026年8月29日，北京海淀区举办了一场别开生面的科技展览。现场观众络绎不绝，人工智能、虚拟现实、量子计算等前沿技术纷纷亮相。\n\n主办方表示，本次展览旨在普及科学知识，激发青少年对科技的兴趣。据统计，当天共有超过两万名观众入场参观。',
+                    2: '夫君子之行，静以修身，俭以养德。非淡泊无以明志，非宁静无以致远。夫学须静也，才须学也，非学无以广才，非志无以成学。淫慢则不能励精，险躁则不能治性。',
+                    3: 'Artificial intelligence is transforming the way we live and work. 人工智能正在改变我们的生活方式。From smart homes to self-driving cars, 从智能家居到自动驾驶汽车，the future is arriving faster than we expected. 未来比我们预想的来得更快。'
+                };
+                textArea.value = demos[i];
+                analyze();
+            });
+        });
+        analyze();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

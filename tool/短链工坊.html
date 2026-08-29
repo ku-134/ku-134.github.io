@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短链工坊 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .text-input {
+            flex: 1; min-width: 200px; padding: 0.55rem 1.1rem; border-radius: 2rem;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.92rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .text-input:focus { border-color: #66bb6a; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .btn-sm { padding: 0.3rem 0.85rem; font-size: 0.78rem; }
+        .loading { display: none; text-align: center; padding: 1rem; opacity: 0.6; }
+        .loading.show { display: block; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,128,128,0.3); border-top-color: #66bb6a; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -3px; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .result-box { margin-bottom: 0.9rem; }
+        .result-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.85rem; border-radius: 0.85rem; background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); margin-bottom: 0.45rem; flex-wrap: wrap; animation: fadeIn 0.3s ease both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        .result-item .r-orig { font-size: 0.75rem; opacity: 0.5; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .result-item .r-short { font-weight: 700; color: #66bb6a; font-size: 0.95rem; word-break: break-all; }
+        .result-item .r-qr { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; }
+        .result-item .r-qr img { width: 52px; height: 52px; border-radius: 0.5rem; background: #fff; padding: 3px; }
+        .hist-title { font-size: 0.85rem; font-weight: 700; opacity: 0.65; margin: 1rem 0 0.5rem; display: flex; justify-content: space-between; align-items: center; }
+        .hist-list { display: flex; flex-direction: column; gap: 0.4rem; }
+        .hist-item { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.8rem; border-radius: 0.8rem; background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.1); font-size: 0.85rem; }
+        .hist-item .h-short { flex-shrink: 0; color: #66bb6a; font-weight: 600; }
+        .hist-item .h-orig { flex: 1; opacity: 0.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hist-item .h-time { font-size: 0.7rem; opacity: 0.4; flex-shrink: 0; }
+        .hist-item .h-act { border: none; background: none; color: inherit; opacity: 0.4; cursor: pointer; font-size: 0.9rem; padding: 2px 6px; border-radius: 0.4rem; }
+        .hist-item .h-act:hover { opacity: 1; background: rgba(128,128,128,0.1); }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🔗 短链工坊</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">长链接一键变短链（tinyurl）。支持批量生成（每行一个），生成后自动附二维码，扫码即达。历史记录本地留存。</div>
+
+            <div class="tool-toolbar">
+                <input type="text" class="text-input" id="urlInput" placeholder="粘贴长链接，或每行一个批量生成" spellcheck="false">
+                <button class="btn btn-primary" id="genBtn">⚡ 生成短链</button>
+            </div>
+            <div class="loading" id="loading"><span class="spinner"></span>生成中…</div>
+            <div class="result-box" id="resultBox"></div>
+
+            <div class="hist-title">
+                <span>🕘 最近生成</span>
+                <button class="btn btn-sm" id="clearHist">清空历史</button>
+            </div>
+            <div class="hist-list" id="histList"></div>
+
+            <div class="tool-foot">数据源：tinyurl 公开接口 · 历史仅存本地 · 二维码由 qrserver 生成</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var HIST_KEY = 'shortHist';
+        var urlInput = document.getElementById('urlInput');
+        var genBtn = document.getElementById('genBtn');
+        var loading = document.getElementById('loading');
+        var resultBox = document.getElementById('resultBox');
+        var histList = document.getElementById('histList');
+
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function domain(u) {
+            try { var a = new URL(u); return a.hostname; } catch (e) { return u.slice(0, 40); }
+        }
+        function loadHist() {
+            try { return JSON.parse(localStorage.getItem(HIST_KEY)) || []; } catch (e) { return []; }
+        }
+        function saveHist(h) {
+            try { localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 10))); } catch (e) { }
+        }
+        function renderHist() {
+            var h = loadHist();
+            if (!h.length) { histList.innerHTML = '<div style="opacity:0.4;font-size:0.85rem;">暂无生成记录</div>'; return; }
+            histList.innerHTML = h.map(function (it) {
+                return '<div class="hist-item"><span class="h-short">' + esc(it.short) + '</span><span class="h-orig" title="' + esc(it.orig) + '">' + esc(domain(it.orig)) + '</span>' +
+                    '<span class="h-time">' + esc(it.time) + '</span>' +
+                    '<button class="h-act" data-act="copy" data-v="' + esc(it.short) + '" title="复制">📋</button>' +
+                    '<button class="h-act" data-act="open" data-v="' + esc(it.short) + '" title="打开">↗</button></div>';
+            }).join('');
+        }
+        histList.addEventListener('click', function (e) {
+            var b = e.target.closest('.h-act');
+            if (!b) return;
+            var v = b.getAttribute('data-v');
+            if (b.getAttribute('data-act') === 'copy') {
+                if (navigator.clipboard) navigator.clipboard.writeText(v);
+                b.textContent = '✅';
+                setTimeout(function () { b.textContent = '📋'; }, 1200);
+            } else {
+                window.open(v, '_blank');
+            }
+        });
+        document.getElementById('clearHist').addEventListener('click', function () {
+            saveHist([]);
+            renderHist();
+        });
+
+        function makeOne(url, cb) {
+            fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(url))
+                .then(function (r) { return r.text(); })
+                .then(function (t) { cb(null, t.trim()); })
+                .catch(function (e) { cb(e); });
+        }
+
+        function gen() {
+            var raw = urlInput.value.trim();
+            if (!raw) return;
+            var urls = raw.split(/\s+/).filter(function (u) { return /^https?:\/\//i.test(u); });
+            if (!urls.length) { resultBox.innerHTML = '<div style="opacity:0.6;font-size:0.85rem;">⚠ 请输入以 http(s):// 开头的链接</div>'; return; }
+            genBtn.disabled = true;
+            loading.classList.add('show');
+            resultBox.innerHTML = '';
+            var done = 0, ok = 0;
+            var h = loadHist();
+            urls.forEach(function (u, i) {
+                makeOne(u, function (err, short) {
+                    done++;
+                    if (!err && short) {
+                        ok++;
+                        resultBox.insertAdjacentHTML('beforeend',
+                            '<div class="result-item"><span class="r-short">' + esc(short) + '</span>' +
+                            '<span class="r-orig">' + esc(u) + '</span>' +
+                            '<div class="r-qr"><img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=' + encodeURIComponent(short) + '" alt="二维码">' +
+                            '<button class="btn btn-sm" data-copy="' + esc(short) + '">📋 复制</button></div></div>');
+                        h.unshift({ short: short, orig: u, time: new Date().toLocaleTimeString() });
+                    } else {
+                        resultBox.insertAdjacentHTML('beforeend',
+                            '<div class="result-item"><span style="color:#ff7777;">❌ 生成失败</span><span class="r-orig">' + esc(u) + '</span></div>');
+                    }
+                    if (done === urls.length) {
+                        loading.classList.remove('show');
+                        genBtn.disabled = false;
+                        saveHist(h);
+                        renderHist();
+                    }
+                });
+            });
+        }
+        resultBox.addEventListener('click', function (e) {
+            var b = e.target.closest('[data-copy]');
+            if (!b) return;
+            if (navigator.clipboard) navigator.clipboard.writeText(b.getAttribute('data-copy'));
+            b.textContent = '✅ 已复制';
+            setTimeout(function () { b.textContent = '📋 复制'; }, 1200);
+        });
+
+        genBtn.addEventListener('click', gen);
+        urlInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') gen(); });
+        renderHist();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

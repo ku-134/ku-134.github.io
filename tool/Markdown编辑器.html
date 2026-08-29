@@ -106,7 +106,7 @@
                     <textarea id="editor" placeholder="# 标题&#10;&#10;开始写作…"></textarea>
                 </div>
                 <div class="preview-pane">
-                    <div class="pane-label"><span>👁️ 预览</span><button class="md-btn" id="fullBtn">⛶ 全屏预览</button></div>
+                    <div class="pane-label"><span>👁️ 预览</span><button class="md-btn" id="fullBtn" title="用本站文章浏览方式打开">📖 文章模式浏览</button></div>
                     <div class="md-preview" id="preview"></div>
                 </div>
             </div>
@@ -240,12 +240,15 @@
             a.click();
         });
         document.getElementById('fullBtn').addEventListener('click', function () {
-            preview.classList.toggle('md-preview-full');
-            if (preview.classList.contains('md-preview-full')) {
-                preview.style.cssText = 'position:fixed;inset:20px;z-index:9999;min-height:0;background:var(--card-bg);padding:2rem;box-shadow:0 20px 80px rgba(0,0,0,0.5);font-size:1rem;';
-            } else {
-                preview.style.cssText = '';
+            var t = editor.value;
+            if (!t.trim()) { alert('编辑器还是空的，先写点内容吧～'); return; }
+            try {
+                localStorage.setItem('mdEditorPreview', t);
+            } catch (e) {
+                alert('内容过大，无法预览（超出本地存储限制）');
+                return;
             }
+            window.open('article.html?file=__editor__', '_blank');
         });
 
         /* 加载 marked */

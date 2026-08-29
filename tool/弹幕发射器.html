@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>弹幕发射器 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .mode-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+        .mode-tab {
+            padding: 0.45rem 1rem; border-radius: 2rem; cursor: pointer; font-size: 0.88rem;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; transition: all 0.2s; font-family: inherit;
+        }
+        .mode-tab:hover { opacity: 0.85; }
+        .mode-tab.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+        .cfg-panel { display: none; flex-direction: column; gap: 0.85rem; margin-bottom: 1rem; }
+        .cfg-panel.show { display: flex; }
+        .cfg-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; font-size: 0.88rem; }
+        .cfg-row label { min-width: 88px; opacity: 0.8; flex-shrink: 0; }
+        .cfg-row .val { opacity: 0.55; font-size: 0.78rem; }
+        .cfg-row textarea {
+            flex: 1; min-width: 240px; min-height: 74px; padding: 0.55rem 0.9rem; border-radius: 0.9rem;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.88rem; outline: none; resize: vertical;
+            transition: border-color 0.2s; line-height: 1.5;
+        }
+        .cfg-row textarea:focus { border-color: #66bb6a; }
+        .text-input, .select-input {
+            padding: 0.45rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25);
+            background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; font-size: 0.85rem;
+            outline: none; transition: border-color 0.2s;
+        }
+        .text-input:focus, .select-input:focus { border-color: #66bb6a; }
+        input[type="range"] { width: 150px; accent-color: #66bb6a; }
+        input[type="color"] { width: 44px; height: 30px; border: 1px solid rgba(128,128,128,0.3); border-radius: 0.5rem; background: none; padding: 2px; cursor: pointer; }
+        .seg { display: inline-flex; gap: 0.35rem; flex-wrap: wrap; }
+        .seg-btn {
+            padding: 0.3rem 0.85rem; border-radius: 2rem; cursor: pointer; font-size: 0.8rem;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; transition: all 0.2s;
+        }
+        .seg-btn.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .launch-row { display: flex; justify-content: center; margin: 0.6rem 0 0.4rem; }
+        .launch-btn {
+            padding: 0.8rem 3.2rem; font-size: 1.15rem; border-radius: 3rem; cursor: pointer;
+            border: 2px solid #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.12);
+            font-family: inherit; font-weight: 700; letter-spacing: 2px; transition: all 0.25s;
+        }
+        .launch-btn:hover { background: rgba(102,187,106,0.22); transform: translateY(-2px); }
+        .color-grid { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; padding: 0.2rem 0; }
+        .color-row { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; opacity: 0.85; }
+        .global-box { border-top: 1px dashed rgba(128,128,128,0.18); padding-top: 0.9rem; margin-top: 0.2rem; }
+        .global-box .g-title { font-size: 0.82rem; font-weight: 700; opacity: 0.7; margin-bottom: 0.6rem; letter-spacing: 1px; }
+        .tool-foot { margin-top: 1.4rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+        .hint-tip { font-size: 0.78rem; opacity: 0.5; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">💬 弹幕发射器</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">让手机 / 电脑屏幕化身弹幕墙：手持应援、B站式滚动、弹幕雨、心跳打 call——全屏播放，适合演唱会应援、直播氛围、表白现场 ✨</div>
+
+            <div class="mode-tabs" id="modeTabs">
+                <button class="mode-tab active" data-mode="hand">📱 手持弹幕</button>
+                <button class="mode-tab" data-mode="bili">📺 B站弹幕</button>
+                <button class="mode-tab" data-mode="rain">🌧️ 弹幕雨</button>
+                <button class="mode-tab" data-mode="heart">💓 心跳大字</button>
+            </div>
+
+            <!-- ===== 手持弹幕 ===== -->
+            <div class="cfg-panel show" id="panel-hand">
+                <div class="cfg-row"><label>弹幕内容</label><textarea id="handText" placeholder="一行一条弹幕&#10;例如：&#10;为XX打call&#10;永远的神！">为 TA 打 call！</textarea></div>
+                <div class="cfg-row"><label>播放速度</label><input type="range" id="handSpeed" min="3" max="20" step="1" value="8"><span class="val" id="handSpeedVal">8 秒/轮</span></div>
+                <div class="cfg-row"><label>弹幕大小</label><input type="range" id="handSize" min="24" max="200" step="4" value="72"><span class="val" id="handSizeVal">72 px</span></div>
+                <div class="cfg-row"><label>弹幕颜色</label><input type="color" id="handColor" value="#ffd700"></div>
+                <div class="cfg-row"><label>背景颜色</label><input type="color" id="handBg" value="#000000"></div>
+                <div class="cfg-row"><label>滚动方向</label>
+                    <div class="seg" id="handDirSeg">
+                        <button class="seg-btn active" data-dir="right">→ 向左滚</button>
+                        <button class="seg-btn" data-dir="left">← 向右滚</button>
+                        <button class="seg-btn" data-dir="up">↑ 向上滚</button>
+                        <button class="seg-btn" data-dir="down">↓ 向下滚</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== B站弹幕 ===== -->
+            <div class="cfg-panel" id="panel-bili">
+                <div class="cfg-row"><label>弹幕内容</label><textarea id="biliText" placeholder="多条弹幕用「、」或换行分隔&#10;例如：前方高能、23333、名场面！">前方高能、23333、名场面、哈哈哈哈</textarea></div>
+                <div class="cfg-row"><label>密集程度</label><input type="range" id="biliDensity" min="5" max="40" step="1" value="15"><span class="val" id="biliDensityVal">同时最多 15 条</span></div>
+                <div class="cfg-row"><label>弹幕大小</label>
+                    <div class="seg" id="biliSizeSeg">
+                        <button class="seg-btn" data-size="16">小</button>
+                        <button class="seg-btn active" data-size="24">中</button>
+                        <button class="seg-btn" data-size="32">大</button>
+                    </div>
+                </div>
+                <div class="cfg-row"><label>颜色方案</label>
+                    <div class="seg" id="biliColorSeg">
+                        <button class="seg-btn active" data-cs="default">默认配色</button>
+                        <button class="seg-btn" data-cs="custom">自定义</button>
+                    </div>
+                </div>
+                <div class="cfg-row" id="biliColorRow" style="display:none;">
+                    <label>弹幕颜色</label>
+                    <div class="color-grid">
+                        <span class="color-row"><input type="color" data-bc="0" value="#ffffff"></span>
+                        <span class="color-row"><input type="color" data-bc="1" value="#ffd700"></span>
+                        <span class="color-row"><input type="color" data-bc="2" value="#ff5555"></span>
+                        <span class="color-row"><input type="color" data-bc="3" value="#66cc66"></span>
+                        <span class="color-row"><input type="color" data-bc="4" value="#6699ff"></span>
+                        <span class="color-row"><input type="color" data-bc="5" value="#cc66ff"></span>
+                        <span class="color-row"><input type="color" data-bc="6" value="#33cccc"></span>
+                        <span class="color-row"><input type="color" data-bc="7" value="#ff99cc"></span>
+                    </div>
+                </div>
+                <div class="cfg-row"><label>透明度</label><input type="range" id="biliAlpha" min="30" max="100" step="5" value="90"><span class="val" id="biliAlphaVal">90%</span></div>
+                <div class="cfg-row"><label>背景颜色</label><input type="color" id="biliBg" value="#000000"></div>
+                <div class="cfg-row"><label>置顶&置底</label>
+                    <div class="seg" id="biliPinSeg">
+                        <button class="seg-btn active" data-pin="1">是</button>
+                        <button class="seg-btn" data-pin="0">否</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== 弹幕雨 ===== -->
+            <div class="cfg-panel" id="panel-rain">
+                <div class="cfg-row"><label>弹幕内容</label><textarea id="rainText" placeholder="多条弹幕用「、」或换行分隔">下雨啦、下雨啦、哇塞、好耶</textarea></div>
+                <div class="cfg-row"><label>下落速度</label>
+                    <div class="seg" id="rainSpeedSeg">
+                        <button class="seg-btn" data-rs="slow">慢</button>
+                        <button class="seg-btn active" data-rs="mid">中</button>
+                        <button class="seg-btn" data-rs="fast">快</button>
+                    </div>
+                </div>
+                <div class="cfg-row"><label>弹幕大小</label>
+                    <div class="seg" id="rainSizeSeg">
+                        <button class="seg-btn" data-size="16">小</button>
+                        <button class="seg-btn active" data-size="24">中</button>
+                        <button class="seg-btn" data-size="32">大</button>
+                    </div>
+                </div>
+                <div class="cfg-row"><label>随机颜色</label>
+                    <div class="seg" id="rainColorSeg">
+                        <button class="seg-btn active" data-rc="1">是（彩虹）</button>
+                        <button class="seg-btn" data-rc="0">否</button>
+                    </div>
+                </div>
+                <div class="cfg-row" id="rainSingleRow" style="display:none;"><label>弹幕颜色</label><input type="color" id="rainColor" value="#ffffff"></div>
+                <div class="cfg-row"><label>背景颜色</label><input type="color" id="rainBg" value="#000000"></div>
+            </div>
+
+            <!-- ===== 心跳大字 ===== -->
+            <div class="cfg-panel" id="panel-heart">
+                <div class="cfg-row"><label>弹幕内容</label><textarea id="heartText" placeholder="多条弹幕用「、」或换行分隔，轮流显示">XX 我爱你！、永远支持你！</textarea></div>
+                <div class="cfg-row"><label>心跳速度</label>
+                    <div class="seg" id="heartSpeedSeg">
+                        <button class="seg-btn" data-hs="slow">慢</button>
+                        <button class="seg-btn active" data-hs="mid">中</button>
+                        <button class="seg-btn" data-hs="fast">快</button>
+                    </div>
+                </div>
+                <div class="cfg-row"><label>弹幕大小</label><input type="range" id="heartSize" min="40" max="240" step="4" value="96"><span class="val" id="heartSizeVal">96 px</span></div>
+                <div class="cfg-row"><label>弹幕颜色</label><input type="color" id="heartColor" value="#ff6b9d"></div>
+                <div class="cfg-row"><label>背景颜色</label><input type="color" id="heartBg" value="#000000"></div>
+            </div>
+
+            <!-- ===== 全局设置 ===== -->
+            <div class="cfg-row global-box">
+                <div class="g-title">⚙️ 全局设置</div>
+                <div class="cfg-row"><label>字体选择</label>
+                    <select class="select-input" id="fontSelect">
+                        <option value="">默认字体</option>
+                        <option value="'PingFang SC','Microsoft YaHei',sans-serif">黑体</option>
+                        <option value="'Songti SC','SimSun',serif">宋体</option>
+                        <option value="'Kaiti SC','KaiTi',serif">楷体</option>
+                        <option value="'Yuanti SC','YouYuan',sans-serif">圆体</option>
+                        <option value="'Courier New',monospace">等宽</option>
+                        <option value="__custom__">自定义（上传 TTF）</option>
+                    </select>
+                    <input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2" hidden>
+                    <span class="val" id="fontNameVal"></span>
+                </div>
+                <div class="cfg-row"><label>全屏方向</label>
+                    <div class="seg" id="orientSeg">
+                        <button class="seg-btn active" data-ori="portrait">竖屏</button>
+                        <button class="seg-btn" data-ori="landscape">横屏</button>
+                    </div>
+                    <span class="hint-tip">横屏模式会自动旋转画面，无需手动转手机</span>
+                </div>
+            </div>
+
+            <div class="launch-row">
+                <button class="launch-btn" id="launchBtn">🚀 开始发射</button>
+            </div>
+            <div class="tool-foot">💡 全屏播放中：轻点屏幕呼出控制条（暂停 / 继续 / 停止）；按 Esc 或点「停止」退出。弹幕内容本地生成，不上传任何服务器。</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var $ = function (id) { return document.getElementById(id); };
+        var MODE = 'hand';
+        var layer = null, player = null, customFontName = null;
+
+        /* ---------- 模式切换 ---------- */
+        var tabs = document.querySelectorAll('.mode-tab');
+        tabs.forEach(function (t) {
+            t.addEventListener('click', function () {
+                tabs.forEach(function (x) { x.classList.remove('active'); });
+                t.classList.add('active');
+                MODE = t.getAttribute('data-mode');
+                document.querySelectorAll('.cfg-panel').forEach(function (p) { p.classList.remove('show'); });
+                $('panel-' + MODE).classList.add('show');
+            });
+        });
+
+        /* ---------- 分段单选 ---------- */
+        function bindSeg(id, onPick) {
+            var box = $(id);
+            box.addEventListener('click', function (e) {
+                var b = e.target.closest('.seg-btn');
+                if (!b) return;
+                box.querySelectorAll('.seg-btn').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                onPick(b);
+            });
+        }
+        bindSeg('handDirSeg', function (b) { });
+        bindSeg('biliSizeSeg', function (b) { });
+        bindSeg('biliColorSeg', function (b) { $('biliColorRow').style.display = b.getAttribute('data-cs') === 'custom' ? '' : 'none'; });
+        bindSeg('biliPinSeg', function (b) { });
+        bindSeg('rainSpeedSeg', function (b) { });
+        bindSeg('rainSizeSeg', function (b) { });
+        bindSeg('rainColorSeg', function (b) { $('rainSingleRow').style.display = b.getAttribute('data-rc') === '0' ? '' : 'none'; });
+        bindSeg('heartSpeedSeg', function (b) { });
+        bindSeg('orientSeg', function (b) { });
+
+        /* ---------- 滑块数值显示 ---------- */
+        function bindRange(id, showId, fmt) {
+            var r = $(id), s = $(showId);
+            r.addEventListener('input', function () { s.textContent = fmt(r.value); });
+        }
+        bindRange('handSpeed', 'handSpeedVal', function (v) { return v + ' 秒/轮'; });
+        bindRange('handSize', 'handSizeVal', function (v) { return v + ' px'; });
+        bindRange('biliDensity', 'biliDensityVal', function (v) { return '同时最多 ' + v + ' 条'; });
+        bindRange('biliAlpha', 'biliAlphaVal', function (v) { return v + '%'; });
+        bindRange('heartSize', 'heartSizeVal', function (v) { return v + ' px'; });
+
+        /* ---------- 字体 ---------- */
+        var fontSelect = $('fontSelect'), fontFile = $('fontFile');
+        fontSelect.addEventListener('change', function () {
+            if (fontSelect.value === '__custom__') {
+                fontFile.click();
+            }
+        });
+        fontFile.addEventListener('change', function () {
+            var f = fontFile.files[0];
+            if (!f) return;
+            customFontName = 'DmCustom' + Date.now();
+            var url = URL.createObjectURL(f);
+            var st = document.createElement('style');
+            st.textContent = '@font-face{font-family:"' + customFontName + '";src:url("' + url + '");}';
+            document.head.appendChild(st);
+            $('fontNameVal').textContent = '已加载：' + f.name;
+        });
+
+        function currentFont() {
+            if (fontSelect.value === '__custom__' && customFontName) return '"' + customFontName + '"';
+            return fontSelect.value || 'inherit';
+        }
+
+        /* ---------- 工具函数 ---------- */
+        function splitText(t) {
+            var arr = t.split(/[、，,。\n]+/).map(function (s) { return s.trim(); }).filter(function (s) { return s.length > 0; });
+            return arr;
+        }
+        function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+        function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function segVal(id) {
+            var a = $(id).querySelector('.seg-btn.active');
+            return a ? a.getAttribute('data-') + '' : '';
+        }
+        function segAttr(id, attr) {
+            var a = $(id).querySelector('.seg-btn.active');
+            return a ? a.getAttribute(attr) : '';
+        }
+
+        /* ---------- 全屏层 ---------- */
+        function applyOrientation() {
+            var land = segAttr('orientSeg', 'data-ori') === 'landscape';
+            var w = window.innerWidth, h = window.innerHeight;
+            var isPortrait = h > w;
+            layer.style.width = w + 'px';
+            layer.style.height = h + 'px';
+            layer.style.left = '0';
+            layer.style.top = '0';
+            layer.style.transform = 'none';
+            if (land && isPortrait) {
+                layer.style.width = h + 'px';
+                layer.style.height = w + 'px';
+                layer.style.left = ((w - h) / 2) + 'px';
+                layer.style.top = ((h - w) / 2) + 'px';
+                layer.style.transform = 'rotate(90deg)';
+            }
+        }
+
+        function makeLayer(bg) {
+            layer = document.createElement('div');
+            layer.id = 'dmLayer';
+            layer.style.cssText = 'position:fixed;z-index:99999;overflow:hidden;background:' + bg + ';font-family:' + currentFont() + ';';
+            layer.addEventListener('click', function () { controlBar.style.display = controlBar.style.display === 'flex' ? 'none' : 'flex'; });
+            document.body.appendChild(layer);
+            applyOrientation();
+            window.addEventListener('resize', applyOrientation);
+            /* 控制条 */
+            controlBar = document.createElement('div');
+            controlBar.id = 'dmCtrl';
+            controlBar.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:10px;z-index:100000;display:none;gap:8px;padding:8px 14px;border-radius:30px;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);align-items:center;';
+            controlBar.innerHTML = '<button class="ctrl-btn" id="dmPause" style="padding:6px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.12);color:#fff;font-size:13px;cursor:pointer;font-family:inherit;">⏸ 暂停</button>' +
+                '<button class="ctrl-btn" id="dmStop" style="padding:6px 16px;border-radius:20px;border:1px solid #ff5555;background:rgba(255,85,85,0.18);color:#ff7777;font-size:13px;cursor:pointer;font-family:inherit;">⏹ 停止</button>' +
+                '<span style="color:rgba(255,255,255,0.5);font-size:11px;">轻点屏幕隐藏</span>';
+            document.body.appendChild(controlBar);
+            $('dmPause').addEventListener('click', function (e) { e.stopPropagation(); togglePause(); });
+            $('dmStop').addEventListener('click', function (e) { e.stopPropagation(); stopAll(); });
+        }
+
+        var controlBar = null, paused = false;
+        function togglePause() {
+            paused = !paused;
+            var b = $('dmPause');
+            b.textContent = paused ? '▶ 继续' : '⏸ 暂停';
+            layer.querySelectorAll('.dm-item').forEach(function (el) {
+                el.style.animationPlayState = paused ? 'paused' : 'running';
+            });
+        }
+
+        function stopAll() {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+            }
+            cleanup();
+        }
+        function cleanup() {
+            if (player) { clearInterval(player.timer); player = null; }
+            if (layer) { layer.remove(); layer = null; }
+            if (controlBar) { controlBar.remove(); controlBar = null; }
+            window.removeEventListener('resize', applyOrientation);
+        }
+
+        function enterFullscreen() {
+            var el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        }
+        document.addEventListener('fullscreenchange', function () {
+            if (!document.fullscreenElement && layer) cleanup();
+        });
+        document.addEventListener('webkitfullscreenchange', function () {
+            if (!document.webkitFullscreenElement && layer) cleanup();
+        });
+
+        /* ---------- 模式：手持弹幕 ---------- */
+        function startHand() {
+            var lines = splitText($('handText').value);
+            if (!lines.length) { alert('请先填写弹幕内容'); return false; }
+            var speed = +$('handSpeed').value;
+            var size = +$('handSize').value;
+            var color = $('handColor').value;
+            var dir = segAttr('handDirSeg', 'data-dir');
+            makeLayer($('handBg').value);
+            var i = 0;
+            function emit() {
+                if (paused) return;
+                var el = document.createElement('div');
+                el.className = 'dm-item';
+                el.textContent = lines[i % lines.length];
+                i++;
+                el.style.cssText = 'position:absolute;white-space:nowrap;font-size:' + size + 'px;font-weight:700;color:' + color + ';text-shadow:0 0 12px rgba(0,0,0,0.6);';
+                var W = layer.clientWidth, H = layer.clientHeight;
+                el.style.top = (H * 0.42) + 'px';
+                el.style.left = '0px';
+                var w = el.offsetWidth;
+                if (dir === 'right') {
+                    el.style.left = '0px';
+                    el.style.animation = 'dmHandRight ' + speed + 's linear forwards';
+                } else if (dir === 'left') {
+                    el.style.left = (W - w) + 'px';
+                    el.style.animation = 'dmHandLeft ' + speed + 's linear forwards';
+                } else if (dir === 'up') {
+                    el.style.left = ((W - w) / 2) + 'px';
+                    el.style.top = (H - size) + 'px';
+                    el.style.animation = 'dmHandUp ' + speed + 's linear forwards';
+                } else {
+                    el.style.left = ((W - w) / 2) + 'px';
+                    el.style.top = '0px';
+                    el.style.animation = 'dmHandDown ' + speed + 's linear forwards';
+                }
+                layer.appendChild(el);
+                el.addEventListener('animationend', function () { el.remove(); });
+            }
+            var st = document.createElement('style');
+            st.id = 'dmKey';
+            st.textContent = '@keyframes dmHandRight{from{transform:translateX(-100%)}to{transform:translateX(' + W + 'px)}}' +
+                '@keyframes dmHandLeft{from{transform:translateX(0)}to{transform:translateX(-100%)}}' +
+                '@keyframes dmHandUp{from{transform:translateY(0)}to{transform:translateY(-' + (H + size) + 'px)}}' +
+                '@keyframes dmHandDown{from{transform:translateY(-' + (H + size) + 'px)}to{transform:translateY(' + (H + size) + 'px)}}';
+            document.head.appendChild(st);
+            emit();
+            player = { timer: setInterval(function () { emit(); }, speed * 1000 + 500) };
+            return true;
+        }
+
+        /* ---------- 模式：B站弹幕 ---------- */
+        function startBili() {
+            var lines = splitText($('biliText').value);
+            if (!lines.length) { alert('请先填写弹幕内容'); return false; }
+            var density = +$('biliDensity').value;
+            var size = +segAttr('biliSizeSeg', 'data-size');
+            var alpha = +$('biliAlpha').value / 100;
+            var cs = segAttr('biliColorSeg', 'data-cs');
+            var colors = [];
+            if (cs === 'custom') {
+                document.querySelectorAll('input[data-bc]').forEach(function (c) { colors.push(c.value); });
+            } else {
+                colors = ['#ffffff', '#ffd700', '#ff5555', '#66cc66', '#6699ff', '#cc66ff', '#33cccc', '#ff99cc'];
+            }
+            var pin = segAttr('biliPinSeg', 'data-pin') === '1';
+            makeLayer($('biliBg').value);
+            var W = layer.clientWidth, H = layer.clientHeight;
+            var lineH = size + 18;
+            var trackCount = Math.max(1, Math.floor(H / lineH));
+            var tracks = [];
+            for (var t = 0; t < trackCount; t++) tracks.push(0);
+            var count = 0, idx = 0;
+            var st = document.createElement('style');
+            st.id = 'dmKey';
+            st.textContent = '@keyframes dmFly{from{transform:translateX(' + W + 'px)}to{transform:translateX(-120%)}}';
+            document.head.appendChild(st);
+            function emit() {
+                if (paused || count >= density) return;
+                var text = lines[idx % lines.length];
+                idx++;
+                var track = -1;
+                for (var t = 0; t < trackCount; t++) { if (tracks[t] === 0) { track = t; break; } }
+                if (track < 0) return;
+                tracks[track] = 1;
+                count++;
+                var el = document.createElement('div');
+                el.className = 'dm-item';
+                el.textContent = text;
+                el.style.cssText = 'position:absolute;white-space:nowrap;font-size:' + size + 'px;font-weight:600;color:' + pick(colors) + ';opacity:' + alpha + ';top:' + (track * lineH + 4) + 'px;left:0;text-shadow:1px 1px 2px rgba(0,0,0,0.7);';
+                el.style.animation = 'dmFly ' + (9 + Math.random() * 4) + 's linear forwards';
+                layer.appendChild(el);
+                var clear = function () { el.remove(); count--; tracks[track] = 0; };
+                el.addEventListener('animationend', clear);
+                setTimeout(function () { if (!el.isConnected) return; tracks[track] = 0; count--; }, 15000);
+            }
+            /* 置顶 & 置底 */
+            if (pin && lines.length >= 2) {
+                var pinTop = document.createElement('div');
+                pinTop.className = 'dm-item';
+                pinTop.textContent = lines[0];
+                pinTop.style.cssText = 'position:absolute;top:6px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:' + size + 'px;font-weight:700;color:#fff;text-shadow:0 0 10px rgba(255,215,0,0.9);';
+                var pinBot = document.createElement('div');
+                pinBot.className = 'dm-item';
+                pinBot.textContent = lines[1];
+                pinBot.style.cssText = 'position:absolute;bottom:6px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:' + size + 'px;font-weight:700;color:#fff;text-shadow:0 0 10px rgba(255,215,0,0.9);';
+                layer.appendChild(pinTop);
+                layer.appendChild(pinBot);
+                setTimeout(function () { pinTop.remove(); }, 5000);
+                setTimeout(function () { pinBot.remove(); }, 5000);
+            }
+            emit();
+            player = { timer: setInterval(function () { emit(); }, 550) };
+            return true;
+        }
+
+        /* ---------- 模式：弹幕雨 ---------- */
+        function startRain() {
+            var lines = splitText($('rainText').value);
+            if (!lines.length) { alert('请先填写弹幕内容'); return false; }
+            var speed = segAttr('rainSpeedSeg', 'data-rs');
+            var size = +segAttr('rainSizeSeg', 'data-size');
+            var rc = segAttr('rainColorSeg', 'data-rc') === '1';
+            var single = $('rainColor').value;
+            var palette = ['#ffffff', '#ffd700', '#ff5555', '#66cc66', '#6699ff', '#cc66ff', '#33cccc', '#ff99cc', '#ff8844'];
+            makeLayer($('rainBg').value);
+            var st = document.createElement('style');
+            st.id = 'dmKey';
+            st.textContent = '@keyframes dmRain{from{transform:translateY(-80px)}to{transform:translateY(' + layer.clientHeight + 'px)}}';
+            document.head.appendChild(st);
+            var idx = 0;
+            function emit() {
+                if (paused) return;
+                var el = document.createElement('div');
+                el.className = 'dm-item';
+                el.textContent = lines[idx % lines.length];
+                idx++;
+                var dur = speed === 'slow' ? randInt(5000, 8000) : speed === 'fast' ? randInt(1800, 3200) : randInt(3000, 5200);
+                el.style.cssText = 'position:absolute;top:0;left:' + randInt(0, layer.clientWidth - 40) + 'px;white-space:nowrap;font-size:' + size + 'px;font-weight:600;color:' + (rc ? pick(palette) : single) + ';opacity:0.9;text-shadow:1px 1px 3px rgba(0,0,0,0.6);';
+                el.style.animation = 'dmRain ' + (dur / 1000) + 's linear forwards';
+                layer.appendChild(el);
+                el.addEventListener('animationend', function () { el.remove(); });
+            }
+            for (var n = 0; n < 10; n++) setTimeout(emit, n * 260);
+            player = { timer: setInterval(function () { emit(); }, speed === 'slow' ? 900 : speed === 'fast' ? 300 : 500) };
+            return true;
+        }
+
+        /* ---------- 模式：心跳大字 ---------- */
+        function startHeart() {
+            var lines = splitText($('heartText').value);
+            if (!lines.length) { alert('请先填写弹幕内容'); return false; }
+            var spd = segAttr('heartSpeedSeg', 'data-hs');
+            var size = +$('heartSize').value;
+            var color = $('heartColor').value;
+            makeLayer($('heartBg').value);
+            var st = document.createElement('style');
+            st.id = 'dmKey';
+            st.textContent = '@keyframes dmHeart{0%,100%{transform:translate(-50%,-50%) scale(1)}25%{transform:translate(-50%,-50%) scale(1.14)}50%{transform:translate(-50%,-50%) scale(0.98)}75%{transform:translate(-50%,-50%) scale(1.1)}}';
+            document.head.appendChild(st);
+            var el = document.createElement('div');
+            el.className = 'dm-item';
+            el.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;font-size:' + size + 'px;font-weight:800;color:' + color + ';text-shadow:0 0 24px ' + color + '66, 0 0 60px ' + color + '44;';
+            el.style.animation = 'dmHeart ' + (spd === 'slow' ? 1.6 : spd === 'fast' ? 0.7 : 1.05) + 's ease-in-out infinite';
+            layer.appendChild(el);
+            var idx = 0;
+            function swap() { el.textContent = lines[idx % lines.length]; idx++; }
+            swap();
+            player = { timer: setInterval(function () { if (!paused) swap(); }, 3000) };
+            return true;
+        }
+
+        /* ---------- 启动 ---------- */
+        $('launchBtn').addEventListener('click', function () {
+            if (layer) return;
+            var ok = MODE === 'hand' ? startHand() : MODE === 'bili' ? startBili() : MODE === 'rain' ? startRain() : startHeart();
+            if (ok) enterFullscreen();
+        });
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

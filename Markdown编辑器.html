@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown 编辑器 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 1100px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
+        .md-btn { padding: 0.3rem 0.7rem; border-radius: 0.6rem; cursor: pointer; font-size: 0.8rem; border: 1px solid rgba(128,128,128,0.22); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; transition: all 0.15s; }
+        .md-btn:hover { border-color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn {
+            padding: 0.45rem 1.2rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.88rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .stat-line { font-size: 0.78rem; opacity: 0.5; margin-left: auto; }
+        .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; min-height: 480px; }
+        @media (max-width: 760px) { .edit-grid { grid-template-columns: 1fr; } }
+        .edit-pane { display: flex; flex-direction: column; }
+        .edit-pane .pane-label { font-size: 0.75rem; opacity: 0.5; margin-bottom: 0.35rem; letter-spacing: 1px; }
+        .edit-pane textarea {
+            flex: 1; min-height: 440px; padding: 0.8rem 0.95rem; border-radius: 0.9rem; resize: vertical;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.05);
+            color: inherit; font-family: 'Courier New', 'PingFang SC', monospace; font-size: 0.88rem; outline: none; line-height: 1.65;
+            transition: border-color 0.2s;
+        }
+        .edit-pane textarea:focus { border-color: #66bb6a; }
+        .preview-pane { min-height: 440px; }
+        .preview-pane .pane-label { display: flex; justify-content: space-between; align-items: center; }
+        .md-preview {
+            min-height: 440px; padding: 0.8rem 0.95rem; border-radius: 0.9rem;
+            border: 1px solid rgba(128,128,128,0.15); background: rgba(128,128,128,0.03);
+            font-size: 0.9rem; line-height: 1.75; overflow: auto; word-break: break-word;
+        }
+        .md-preview h1, .md-preview h2, .md-preview h3 { margin: 0.9em 0 0.45em; line-height: 1.35; }
+        .md-preview h1 { font-size: 1.45rem; border-bottom: 1px solid rgba(128,128,128,0.15); padding-bottom: 0.3em; }
+        .md-preview h2 { font-size: 1.2rem; }
+        .md-preview h3 { font-size: 1.05rem; }
+        .md-preview code { background: rgba(128,128,128,0.12); padding: 0.15em 0.4em; border-radius: 0.3em; font-size: 0.85em; }
+        .md-preview pre { background: rgba(0,0,0,0.35); padding: 0.7em 0.9em; border-radius: 0.7em; overflow: auto; }
+        .md-preview pre code { background: none; padding: 0; }
+        .md-preview blockquote { border-left: 3px solid #66bb6a; margin: 0.6em 0; padding: 0.2em 0.9em; opacity: 0.75; }
+        .md-preview img { max-width: 100%; border-radius: 0.5rem; }
+        .md-preview a { color: #66bb6a; }
+        .md-preview table { border-collapse: collapse; }
+        .md-preview th, .md-preview td { border: 1px solid rgba(128,128,128,0.25); padding: 0.3em 0.7em; }
+        .saved-tip { font-size: 0.78rem; opacity: 0.45; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">📝 Markdown 编辑器</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">双栏实时预览的 Markdown 写作台。自动保存草稿、粘贴图片自动转 base64 嵌入、一键导出 HTML/MD，还可把成品发布到本站 VOID 文章系统。</div>
+
+            <div class="tool-toolbar">
+                <button class="md-btn" data-act="h1">H1</button>
+                <button class="md-btn" data-act="h2">H2</button>
+                <button class="md-btn" data-act="h3">H3</button>
+                <button class="md-btn" data-act="bold"><b>B</b></button>
+                <button class="md-btn" data-act="italic"><i>I</i></button>
+                <button class="md-btn" data-act="strike"><s>S</s></button>
+                <button class="md-btn" data-act="quote">❝ 引用</button>
+                <button class="md-btn" data-act="code">` 代码</button>
+                <button class="md-btn" data-act="codeblock">▤ 代码块</button>
+                <button class="md-btn" data-act="link">🔗 链接</button>
+                <button class="md-btn" data-act="img">🖼️ 图片</button>
+                <button class="md-btn" data-act="ul">• 列表</button>
+                <button class="md-btn" data-act="ol">1. 列表</button>
+                <button class="md-btn" data-act="hr">— 分割线</button>
+            </div>
+            <div class="tool-toolbar">
+                <button class="btn btn-primary" id="newBtn">✨ 新建</button>
+                <button class="btn" id="dlMdBtn">💾 下载 MD</button>
+                <button class="btn" id="dlHtmlBtn">📄 下载 HTML</button>
+                <span class="stat-line" id="statLine"></span>
+                <span class="saved-tip" id="savedTip"></span>
+            </div>
+
+            <div class="edit-grid">
+                <div class="edit-pane">
+                    <div class="pane-label">✍️ 编辑区（Ctrl+S 保存 / 粘贴图片自动嵌入）</div>
+                    <textarea id="editor" placeholder="# 标题&#10;&#10;开始写作…"></textarea>
+                </div>
+                <div class="preview-pane">
+                    <div class="pane-label"><span>👁️ 预览</span><button class="md-btn" id="fullBtn" title="用本站文章浏览方式打开">📖 文章模式浏览</button></div>
+                    <div class="md-preview" id="preview"></div>
+                </div>
+            </div>
+
+            <div class="tool-foot">渲染：marked.js（CDN）· 草稿自动保存于本地浏览器 · 图片粘贴后以 base64 嵌入文档</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var DRAFT_KEY = 'mdDraft';
+        var editor = document.getElementById('editor');
+        var preview = document.getElementById('preview');
+        var statLine = document.getElementById('statLine');
+        var savedTip = document.getElementById('savedTip');
+        var saveTimer = null;
+
+        /* 恢复草稿 */
+        try {
+            var d = JSON.parse(localStorage.getItem(DRAFT_KEY));
+            if (d && d.text) {
+                editor.value = d.text;
+                savedTip.textContent = '已恢复上次草稿（' + d.time + '）';
+            }
+        } catch (e) { }
+
+        function render() {
+            var t = editor.value;
+            if (window.marked) {
+                preview.innerHTML = marked.parse(t, { breaks: true });
+            } else {
+                preview.textContent = t;
+            }
+            var chars = t.length;
+            var words = (t.match(/[\u4e00-\u9fff]/g) || []).length + (t.match(/[a-zA-Z0-9]+/g) || []).length;
+            statLine.textContent = chars + ' 字符 · 约 ' + words + ' 词 · 阅读约 ' + Math.max(1, Math.round(words / 300)) + ' 分钟';
+        }
+        function saveDraft() {
+            try {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify({ text: editor.value, time: new Date().toLocaleString() }));
+                savedTip.textContent = '💾 已自动保存 ' + new Date().toLocaleTimeString();
+            } catch (e) { }
+        }
+        editor.addEventListener('input', function () {
+            render();
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveDraft, 800);
+        });
+        editor.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveDraft();
+            }
+        });
+
+        /* 工具栏 */
+        function wrap(prefix, suffix, placeholder) {
+            var s = editor.selectionStart, e = editor.selectionEnd;
+            var sel = editor.value.slice(s, e) || placeholder;
+            editor.value = editor.value.slice(0, s) + prefix + sel + suffix + editor.value.slice(e);
+            editor.focus();
+            editor.selectionStart = s + prefix.length;
+            editor.selectionEnd = s + prefix.length + sel.length;
+            render();
+        }
+        var ACTS = {
+            h1: function () { wrap('\n# ', '\n', '标题'); },
+            h2: function () { wrap('\n## ', '\n', '标题'); },
+            h3: function () { wrap('\n### ', '\n', '标题'); },
+            bold: function () { wrap('**', '**', '加粗'); },
+            italic: function () { wrap('*', '*', '斜体'); },
+            strike: function () { wrap('~~', '~~', '删除线'); },
+            quote: function () { wrap('\n> ', '\n', '引用内容'); },
+            code: function () { wrap('`', '`', 'code'); },
+            codeblock: function () { wrap('\n```\n', '\n```\n', '代码'); },
+            link: function () { wrap('[', '](https://)', '链接文字'); },
+            img: function () { wrap('![', '](https://图片地址)', '图片描述'); },
+            ul: function () { wrap('\n- ', '\n', '列表项'); },
+            ol: function () { wrap('\n1. ', '\n', '列表项'); },
+            hr: function () { wrap('\n\n---\n\n', '', ''); }
+        };
+        document.querySelectorAll('.md-btn[data-act]').forEach(function (b) {
+            b.addEventListener('click', function () {
+                var act = ACTS[b.getAttribute('data-act')];
+                if (act) act();
+            });
+        });
+
+        /* 粘贴图片 → base64 */
+        editor.addEventListener('paste', function (e) {
+            var items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type && items[i].type.indexOf('image/') === 0) {
+                    e.preventDefault();
+                    var f = items[i].getAsFile();
+                    var reader = new FileReader();
+                    reader.onload = function (ev) {
+                        var s = editor.selectionStart;
+                        editor.value = editor.value.slice(0, s) + '\n![' + (f.name || '图片') + '](' + ev.target.result + ')\n' + editor.value.slice(s);
+                        render();
+                        saveDraft();
+                        savedTip.textContent = '🖼️ 已嵌入图片（base64）';
+                    };
+                    reader.readAsDataURL(f);
+                    break;
+                }
+            }
+        });
+
+        document.getElementById('newBtn').addEventListener('click', function () {
+            if (editor.value && !confirm('确定清空并新建？当前草稿将被覆盖。')) return;
+            editor.value = '';
+            render();
+            saveDraft();
+        });
+        document.getElementById('dlMdBtn').addEventListener('click', function () {
+            var blob = new Blob([editor.value], { type: 'text/markdown;charset=utf-8' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'draft_' + Date.now() + '.md';
+            a.click();
+        });
+        document.getElementById('dlHtmlBtn').addEventListener('click', function () {
+            var html = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>Markdown 导出</title><style>body{max-width:760px;margin:0 auto;padding:24px;line-height:1.8;font-family:system-ui,sans-serif}img{max-width:100%}pre{background:#f4f4f4;padding:12px;border-radius:8px;overflow:auto}code{background:#f0f0f0;padding:2px 5px;border-radius:4px}blockquote{border-left:3px solid #66bb6a;margin:8px 0;padding:2px 14px;color:#555}table{border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px 12px}</style></head><body>' + (window.marked ? marked.parse(editor.value, { breaks: true }) : editor.value) + '</body></html>';
+            var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'draft_' + Date.now() + '.html';
+            a.click();
+        });
+        document.getElementById('fullBtn').addEventListener('click', function () {
+            var t = editor.value;
+            if (!t.trim()) { alert('编辑器还是空的，先写点内容吧～'); return; }
+            try {
+                localStorage.setItem('mdEditorPreview', t);
+            } catch (e) {
+                alert('内容过大，无法预览（超出本地存储限制）');
+                return;
+            }
+            window.open('article.html?file=__editor__', '_blank');
+        });
+
+        /* 加载 marked */
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/marked@12/marked.min.js';
+        s.onload = function () { render(); };
+        s.onerror = function () { preview.textContent = '⚠ marked 加载失败（网络问题），预览不可用，编辑功能正常'; };
+        document.head.appendChild(s);
+        render();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

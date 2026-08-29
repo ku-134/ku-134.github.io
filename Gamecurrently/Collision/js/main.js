@@ -116,10 +116,12 @@ function setupBg() {
     }
     collideBalls(bgBalls[0], bgBalls[1], bgCtx, bgLoop.time);
     bg.update(dt);
-  }, () => bg.render(bgBalls, bgLoop.time));
+  }, () => bg.render(bgBalls, bgLoop.time, ctx.phantoms || []));
   bgLoop.start();
 }
 setupBg();
+// ★ 初始即静音：首页背景运行中（对局未开始），战斗音效强制静音（防毒液腐蚀等持续伤害音效泄漏）
+setBattleMuted(true);
 // 背景开关：正式对局（单机/联机）暂停，返回首页/大厅恢复
 let bgRunning = true;
 bus.on('bg:run', run => {

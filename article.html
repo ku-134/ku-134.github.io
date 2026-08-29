@@ -1083,6 +1083,24 @@
                 if (window.showVoidToast) showVoidToast('📭 文章不存在', 2000);
                 return;
             }
+            // ===== 编辑器预览模式：?file=__editor__ 从 localStorage 读取临时内容 =====
+            if (file === '__editor__') {
+                let tmp = '';
+                try { tmp = localStorage.getItem('mdEditorPreview') || ''; } catch (e) {}
+                if (!tmp) {
+                    articleBody.innerHTML = '<div class="article-empty">📭 没有可预览的内容<br>请先在 Markdown 编辑器中点击「文章模式浏览」</div>';
+                    if (window.showVoidToast) showVoidToast('📭 暂无内容', 2000);
+                    return;
+                }
+                articleBody.innerHTML = marked.parse(tmp);
+                if (window.ArtSettings) window.ArtSettings.refresh();
+                const kKids = articleBody.children;
+                for (let i = 0; i < kKids.length; i++) {
+                    kKids[i].style.setProperty('--reveal-delay', Math.min(i * 0.07, 1.8) + 's');
+                }
+                document.title = '编辑器预览 · 虚空终端';
+                return;
+            }
             // 兼容纯文件名（自动补 VOID/ 前缀）与完整路径
             if (!file.includes('/')) file = 'VOID/' + file;
 

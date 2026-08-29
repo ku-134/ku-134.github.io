@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字识别 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .select-input {
+            padding: 0.5rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25);
+            background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; font-size: 0.88rem;
+            outline: none; transition: border-color 0.2s;
+        }
+        .select-input:focus { border-color: #66bb6a; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .btn-sm { padding: 0.3rem 0.85rem; font-size: 0.78rem; }
+        .drop-zone { border: 2px dashed rgba(128,128,128,0.3); border-radius: 1.2rem; padding: 2rem 1.5rem; text-align: center; cursor: pointer; transition: all 0.25s; background: rgba(128,128,128,0.03); margin-bottom: 0.9rem; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #66bb6a; background: rgba(102,187,106,0.06); }
+        .drop-zone .dz-icon { font-size: 2.4rem; display: block; margin-bottom: 0.5rem; }
+        .drop-zone .dz-text { opacity: 0.7; font-size: 0.92rem; }
+        .drop-zone .dz-sub { opacity: 0.45; font-size: 0.78rem; margin-top: 0.4rem; }
+        .loading { display: none; text-align: center; padding: 1rem; opacity: 0.7; }
+        .loading.show { display: block; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,128,128,0.3); border-top-color: #66bb6a; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -3px; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .progress-bar { height: 6px; border-radius: 3px; background: rgba(128,128,128,0.1); overflow: hidden; margin-top: 0.6rem; }
+        .progress-bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #66bb6a, #f5a623); transition: width 0.2s; }
+        .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+        @media (max-width: 640px) { .result-grid { grid-template-columns: 1fr; } }
+        .img-preview { width: 100%; border-radius: 0.8rem; border: 1px solid rgba(128,128,128,0.15); background: rgba(128,128,128,0.04); }
+        .ocr-box { display: flex; flex-direction: column; }
+        .ocr-box textarea {
+            flex: 1; min-height: 220px; padding: 0.7rem 0.9rem; border-radius: 0.9rem; resize: vertical;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.92rem; outline: none; line-height: 1.6;
+            transition: border-color 0.2s;
+        }
+        .ocr-box textarea:focus { border-color: #66bb6a; }
+        .ocr-actions { display: flex; gap: 0.4rem; margin-top: 0.5rem; flex-wrap: wrap; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🔤 文字识别</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">图片文字提取（OCR），支持中英文，全部在本地浏览器运行（WASM），图片不上传。识别后可一键翻译为英文。</div>
+
+            <div class="tool-toolbar">
+                <select class="select-input" id="langSel">
+                    <option value="chi_sim+eng">中文 + 英文</option>
+                    <option value="eng">仅英文</option>
+                    <option value="jpn+eng">日文 + 英文</option>
+                    <option value="kor+eng">韩文 + 英文</option>
+                </select>
+                <button class="btn btn-primary" id="pickBtn">📁 选择图片</button>
+                <input type="file" id="fileInput" accept="image/*" hidden>
+                <span id="libState" style="font-size:0.78rem;opacity:0.5;"></span>
+            </div>
+
+            <div class="drop-zone" id="dropZone">
+                <span class="dz-icon">🔤</span>
+                <div class="dz-text">拖拽图片到这里，或点击选择文件</div>
+                <div class="dz-sub">支持 PNG / JPG / WebP，首次识别需下载识别引擎（约 15MB，浏览器缓存）</div>
+            </div>
+            <div class="loading" id="loading"><span class="spinner" id="loadingText"></span><span id="loadingMsg">正在加载识别引擎…</span>
+                <div class="progress-bar"><i id="progressBar"></i></div>
+            </div>
+
+            <div class="result-grid" id="resultArea" style="display:none;">
+                <div>
+                    <img class="img-preview" id="imgPreview" alt="预览">
+                </div>
+                <div class="ocr-box">
+                    <textarea id="ocrText" placeholder="识别结果…"></textarea>
+                    <div class="ocr-actions">
+                        <button class="btn btn-sm" id="copyBtn">📋 复制结果</button>
+                        <button class="btn btn-sm" id="dlBtn">💾 下载 txt</button>
+                        <button class="btn btn-sm" id="transBtn">🌐 翻译为英文</button>
+                        <span id="transResult" style="font-size:0.78rem;opacity:0.6;width:100%;"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tool-foot">引擎：Tesseract.js（WASM 本地识别，100% 隐私）· 语言包 CDN：jsDelivr · 翻译联动：MyMemory</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var TESS_CDN = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        var loading = document.getElementById('loading');
+        var loadingMsg = document.getElementById('loadingMsg');
+        var progressBar = document.getElementById('progressBar');
+        var libState = document.getElementById('libState');
+        var fileInput = document.getElementById('fileInput');
+        var pickBtn = document.getElementById('pickBtn');
+        var dropZone = document.getElementById('dropZone');
+        var resultArea = document.getElementById('resultArea');
+        var imgPreview = document.getElementById('imgPreview');
+        var ocrText = document.getElementById('ocrText');
+        var worker = null;
+
+        function setProgress(p) { progressBar.style.width = p + '%'; }
+
+        function ensureLib(cb) {
+            if (window.Tesseract) { cb(); return; }
+            libState.textContent = '⏳ 首次加载引擎…';
+            var s = document.createElement('script');
+            s.src = TESS_CDN;
+            s.onload = function () {
+                libState.textContent = '✅ 引擎就绪';
+                cb();
+            };
+            s.onerror = function () {
+                libState.textContent = '⚠ 引擎加载失败（网络问题）';
+                loading.classList.remove('show');
+            };
+            document.head.appendChild(s);
+        }
+
+        function recognize(file) {
+            ensureLib(function () {
+                loading.classList.add('show');
+                loadingMsg.textContent = '正在识别…';
+                setProgress(5);
+                var img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.onload = function () {
+                    var lang = document.getElementById('langSel').value;
+                    Tesseract.recognize(img, lang, {
+                        logger: function (m) {
+                            if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100));
+                        }
+                    }).then(function (r) {
+                        var text = (r && r.data && r.data.text) || '';
+                        ocrText.value = text.trim();
+                        imgPreview.src = img.src;
+                        resultArea.style.display = '';
+                        loading.classList.remove('show');
+                        document.getElementById('transResult').textContent = '';
+                    }).catch(function (e) {
+                        loading.classList.remove('show');
+                        alert('识别失败：' + (e && e.message ? e.message : e));
+                    });
+                };
+            });
+        }
+
+        dropZone.addEventListener('click', function () { fileInput.click(); });
+        dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            var f = e.dataTransfer.files[0];
+            if (f && /^image\//.test(f.type)) recognize(f);
+        });
+        pickBtn.addEventListener('click', function () { fileInput.click(); });
+        fileInput.addEventListener('change', function () {
+            var f = fileInput.files[0];
+            if (f) recognize(f);
+            fileInput.value = '';
+        });
+        document.getElementById('copyBtn').addEventListener('click', function () {
+            var t = ocrText.value;
+            if (!t) return;
+            if (navigator.clipboard) navigator.clipboard.writeText(t);
+            var b = this; b.textContent = '✅ 已复制';
+            setTimeout(function () { b.textContent = '📋 复制结果'; }, 1200);
+        });
+        document.getElementById('dlBtn').addEventListener('click', function () {
+            var t = ocrText.value;
+            if (!t) return;
+            var blob = new Blob([t], { type: 'text/plain;charset=utf-8' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'ocr_' + Date.now() + '.txt';
+            a.click();
+        });
+        document.getElementById('transBtn').addEventListener('click', function () {
+            var t = ocrText.value.trim();
+            if (!t) return;
+            var tr = document.getElementById('transResult');
+            tr.textContent = '翻译中…';
+            fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(t.slice(0, 450)) + '&langpair=zh-CN|en')
+                .then(function (r) { return r.json(); })
+                .then(function (j) {
+                    tr.textContent = j.responseStatus === 200 && j.responseData ? '🌐 ' + j.responseData.translatedText : '⚠ 翻译失败';
+                })
+                .catch(function () { tr.textContent = '⚠ 翻译失败（网络问题）'; });
+        });
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

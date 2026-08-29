@@ -77,7 +77,15 @@
             line-height: 1.8;
             font-size: 1rem;
             min-height: 200px;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
+        .article-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.8rem;
+        }
+        .article-body a { overflow-wrap: break-word; word-break: break-all; }
         /* 段落依次浮现特效：只作用于顶层元素，完美兼容 md 嵌套结构 */
         .article-body > * {
             opacity: 0;

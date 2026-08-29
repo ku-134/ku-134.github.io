@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调色板 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .mode-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .mode-tab { padding: 0.42rem 1rem; border-radius: 2rem; cursor: pointer; font-size: 0.85rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; transition: all 0.2s; font-family: inherit; }
+        .mode-tab.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+        .cfg-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; margin-bottom: 0.8rem; font-size: 0.88rem; }
+        .cfg-row label { opacity: 0.75; min-width: 80px; }
+        .btn {
+            padding: 0.45rem 1.2rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.88rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn-sm { padding: 0.3rem 0.85rem; font-size: 0.78rem; }
+        .select-input { padding: 0.45rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; font-size: 0.85rem; outline: none; }
+        input[type="color"] { width: 46px; height: 32px; border: 1px solid rgba(128,128,128,0.3); border-radius: 0.5rem; background: none; padding: 2px; cursor: pointer; }
+        .swatch-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0.6rem 0; }
+        .swatch { width: 86px; border-radius: 0.9rem; overflow: hidden; border: 1px solid rgba(128,128,128,0.15); cursor: pointer; transition: transform 0.15s; }
+        .swatch:hover { transform: translateY(-3px); }
+        .swatch .s-color { height: 56px; }
+        .swatch .s-info { padding: 0.35rem 0.4rem; font-size: 0.72rem; background: rgba(128,128,128,0.06); }
+        .swatch .s-info div:first-child { font-weight: 700; font-family: 'Courier New', monospace; }
+        .swatch .s-info div:last-child { opacity: 0.5; font-size: 0.68rem; margin-top: 1px; }
+        .drop-zone { border: 2px dashed rgba(128,128,128,0.3); border-radius: 1rem; padding: 1.4rem; text-align: center; cursor: pointer; transition: all 0.25s; background: rgba(128,128,128,0.03); font-size: 0.85rem; }
+        .drop-zone:hover { border-color: #66bb6a; }
+        .grad-preview { height: 110px; border-radius: 1rem; margin: 0.6rem 0; border: 1px solid rgba(128,128,128,0.15); }
+        .grad-css { font-family: 'Courier New', monospace; font-size: 0.78rem; opacity: 0.75; background: rgba(128,128,128,0.07); padding: 0.6rem 0.8rem; border-radius: 0.7rem; word-break: break-all; margin-bottom: 0.5rem; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🖌️ 调色板</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">色彩实验室：图片智能取色、经典配色方案生成、渐变 CSS 生成器。色板可收藏，色值一键复制。</div>
+
+            <div class="mode-tabs">
+                <button class="mode-tab active" data-mode="pick">🖼️ 图片取色</button>
+                <button class="mode-tab" data-mode="scheme">🎲 配色方案</button>
+                <button class="mode-tab" data-mode="grad">🌈 渐变生成</button>
+            </div>
+
+            <div class="cfg-panel" id="panel-pick">
+                <div class="drop-zone" id="pickZone">🖼️ 拖拽图片到这里，或点击选择——自动提取 5 个主色调色板<br><span style="opacity:0.5;font-size:0.75rem;">本地处理，图片不上传</span></div>
+                <input type="file" id="pickFile" accept="image/*" hidden>
+                <div class="swatch-row" id="pickSwatches"></div>
+            </div>
+
+            <div class="cfg-panel" id="panel-scheme" style="display:none;">
+                <div class="cfg-row">
+                    <label>方案类型</label>
+                    <select class="select-input" id="schemeType">
+                        <option value="analogous">类似色（柔和）</option>
+                        <option value="complementary">互补色（对比）</option>
+                        <option value="triadic">三角色（活泼）</option>
+                        <option value="mono">单色系（渐变深浅）</option>
+                    </select>
+                    <button class="btn btn-primary" id="schemeBtn">🎲 生成方案</button>
+                </div>
+                <div class="swatch-row" id="schemeSwatches"></div>
+            </div>
+
+            <div class="cfg-panel" id="panel-grad" style="display:none;">
+                <div class="cfg-row">
+                    <label>起始色</label><input type="color" id="gradA" value="#66bb6a">
+                    <label>结束色</label><input type="color" id="gradB" value="#f5a623">
+                    <label>方向</label>
+                    <select class="select-input" id="gradDir">
+                        <option value="to right">→ 向右</option>
+                        <option value="to bottom">↓ 向下</option>
+                        <option value="to top right">↗ 右上</option>
+                        <option value="135deg">135° 对角线</option>
+                        <option value="to bottom right">↘ 右下</option>
+                    </select>
+                </div>
+                <div class="grad-preview" id="gradPreview"></div>
+                <div class="grad-css" id="gradCss"></div>
+                <button class="btn btn-sm" id="gradCopy">📋 复制 CSS</button>
+            </div>
+
+            <div class="cfg-row" style="margin-top:1rem;border-top:1px dashed rgba(128,128,128,0.18);padding-top:0.8rem;">
+                <label>⭐ 收藏色板</label>
+                <button class="btn btn-sm" id="favBtn">收藏当前</button>
+                <button class="btn btn-sm" id="favClear">清空收藏</button>
+            </div>
+            <div class="swatch-row" id="favSwatches"></div>
+
+            <div class="tool-foot">图片取色为平均色算法 · 收藏存于本地浏览器</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var FAV_KEY = 'paletteFavs';
+        var MODE = 'pick';
+        document.querySelectorAll('.mode-tab').forEach(function (t) {
+            t.addEventListener('click', function () {
+                document.querySelectorAll('.mode-tab').forEach(function (x) { x.classList.remove('active'); });
+                t.classList.add('active');
+                MODE = t.getAttribute('data-mode');
+                ['pick', 'scheme', 'grad'].forEach(function (m) {
+                    document.getElementById('panel-' + m).style.display = m === MODE ? '' : 'none';
+                });
+            });
+        });
+
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function rgb2hex(r, g, b) {
+            return '#' + [r, g, b].map(function (v) { return ('0' + Math.max(0, Math.min(255, Math.round(v))).toString(16)).slice(-2); }).join('');
+        }
+        function hex2rgb(h) {
+            h = h.replace('#', '');
+            if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+            return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+        }
+        function nameOf(hex) {
+            var h = hex.toLowerCase();
+            var map = {
+                'ff0000': '红', 'ff8800': '橙', 'ffd700': '金', '66bb6a': '绿', '00cccc': '青',
+                '6699ff': '蓝', 'cc66ff': '紫', 'ff99cc': '粉', 'ffffff': '白', '000000': '黑', '888888': '灰'
+            };
+            return map[h] || '';
+        }
+
+        function renderSwatches(box, colors, editable) {
+            box.innerHTML = colors.map(function (c) {
+                return '<div class="swatch" data-hex="' + c + '" title="点击复制"><div class="s-color" style="background:' + c + '"></div>' +
+                    '<div class="s-info"><div>' + c.toUpperCase() + '</div><div>' + (nameOf(c) || '') + '</div></div></div>';
+            }).join('');
+        }
+        function copyHex(hex) {
+            if (navigator.clipboard) navigator.clipboard.writeText(hex);
+        }
+        document.addEventListener('click', function (e) {
+            var sw = e.target.closest('.swatch');
+            if (!sw) return;
+            copyHex(sw.getAttribute('data-hex'));
+            var old = sw.querySelector('.s-info div').textContent;
+            sw.querySelector('.s-info div').textContent = '✅ 已复制';
+            var s = sw.querySelector('.s-info div');
+            setTimeout(function () { s.textContent = old; }, 900);
+        });
+
+        /* ===== 图片取色 ===== */
+        var pickZone = document.getElementById('pickZone'), pickFile = document.getElementById('pickFile');
+        pickZone.addEventListener('click', function () { pickFile.click(); });
+        pickZone.addEventListener('dragover', function (e) { e.preventDefault(); });
+        pickZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            var f = e.dataTransfer.files[0];
+            if (f && /^image\//.test(f.type)) extract(f);
+        });
+        pickFile.addEventListener('change', function () {
+            var f = pickFile.files[0];
+            if (f) extract(f);
+            pickFile.value = '';
+        });
+        function extract(f) {
+            var url = URL.createObjectURL(f);
+            var img = new Image();
+            img.onload = function () {
+                var c = document.createElement('canvas');
+                var W = 64, H = Math.max(1, Math.round(img.height / img.width * 64));
+                c.width = W; c.height = H;
+                var ctx = c.getContext('2d');
+                ctx.drawImage(img, 0, 0, W, H);
+                var data = ctx.getImageData(0, 0, W, H).data;
+                /* 简单量化聚类：分桶后取 5 个主色 */
+                var buckets = {};
+                for (var i = 0; i < data.length; i += 4) {
+                    var r = data[i] >> 5 << 5, g = data[i + 1] >> 5 << 5, b = data[i + 2] >> 5 << 5;
+                    var key = r + ',' + g + ',' + b;
+                    buckets[key] = (buckets[key] || 0) + 1;
+                }
+                var sorted = Object.keys(buckets).sort(function (a, b) { return buckets[b] - buckets[a]; });
+                var colors = sorted.slice(0, 5).map(function (k) {
+                    var p = k.split(',');
+                    return rgb2hex(+p[0], +p[1], +p[2]);
+                });
+                renderSwatches(document.getElementById('pickSwatches'), colors);
+            };
+            img.src = url;
+        }
+
+        /* ===== 配色方案 ===== */
+        function hsl2hex(h, s, l) {
+            h = ((h % 360) + 360) % 360;
+            s /= 100; l /= 100;
+            var c = (1 - Math.abs(2 * l - 1)) * s;
+            var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+            var m = l - c / 2;
+            var r = 0, g = 0, b = 0;
+            if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; } else if (h < 180) { g = c; b = x; } else if (h < 240) { g = x; b = c; } else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+            return rgb2hex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+        }
+        document.getElementById('schemeBtn').addEventListener('click', function () {
+            var type = document.getElementById('schemeType').value;
+            var base = Math.floor(Math.random() * 360);
+            var s = 62 + Math.floor(Math.random() * 20);
+            var l = 48 + Math.floor(Math.random() * 12);
+            var colors = [];
+            if (type === 'mono') {
+                for (var i = 0; i < 5; i++) colors.push(hsl2hex(base, s, 22 + i * 16));
+            } else if (type === 'complementary') {
+                for (var i = 0; i < 5; i++) colors.push(hsl2hex(base + (i >= 3 ? 180 : 0), s, 40 + i * 8));
+            } else if (type === 'triadic') {
+                for (var i = 0; i < 5; i++) colors.push(hsl2hex(base + Math.floor(i / 2) * 120, s, 38 + i * 7));
+            } else {
+                for (var i = 0; i < 5; i++) colors.push(hsl2hex(base + (i - 2) * 22, s, 40 + i * 8));
+            }
+            renderSwatches(document.getElementById('schemeSwatches'), colors);
+        });
+
+        /* ===== 渐变生成 ===== */
+        function gradCss() {
+            var a = document.getElementById('gradA').value, b = document.getElementById('gradB').value;
+            var dir = document.getElementById('gradDir').value;
+            return 'background: linear-gradient(' + dir + ', ' + a + ', ' + b + ');';
+        }
+        function renderGrad() {
+            document.getElementById('gradPreview').style.cssText = gradCss();
+            document.getElementById('gradCss').textContent = gradCss();
+        }
+        ['gradA', 'gradB', 'gradDir'].forEach(function (id) {
+            document.getElementById(id).addEventListener('input', renderGrad);
+        });
+        document.getElementById('gradCopy').addEventListener('click', function () {
+            var t = gradCss();
+            if (navigator.clipboard) navigator.clipboard.writeText(t);
+            var b = this; b.textContent = '✅ 已复制 CSS';
+            setTimeout(function () { b.textContent = '📋 复制 CSS'; }, 1200);
+        });
+        renderGrad();
+
+        /* ===== 收藏 ===== */
+        function loadFavs() {
+            try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch (e) { return []; }
+        }
+        function saveFavs(f) {
+            try { localStorage.setItem(FAV_KEY, JSON.stringify(f.slice(0, 30))); } catch (e) { }
+        }
+        function currentColors() {
+            var box = document.getElementById(MODE === 'pick' ? 'pickSwatches' : MODE === 'scheme' ? 'schemeSwatches' : '');
+            if (!box) return [];
+            var arr = [];
+            box.querySelectorAll('.swatch').forEach(function (s) { arr.push(s.getAttribute('data-hex')); });
+            return arr;
+        }
+        function renderFavs() {
+            var favs = loadFavs();
+            var box = document.getElementById('favSwatches');
+            if (!favs.length) { box.innerHTML = '<div style="opacity:0.4;font-size:0.85rem;">暂无收藏，点击「收藏当前」保存当前色板</div>'; return; }
+            renderSwatches(box, favs);
+        }
+        document.getElementById('favBtn').addEventListener('click', function () {
+            var colors = currentColors();
+            if (!colors.length) { alert('当前没有可收藏的颜色'); return; }
+            var favs = loadFavs();
+            colors.forEach(function (c) { if (favs.indexOf(c) < 0) favs.push(c); });
+            saveFavs(favs);
+            renderFavs();
+        });
+        document.getElementById('favClear').addEventListener('click', function () {
+            if (!confirm('清空全部收藏？')) return;
+            saveFavs([]);
+            renderFavs();
+        });
+        renderFavs();
+        document.getElementById('schemeBtn').click();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

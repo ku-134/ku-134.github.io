@@ -12,10 +12,9 @@ import { isTouchDevice, bindHold } from '../ui/input.js';
 // 单机模式：玩家选球 vs 玩家指定的 AI 职业，321 倒计时，观战 + 主动干涉
 // 双技能通道：基础冲刺（Space/左下按钮，全职业；兵团带30伤）+ 职业技能（J键/右下按钮，主动职业）
 // 战场：由场地文件（js/maps/*）控制出生点/绘制/边界；battleId=null → 随机场地
-// 战场干扰球：每局随机一个（巨人 | 魔王 | 太阳），均为第三方，不参与胜负
+// 战场干扰球：每局随机一个（巨人 | 魔王），均为第三方，不参与胜负
 // 死灵术士：双侧阵营都支持（玩家侧=necrosA / AI侧=necrosB）——双方都选死灵时各自召唤/转移/分段血条
 // ★ 随机选球：start 收到 null = 从可选职业随机（不含战场球与测试角色死灵）；再来一局时重新随机
-// ★ 战绩系统：至少一方随机选球才启用（statsEnabled）——胜负结算记录连胜，惜败清空，最高连胜保留（localStorage）
 // ★ 对局开始暂停首页背景（bg:run false），返回时恢复（背景无技能音效）
 const WILD_IDS = ['giant', 'demon', 'sun'];
 
@@ -26,7 +25,7 @@ const pickRandom = () => {
   return pool[Math.floor(Math.random() * pool.length)];
 };
 
-// 创建战场干扰球（巨人 r=20 红色暴怒 / 魔王 r=30 紫色召唤 / 太阳 r=60 橙色光芒）
+// 创建战场干扰球（巨人 r=20 红色暴怒 / 魔王 r=30 紫色召唤）
 export function makeWildBall(id, ctx, w, h) {
   const isDemon = id === 'demon';
   const isSun = id === 'sun';
@@ -48,6 +47,11 @@ export function makeWildBall(id, ctx, w, h) {
 export class SingleMode {
   constructor(ctx, { canvas, onBack }) {
     this.ctx = ctx;
+    // 狂暴留手设置（单人模式）：是=血量低于 x% 停手；否=狂暴扣到死（联机不受影响）
+    try {
+      const m = JSON.parse(localStorage.getItem('collision.mercy') || '{"enabled":true,"percent":15}');
+      ctx.berserkMercy = { enabled: !!m.enabled, percent: Math.max(1, Math.min(50, +m.percent || 15)) };
+    } catch { ctx.berserkMercy = { enabled: true, percent: 15 }; }
     this.renderer = new Renderer(canvas);
     this.hud = new Hud();
     this.onBack = onBack;
@@ -106,7 +110,7 @@ export class SingleMode {
     p1.color = p1.skill.def.color;
     p2.color = p2.skill.def.color;
     p1.isPlayer = true;
-    // 战场干扰球：每局随机一个（巨人 | 魔王 | 太阳），出生自场地点位
+    // 战场干扰球：每局随机一个（巨人 | 魔王），出生自场地点位
     const wild = makeWildBall(WILD_IDS[Math.floor(Math.random() * WILD_IDS.length)], this.ctx, w, h);
     wild.x = sw.x; wild.y = sw.y;
     this.wilds = [wild];

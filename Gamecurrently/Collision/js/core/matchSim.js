@@ -156,7 +156,13 @@ export class MatchSim {
       if (this.berserkTick >= 1) {
         this.berserkTick -= 1;
         const targets = [...new Set([...this.balls, ...this.necros])];
-        for (const b of targets) if (!b.dead && b.hp > CONFIG.BERSERK.exemptHp) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true, true);  // noIce：狂暴伤害不触发冰晶减伤/吐块
+        // ★ 狂暴留手（单人模式设置 ctx.berserkMercy）：是=血量低于 x%（maxHp×percent/100）停手；否=阈值0扣到死；联机保持默认 exemptHp
+        const mercy = this.ctx.berserkMercy;
+        for (const b of targets) {
+          if (b.dead) continue;
+          const threshold = mercy ? (mercy.enabled ? Math.floor(b.maxHp * mercy.percent / 100) : 0) : CONFIG.BERSERK.exemptHp;
+          if (b.hp > threshold) b.takeDamage(CONFIG.BERSERK.dps, this.ctx, null, true, true);  // noIce：狂暴伤害不触发冰晶减伤/吐块
+        }
       }
     }
     // 意识转移（双侧独立）：当前球阵亡 → 移交该侧下一个活着的；dead 从者随时清理
@@ -532,66 +538,66 @@ export class MatchSim {
   }
   // 火星【周期风暴】：铁锈沙尘暴周期出现（游走4~9s → 渐影消失5s → 再现）
   // 特性·奥林匹斯之巅：伤害随本体血量反比加成（最多+150%）；风暴本体免疫；范围内球每0.5s受击
+  // ★ 双方都选火星时：每个火星本体各自维护自己的风暴（互不干扰、各发各的，不再只处理第一个）
   _updateMars(dt, all) {
     const ph = this.ctx.phantoms = this.ctx.phantoms || [];
-    // 找火星本体（风暴随本体存在；无本体则残留风暴自然消失）
-    let owner = null;
-    for (const b of all) {
-      if (b.skill?.def?.id === 'mars' && !b.dead) { owner = b; break; }
-    }
-    if (!owner) return;
+    // 所有存活火星本体（风暴随本体存在；无本体则残留风暴自然消失）
+    const owners = all.filter(b => b.skill?.def?.id === 'mars' && !b.dead);
+    if (!owners.length) return;
     const { w: FW, h: FH } = CONFIG.FIELD;
-    let storm = ph.find(m => m.isDustStorm && m.owner === owner);
-    if (!storm) {
-      // 周期再现：随机位置新风暴
-      storm = {
-        isPhantom: true, isDustStorm: true,
-        owner,
-        x: 100 + Math.random() * (FW - 200),
-        y: 100 + Math.random() * (FH - 200),
-        angle: Math.random() * Math.PI * 2,
-        speed: 70 + Math.random() * 40,
-        radius: CONFIG.BALL.radius * (CONFIG.MARS.stormScaleMin + Math.random() * (CONFIG.MARS.stormScaleMax - CONFIG.MARS.stormScaleMin)),
-        noise: Math.floor(Math.random() * 100),
-        t: 0, tickT: 0,
-        appearLeft: CONFIG.MARS.appearMin + Math.random() * (CONFIG.MARS.appearMax - CONFIG.MARS.appearMin),
-        hiding: false, hideT: 0,
-      };
-      ph.push(storm);
-    }
-    if (!storm.hiding) {
-      // 游走阶段：随机转向缓慢移动 + 边界反弹
-      storm.t += dt;
-      storm.angle += (Math.random() - 0.5) * 0.4;
-      storm.x += Math.cos(storm.angle) * storm.speed * dt;
-      storm.y += Math.sin(storm.angle) * storm.speed * dt;
-      if (storm.x < storm.radius) { storm.x = storm.radius; storm.angle = Math.PI - storm.angle; }
-      else if (storm.x > FW - storm.radius) { storm.x = FW - storm.radius; storm.angle = Math.PI - storm.angle; }
-      if (storm.y < storm.radius) { storm.y = storm.radius; storm.angle = -storm.angle; }
-      else if (storm.y > FH - storm.radius) { storm.y = FH - storm.radius; storm.angle = -storm.angle; }
-      // 游走时间到 → 渐影消失阶段（5s）
-      if (storm.t >= storm.appearLeft) { storm.hiding = true; storm.hideT = 0; }
-      // 领域伤害：每 0.5s 对范围内球造成 5×(1+加成) 基础伤害（本体免疫；战场球不受）
-      storm.tickT += dt;
-      if (storm.tickT >= CONFIG.MARS.tick) {
-        storm.tickT -= CONFIG.MARS.tick;
-        const ratio = Math.max(0, Math.min(1, owner.hp / owner.maxHp));
-        const boost = (1 - ratio) * CONFIG.MARS.boostMax;
-        const dmg = Math.round(CONFIG.MARS.baseDamage * (1 + boost));   // 取整：伤害数字不出现小数尾巴
-        for (const b of all) {
-          if (b === owner || b.dead || this.wilds.includes(b)) continue;
-          if (Math.hypot(b.x - storm.x, b.y - storm.y) <= storm.radius + b.radiusScaled) {
-            b.takeDamage(dmg, this.ctx, owner);
-            this.ctx.events.emit('fx:dustTick', { x: b.x, y: b.y });
+    for (const owner of owners) {
+      let storm = ph.find(m => m.isDustStorm && m.owner === owner);
+      if (!storm) {
+        // 周期再现：随机位置新风暴
+        storm = {
+          isPhantom: true, isDustStorm: true,
+          owner,
+          x: 100 + Math.random() * (FW - 200),
+          y: 100 + Math.random() * (FH - 200),
+          angle: Math.random() * Math.PI * 2,
+          speed: 70 + Math.random() * 40,
+          radius: CONFIG.BALL.radius * (CONFIG.MARS.stormScaleMin + Math.random() * (CONFIG.MARS.stormScaleMax - CONFIG.MARS.stormScaleMin)),
+          noise: Math.floor(Math.random() * 100),
+          t: 0, tickT: 0,
+          appearLeft: CONFIG.MARS.appearMin + Math.random() * (CONFIG.MARS.appearMax - CONFIG.MARS.appearMin),
+          hiding: false, hideT: 0,
+        };
+        ph.push(storm);
+      }
+      if (!storm.hiding) {
+        // 游走阶段：随机转向缓慢移动 + 边界反弹
+        storm.t += dt;
+        storm.angle += (Math.random() - 0.5) * 0.4;
+        storm.x += Math.cos(storm.angle) * storm.speed * dt;
+        storm.y += Math.sin(storm.angle) * storm.speed * dt;
+        if (storm.x < storm.radius) { storm.x = storm.radius; storm.angle = Math.PI - storm.angle; }
+        else if (storm.x > FW - storm.radius) { storm.x = FW - storm.radius; storm.angle = Math.PI - storm.angle; }
+        if (storm.y < storm.radius) { storm.y = storm.radius; storm.angle = -storm.angle; }
+        else if (storm.y > FH - storm.radius) { storm.y = FH - storm.radius; storm.angle = -storm.angle; }
+        // 游走时间到 → 渐影消失阶段（5s）
+        if (storm.t >= storm.appearLeft) { storm.hiding = true; storm.hideT = 0; }
+        // 领域伤害：每 0.5s 对范围内球造成 5×(1+加成) 基础伤害（本体免疫；战场球不受）
+        storm.tickT += dt;
+        if (storm.tickT >= CONFIG.MARS.tick) {
+          storm.tickT -= CONFIG.MARS.tick;
+          const ratio = Math.max(0, Math.min(1, owner.hp / owner.maxHp));
+          const boost = (1 - ratio) * CONFIG.MARS.boostMax;
+          const dmg = Math.round(CONFIG.MARS.baseDamage * (1 + boost));   // 取整：伤害数字不出现小数尾巴
+          for (const b of all) {
+            if (b === owner || b.dead || this.wilds.includes(b)) continue;
+            if (Math.hypot(b.x - storm.x, b.y - storm.y) <= storm.radius + b.radiusScaled) {
+              b.takeDamage(dmg, this.ctx, owner);
+              this.ctx.events.emit('fx:dustTick', { x: b.x, y: b.y });
+            }
           }
         }
-      }
-    } else {
-      // 渐影消失 5s → 移除（下一周期再现）
-      storm.hideT += dt;
-      if (storm.hideT >= CONFIG.MARS.hideDuration) {
-        const idx = ph.indexOf(storm);
-        if (idx >= 0) ph.splice(idx, 1);
+      } else {
+        // 渐影消失 5s → 移除（下一周期再现）
+        storm.hideT += dt;
+        if (storm.hideT >= CONFIG.MARS.hideDuration) {
+          const idx = ph.indexOf(storm);
+          if (idx >= 0) ph.splice(idx, 1);
+        }
       }
     }
   }

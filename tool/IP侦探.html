@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP 侦探 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .loading { display: none; text-align: center; padding: 1.2rem; opacity: 0.6; }
+        .loading.show { display: block; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,128,128,0.3); border-top-color: #66bb6a; border-radius: 50%; animation: spin 0.6s linear infinite; vertical-align: -3px; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .ip-hero { text-align: center; padding: 1rem 0 1.2rem; }
+        .ip-hero .ip-big { font-size: 2.2rem; font-weight: 800; font-family: 'Courier New', monospace; letter-spacing: 2px; color: #66bb6a; text-shadow: 0 0 24px rgba(102,187,106,0.3); word-break: break-all; }
+        .ip-hero .ip-sub { font-size: 0.85rem; opacity: 0.55; margin-top: 0.4rem; }
+        .diff-banner { margin: 0 0 0.9rem; padding: 0.6rem 1rem; border-radius: 0.9rem; font-size: 0.85rem; background: rgba(245,166,35,0.1); border: 1px solid rgba(245,166,35,0.3); color: #f5a623; text-align: center; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem; }
+        @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+        .panel { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 1rem; padding: 0.9rem 1rem; }
+        .panel .p-title { font-size: 0.78rem; opacity: 0.55; margin-bottom: 0.55rem; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+        .kv { display: flex; justify-content: space-between; gap: 1rem; padding: 0.28rem 0; font-size: 0.86rem; border-bottom: 1px dashed rgba(128,128,128,0.08); }
+        .kv:last-child { border-bottom: none; }
+        .kv .k { opacity: 0.6; flex-shrink: 0; }
+        .kv .v { font-weight: 600; text-align: right; word-break: break-all; }
+        .kv .v.mono { font-family: 'Courier New', monospace; }
+        .leak-warn { color: #ff7777; font-weight: 700; }
+        .leak-ok { color: #66bb6a; font-weight: 700; }
+        .copy-hint { cursor: pointer; transition: opacity 0.2s; }
+        .copy-hint:hover { opacity: 0.7; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🕵️ IP 侦探</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">一键体检你的网络身份：公网 IP、归属地、运营商、时区、经纬度，多源交叉验证 + WebRTC 泄露检测 + IP 变化快照追踪。</div>
+
+            <div class="tool-toolbar">
+                <button class="btn btn-primary" id="scanBtn">🔍 开始体检</button>
+                <span class="loading" id="loading" style="display:none;"><span class="spinner"></span>正在多源探测…</span>
+            </div>
+
+            <div id="resultArea" style="display:none;">
+                <div class="diff-banner" id="diffBanner" style="display:none;"></div>
+                <div class="ip-hero">
+                    <div class="ip-big" id="ipBig" title="点击复制">-</div>
+                    <div class="ip-sub" id="ipSub"></div>
+                </div>
+                <div class="grid2">
+                    <div class="panel">
+                        <div class="p-title"><span>📍 主源定位（ipwho.is）</span><span class="copy-hint" data-copy="geo1">📋 复制</span></div>
+                        <div id="geo1"></div>
+                    </div>
+                    <div class="panel">
+                        <div class="p-title"><span>🔁 交叉验证（ipinfo.io）</span><span class="copy-hint" data-copy="geo2">📋 复制</span></div>
+                        <div id="geo2"></div>
+                    </div>
+                </div>
+                <div class="panel" style="margin-bottom:0.8rem;">
+                    <div class="p-title"><span>🕳️ WebRTC 泄露检测</span><span id="webrtcStatus"></span></div>
+                    <div id="webrtcResult" style="font-size:0.85rem;opacity:0.7;line-height:1.7;"></div>
+                </div>
+                <div class="panel">
+                    <div class="p-title"><span>📸 IP 快照追踪</span><span id="snapInfo"></span></div>
+                    <div id="snapResult" style="font-size:0.85rem;opacity:0.7;line-height:1.7;"></div>
+                </div>
+            </div>
+
+            <div class="tool-foot">数据源：ipwho.is / ipinfo.io（双源交叉）· WebRTC 检测在本机浏览器完成 · IP 快照仅存于本地浏览器</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var scanBtn = document.getElementById('scanBtn');
+        var loading = document.getElementById('loading');
+        var resultArea = document.getElementById('resultArea');
+
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function kv(k, v, cls) {
+            return '<div class="kv"><span class="k">' + esc(k) + '</span><span class="v ' + (cls || '') + '">' + esc(v == null ? '-' : v) + '</span></div>';
+        }
+        function copyText(t) {
+            if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { }, function () { });
+        }
+        document.addEventListener('click', function (e) {
+            var c = e.target.closest('.copy-hint');
+            if (!c) return;
+            var key = c.getAttribute('data-copy');
+            var txt = key === 'ip' ? (document.getElementById('ipBig').textContent || '') :
+                      key === 'geo1' ? document.getElementById('geo1').textContent.replace(/^.*$/m, '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean).join(', ') :
+                      key === 'geo2' ? document.getElementById('geo2').textContent.split('\n').map(function (s) { return s.trim(); }).filter(Boolean).join(', ') : '';
+            if (txt) { copyText(txt); c.textContent = '✅ 已复制'; setTimeout(function () { c.textContent = '📋 复制'; }, 1500); }
+        });
+
+        /* ---- WebRTC 泄露检测 ---- */
+        function detectWebRTC(cb) {
+            var found = { public: [], private: [] };
+            try {
+                var pc = new (window.RTCPeerConnection || window.webkitRTCPeerConnection)({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                pc.createDataChannel('probe');
+                pc.onicecandidate = function (e) {
+                    if (!e.candidate) { cb(found); return; }
+                    var m = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(e.candidate.candidate);
+                    if (m) {
+                        var ip = m[1];
+                        if (ip === '0.0.0.0' || ip.startsWith('127.')) return;
+                        if (/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(ip)) {
+                            if (found.private.indexOf(ip) < 0) found.private.push(ip);
+                        } else {
+                            if (found.public.indexOf(ip) < 0) found.public.push(ip);
+                        }
+                    }
+                };
+                setTimeout(function () { try { pc.close(); cb(found); } catch (e) { cb(found); } }, 2500);
+                pc.createOffer().then(function (o) { return pc.setLocalDescription(o); }).catch(function () { });
+            } catch (e) { cb(found); }
+        }
+
+        function scan() {
+            scanBtn.disabled = true;
+            loading.style.display = '';
+            resultArea.style.display = 'none';
+            var results = {};
+            function done() {
+                if (!results.a || !results.b) return;
+                loading.style.display = 'none';
+                scanBtn.disabled = false;
+                render(results);
+            }
+            fetch('https://ipwho.is/').then(function (r) { return r.json(); }).then(function (j) { results.a = j; done(); }).catch(function () { results.a = null; done(); });
+            fetch('https://ipinfo.io/json').then(function (r) { return r.json(); }).then(function (j) { results.b = j; done(); }).catch(function () { results.b = null; done(); });
+            detectWebRTC(function (f) { results.rtc = f; done(); });
+        }
+
+        function render(r) {
+            resultArea.style.display = '';
+            var a = r.a || {}, b = r.b || {};
+            var ip = a.ip || b.ip || '-';
+            document.getElementById('ipBig').textContent = ip;
+            document.getElementById('ipSub').textContent = (a.success !== false ? ((a.type || '') + ' · ') : '') + (a.country || '') + (a.region ? ' ' + a.region : '') + (a.city ? ' ' + a.city : '') + (b.org ? ' · ' + b.org : '');
+            /* geo1 */
+            var g1 = kv('IP 地址', a.ip, 'mono') + kv('类型', a.type || '-') +
+                kv('国家', (a.country || '') + (a.flag ? ' ' + a.flag.emoji : '')) +
+                kv('省份', a.region || '-') + kv('城市', a.city || '-') +
+                kv('运营商', (a.connection && (a.connection.isp || a.connection.org)) || '-') +
+                kv('ASN', (a.connection && a.connection.asn) || '-') +
+                kv('时区', (a.timezone && a.timezone.id) || '-') +
+                kv('经纬度', (a.latitude ? a.latitude.toFixed(4) + ', ' + a.longitude.toFixed(4) : '-'), 'mono');
+            document.getElementById('geo1').innerHTML = g1;
+            /* geo2 */
+            var g2 = kv('IP 地址', b.ip, 'mono') + kv('城市', b.city || '-') + kv('省份', b.region || '-') +
+                kv('国家', b.country || '-') + kv('组织', b.org || '-') + kv('邮编', b.postal || '-') +
+                kv('时区', b.timezone || '-') + kv('经纬度', b.loc || '-', 'mono');
+            document.getElementById('geo2').innerHTML = g2;
+            /* WebRTC */
+            var wrs = document.getElementById('webrtcResult');
+            var st = document.getElementById('webrtcStatus');
+            var pub = (r.rtc && r.rtc.public) || [];
+            var priv = (r.rtc && r.rtc.private) || [];
+            var pubReal = pub.filter(function (p) { return p !== ip; });
+            if (pubReal.length) {
+                st.innerHTML = '<span class="leak-warn">⚠ 存在泄露</span>';
+                wrs.innerHTML = '检测到 <b>' + pubReal.length + '</b> 个与公网 IP 不同的地址：<span class="mono">' + esc(pubReal.join('、')) + '</span>——开启 VPN/代理后仍可能暴露真实 IP。';
+            } else {
+                st.innerHTML = '<span class="leak-ok">✅ 未发现异常</span>';
+                wrs.innerHTML = '未检测到额外公网地址' + (priv.length ? '；局域网 IP：<span class="mono">' + esc(priv.join('、')) + '</span>' : '') + '。';
+            }
+            /* 快照 */
+            var KEY = 'ipSnap';
+            var now = new Date();
+            var last = null;
+            try { last = JSON.parse(localStorage.getItem(KEY)); } catch (e) { }
+            var snapInfo = document.getElementById('snapInfo');
+            var snapResult = document.getElementById('snapResult');
+            if (last && last.ip !== ip) {
+                var oldT = new Date(last.time);
+                snapInfo.innerHTML = '<span style="color:#f5a623;">🔄 IP 已变化</span>';
+                snapResult.innerHTML = '上次记录（' + oldT.toLocaleString() + '）：<span class="mono">' + esc(last.ip) + '</span> ' + esc(last.loc || '') + '<br>本次：<span class="mono">' + esc(ip) + '</span> —— 网络环境发生过变化。';
+                document.getElementById('diffBanner').style.display = '';
+                document.getElementById('diffBanner').textContent = '🔄 你的 IP 与上次体检不同（' + esc(last.ip) + ' → ' + esc(ip) + '）';
+            } else {
+                snapInfo.innerHTML = '<span class="leak-ok">✅ 无变化</span>';
+                snapResult.innerHTML = last ? '上次记录：' + new Date(last.time).toLocaleString() + '，IP 未变。' : '首次体检，将记录本次 IP 作为基线。';
+            }
+            try {
+                localStorage.setItem(KEY, JSON.stringify({ ip: ip, loc: (a.city || '') + (a.region || ''), time: now.toISOString() }));
+            } catch (e) { }
+        }
+
+        scanBtn.addEventListener('click', scan);
+        document.getElementById('ipBig').addEventListener('click', function () {
+            copyText(this.textContent);
+            this.textContent = '✅ 已复制';
+            var t = this;
+            setTimeout(function () { if (t.textContent === '✅ 已复制') t.textContent = ip; }, 1200);
+        });
+        scan();
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

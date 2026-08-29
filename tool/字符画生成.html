@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字符画工坊 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .tool-toolbar { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .select-input {
+            padding: 0.45rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25);
+            background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; font-size: 0.85rem;
+            outline: none; transition: border-color 0.2s;
+        }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn-sm { padding: 0.3rem 0.85rem; font-size: 0.78rem; }
+        .drop-zone { border: 2px dashed rgba(128,128,128,0.3); border-radius: 1.2rem; padding: 1.8rem 1.5rem; text-align: center; cursor: pointer; transition: all 0.25s; background: rgba(128,128,128,0.03); margin-bottom: 0.9rem; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #66bb6a; background: rgba(102,187,106,0.06); }
+        .drop-zone .dz-icon { font-size: 2.2rem; display: block; margin-bottom: 0.5rem; }
+        .drop-zone .dz-text { opacity: 0.7; font-size: 0.92rem; }
+        .opts-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.9rem; font-size: 0.85rem; }
+        .opts-row label { opacity: 0.7; }
+        .opts-row input[type="range"] { width: 130px; accent-color: #66bb6a; }
+        .opts-row .seg { display: inline-flex; gap: 0.3rem; flex-wrap: wrap; }
+        .seg-btn { padding: 0.28rem 0.75rem; border-radius: 2rem; cursor: pointer; font-size: 0.78rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; transition: all 0.2s; }
+        .seg-btn.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+        .preview-box { background: #0a0a0a; border-radius: 1rem; padding: 1rem; overflow: auto; max-height: 420px; margin-bottom: 0.8rem; }
+        .preview-box pre { margin: 0; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.05; color: #e0e0e0; white-space: pre; }
+        .preview-box pre.color { font-size: 0; line-height: 0; }
+        .preview-box pre.color span { font-size: 11px; line-height: 1.05; }
+        .tool-foot { margin-top: 1.5rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">🎨 字符画工坊</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">图片 → 字符画，像素艺术风。多种字符集、彩色字符画（HTML）、亮度/对比度/反色调节，全程本地处理。</div>
+
+            <div class="drop-zone" id="dropZone">
+                <span class="dz-icon">🖼️</span>
+                <div class="dz-text">拖拽图片到这里，或点击选择图片</div>
+                <div class="dz-sub">支持 PNG / JPG / WebP，图片仅在本机处理</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" hidden>
+
+            <div class="opts-row">
+                <label>字符集</label>
+                <div class="seg" id="charsetSeg">
+                    <button class="seg-btn active" data-cs="classic">经典灰度</button>
+                    <button class="seg-btn" data-cs="min">极简</button>
+                    <button class="seg-btn" data-cs="block">实心块</button>
+                    <button class="seg-btn" data-cs="emoji">Emoji</button>
+                </div>
+            </div>
+            <div class="opts-row">
+                <label>宽度</label><input type="range" id="widthRange" min="40" max="200" step="4" value="100"><span id="widthVal" style="opacity:0.55;font-size:0.78rem;">100</span>
+                <label style="margin-left:0.6rem;">亮度</label><input type="range" id="brightRange" min="-60" max="60" step="2" value="0">
+                <label style="margin-left:0.6rem;">对比度</label><input type="range" id="contrastRange" min="-60" max="60" step="2" value="0">
+            </div>
+            <div class="opts-row">
+                <div class="seg" id="colorSeg">
+                    <button class="seg-btn active" data-col="0">黑白字符画</button>
+                    <button class="seg-btn" data-col="1">🌈 彩色字符画</button>
+                </div>
+                <button class="btn btn-sm" id="copyBtn">📋 复制文本</button>
+                <button class="btn btn-sm" id="dlBtn">💾 下载</button>
+            </div>
+
+            <div class="preview-box" id="previewBox" style="display:none;"><pre id="preview"></pre></div>
+
+            <div class="tool-foot">字符画在浏览器本地生成 · 彩色版下载为 HTML 文件，可直接打开欣赏</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var CHARSETS = {
+            classic: '@%#*+=-:. ',
+            min: '#. ',
+            block: '█▓▒░ ',
+            emoji: '😀😎🔥⭐🍀❤️💎⚡✨🕳️'
+        };
+        var img = null, previewBox = document.getElementById('previewBox'), preview = document.getElementById('preview');
+
+        function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function segVal(id) {
+            var a = document.querySelector('#' + id + ' .seg-btn.active');
+            return a ? a.getAttribute('data-' + (id === 'charsetSeg' ? 'cs' : 'col')) : '';
+        }
+        document.querySelectorAll('.seg').forEach(function (box) {
+            box.addEventListener('click', function (e) {
+                var b = e.target.closest('.seg-btn');
+                if (!b) return;
+                box.querySelectorAll('.seg-btn').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                if (img) generate();
+            });
+        });
+        document.getElementById('widthRange').addEventListener('input', function () {
+            document.getElementById('widthVal').textContent = this.value;
+            if (img) generate();
+        });
+        document.getElementById('brightRange').addEventListener('input', function () { if (img) generate(); });
+        document.getElementById('contrastRange').addEventListener('input', function () { if (img) generate(); });
+
+        function generate() {
+            var W = +document.getElementById('widthRange').value;
+            var bright = +document.getElementById('brightRange').value;
+            var contrast = +document.getElementById('contrastRange').value;
+            var cs = segVal('charsetSeg');
+            var color = segVal('colorSeg') === '1';
+            var chars = CHARSETS[cs] || CHARSETS.classic;
+            var canvas = document.createElement('canvas');
+            var scale = W / img.width;
+            var H = Math.max(1, Math.round(img.height * scale * 0.48));
+            canvas.width = W; canvas.height = H;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, W, H);
+            var data = ctx.getImageData(0, 0, W, H).data;
+            var lines = [];
+            for (var y = 0; y < H; y++) {
+                var line = '';
+                for (var x = 0; x < W; x++) {
+                    var i = (y * W + x) * 4;
+                    var r = data[i], g = data[i + 1], b = data[i + 2];
+                    var gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                    gray += bright;
+                    gray = (gray - 128) * (1 + contrast / 60) + 128;
+                    gray = Math.max(0, Math.min(255, gray));
+                    var idx = Math.floor(gray / 256 * chars.length);
+                    if (idx >= chars.length) idx = chars.length - 1;
+                    line += chars[idx];
+                }
+                lines.push(line);
+            }
+            previewBox.style.display = '';
+            if (color) {
+                var html = '';
+                for (var yy = 0; yy < H; yy++) {
+                    for (var xx = 0; xx < W; xx++) {
+                        var ii = (yy * W + xx) * 4;
+                        html += '<span style="color:rgb(' + data[ii] + ',' + data[ii + 1] + ',' + data[ii + 2] + ')">' + chars[Math.floor(((0.299 * data[ii] + 0.587 * data[ii + 1] + 0.114 * data[ii + 2] + bright) / 256) * chars.length)] + '</span>';
+                    }
+                    html += '\n';
+                }
+                preview.className = 'color';
+                preview.innerHTML = html;
+            } else {
+                preview.className = '';
+                preview.textContent = lines.join('\n');
+            }
+        }
+
+        var dropZone = document.getElementById('dropZone'), fileInput = document.getElementById('fileInput');
+        dropZone.addEventListener('click', function () { fileInput.click(); });
+        dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            var f = e.dataTransfer.files[0];
+            if (f && /^image\//.test(f.type)) loadFile(f);
+        });
+        fileInput.addEventListener('change', function () {
+            var f = fileInput.files[0];
+            if (f) loadFile(f);
+            fileInput.value = '';
+        });
+        function loadFile(f) {
+            var url = URL.createObjectURL(f);
+            img = new Image();
+            img.onload = function () { generate(); };
+            img.src = url;
+        }
+
+        function getArtText() {
+            return preview.className === 'color' ? preview.innerText : preview.textContent;
+        }
+        document.getElementById('copyBtn').addEventListener('click', function () {
+            var t = getArtText();
+            if (!t) return;
+            if (navigator.clipboard) navigator.clipboard.writeText(t);
+            var b = this; b.textContent = '✅ 已复制';
+            setTimeout(function () { b.textContent = '📋 复制文本'; }, 1200);
+        });
+        document.getElementById('dlBtn').addEventListener('click', function () {
+            if (!img) return;
+            var blob, name;
+            if (preview.className === 'color') {
+                blob = new Blob(['<!DOCTYPE html><html><head><meta charset="utf-8"><title>字符画</title><style>body{background:#0a0a0a;margin:0;padding:20px;overflow:auto}pre{font-family:monospace;line-height:1.05;font-size:11px}</style></head><body><pre>' + preview.innerHTML + '</pre></body></html>'], { type: 'text/html' });
+                name = 'ascii_art_' + Date.now() + '.html';
+            } else {
+                blob = new Blob([getArtText()], { type: 'text/plain;charset=utf-8' });
+                name = 'ascii_art_' + Date.now() + '.txt';
+            }
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            a.click();
+        });
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

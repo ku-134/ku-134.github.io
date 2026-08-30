@@ -1,0 +1,8 @@
+Game_name:妲那给木;
+Game_key:DLGM001;
+Title_img:DLGM-start.webp;
+Title_bgm:;
+Game_Logo:DLGM-start.webp;
+Enable_Appreciation:true;
+Enable_Continue:true;
+Enable_flowchart:false;

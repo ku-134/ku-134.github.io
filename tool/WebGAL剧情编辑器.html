@@ -51,15 +51,10 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
 .wg-node .nsum { font-size: 0.82rem; line-height: 1.5; word-break: break-all; white-space: pre-wrap; }
 .wg-node .nsum .spk { color: #66bb6a; font-weight: 600; margin-right: 0.35rem; }
 .wg-node .nmeta { font-size: 0.7rem; opacity: 0.45; margin-top: 0.15rem; }
-.wg-node .nops { display: flex; gap: 0.15rem; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
-.wg-node:hover .nops { opacity: 1; }
-.wg-node .nops button { background: none; border: none; color: inherit; cursor: pointer; font-size: 0.8rem; opacity: 0.6; padding: 0.1rem 0.2rem; }
-.wg-node .nops button:hover { opacity: 1; }
-.wg-node .nops button.del:hover { color: #ef5350; }
 .wg-node .nsubs { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; }
 .wg-node .nsub { display: flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; padding: 0.28rem 0.5rem; border-radius: 0.5rem; background: rgba(102,187,106,0.07); border: 1px dashed rgba(102,187,106,0.3); }
 .wg-node .nsub .ar { color: #66bb6a; }
-/* ===== 右栏：属性 / 好感度 ===== */
+/* ===== 右栏：属性 / 变量 ===== */
 .wg-right { width: 300px; border-left: 1px solid var(--border-color, rgba(255,255,255,0.09)); background: var(--card-bg, rgba(255,255,255,0.04)); display: flex; flex-direction: column; min-height: 0; }
 .wg-tabs { display: flex; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.09)); }
 .wg-tab { flex: 1; text-align: center; padding: 0.55rem 0; font-size: 0.8rem; cursor: pointer; opacity: 0.6; border-bottom: 2px solid transparent; transition: all 0.2s; }
@@ -71,7 +66,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
 .wg-prop textarea { min-height: 72px; resize: vertical; line-height: 1.5; }
 .wg-prop input:focus, .wg-prop select:focus, .wg-prop textarea:focus { border-color: #66bb6a; }
 .wg-hint { font-size: 0.72rem; opacity: 0.5; line-height: 1.5; margin-top: 0.8rem; padding-top: 0.6rem; border-top: 1px dashed rgba(128,128,128,0.15); }
-/* 好感度面板 */
+/* 变量面板 */
 .wg-aff-hero { text-align: center; padding: 1rem 0.5rem; }
 .wg-aff-num { font-size: 2.2rem; font-weight: 700; color: #66bb6a; font-family: 'Courier New', monospace; }
 .wg-aff-bar { height: 10px; border-radius: 5px; background: rgba(128,128,128,0.15); margin: 0.6rem 0; overflow: hidden; }
@@ -115,6 +110,25 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
 .wg-pv-name { color: #66bb6a; font-weight: 600; font-size: 1rem; min-height: 1.3em; }
 .wg-pv-text { font-size: 1.02rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word; min-height: 2.6em; }
 .pv-music-tip { position: absolute; top: 0.6rem; left: 0.8rem; font-size: 0.72rem; color: #90caf9; background: rgba(0,0,0,0.5); padding: 0.25rem 0.6rem; border-radius: 2rem; z-index: 3; display: none; }
+/* ===== 预览测试控制台 ===== */
+.wg-pv-console { border-top: 1px solid rgba(255,255,255,0.08); background: rgba(12,16,26,0.9); }
+.wg-pv-console.open { border-top-color: rgba(102,187,106,0.3); }
+.pv-console-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1rem; cursor: pointer; font-size: 0.8rem; opacity: 0.75; user-select: none; }
+.pv-console-head:hover { opacity: 1; }
+.pv-console-head .arrow { transition: transform 0.2s; font-size: 0.7rem; }
+.wg-pv-console.open .pv-console-head .arrow { transform: rotate(180deg); }
+.pv-console-body { display: none; padding: 0.6rem 1rem 0.8rem; flex-direction: column; gap: 0.5rem; }
+.wg-pv-console.open .pv-console-body { display: flex; }
+.pv-con-row { font-size: 0.78rem; opacity: 0.85; line-height: 1.6; word-break: break-all; }
+.pv-con-row b { color: #66bb6a; font-family: 'Courier New', monospace; }
+.pv-con-actions { display: flex; gap: 0.5rem; }
+.pv-con-actions .pv-ctrl { padding: 0.3rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.28); background: rgba(128,128,128,0.07); color: inherit; cursor: pointer; font-size: 0.78rem; font-family: inherit; }
+.pv-con-actions .pv-ctrl:hover { border-color: #66bb6a; color: #66bb6a; }
+.pv-con-vars { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.pv-con-vars span { font-size: 0.72rem; font-family: 'Courier New', monospace; background: rgba(102,187,106,0.1); border: 1px solid rgba(102,187,106,0.25); color: #a5d6a7; padding: 0.18rem 0.55rem; border-radius: 2rem; }
+/* ===== 节点操作栏（选中后） ===== */
+.wg-node-ops { display: flex; gap: 0.4rem; flex-wrap: wrap; padding-bottom: 0.7rem; margin-bottom: 0.7rem; border-bottom: 1px dashed rgba(128,128,128,0.2); }
+.wg-node-ops .nb.del:hover { border-color: #ef5350; color: #ef5350; }
 /* ===== 内置弹窗 ===== */
 .wg-modal { position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; }
 .wg-modal.show { display: flex; }
@@ -138,15 +152,13 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
 .ap-empty { text-align: center; font-size: 0.78rem; opacity: 0.5; padding: 1.5rem 0; line-height: 1.8; }
 .ap-confirm { text-align: center; padding: 0.8rem 0 1.1rem; font-size: 0.85rem; line-height: 1.7; }
 .ap-confirm-actions { display: flex; justify-content: center; gap: 0.6rem; }
-/* ===== 插入分类组 ===== */
-.wg-cats { display: flex; flex-direction: column; gap: 0.3rem; width: 100%; }
-.wg-cat-row { border: 1px solid rgba(128,128,128,0.12); border-radius: 0.6rem; overflow: hidden; background: rgba(128,128,128,0.03); }
-.wg-cat-title { display: flex; align-items: center; gap: 0.4rem; padding: 0.32rem 0.6rem; font-size: 0.74rem; cursor: pointer; opacity: 0.85; user-select: none; }
-.wg-cat-title:hover { opacity: 1; background: rgba(128,128,128,0.05); }
-.wg-cat-title .arrow { transition: transform 0.2s; font-size: 0.7rem; display: inline-block; }
-.wg-cat-row.closed .arrow { transform: rotate(-90deg); }
-.wg-cat-row.closed .wg-cat-btns { display: none; }
-.wg-cat-btns { display: flex; gap: 0.3rem; flex-wrap: wrap; padding: 0.4rem 0.55rem; }
+/* ===== 插入分类（上下两区） ===== */
+.wg-cat-pills { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.cat-pill { padding: 0.28rem 0.75rem; border-radius: 2rem; cursor: pointer; font-size: 0.74rem; border: 1px solid rgba(128,128,128,0.22); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; transition: all 0.15s; }
+.cat-pill:hover { border-color: rgba(102,187,106,0.5); }
+.cat-pill.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+.wg-cat-nodes { display: flex; gap: 0.3rem; flex-wrap: wrap; min-height: 1.6rem; align-items: center; }
+.wg-cat-nodes .cat-hint { font-size: 0.72rem; opacity: 0.4; }
 /* ===== 按钮组（替代原生下拉） ===== */
 .seg { display: inline-flex; gap: 0.35rem; flex-wrap: wrap; }
 .seg-btn { padding: 0.32rem 0.85rem; border-radius: 2rem; cursor: pointer; font-size: 0.78rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; transition: all 0.15s; }
@@ -190,44 +202,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
           <span class="sp"></span>
           <button class="nb" id="btnClear" style="color:#ef5350;">🗑 清空</button>
         </div>
-        <div class="wg-cats" id="insertCats">
-          <div class="wg-cat-row" data-cat="script">
-            <div class="wg-cat-title"><span class="arrow">▾</span>💬 剧本</div>
-            <div class="wg-cat-btns">
-              <button class="nb" data-add="dialogue">💬 对话</button>
-              <button class="nb" data-add="narrate">📖 旁白</button>
-            </div>
-          </div>
-          <div class="wg-cat-row" data-cat="stage">
-            <div class="wg-cat-title"><span class="arrow">▾</span>🎭 布景</div>
-            <div class="wg-cat-btns">
-              <button class="nb" data-add="bg">🖼 背景</button>
-              <button class="nb" data-add="char">🧍 立绘</button>
-            </div>
-          </div>
-          <div class="wg-cat-row" data-cat="audio">
-            <div class="wg-cat-title"><span class="arrow">▾</span>🎵 声音</div>
-            <div class="wg-cat-btns">
-              <button class="nb" data-add="music">🎵 音乐</button>
-              <button class="nb" data-add="effect">🔊 音效</button>
-              <button class="nb" data-add="voice">🗣 语音</button>
-            </div>
-          </div>
-          <div class="wg-cat-row" data-cat="emotion">
-            <div class="wg-cat-title"><span class="arrow">▾</span>💗 情感</div>
-            <div class="wg-cat-btns">
-              <button class="nb" data-add="affection">💗 好感度</button>
-            </div>
-          </div>
-          <div class="wg-cat-row" data-cat="flow">
-            <div class="wg-cat-title"><span class="arrow">▾</span>🔀 流程</div>
-            <div class="wg-cat-btns">
-              <button class="nb" data-add="choose">🔀 分支</button>
-              <button class="nb" data-add="label">🏷 标签</button>
-              <button class="nb" data-add="jump">➡️ 跳转</button>
-            </div>
-          </div>
-        </div>
+        <div class="wg-cat-pills" id="catPills"></div>
+        <div class="wg-cat-nodes" id="catNodes"><span class="cat-hint">点击上方分类，选择要插入的节点类型</span></div>
       </div>
       <div class="wg-list" id="nodeList"></div>
     </div>
@@ -235,7 +211,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     <div class="wg-right" id="rightPanel">
       <div class="wg-tabs">
         <div class="wg-tab active" data-tab="prop">属性</div>
-        <div class="wg-tab" data-tab="aff">💗 好感度</div>
+        <div class="wg-tab" data-tab="aff">📊 变量</div>
       </div>
       <div class="wg-right-body" id="propBody"></div>
       <div class="wg-right-body" id="affBody" style="display:none;"></div>
@@ -277,6 +253,19 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     <button class="pv-ctrl" id="pvNext">下一步 ⏩</button>
     <span class="pv-prog" id="pvProg"></span>
   </div>
+  <!-- 测试控制台 -->
+  <div class="wg-pv-console" id="pvConsole">
+    <div class="pv-console-head" id="pvConsoleToggle"><span class="arrow">▾</span>🛠 测试控制台</div>
+    <div class="pv-console-body">
+      <div class="pv-con-row">当前位置：#<b id="pvConPos">-</b> · <span id="pvConNode">-</span></div>
+      <div class="pv-con-actions">
+        <button class="pv-ctrl" id="pvConBack">⏮ 强制上一步</button>
+        <button class="pv-ctrl" id="pvConNext">强制下一步 ⏭</button>
+      </div>
+      <div class="pv-con-row">变量：</div>
+      <div class="pv-con-vars" id="pvConVars"><span style="opacity:.5;">（暂无变量）</span></div>
+    </div>
+  </div>
 </div>
 
 <input type="file" id="fileImport" accept=".txt,text/plain" style="display:none;">
@@ -292,7 +281,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
   var nodes = [];
   var assets = { bg: [], char: [], music: [], effect: [], voice: [] };
   var selId = null;
-  var affVars = ['好感度'];
+  var affVars = [];
 
   /* ===== 工具函数 ===== */
   function uid() { return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
@@ -311,7 +300,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
       case 'music': return { icon: '🎵', html: d.action === 'clear' ? '停止音乐' : '音乐：' + esc(d.file || '未选择') };
       case 'effect': return { icon: '🔊', html: '音效：' + esc(d.file || '未选择') };
       case 'voice': return { icon: '🗣', html: '语音：' + esc(d.file || '未选择') };
-      case 'affection': return { icon: '💗', html: '好感度 <b style="color:' + (d.op === '-' ? '#ef5350' : '#66bb6a') + '">' + fmtAff(d.op, d.value) + '</b>　<span style="opacity:.5">' + esc(d.var) + '</span>' };
+      case 'affection': return { icon: '📊', html: (d.var || '变量') + ' <b style="color:' + (d.op === '-' ? '#ef5350' : '#66bb6a') + '">' + fmtAff(d.op, d.value) + '</b>　<span style="opacity:.5">' + esc(d.var) + '</span>' };
       case 'choose': return { icon: '🔀', html: '分支选择（' + d.options.length + ' 个选项）' };
       case 'label': return { icon: '🏷', html: '标签：<b>' + esc(d.name) + '</b>' };
       case 'jump': return { icon: '➡️', html: '跳转 → ' + esc(d.target) };
@@ -329,7 +318,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
       case 'music': base.data = { file: '', action: 'play' }; break;
       case 'effect': base.data = { file: '' }; break;
       case 'voice': base.data = { file: '' }; break;
-      case 'affection': base.data = { var: '好感度', op: '+', value: 1 }; break;
+      case 'affection': base.data = { var: '', op: '+', value: 1 }; break;
       case 'choose': base.data = { options: [{ text: '', target: '', cond: '' }, { text: '', target: '', cond: '' }] }; break;
       case 'label': base.data = { name: '' }; break;
       case 'jump': base.data = { target: '' }; break;
@@ -354,25 +343,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
       }
       div.innerHTML = '<div class="nicon">' + s.icon + '</div>' +
         '<div class="nbody"><div class="nsum">' + s.html + '</div>' + subs +
-        '<div class="nmeta">#' + (i + 1) + ' · ' + n.type + '</div></div>' +
-        '<div class="nops">' +
-        '<button data-op="up" title="上移">↑</button>' +
-        '<button data-op="down" title="下移">↓</button>' +
-        '<button data-op="copy" title="复制">⧉</button>' +
-        '<button data-op="del" class="del" title="删除">✕</button>' +
-        '</div>';
-      div.addEventListener('click', function (e) {
-        var op = e.target.getAttribute('data-op');
-        if (op) {
-          e.stopPropagation();
-          if (op === 'up' && i > 0) { swap(i, i - 1); }
-          else if (op === 'down' && i < nodes.length - 1) { swap(i, i + 1); }
-          else if (op === 'copy') {
-            var cp = JSON.parse(JSON.stringify(n)); cp.id = uid();
-            nodes.splice(i + 1, 0, cp); save(); renderList();
-          } else if (op === 'del') { nodes.splice(i, 1); if (selId === n.id) selId = null; save(); renderList(); renderProp(); renderAff(); }
-          return;
-        }
+        '<div class="nmeta">#' + (i + 1) + ' · ' + n.type + '</div></div>';
+      div.addEventListener('click', function () {
         selId = n.id; renderList(); renderProp();
       });
       box.appendChild(div);
@@ -391,6 +363,14 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     }
     var d = n.data;
     var h = '';
+    /* 节点操作栏（选中后显示） */
+    var idx = nodes.indexOf(n);
+    h += '<div class="wg-node-ops">' +
+      '<button class="nb" data-nop="up"' + (idx <= 0 ? ' disabled style="opacity:.35;"' : '') + '>↑ 上移</button>' +
+      '<button class="nb" data-nop="down"' + (idx >= nodes.length - 1 ? ' disabled style="opacity:.35;"' : '') + '>↓ 下移</button>' +
+      '<button class="nb" data-nop="copy">⧉ 复制</button>' +
+      '<button class="nb del" data-nop="del">🗑 删除</button>' +
+      '</div>';
     function field(label, inner) { return '<div class="wg-prop"><label>' + label + '</label>' + inner + '</div>'; }
     function input(id, val, ph) { return '<input type="text" id="' + id + '" value="' + esc(val) + '" placeholder="' + (ph || '') + '">'; }
     switch (n.type) {
@@ -434,7 +414,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
         h += field('语音素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="voice">选</button></div>');
         break;
       case 'affection':
-        h += field('变量名', input('pVar', d.var, '好感度'));
+        h += field('变量名', input('pVar', d.var, '变量名（如：好感度）'));
         h += field('操作', '<div class="seg" data-bind="op" id="pOpSeg">' +
           '<button class="seg-btn' + (d.op === '+' ? ' active' : '') + '" data-v="+">增加 +</button>' +
           '<button class="seg-btn' + (d.op === '-' ? ' active' : '') + '" data-v="-">减少 -</button>' +
@@ -465,6 +445,22 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
 
   function bindPropEvents(n) {
     var d = n.data;
+    /* 节点操作栏：上移/下移/复制/删除（保持选中，复制后选中新节点） */
+    document.querySelectorAll('#propBody [data-nop]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var op = b.getAttribute('data-nop');
+        var i = nodes.indexOf(n);
+        if (op === 'up' && i > 0) { var t = nodes[i]; nodes[i] = nodes[i - 1]; nodes[i - 1] = t; }
+        else if (op === 'down' && i < nodes.length - 1) { var t2 = nodes[i]; nodes[i] = nodes[i + 1]; nodes[i + 1] = t2; }
+        else if (op === 'copy') {
+          var cp = JSON.parse(JSON.stringify(n)); cp.id = uid();
+          nodes.splice(i + 1, 0, cp); selId = cp.id;
+        } else if (op === 'del') {
+          nodes.splice(i, 1); selId = null;
+        }
+        save(); renderList(); renderProp(); renderAff();
+      });
+    });
     function on(id, fn) { var el = $(id); if (el) el.addEventListener('input', fn); }
     on('pSpeaker', function (e) { d.speaker = e.target.value; save(); refreshListOnly(); });
     on('pText', function (e) { d.text = e.target.value; save(); refreshListOnly(); });
@@ -506,7 +502,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     nodes.forEach(function (n) { if (n.type === 'affection' && vars.indexOf(n.data.var) < 0) vars.push(n.data.var); });
     var items = vars.map(function (v) {
       return '<div class="ap-item" data-name="' + esc(v) + '"><span class="ap-thumb">📊</span><span class="ap-name">' + esc(v) + '</span></div>';
-    }).join('') || '<div class="ap-empty">还没有定义过变量～<br>先插入一个 💗 好感度节点，或用下方自定义输入</div>';
+    }).join('') || '<div class="ap-empty">还没有定义过变量～<br>先插入一个 📊 变量节点，或用下方自定义输入</div>';
     var html = '<div class="ap-grid">' + items + '</div>' +
       '<div class="ap-custom"><input type="text" id="apCustom" placeholder="自定义变量名（如 勇气值）"><button class="tb primary" id="apCustomOk">选用</button></div>';
     openModal('选择条件变量', html, function () {
@@ -688,35 +684,35 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     save(); renderList(); renderProp();
   }
 
-  /* ===== 好感度可视化 ===== */
+  /* ===== 变量可视化 ===== */
   function renderAff() {
     var box = $('affBody');
     var steps = [];
     nodes.forEach(function (n) { if (n.type === 'affection') steps.push(n.data); });
     var totals = {};
     steps.forEach(function (s) {
-      var k = s.var || '好感度';
+      var k = s.var || '变量';
       if (!(k in totals)) totals[k] = 0;
       if (s.op === '=') totals[k] = s.value;
       else totals[k] += (s.op === '-' ? -1 : 1) * s.value;
     });
     if (!steps.length) {
-      box.innerHTML = '<div class="wg-aff-empty">还没有 💗 好感度节点～<br>在时间线里插入「💗 好感度」节点，<br>这里会实时绘制好感度变化曲线与当前总值。</div>';
+      box.innerHTML = '<div class="wg-aff-empty">还没有 📊 变量节点～<br>在时间线里插入「📊 变量」节点，<br>这里会实时绘制变量变化曲线与当前总值。</div>';
       return;
     }
-    var vars = affVars.filter(function (v) { return steps.some(function (s) { return (s.var || '好感度') === v; }); });
+    var vars = affVars.filter(function (v) { return steps.some(function (s) { return (s.var || '变量') === v; }); });
     var h = '';
     vars.forEach(function (v) {
       var cur = totals[v] || 0;
       var arr = [];
       var acc = 0;
       steps.forEach(function (s, i) {
-        if ((s.var || '好感度') !== v) return;
+        if ((s.var || '变量') !== v) return;
         if (s.op === '=') acc = s.value; else acc += (s.op === '-' ? -1 : 1) * s.value;
         arr.push({ i: i, v: acc, op: s.op, val: s.value });
       });
       var maxAbs = Math.max.apply(null, arr.map(function (a) { return Math.abs(a.v); }).concat([1]));
-      h += '<div class="wg-aff-hero"><div style="font-size:.75rem;opacity:.6;margin-bottom:.3rem;">💗 ' + esc(v) + ' · 当前值</div><div class="wg-aff-num">' + (cur >= 0 ? '+' : '') + cur + '</div>' +
+      h += '<div class="wg-aff-hero"><div style="font-size:.75rem;opacity:.6;margin-bottom:.3rem;">📊 ' + esc(v) + ' · 当前值</div><div class="wg-aff-num">' + (cur >= 0 ? '+' : '') + cur + '</div>' +
         '<div class="wg-aff-bar"><div class="wg-aff-fill" style="width:' + Math.min(100, Math.abs(cur) / maxAbs * 100) + '%;"></div></div>' +
         '<div style="font-size:.7rem;opacity:.5;">共 ' + arr.length + ' 次变化 · 区间 -' + maxAbs + ' ~ +' + maxAbs + '</div></div>';
       h += '<div class="wg-aff-steps">' + arr.map(function (a, j) {
@@ -741,7 +737,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
         case 'music': lines.push(d.action === 'clear' ? '[music:clear]' : '[music:' + d.file + ']'); break;
         case 'effect': lines.push('[playEffect:' + d.file + ']'); break;
         case 'voice': lines.push('[voice:' + d.file + ']'); break;
-        case 'affection': lines.push('[set:' + (d.var || '好感度') + fmtAff(d.op, d.value) + ']'); break;
+        case 'affection': lines.push('[set:' + (d.var || '变量') + fmtAff(d.op, d.value) + ']'); break;
         case 'choose': lines.push('[choose]' + d.options.map(function (o) { return (o.text || '（选项）') + '->' + (o.target || '') + (o.cond ? '?' + o.cond : ''); }).join('|') + '[/choose]'); break;
         case 'label': lines.push('[label:' + d.name + ']'); break;
         case 'jump': lines.push('[jump:' + d.target + ']'); break;
@@ -895,6 +891,33 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     $('pvBox').classList.add('show');
     renderPreview();
   }
+  /* 推进：先存快照再前进（保证回退一致） */
+  function pvNext() {
+    if (pvIdx >= nodes.length - 1) return;
+    pvHist.push(snapState());
+    pvIdx++;
+    renderPreview();
+  }
+  /* 回退：回退一步并恢复该步之前的舞台状态 */
+  function pvBack() {
+    if (pvIdx <= 0) return;
+    pvIdx--;
+    if (pvHist.length) applySnap(pvHist.pop());
+    renderPreview();
+  }
+  /* 测试控制台 */
+  function updateConsole() {
+    var n = nodes[pvIdx];
+    $('pvConPos').textContent = (pvIdx + 1) + ' / ' + nodes.length;
+    if (n) {
+      var s = nodeSummary(n);
+      $('pvConNode').innerHTML = s.icon + ' ' + s.html;
+    } else { $('pvConNode').textContent = '—— 剧情结束 ——'; }
+    var keys = Object.keys(pvState.affs);
+    $('pvConVars').innerHTML = keys.length
+      ? keys.map(function (k) { return '<span>📊 ' + esc(k) + ' = ' + pvState.affs[k] + '</span>'; }).join('')
+      : '<span style="opacity:.5;">（暂无变量）</span>';
+  }
   function renderPreview() {
     var n = nodes[pvIdx];
     $('pvName').textContent = ''; $('pvText').textContent = ''; $('pvChoose').innerHTML = '';
@@ -958,15 +981,15 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
       $('pvText').textContent = '🗣 语音：' + d.file + (va ? '' : '（素材未上传，静音预览）');
     }
     else if (n.type === 'affection') {
-      var key = d.var || '好感度';
+      var key = d.var || '变量';
       if (!(key in pvState.affs)) pvState.affs[key] = 0;
       if (d.op === '=') pvState.affs[key] = d.value;
       else pvState.affs[key] += (d.op === '-' ? -1 : 1) * d.value;
       renderAffHud();
-      $('pvText').textContent = '💗 ' + key + ' ' + fmtAff(d.op, d.value) + '　→ 当前 ' + pvState.affs[key];
+      $('pvText').textContent = '📊 ' + key + ' ' + fmtAff(d.op, d.value) + '　→ 当前 ' + pvState.affs[key];
     }
     else if (n.type === 'label') { $('pvText').textContent = '🏷 标签：' + d.name; }
-    else if (n.type === 'jump') { jumpToLabel(d.target); return; }
+    else if (n.type === 'jump') { jumpToLabel(d.target, false); return; }
     else if (n.type === 'choose') {
       var shown = d.options.filter(function (o) { return evalCond(o.cond, pvState.affs); });
       $('pvName').textContent = '🔀 选择你的行动';
@@ -974,25 +997,28 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
       shown.forEach(function (o) {
         var b = document.createElement('button');
         b.textContent = '🔘 ' + (o.text || '（选项）');
-        b.addEventListener('click', function () {
-          if (o.target) { jumpToLabel(o.target); }
-          else { pvIdx++; renderPreview(); }
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (o.target) { jumpToLabel(o.target, true); }
+          else { pvNext(); }
         });
         $('pvChoose').appendChild(b);
       });
     }
+    updateConsole();
   }
   function renderAffHud() {
     var keys = Object.keys(pvState.affs);
     var hud = $('pvAffHud');
     hud.innerHTML = keys.map(function (k) {
       var v = pvState.affs[k];
-      return '<span>💗 ' + esc(k) + ' ' + (v >= 0 ? '+' : '') + v + '</span>';
+      return '<span>📊 ' + esc(k) + ' ' + (v >= 0 ? '+' : '') + v + '</span>';
     }).join('');
   }
-  function jumpToLabel(name) {
+  function jumpToLabel(name, pushSnap) {
     var idx = nodes.findIndex(function (x) { return x.type === 'label' && x.data.name === name; });
-    if (idx < 0) { $('pvText').textContent = '➡️ 跳转目标「' + name + '」不存在…（预览结束）'; return; }
+    if (idx < 0) { $('pvText').textContent = '➡️ 跳转目标「' + name + '」不存在…（预览结束）'; updateConsole(); return; }
+    if (pushSnap) pvHist.push(snapState());
     pvIdx = idx; renderPreview();
   }
 
@@ -1003,31 +1029,26 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
   function load() {
     try {
       var d = JSON.parse(localStorage.getItem('webgalEditorDraft'));
-      if (d && d.nodes) { nodes = d.nodes; affVars = d.affVars || ['好感度']; }
+      if (d && d.nodes) { nodes = d.nodes; affVars = d.affVars || []; }
     } catch (e) { }
   }
 
   /* ===== 事件绑定 ===== */
-  document.querySelectorAll('[data-add]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var type = b.getAttribute('data-add');
-      if (type === 'affection') { openAffectionDialog(function (cfg) { var n = newNode('affection'); n.data = cfg; insertAtSel(n); }); return; }
-      insertAtSel(newNode(type));
-    });
-  });
-  /* 好感度配置弹窗 */
+  /* 节点插入按钮由 renderCatNodes 动态绑定 */
+
+  /* 变量配置弹窗 */
   function openAffectionDialog(cb) {
     var existing = affVars.slice();
     nodes.forEach(function (n) { if (n.type === 'affection' && existing.indexOf(n.data.var) < 0) existing.push(n.data.var); });
     var html =
-      '<div class="wg-prop"><label>变量名（现有：' + esc(existing.join('、') || '无') + '）</label><input type="text" id="afVar" value="好感度" placeholder="好感度"></div>' +
+      '<div class="wg-prop"><label>变量名（现有：' + esc(existing.join('、') || '无') + '）</label><input type="text" id="afVar" value="" placeholder="变量名（如：好感度）"></div>' +
       '<div class="wg-prop"><label>操作</label><div class="seg" id="afOpSeg">' +
       '<button class="seg-btn active" data-v="+">增加 +</button>' +
       '<button class="seg-btn" data-v="-">减少 -</button>' +
       '<button class="seg-btn" data-v="=">设为 =</button></div></div>' +
       '<div class="wg-prop"><label>数值</label><input type="number" id="afVal" value="1" min="0" style="width:100%;padding:.45rem .6rem;border-radius:.55rem;border:1px solid rgba(128,128,128,.22);background:rgba(128,128,128,.07);color:inherit;font-size:.82rem;outline:none;"></div>' +
       '<div class="ap-confirm-actions"><button class="tb" id="afCancel">取消</button><button class="tb primary" id="afOk">插入</button></div>';
-    openModal('💗 好感度变化', html, function () {
+    openModal('📊 变量变化', html, function () {
       var op = '+';
       $('afOpSeg').addEventListener('click', function (e) {
         var b = e.target.closest('.seg-btn'); if (!b) return;
@@ -1036,7 +1057,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
       });
       $('afCancel').addEventListener('click', closeModal);
       $('afOk').addEventListener('click', function () {
-        var vname = $('afVar').value.trim() || '好感度';
+        var vname = $('afVar').value.trim() || '变量';
         var val = Math.max(0, +$('afVal').value || 0);
         if (affVars.indexOf(vname) < 0) affVars.push(vname);
         closeModal();
@@ -1070,8 +1091,16 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
   });
   $('btnPreview').addEventListener('click', startPreview);
   $('pvClose').addEventListener('click', function () { $('pvBox').classList.remove('show'); clearStage(); });
-  $('pvNext').addEventListener('click', function () { if (pvIdx < nodes.length - 1) { pvHist.push(snapState()); pvIdx++; renderPreview(); } });
-  $('pvBack').addEventListener('click', function () { if (pvIdx > 0) { pvIdx--; if (pvHist.length) applySnap(pvHist.pop()); renderPreview(); } });
+  $('pvNext').addEventListener('click', pvNext);
+  $('pvBack').addEventListener('click', pvBack);
+  /* 游戏式点击继续：点击舞台/对话框区域推进（选项按钮已 stopPropagation） */
+  $('pvStage').addEventListener('click', function () { if (!$('pvChoose').children.length) pvNext(); });
+  $('pvStage').addEventListener('contextmenu', function (e) { e.preventDefault(); pvBack(); });
+  /* 测试控制台 */
+  $('pvConBack').addEventListener('click', pvBack);
+  $('pvConNext').addEventListener('click', pvNext);
+  $('pvConsoleToggle').addEventListener('click', function () { $('pvConsole').classList.toggle('open'); });
+  $('pvConsole').addEventListener('click', function (e) { e.stopPropagation(); });
   document.querySelectorAll('.wg-tab').forEach(function (t) {
     t.addEventListener('click', function () {
       document.querySelectorAll('.wg-tab').forEach(function (x) { x.classList.remove('active'); });
@@ -1087,18 +1116,52 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
   $('btnAssets').addEventListener('click', function (e) { e.stopPropagation(); if (drawerOpen === 'a') { closeDrawers(); return; } closeDrawers(); $('assetPanel').classList.add('open'); $('wgMask').classList.add('show'); drawerOpen = 'a'; });
   document.querySelector('.tool-title').addEventListener('click', function () { if (drawerOpen === 'r') { closeDrawers(); return; } closeDrawers(); $('rightPanel').classList.add('open'); $('wgMask').classList.add('show'); drawerOpen = 'r'; });
   $('wgMask').addEventListener('click', closeDrawers);
-  /* 插入分类：展开/收起 */
-  var catClosed = {};
-  try { catClosed = JSON.parse(localStorage.getItem('wgCatClosed') || '{}'); } catch (e) { }
-  document.querySelectorAll('.wg-cat-row').forEach(function (row) {
-    var cat = row.getAttribute('data-cat');
-    if (catClosed[cat]) row.classList.add('closed');
-    row.querySelector('.wg-cat-title').addEventListener('click', function () {
-      row.classList.toggle('closed');
-      catClosed[cat] = row.classList.contains('closed');
-      try { localStorage.setItem('wgCatClosed', JSON.stringify(catClosed)); } catch (e) { }
+  /* ===== 插入分类：上下两区（分类 pill + 当前分类节点） ===== */
+  var CAT_GROUPS = {
+    script: { name: '💬 剧本', nodes: [['dialogue', '💬 对话'], ['narrate', '📖 旁白']] },
+    stage: { name: '🎭 布景', nodes: [['bg', '🖼 背景'], ['char', '🧍 立绘']] },
+    audio: { name: '🎵 声音', nodes: [['music', '🎵 音乐'], ['effect', '🔊 音效'], ['voice', '🗣 语音']] },
+    variable: { name: '📊 变量', nodes: [['affection', '📊 设置变量']] },
+    flow: { name: '🔀 流程', nodes: [['choose', '🔀 分支'], ['label', '🏷 标签'], ['jump', '➡️ 跳转']] }
+  };
+  var activeCat = 'script';
+  function renderCatPills() {
+    var pills = $('catPills');
+    pills.innerHTML = Object.keys(CAT_GROUPS).map(function (k) {
+      return '<button class="cat-pill' + (k === activeCat ? ' active' : '') + '" data-cat="' + k + '">' + CAT_GROUPS[k].name + '</button>';
+    }).join('');
+    pills.querySelectorAll('.cat-pill').forEach(function (p) {
+      p.addEventListener('click', function () {
+        var k = p.getAttribute('data-cat');
+        /* 再次点击已选分类 → 取消选择 */
+        if (k === activeCat) { activeCat = null; }
+        else { activeCat = k; }
+        renderCatPills();
+        renderCatNodes();
+      });
     });
-  });
+    renderCatNodes();
+  }
+  function renderCatNodes() {
+    var box = $('catNodes');
+    if (!activeCat) {
+      box.innerHTML = '<span class="cat-hint">点击上方分类，选择要插入的节点类型</span>';
+      return;
+    }
+    var group = CAT_GROUPS[activeCat];
+    box.innerHTML = '<span class="cat-hint" style="opacity:.35;">' + group.name + '：</span>' +
+      group.nodes.map(function (nd) {
+        return '<button class="nb" data-add="' + nd[0] + '">' + nd[1] + '</button>';
+      }).join('');
+    box.querySelectorAll('[data-add]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var type = b.getAttribute('data-add');
+        if (type === 'affection') { openAffectionDialog(function (cfg) { var n = newNode('affection'); n.data = cfg; insertAtSel(n); }); return; }
+        insertAtSel(newNode(type));
+      });
+    });
+  }
+  renderCatPills();
   /* 内置弹窗关闭 */
   $('wgModalX').addEventListener('click', closeModal);
   $('wgModal').addEventListener('click', function (e) { if (e.target === $('wgModal')) closeModal(); });

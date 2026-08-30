@@ -137,6 +137,20 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
 .ap-empty { text-align: center; font-size: 0.78rem; opacity: 0.5; padding: 1.5rem 0; line-height: 1.8; }
 .ap-confirm { text-align: center; padding: 0.8rem 0 1.1rem; font-size: 0.85rem; line-height: 1.7; }
 .ap-confirm-actions { display: flex; justify-content: center; gap: 0.6rem; }
+/* ===== 插入分类组 ===== */
+.wg-cats { display: flex; flex-direction: column; gap: 0.3rem; width: 100%; }
+.wg-cat-row { border: 1px solid rgba(128,128,128,0.12); border-radius: 0.6rem; overflow: hidden; background: rgba(128,128,128,0.03); }
+.wg-cat-title { display: flex; align-items: center; gap: 0.4rem; padding: 0.32rem 0.6rem; font-size: 0.74rem; cursor: pointer; opacity: 0.85; user-select: none; }
+.wg-cat-title:hover { opacity: 1; background: rgba(128,128,128,0.05); }
+.wg-cat-title .arrow { transition: transform 0.2s; font-size: 0.7rem; display: inline-block; }
+.wg-cat-row.closed .arrow { transform: rotate(-90deg); }
+.wg-cat-row.closed .wg-cat-btns { display: none; }
+.wg-cat-btns { display: flex; gap: 0.3rem; flex-wrap: wrap; padding: 0.4rem 0.55rem; }
+/* ===== 按钮组（替代原生下拉） ===== */
+.seg { display: inline-flex; gap: 0.35rem; flex-wrap: wrap; }
+.seg-btn { padding: 0.32rem 0.85rem; border-radius: 2rem; cursor: pointer; font-size: 0.78rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; transition: all 0.15s; }
+.seg-btn:hover { border-color: rgba(102,187,106,0.5); }
+.seg-btn.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
 /* 移动端适配 */
 .wg-drawer-toggle { display: none; }
 @media (max-width: 900px) {
@@ -171,18 +185,43 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     <div class="wg-stage">
       <div class="wg-toolbar">
         <span style="font-size:0.75rem;opacity:0.6;">插入节点</span>
-        <div class="wg-node-adds">
-          <button class="nb" data-add="dialogue">💬 对话</button>
-          <button class="nb" data-add="narrate">📖 旁白</button>
-          <button class="nb" data-add="bg">🖼 背景</button>
-          <button class="nb" data-add="char">🧍 立绘</button>
-          <button class="nb" data-add="music">🎵 音乐</button>
-          <button class="nb" data-add="effect">🔊 音效</button>
-          <button class="nb" data-add="voice">🗣 语音</button>
-          <button class="nb" data-add="affection">💗 好感度</button>
-          <button class="nb" data-add="choose">🔀 分支</button>
-          <button class="nb" data-add="label">🏷 标签</button>
-          <button class="nb" data-add="jump">➡️ 跳转</button>
+        <div class="wg-cats" id="insertCats">
+          <div class="wg-cat-row" data-cat="script">
+            <div class="wg-cat-title"><span class="arrow">▾</span>💬 剧本</div>
+            <div class="wg-cat-btns">
+              <button class="nb" data-add="dialogue">💬 对话</button>
+              <button class="nb" data-add="narrate">📖 旁白</button>
+            </div>
+          </div>
+          <div class="wg-cat-row" data-cat="stage">
+            <div class="wg-cat-title"><span class="arrow">▾</span>🎭 布景</div>
+            <div class="wg-cat-btns">
+              <button class="nb" data-add="bg">🖼 背景</button>
+              <button class="nb" data-add="char">🧍 立绘</button>
+            </div>
+          </div>
+          <div class="wg-cat-row" data-cat="audio">
+            <div class="wg-cat-title"><span class="arrow">▾</span>🎵 声音</div>
+            <div class="wg-cat-btns">
+              <button class="nb" data-add="music">🎵 音乐</button>
+              <button class="nb" data-add="effect">🔊 音效</button>
+              <button class="nb" data-add="voice">🗣 语音</button>
+            </div>
+          </div>
+          <div class="wg-cat-row" data-cat="emotion">
+            <div class="wg-cat-title"><span class="arrow">▾</span>💗 情感</div>
+            <div class="wg-cat-btns">
+              <button class="nb" data-add="affection">💗 好感度</button>
+            </div>
+          </div>
+          <div class="wg-cat-row" data-cat="flow">
+            <div class="wg-cat-title"><span class="arrow">▾</span>🔀 流程</div>
+            <div class="wg-cat-btns">
+              <button class="nb" data-add="choose">🔀 分支</button>
+              <button class="nb" data-add="label">🏷 标签</button>
+              <button class="nb" data-add="jump">➡️ 跳转</button>
+            </div>
+          </div>
         </div>
         <span class="sp"></span>
         <button class="nb" id="btnClear" style="color:#ef5350;">🗑 清空</button>
@@ -288,7 +327,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
       case 'effect': base.data = { file: '' }; break;
       case 'voice': base.data = { file: '' }; break;
       case 'affection': base.data = { var: '好感度', op: '+', value: 1 }; break;
-      case 'choose': base.data = { options: [{ text: '', target: '' }, { text: '', target: '' }] }; break;
+      case 'choose': base.data = { options: [{ text: '', target: '', cond: '' }, { text: '', target: '', cond: '' }] }; break;
       case 'label': base.data = { name: '' }; break;
       case 'jump': base.data = { target: '' }; break;
     }
@@ -306,7 +345,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
       var subs = '';
       if (n.type === 'choose') {
         subs = '<div class="nsubs">' + n.data.options.map(function (o) {
-          return '<div class="nsub"><span>🔘 ' + esc(o.text || '（未命名选项）') + '</span><span class="ar">→</span><span>' + esc(o.target || '？') + '</span></div>';
+          return '<div class="nsub"><span>🔘 ' + esc(o.text || '（未命名选项）') + (o.cond ? ' <b style="color:#ffb74d">[if ' + esc(o.cond) + ']</b>' : '') + '</span><span class="ar">→</span><span>' + esc(o.target || '？') + '</span></div>';
         }).join('') + '</div>';
       }
       div.innerHTML = '<div class="nicon">' + s.icon + '</div>' +
@@ -360,18 +399,29 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
         break;
       case 'bg':
         h += field('背景素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="bg">选</button></div>');
-        h += field('过渡效果', '<select id="pTrans"><option value=""' + (!d.transition ? ' selected' : '') + '>无</option><option value="fade"' + (d.transition === 'fade' ? ' selected' : '') + '>淡入 fade</option><option value="none"' + (d.transition === 'none' ? ' selected' : '') + '>直接 none</option></select>');
+        h += field('过渡效果', '<div class="seg" data-bind="transition" id="pTransSeg">' +
+          '<button class="seg-btn' + (!d.transition ? ' active' : '') + '" data-v="">无</button>' +
+          '<button class="seg-btn' + (d.transition === 'fade' ? ' active' : '') + '" data-v="fade">淡入 fade</button>' +
+          '<button class="seg-btn' + (d.transition === 'none' ? ' active' : '') + '" data-v="none">直接 none</button></div>');
         break;
       case 'char':
-        h += field('操作', '<select id="pAction"><option value="show"' + (d.action !== 'clear' ? ' selected' : '') + '>显示立绘</option><option value="clear"' + (d.action === 'clear' ? ' selected' : '') + '>隐藏立绘</option></select>');
+        h += field('操作', '<div class="seg" data-bind="action" id="pActionSeg">' +
+          '<button class="seg-btn' + (d.action !== 'clear' ? ' active' : '') + '" data-v="show">显示立绘</button>' +
+          '<button class="seg-btn' + (d.action === 'clear' ? ' active' : '') + '" data-v="clear">隐藏立绘</button></div>');
         if (d.action !== 'clear') {
           h += field('立绘素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="char">选</button></div>');
-          h += field('位置', '<select id="pPos"><option value=""' + (!d.pos ? ' selected' : '') + '>居中</option><option value="left"' + (d.pos === 'left' ? ' selected' : '') + '>左侧 left</option><option value="right"' + (d.pos === 'right' ? ' selected' : '') + '>右侧 right</option></select>');
+          h += field('位置', '<div class="seg" data-bind="pos" id="pPosSeg">' +
+            '<button class="seg-btn' + (!d.pos ? ' active' : '') + '" data-v="">居中</button>' +
+            '<button class="seg-btn' + (d.pos === 'left' ? ' active' : '') + '" data-v="left">左侧 left</button>' +
+            '<button class="seg-btn' + (d.pos === 'right' ? ' active' : '') + '" data-v="right">右侧 right</button></div>');
         }
         break;
       case 'music':
-        h += field('操作', '<select id="pAction"><option value="play"' + (d.action !== 'clear' ? ' selected' : '') + '>播放</option><option value="clear"' + (d.action === 'clear' ? ' selected' : '') + '>停止</option></select>');
+        h += field('操作', '<div class="seg" data-bind="action" id="pActionSeg">' +
+          '<button class="seg-btn' + (d.action !== 'clear' ? ' active' : '') + '" data-v="play">播放</button>' +
+          '<button class="seg-btn' + (d.action === 'clear' ? ' active' : '') + '" data-v="clear">停止</button></div>');
         if (d.action !== 'clear') h += field('音乐素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="music">选</button></div>');
+        break;
         break;
       case 'effect':
         h += field('音效素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="effect">选</button></div>');
@@ -381,15 +431,19 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
         break;
       case 'affection':
         h += field('变量名', input('pVar', d.var, '好感度'));
-        h += field('操作', '<select id="pOp"><option value="+"' + (d.op === '+' ? ' selected' : '') + '>增加 +</option><option value="-"'+ (d.op === '-' ? ' selected' : '') + '>减少 -</option><option value="="' + (d.op === '=' ? ' selected' : '') + '>设为 =</option></select>');
+        h += field('操作', '<div class="seg" data-bind="op" id="pOpSeg">' +
+          '<button class="seg-btn' + (d.op === '+' ? ' active' : '') + '" data-v="+">增加 +</button>' +
+          '<button class="seg-btn' + (d.op === '-' ? ' active' : '') + '" data-v="-">减少 -</button>' +
+          '<button class="seg-btn' + (d.op === '=' ? ' active' : '') + '" data-v="=">设为 =</button></div>');
         h += field('数值', '<input type="number" id="pValue" value="' + d.value + '" min="0" style="width:100%;padding:.45rem .6rem;border-radius:.55rem;border:1px solid rgba(128,128,128,.22);background:rgba(128,128,128,.07);color:inherit;font-size:.82rem;outline:none;">');
         break;
       case 'choose':
-        h += '<div style="font-size:.75rem;opacity:.6;margin-bottom:.5rem;">选项会渲染为分支按钮，点击后跳转到对应标签。建议先建好 🏷 标签节点再回来关联。</div>';
+        h += '<div style="font-size:.75rem;opacity:.6;margin-bottom:.5rem;">选项会渲染为分支按钮，点击后跳转到对应标签。<b>显示条件</b>（可选）：满足条件的选项才会出现，如 <code style="opacity:.8;">好感度&gt;=3</code>。</div>';
         d.options.forEach(function (o, i) {
           h += '<div style="border:1px dashed rgba(102,187,106,.3);border-radius:.6rem;padding:.5rem;margin-bottom:.5rem;">' +
             field('选项 ' + (i + 1) + ' 文本', input('pOptT' + i, o.text, '选项文字')) +
             field('跳转目标（标签名）', '<div style="display:flex;gap:.4rem;">' + input('pOptG' + i, o.target, 'label 名') + '<button class="nb" data-labelpick="' + i + '">选</button></div>') +
+            field('显示条件（可选）', '<div style="display:flex;gap:.4rem;">' + input('pOptC' + i, o.cond, '如：好感度>=3') + '<button class="nb" data-varpick="' + i + '">变量</button></div>') +
             '</div>';
         });
         h += '<button class="nb" id="pAddOpt">+ 添加选项</button> <button class="nb" id="pDelOpt" style="color:#ef5350;">− 删除末项</button>';
@@ -411,25 +465,57 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     on('pSpeaker', function (e) { d.speaker = e.target.value; save(); refreshListOnly(); });
     on('pText', function (e) { d.text = e.target.value; save(); refreshListOnly(); });
     on('pFile', function (e) { d.file = e.target.value; save(); refreshListOnly(); });
-    on('pTrans', function (e) { d.transition = e.target.value; save(); refreshListOnly(); });
-    on('pAction', function (e) { d.action = e.target.value; save(); renderProp(); renderList(); });
-    on('pPos', function (e) { d.pos = e.target.value; save(); refreshListOnly(); });
     on('pVar', function (e) { d.var = e.target.value; if (affVars.indexOf(d.var) < 0) affVars.push(d.var); save(); renderAff(); refreshListOnly(); });
-    on('pOp', function (e) { d.op = e.target.value; save(); refreshListOnly(); renderAff(); });
     on('pValue', function (e) { d.value = Math.max(0, +e.target.value || 0); save(); refreshListOnly(); renderAff(); });
     on('pName', function (e) { d.name = e.target.value; save(); refreshListOnly(); });
     on('pTarget', function (e) { d.target = e.target.value; save(); refreshListOnly(); });
+    /* 按钮组（seg）统一绑定 */
+    document.querySelectorAll('#propBody .seg[data-bind]').forEach(function (seg) {
+      seg.addEventListener('click', function (e) {
+        var b = e.target.closest('.seg-btn');
+        if (!b) return;
+        seg.querySelectorAll('.seg-btn').forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        d[seg.getAttribute('data-bind')] = b.getAttribute('data-v');
+        save(); renderList(); renderAff();
+        /* action 变化需要重建面板（隐藏/显示字段联动） */
+        if (seg.getAttribute('data-bind') === 'action') renderProp();
+      });
+    });
     var pk = $('pPick'); if (pk) pk.addEventListener('click', function () { openAssetPicker(pk.getAttribute('data-pick'), function (name) { d.file = name; save(); renderProp(); renderList(); }); });
     var lpk = $('pLabelPick'); if (lpk) lpk.addEventListener('click', function () { openLabelPicker(function (name) { d.target = name; save(); renderProp(); renderList(); }); });
     if (n.type === 'choose') {
       d.options.forEach(function (o, i) {
         var t = $('pOptT' + i); if (t) t.addEventListener('input', function (e) { o.text = e.target.value; save(); refreshListOnly(); });
         var g = $('pOptG' + i); if (g) g.addEventListener('input', function (e) { o.target = e.target.value; save(); refreshListOnly(); });
+        var c = $('pOptC' + i); if (c) c.addEventListener('input', function (e) { o.cond = e.target.value.trim(); save(); refreshListOnly(); });
         var lp = document.querySelector('[data-labelpick="' + i + '"]'); if (lp) lp.addEventListener('click', function () { openLabelPicker(function (name) { o.target = name; save(); renderProp(); renderList(); }); });
+        var vp = document.querySelector('[data-varpick="' + i + '"]'); if (vp) vp.addEventListener('click', function () { openVarPicker(function (vname) { o.cond = (o.cond ? o.cond + ' ' : '') + vname + '>='; save(); renderProp(); }); });
       });
-      var add = $('pAddOpt'); if (add) add.addEventListener('click', function () { d.options.push({ text: '', target: '' }); renderProp(); });
+      var add = $('pAddOpt'); if (add) add.addEventListener('click', function () { d.options.push({ text: '', target: '', cond: '' }); renderProp(); });
       var del = $('pDelOpt'); if (del) del.addEventListener('click', function () { if (d.options.length > 1) { d.options.pop(); renderProp(); } });
     }
+  }
+  /* 变量选择弹窗（条件用） */
+  function openVarPicker(cb) {
+    var vars = affVars.slice();
+    nodes.forEach(function (n) { if (n.type === 'affection' && vars.indexOf(n.data.var) < 0) vars.push(n.data.var); });
+    var items = vars.map(function (v) {
+      return '<div class="ap-item" data-name="' + esc(v) + '"><span class="ap-thumb">📊</span><span class="ap-name">' + esc(v) + '</span></div>';
+    }).join('') || '<div class="ap-empty">还没有定义过变量～<br>先插入一个 💗 好感度节点，或用下方自定义输入</div>';
+    var html = '<div class="ap-grid">' + items + '</div>' +
+      '<div class="ap-custom"><input type="text" id="apCustom" placeholder="自定义变量名（如 勇气值）"><button class="tb primary" id="apCustomOk">选用</button></div>';
+    openModal('选择条件变量', html, function () {
+      $('wgModalBody').querySelectorAll('.ap-item').forEach(function (it) {
+        it.addEventListener('click', function () { closeModal(); cb(it.getAttribute('data-name')); });
+      });
+      $('apCustomOk').addEventListener('click', function () {
+        var v = $('apCustom').value.trim();
+        if (!v) { toast('请输入变量名', 1800); return; }
+        closeModal(); cb(v);
+      });
+      $('apCustom').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('apCustomOk').click(); });
+    });
   }
 
   function refreshListOnly() { /* 只刷新摘要，保持选中态 */ renderList(); }
@@ -634,7 +720,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
         case 'effect': lines.push('[playEffect:' + d.file + ']'); break;
         case 'voice': lines.push('[voice:' + d.file + ']'); break;
         case 'affection': lines.push('[set:' + (d.var || '好感度') + fmtAff(d.op, d.value) + ']'); break;
-        case 'choose': lines.push('[choose]' + d.options.map(function (o) { return (o.text || '（选项）') + '->' + (o.target || ''); }).join('|') + '[/choose]'); break;
+        case 'choose': lines.push('[choose]' + d.options.map(function (o) { return (o.text || '（选项）') + '->' + (o.target || '') + (o.cond ? '?' + o.cond : ''); }).join('|') + '[/choose]'); break;
         case 'label': lines.push('[label:' + d.name + ']'); break;
         case 'jump': lines.push('[jump:' + d.target + ']'); break;
       }
@@ -656,7 +742,11 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
         if (inline) {
           inline[1].split('|').forEach(function (ol) {
             var parts = ol.split('->');
-            opts.push({ text: (parts[0] || '').trim(), target: (parts[1] || '').trim() });
+            var tgt = (parts[1] || '').trim();
+            var cond = '';
+            var qi = tgt.indexOf('?');
+            if (qi >= 0) { cond = tgt.slice(qi + 1).trim(); tgt = tgt.slice(0, qi).trim(); }
+            opts.push({ text: (parts[0] || '').trim(), target: tgt, cond: cond });
           });
           i++;
         } else {
@@ -665,13 +755,17 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
             var ol = lines[i].trim();
             if (ol) {
               var parts = ol.split('->');
-              opts.push({ text: (parts[0] || '').trim(), target: (parts[1] || '').trim() });
+              var tgt = (parts[1] || '').trim();
+              var cond = '';
+              var qi = tgt.indexOf('?');
+              if (qi >= 0) { cond = tgt.slice(qi + 1).trim(); tgt = tgt.slice(0, qi).trim(); }
+              opts.push({ text: (parts[0] || '').trim(), target: tgt, cond: cond });
             }
             i++;
           }
           if (i < lines.length && lines[i].trim().startsWith('[/choose]')) i++;
         }
-        var cn = newNode('choose'); cn.data.options = opts.length ? opts : [{ text: '', target: '' }];
+        var cn = newNode('choose'); cn.data.options = opts.length ? opts : [{ text: '', target: '', cond: '' }];
         nodes.push(cn); continue;
       }
       var m;
@@ -708,8 +802,8 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     toast('导入完成：' + nodes.length + ' 个节点', 2200);
   }
 
-  /* ===== 预览（舞台式：真实素材渲染） ===== */
-  var pvIdx = 0;
+  /* ===== 预览（舞台式：真实素材渲染 + 状态回退） ===== */
+  var pvIdx = 0, pvHist = [];
   var pvState = { bg: null, chars: [], music: null, musicName: '', audio: null, affs: {} };
   function findAsset(cat, name) {
     var list = assets[cat] || [];
@@ -717,10 +811,65 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     return null;
   }
   function stopMusic() { if (pvState.audio) { try { pvState.audio.pause(); } catch (e) { } pvState.audio = null; } }
+  function snapState() {
+    return {
+      bg: pvState.bg,
+      chars: pvState.chars.map(function (c) { return { name: c.name, url: c.url, pos: c.pos }; }),
+      music: pvState.music, musicName: pvState.musicName,
+      affs: Object.assign({}, pvState.affs)
+    };
+  }
+  function applySnap(s) {
+    pvState.bg = s.bg;
+    pvState.chars = s.chars.slice();
+    pvState.music = s.music; pvState.musicName = s.musicName;
+    pvState.affs = Object.assign({}, s.affs);
+    var bl = $('pvBgLayer');
+    if (pvState.bg) { bl.style.backgroundImage = 'url(' + pvState.bg + ')'; bl.innerHTML = ''; }
+    else { bl.style.backgroundImage = ''; bl.innerHTML = ''; }
+    $('pvCharLayer').innerHTML = pvState.chars.map(function (c) {
+      return '<img src="' + c.url + '" class="' + c.pos + '" alt="">';
+    }).join('');
+    if (pvState.music) {
+      stopMusic();
+      var au = new Audio(pvState.music);
+      au.loop = true; au.play().catch(function () { });
+      pvState.audio = au;
+      $('pvMusicTip').textContent = '🎵 ' + pvState.musicName;
+      $('pvMusicTip').style.display = 'block';
+    } else { stopMusic(); $('pvMusicTip').style.display = 'none'; }
+    renderAffHud();
+  }
+  function clearStage() {
+    stopMusic();
+    pvState = { bg: null, chars: [], music: null, musicName: '', audio: null, affs: {} };
+    pvHist = [];
+    $('pvBgLayer').style.backgroundImage = '';
+    $('pvBgLayer').innerHTML = '';
+    $('pvCharLayer').innerHTML = '';
+    $('pvAffHud').innerHTML = '';
+    $('pvMusicTip').style.display = 'none';
+  }
+  function evalCond(expr, affs) {
+    if (!expr) return true;
+    var m = expr.match(/^(.+?)\s*(>=|<=|==|!=|>|<|=)\s*(-?\d+)$/);
+    if (!m) return true;
+    var v = affs[m[1].trim()] || 0;
+    var x = +m[3];
+    switch (m[2]) {
+      case '>=': return v >= x;
+      case '<=': return v <= x;
+      case '==': case '=': return v === x;
+      case '!=': return v !== x;
+      case '>': return v > x;
+      case '<': return v < x;
+    }
+    return true;
+  }
   function startPreview() {
     if (!nodes.length) { toast('台本是空的，先写点剧情吧', 2000); return; }
+    clearStage();
     pvIdx = 0;
-    pvState = { bg: null, chars: [], music: null, musicName: '', audio: null, affs: {} };
     $('pvBox').classList.add('show');
     renderPreview();
   }
@@ -797,9 +946,10 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     else if (n.type === 'label') { $('pvText').textContent = '🏷 标签：' + d.name; }
     else if (n.type === 'jump') { jumpToLabel(d.target); return; }
     else if (n.type === 'choose') {
+      var shown = d.options.filter(function (o) { return evalCond(o.cond, pvState.affs); });
       $('pvName').textContent = '🔀 选择你的行动';
-      $('pvText').textContent = '';
-      d.options.forEach(function (o) {
+      $('pvText').textContent = shown.length < d.options.length ? '（' + (d.options.length - shown.length) + ' 个选项因条件未满足而隐藏）' : '';
+      shown.forEach(function (o) {
         var b = document.createElement('button');
         b.textContent = '🔘 ' + (o.text || '（选项）');
         b.addEventListener('click', function () {
@@ -837,8 +987,42 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
 
   /* ===== 事件绑定 ===== */
   document.querySelectorAll('[data-add]').forEach(function (b) {
-    b.addEventListener('click', function () { insertAtSel(newNode(b.getAttribute('data-add'))); });
+    b.addEventListener('click', function () {
+      var type = b.getAttribute('data-add');
+      if (type === 'affection') { openAffectionDialog(function (cfg) { var n = newNode('affection'); n.data = cfg; insertAtSel(n); }); return; }
+      insertAtSel(newNode(type));
+    });
   });
+  /* 好感度配置弹窗 */
+  function openAffectionDialog(cb) {
+    var existing = affVars.slice();
+    nodes.forEach(function (n) { if (n.type === 'affection' && existing.indexOf(n.data.var) < 0) existing.push(n.data.var); });
+    var html =
+      '<div class="wg-prop"><label>变量名（现有：' + esc(existing.join('、') || '无') + '）</label><input type="text" id="afVar" value="好感度" placeholder="好感度"></div>' +
+      '<div class="wg-prop"><label>操作</label><div class="seg" id="afOpSeg">' +
+      '<button class="seg-btn active" data-v="+">增加 +</button>' +
+      '<button class="seg-btn" data-v="-">减少 -</button>' +
+      '<button class="seg-btn" data-v="=">设为 =</button></div></div>' +
+      '<div class="wg-prop"><label>数值</label><input type="number" id="afVal" value="1" min="0" style="width:100%;padding:.45rem .6rem;border-radius:.55rem;border:1px solid rgba(128,128,128,.22);background:rgba(128,128,128,.07);color:inherit;font-size:.82rem;outline:none;"></div>' +
+      '<div class="ap-confirm-actions"><button class="tb" id="afCancel">取消</button><button class="tb primary" id="afOk">插入</button></div>';
+    openModal('💗 好感度变化', html, function () {
+      var op = '+';
+      $('afOpSeg').addEventListener('click', function (e) {
+        var b = e.target.closest('.seg-btn'); if (!b) return;
+        $('afOpSeg').querySelectorAll('.seg-btn').forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active'); op = b.getAttribute('data-v');
+      });
+      $('afCancel').addEventListener('click', closeModal);
+      $('afOk').addEventListener('click', function () {
+        var vname = $('afVar').value.trim() || '好感度';
+        var val = Math.max(0, +$('afVal').value || 0);
+        if (affVars.indexOf(vname) < 0) affVars.push(vname);
+        closeModal();
+        cb({ var: vname, op: op, value: val });
+      });
+      $('afVar').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('afOk').click(); });
+    });
+  }
   $('btnClear').addEventListener('click', function () {
     if (nodes.length) openConfirm('确定清空全部节点吗？此操作不可撤销。', function () { nodes = []; selId = null; save(); renderList(); renderProp(); renderAff(); });
   });
@@ -863,9 +1047,9 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     this.value = '';
   });
   $('btnPreview').addEventListener('click', startPreview);
-  $('pvClose').addEventListener('click', function () { $('pvBox').classList.remove('show'); stopMusic(); });
-  $('pvNext').addEventListener('click', function () { if (pvIdx < nodes.length - 1) { pvIdx++; renderPreview(); } });
-  $('pvBack').addEventListener('click', function () { if (pvIdx > 0) { pvIdx--; renderPreview(); } });
+  $('pvClose').addEventListener('click', function () { $('pvBox').classList.remove('show'); clearStage(); });
+  $('pvNext').addEventListener('click', function () { if (pvIdx < nodes.length - 1) { pvHist.push(snapState()); pvIdx++; renderPreview(); } });
+  $('pvBack').addEventListener('click', function () { if (pvIdx > 0) { pvIdx--; if (pvHist.length) applySnap(pvHist.pop()); renderPreview(); } });
   document.querySelectorAll('.wg-tab').forEach(function (t) {
     t.addEventListener('click', function () {
       document.querySelectorAll('.wg-tab').forEach(function (x) { x.classList.remove('active'); });
@@ -881,6 +1065,18 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
   $('btnAssets').addEventListener('click', function (e) { e.stopPropagation(); if (drawerOpen === 'a') { closeDrawers(); return; } closeDrawers(); $('assetPanel').classList.add('open'); $('wgMask').classList.add('show'); drawerOpen = 'a'; });
   document.querySelector('.tool-title').addEventListener('click', function () { if (drawerOpen === 'r') { closeDrawers(); return; } closeDrawers(); $('rightPanel').classList.add('open'); $('wgMask').classList.add('show'); drawerOpen = 'r'; });
   $('wgMask').addEventListener('click', closeDrawers);
+  /* 插入分类：展开/收起 */
+  var catClosed = {};
+  try { catClosed = JSON.parse(localStorage.getItem('wgCatClosed') || '{}'); } catch (e) { }
+  document.querySelectorAll('.wg-cat-row').forEach(function (row) {
+    var cat = row.getAttribute('data-cat');
+    if (catClosed[cat]) row.classList.add('closed');
+    row.querySelector('.wg-cat-title').addEventListener('click', function () {
+      row.classList.toggle('closed');
+      catClosed[cat] = row.classList.contains('closed');
+      try { localStorage.setItem('wgCatClosed', JSON.stringify(catClosed)); } catch (e) { }
+    });
+  });
   /* 内置弹窗关闭 */
   $('wgModalX').addEventListener('click', closeModal);
   $('wgModal').addEventListener('click', function (e) { if (e.target === $('wgModal')) closeModal(); });

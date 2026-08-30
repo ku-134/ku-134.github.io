@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素化工坊 · 虚空终端</title>
+    <link rel="preload" as="image" href="../background.webp">
+    <link rel="preload" as="image" href="../background1.webp">
+    <link rel="preload" as="image" href="../background2.webp">
+    <link rel="preload" as="image" href="../background3.webp">
+    <link rel="preload" as="image" href="../background4.webp">
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; }
+        .tool-card { background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); padding: 2.2rem 2.2rem 2rem; border-radius: 2rem; backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); }
+        .tool-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1); }
+        .tool-header .brand { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.02em; }
+        .tool-header .nav-links { display: flex; gap: 1rem; font-size: 0.95rem; }
+        .tool-header .nav-links a { text-decoration: none; opacity: 0.7; transition: opacity 0.2s; }
+        .tool-header .nav-links a:hover { opacity: 1; }
+        .tool-sub { font-size: 0.9rem; opacity: 0.6; margin: -0.4rem 0 1.2rem; line-height: 1.6; }
+        .drop-zone { border: 2px dashed rgba(128,128,128,0.3); border-radius: 1.2rem; padding: 2rem 1.5rem; text-align: center; cursor: pointer; transition: all 0.25s; background: rgba(128,128,128,0.03); margin-bottom: 1rem; }
+        .drop-zone:hover, .drop-zone.dragover { border-color: #66bb6a; background: rgba(102,187,106,0.06); }
+        .drop-zone .dz-icon { font-size: 2.4rem; display: block; margin-bottom: 0.5rem; }
+        .drop-zone .dz-text { opacity: 0.7; font-size: 0.92rem; }
+        .drop-zone .dz-sub { opacity: 0.45; font-size: 0.78rem; margin-top: 0.4rem; }
+        .opts { display: flex; flex-direction: column; gap: 0.7rem; margin-bottom: 1rem; }
+        .opts-row { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; font-size: 0.88rem; }
+        .opts-row label { opacity: 0.75; min-width: 72px; }
+        .opts-row .val { opacity: 0.55; font-size: 0.78rem; font-family: 'Courier New', monospace; }
+        input[type="range"] { width: 170px; accent-color: #66bb6a; }
+        .seg { display: inline-flex; gap: 0.35rem; flex-wrap: wrap; }
+        .seg-btn { padding: 0.3rem 0.85rem; border-radius: 2rem; cursor: pointer; font-size: 0.8rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; transition: all 0.2s; }
+        .seg-btn.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+        .btn {
+            padding: 0.5rem 1.4rem; border-radius: 2rem; cursor: pointer;
+            border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06);
+            color: inherit; font-family: inherit; font-size: 0.9rem;
+            transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+        @media (max-width: 640px) { .cmp-grid { grid-template-columns: 1fr; } }
+        .cmp-box { background: rgba(128,128,128,0.04); border: 1px solid rgba(128,128,128,0.12); border-radius: 1rem; padding: 0.7rem; }
+        .cmp-box .c-label { font-size: 0.78rem; opacity: 0.6; margin-bottom: 0.5rem; display: flex; justify-content: space-between; }
+        .cmp-box canvas, .cmp-box img { width: 100%; border-radius: 0.6rem; image-rendering: pixelated; background: repeating-conic-gradient(rgba(128,128,128,0.08) 0% 25%, transparent 0% 50%) 50% / 20px 20px; }
+        .result-foot { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.1rem; flex-wrap: wrap; }
+        .tool-foot { margin-top: 1.4rem; font-size: 0.78rem; opacity: 0.45; text-align: center; border-top: 1px solid rgba(128,128,128,0.1); padding-top: 1rem; }
+    </style>
+</head>
+<body>
+    <div class="tool-container">
+        <div class="tool-card">
+            <header class="tool-header">
+                <div class="brand"><span class="typing-title">👾 像素化工坊</span></div>
+                <div class="nav-links">
+                    <a href="../MT.html">📝 返回列表</a>
+                </div>
+            </header>
+            <div class="tool-sub">把照片变成像素艺术！自由调节像素分辨率与复古色深（8/16/32/64 色），支持网格线辅助与多倍放大导出，全程本地处理。</div>
+
+            <div class="drop-zone" id="dropZone">
+                <span class="dz-icon">👾</span>
+                <div class="dz-text">拖拽图片到这里，或点击选择图片</div>
+                <div class="dz-sub">支持 PNG / JPG / WebP，图片仅在本机处理</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" hidden>
+
+            <div class="opts" id="optsBox" style="display:none;">
+                <div class="opts-row">
+                    <label>像素分辨率</label>
+                    <input type="range" id="pixelRange" min="8" max="160" step="4" value="64">
+                    <span class="val" id="pixelVal">64 × 64</span>
+                </div>
+                <div class="opts-row">
+                    <label>复古色深</label>
+                    <div class="seg" id="depthSeg">
+                        <button class="seg-btn active" data-d="true">真彩</button>
+                        <button class="seg-btn" data-d="2x2x2">8 色</button>
+                        <button class="seg-btn" data-d="2x4x2">16 色</button>
+                        <button class="seg-btn" data-d="2x4x4">32 色</button>
+                        <button class="seg-btn" data-d="4x4x4">64 色</button>
+                    </div>
+                </div>
+                <div class="opts-row">
+                    <label>网格线</label>
+                    <div class="seg" id="gridSeg">
+                        <button class="seg-btn active" data-g="0">关</button>
+                        <button class="seg-btn" data-g="1">开（辅助数格）</button>
+                    </div>
+                    <label style="margin-left:0.5rem;">导出放大</label>
+                    <div class="seg" id="scaleSeg">
+                        <button class="seg-btn active" data-s="1">1×</button>
+                        <button class="seg-btn" data-s="4">4×</button>
+                        <button class="seg-btn" data-s="8">8×</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cmp-grid" id="cmpArea" style="display:none;">
+                <div class="cmp-box">
+                    <div class="c-label"><span>📄 原图</span><span id="origInfo"></span></div>
+                    <img id="origImg" alt="原图">
+                </div>
+                <div class="cmp-box">
+                    <div class="c-label"><span>👾 像素化</span><span id="pixInfo"></span></div>
+                    <canvas id="pixCanvas"></canvas>
+                </div>
+            </div>
+
+            <div class="result-foot">
+                <button class="btn btn-primary" id="dlBtn">💾 下载像素图 PNG</button>
+                <button class="btn" id="rePickBtn">📁 换一张</button>
+            </div>
+
+            <div class="tool-foot">像素化在浏览器本地完成 · 导出时按「导出放大」倍数放大（最近邻采样保持像素感）</div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+        var img = null;
+        var dropZone = document.getElementById('dropZone');
+        var fileInput = document.getElementById('fileInput');
+        var optsBox = document.getElementById('optsBox');
+        var cmpArea = document.getElementById('cmpArea');
+        var origImg = document.getElementById('origImg');
+        var pixCanvas = document.getElementById('pixCanvas');
+        var dlBtn = document.getElementById('dlBtn');
+        var rePickBtn = document.getElementById('rePickBtn');
+
+        function segVal(id) {
+            var a = document.querySelector('#' + id + ' .seg-btn.active');
+            return a ? a.getAttribute('data-' + (id === 'depthSeg' ? 'd' : id === 'gridSeg' ? 'g' : 's')) : '';
+        }
+        function bindSeg(id, onChange) {
+            var box = document.getElementById(id);
+            box.addEventListener('click', function (e) {
+                var b = e.target.closest('.seg-btn');
+                if (!b) return;
+                box.querySelectorAll('.seg-btn').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                if (img) onChange();
+            });
+        }
+        bindSeg('depthSeg', render);
+        bindSeg('gridSeg', render);
+        bindSeg('scaleSeg', render);
+
+        function quantize(v, levels) {
+            if (levels <= 1) return 0;
+            var q = Math.round(v * (levels - 1) / 255);
+            return Math.round(q * 255 / (levels - 1));
+        }
+
+        function render() {
+            if (!img) return;
+            var N = +document.getElementById('pixelRange').value;
+            var depth = segVal('depthSeg');
+            var grid = segVal('gridSeg') === '1';
+            var scale = +segVal('scaleSeg');
+            var W = N, H = Math.max(1, Math.round(N * img.height / img.width));
+            var canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            var ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.drawImage(img, 0, 0, W, H);
+            var data = ctx.getImageData(0, 0, W, H);
+            /* 色深量化 */
+            if (depth && depth !== 'true') {
+                var lv = depth.split('x').map(Number);
+                for (var i = 0; i < data.data.length; i += 4) {
+                    data.data[i] = quantize(data.data[i], lv[0]);
+                    data.data[i + 1] = quantize(data.data[i + 1], lv[1]);
+                    data.data[i + 2] = quantize(data.data[i + 2], lv[2]);
+                }
+                ctx.putImageData(data, 0, 0);
+            }
+            /* 放大导出 */
+            var outW = W * scale, outH = H * scale;
+            pixCanvas.width = outW;
+            pixCanvas.height = outH;
+            var octx = pixCanvas.getContext('2d');
+            octx.imageSmoothingEnabled = false;
+            octx.drawImage(canvas, 0, 0, outW, outH);
+            /* 网格线（预览辅助） */
+            if (grid && scale >= 4) {
+                octx.strokeStyle = 'rgba(255,255,255,0.25)';
+                octx.lineWidth = 1;
+                for (var gx = 1; gx < W; gx++) {
+                    octx.beginPath();
+                    octx.moveTo(gx * scale + 0.5, 0);
+                    octx.lineTo(gx * scale + 0.5, outH);
+                    octx.stroke();
+                }
+                for (var gy = 1; gy < H; gy++) {
+                    octx.beginPath();
+                    octx.moveTo(0, gy * scale + 0.5);
+                    octx.lineTo(outW, gy * scale + 0.5);
+                    octx.stroke();
+                }
+            }
+            document.getElementById('pixInfo').textContent = W + '×' + H + ' → 导出 ' + outW + '×' + outH;
+            document.getElementById('origInfo').textContent = img.naturalWidth + '×' + img.naturalHeight;
+        }
+
+        document.getElementById('pixelRange').addEventListener('input', function () {
+            var v = +this.value;
+            document.getElementById('pixelVal').textContent = v + ' × ' + Math.max(1, Math.round(v * (img ? img.height / img.width : 1)));
+            if (img) render();
+        });
+
+        dropZone.addEventListener('click', function () { fileInput.click(); });
+        dropZone.addEventListener('dragover', function (e) { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', function () { dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            var f = e.dataTransfer.files[0];
+            if (f && /^image\//.test(f.type)) loadFile(f);
+        });
+        fileInput.addEventListener('change', function () {
+            var f = fileInput.files[0];
+            if (f) loadFile(f);
+            fileInput.value = '';
+        });
+        rePickBtn.addEventListener('click', function () { fileInput.click(); });
+
+        function loadFile(f) {
+            var url = URL.createObjectURL(f);
+            var im = new Image();
+            im.onload = function () {
+                img = im;
+                origImg.src = url;
+                dropZone.style.display = 'none';
+                optsBox.style.display = '';
+                cmpArea.style.display = '';
+                document.getElementById('pixelVal').textContent = '64 × ' + Math.max(1, Math.round(64 * im.height / im.width));
+                render();
+            };
+            im.src = url;
+        }
+
+        dlBtn.addEventListener('click', function () {
+            if (!img) return;
+            var a = document.createElement('a');
+            a.href = pixCanvas.toDataURL('image/png');
+            a.download = 'pixel_' + pixCanvas.width + 'x' + pixCanvas.height + '.png';
+            a.click();
+        });
+    })();
+    </script>
+    <script src="../global-ui.js"></script>
+</body>
+</html>

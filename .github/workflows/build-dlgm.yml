@@ -50,23 +50,18 @@ jobs:
 
       - name: Generate icons from source image
         run: |
-          echo "=== generate icons debug ===" > debug-icons.log
           SRC=""
           [ -f Gamecurrently/DLGM/custom-icons/icon-source.png ] && SRC="Gamecurrently/DLGM/custom-icons/icon-source.png"
           [ -z "$SRC" ] && [ -f retouch_2026083011232567.png ] && SRC="retouch_2026083011232567.png"
           [ -z "$SRC" ] && [ -f Gamecurrently/DLGM/game/background/DLGM-start.webp ] && SRC="Gamecurrently/DLGM/game/background/DLGM-start.webp"
           [ -z "$SRC" ] && [ -f Gamecurrently/DLGM/DLGM-start.webp ] && SRC="Gamecurrently/DLGM/DLGM-start.webp"
-          echo "SRC=[$SRC]" >> debug-icons.log
           if [ -n "$SRC" ]; then
-            python3 -m venv /tmp/venv >> debug-icons.log 2>&1
-            echo "venv exit: $?" >> debug-icons.log
-            /tmp/venv/bin/pip install -q pillow >> debug-icons.log 2>&1
-            echo "pillow exit: $?" >> debug-icons.log
-            SRC="$SRC" /tmp/venv/bin/python3 << 'PYEOF' >> debug-icons.log 2>&1
+            python3 -m venv /tmp/venv
+            /tmp/venv/bin/pip install -q pillow
+            SRC="$SRC" /tmp/venv/bin/python3 << 'PYEOF'
           import os
           from PIL import Image
           src = os.environ['SRC']
-          print('opening', src)
           im = Image.open(src).convert('RGBA')
           w, h = im.size
           s = min(w, h)
@@ -82,25 +77,24 @@ jobs:
               canvas.save(f'Gamecurrently/DLGM/icons/icon-{size}-maskable.png')
           print('icons generated from', src)
           PYEOF
-            echo "python exit: $?" >> debug-icons.log
           fi
-          ls -la Gamecurrently/DLGM/icons/ >> debug-icons.log
-          cat debug-icons.log
+          # 全站根目录统一 favicon（总是同步最新版）
+          if [ -f Gamecurrently/DLGM/icons/favicon.ico ]; then
+            cp -f Gamecurrently/DLGM/icons/favicon.ico favicon.ico
+            echo "root favicon synced"
+          fi
 
       - name: Apply custom icons (override)
         run: |
-          echo "=== apply custom ===" >> debug-icons.log
           if [ -d Gamecurrently/DLGM/custom-icons ]; then
-            ls -la Gamecurrently/DLGM/custom-icons/ >> debug-icons.log
             cp -f Gamecurrently/DLGM/custom-icons/* Gamecurrently/DLGM/icons/ 2>/dev/null || true
-            echo "custom-icons applied" >> debug-icons.log
-          else
-            echo "no custom-icons dir" >> debug-icons.log
+            echo "custom-icons applied"
           fi
-          cat debug-icons.log
 
       - name: Commit & push
         run: |
+          # 清理调试残留
+          rm -f debug-icons.log
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A

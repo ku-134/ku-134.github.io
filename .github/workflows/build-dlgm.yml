@@ -47,13 +47,30 @@ jobs:
           cp -f /tmp/webgal/manifest.json Gamecurrently/DLGM/manifest.json
           cp -f /tmp/webgal/webgal-engine.json Gamecurrently/DLGM/webgal-engine.json
           cp -f /tmp/webgal/webgal-serviceworker.js Gamecurrently/DLGM/webgal-serviceworker.js
-          # 保留旧的 DLGM.html 兼容入口
-          ls Gamecurrently/DLGM/
 
       - name: Commit & push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "[skip ci] build DLGM with WebGAL 4.6.4" || echo "nothing to commit"
-          git push
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+          else
+            git commit -m "[skip ci] build DLGM with WebGAL 4.6.4"
+          fi
+          if ! git push origin HEAD:main; then
+            echo "push rejected, syncing with remote and retrying"
+            git fetch origin
+            git reset --hard origin/main
+            rm -rf Gamecurrently/DLGM/assets Gamecurrently/DLGM/icons Gamecurrently/DLGM/game
+            cp -r /tmp/webgal/assets Gamecurrently/DLGM/assets
+            cp -r /tmp/webgal/icons Gamecurrently/DLGM/icons
+            cp -r /tmp/webgal/game Gamecurrently/DLGM/game
+            cp -f /tmp/webgal/index.html Gamecurrently/DLGM/index.html
+            cp -f /tmp/webgal/manifest.json Gamecurrently/DLGM/manifest.json
+            cp -f /tmp/webgal/webgal-engine.json Gamecurrently/DLGM/webgal-engine.json
+            cp -f /tmp/webgal/webgal-serviceworker.js Gamecurrently/DLGM/webgal-serviceworker.js
+            git add -A
+            git commit -m "[skip ci] build DLGM with WebGAL 4.6.4" || true
+            git push origin HEAD:main
+          fi

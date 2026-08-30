@@ -2,101 +2,12 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>🍀妲那给木 · 视觉小说</title>
-    <link rel="stylesheet" href="DLGM/DLGM-style.css" />
-    <link rel="preload" as="image" href="DLGM/DLGM-start.webp" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="refresh" content="0; url=./DLGM/index.html" />
+    <title>🍀妲那给木 · 视觉小说（WebGAL）</title>
+    <script>location.replace('./DLGM/index.html');</script>
 </head>
-<body>
-
-    <div id="game-container">
-
-        <!-- 开始界面 -->
-        <div id="start-screen">
-            <div id="start-bg"></div>
-            <div id="start-overlay"></div>
-            <div id="game-title">
-                <span class="title-icon">🍀</span>
-                <span class="title-text">妲那给木</span>
-                <span class="title-sub">— 视觉小说 —</span>
-            </div>
-            <div id="button-group">
-                <button class="game-btn btn-start" id="btnStart">▶ 开始</button>
-                <button class="game-btn btn-continue" id="btnContinue">⏎ 继续</button>
-            </div>
-            <div id="disclaimer">
-                <p>免责声明：本作为同人原创作品，仅供娱乐交流，不涉及任何商业用途。<br />所有角色与设定均属虚构，如有雷同纯属巧合。</p>
-            </div>
-            <div id="version-info">v1.0.4</div>
-        </div>
-
-        <!-- 加载进度条 -->
-        <div id="loading-overlay" style="display:none;">
-            <div id="loading-container">
-                <div id="loading-bar-track">
-                    <div id="loading-bar-fill"></div>
-                </div>
-                <div id="loading-text">加载中… 0%</div>
-            </div>
-        </div>
-
-        <!-- 游戏主界面 -->
-        <div id="game-screen" style="display:none;">
-            <div id="stage-bg"></div>
-            <div id="overlay"></div>
-            <div id="characters-container"></div>
-            <div id="dialogue-box">
-                <div id="dialogue-name"></div>
-                <div id="dialogue-text"></div>
-            </div>
-            <div id="options-container" style="display:none;">
-                <div id="options-prompt"></div>
-                <div id="options-buttons"></div>
-            </div>
-        </div>
-    </div>
-
-    <script src="DLGM/DLGM.js"></script>
-    <script>
-        (function() {
-            const startScreen = document.getElementById('start-screen');
-            const gameScreen = document.getElementById('game-screen');
-            const btnStart = document.getElementById('btnStart');
-            const btnContinue = document.getElementById('btnContinue');
-            const loadingOverlay = document.getElementById('loading-overlay');
-
-            // 确保初始状态正确
-            startScreen.style.display = 'block';
-            loadingOverlay.style.display = 'none';
-            gameScreen.style.display = 'none';
-
-            document.getElementById('start-bg').style.backgroundImage = "url('DLGM/DLGM-start.webp')";
-
-            function waitForEngine(callback, retries) {
-                retries = retries || 0;
-                if (typeof DLGM !== 'undefined' && DLGM.startGame) {
-                    callback();
-                } else if (retries < 20) {
-                    setTimeout(() => waitForEngine(callback, retries + 1), 100);
-                } else {
-                    alert('游戏引擎加载失败，请刷新页面重试。');
-                }
-            }
-
-            btnStart.addEventListener('click', function() {
-                waitForEngine(function() {
-                    startScreen.style.display = 'none';
-                    gameScreen.style.display = 'block';
-                    DLGM.startGame();
-                });
-            });
-
-            btnContinue.addEventListener('click', function() {
-                alert('📖 存档功能开发中……');
-            });
-
-            console.log('🍀 开始界面已就绪 (v1.0.4)');
-        })();
-    </script>
+<body style="background:#000;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+    <p>正在跳转到 WebGAL 版游戏…</p>
 </body>
 </html>

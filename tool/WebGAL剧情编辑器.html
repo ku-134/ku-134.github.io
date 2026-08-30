@@ -7,9 +7,10 @@
 <link rel="stylesheet" href="../style.css">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; overflow: hidden; }
-body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-color, #0f1420); color: var(--text-color, #e8e6e3); }
-.wg-app { height: 100dvh; display: flex; flex-direction: column; }
+html { height: 100%; }
+html, body { overflow: hidden; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-color, #0f1420); color: var(--text-color, #e8e6e3); display: block !important; justify-content: initial !important; align-items: initial !important; padding: 0 !important; min-height: 0 !important; height: 100%; }
+.wg-app { height: 100dvh; width: 100%; display: flex; flex-direction: column; }
 .tool-header { display: flex; align-items: center; gap: 0.8rem; padding: 0.55rem 1rem; background: var(--card-bg, rgba(255,255,255,0.06)); backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.09)); z-index: 20; }
 .tool-back { color: var(--text-color); text-decoration: none; font-size: 0.85rem; opacity: 0.75; white-space: nowrap; }
 .tool-back:hover { opacity: 1; }
@@ -36,9 +37,9 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
 .wg-empty { padding: 0.5rem; font-size: 0.72rem; opacity: 0.4; text-align: center; }
 /* ===== 中栏：节点时间线 ===== */
 .wg-stage { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.wg-toolbar { display: flex; gap: 0.35rem; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.09)); flex-wrap: wrap; align-items: center; }
+.wg-toolbar { display: flex; flex-direction: column; gap: 0.45rem; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.09)); }
+.wg-toolbar .tb-row { display: flex; align-items: center; gap: 0.5rem; }
 .wg-toolbar .sp { flex: 1; }
-.wg-node-adds { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 .nb { padding: 0.28rem 0.6rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.22); background: rgba(128,128,128,0.06); color: inherit; font-size: 0.74rem; cursor: pointer; font-family: inherit; transition: all 0.15s; }
 .nb:hover { border-color: #66bb6a; color: #66bb6a; }
 .wg-list { flex: 1; overflow-y: auto; padding: 0.7rem; }
@@ -184,7 +185,11 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     <!-- 节点时间线 -->
     <div class="wg-stage">
       <div class="wg-toolbar">
-        <span style="font-size:0.75rem;opacity:0.6;">插入节点</span>
+        <div class="tb-row">
+          <span style="font-size:0.75rem;opacity:0.6;">插入节点</span>
+          <span class="sp"></span>
+          <button class="nb" id="btnClear" style="color:#ef5350;">🗑 清空</button>
+        </div>
         <div class="wg-cats" id="insertCats">
           <div class="wg-cat-row" data-cat="script">
             <div class="wg-cat-title"><span class="arrow">▾</span>💬 剧本</div>
@@ -223,8 +228,6 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
             </div>
           </div>
         </div>
-        <span class="sp"></span>
-        <button class="nb" id="btnClear" style="color:#ef5350;">🗑 清空</button>
       </div>
       <div class="wg-list" id="nodeList"></div>
     </div>
@@ -342,6 +345,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
       var s = nodeSummary(n);
       var div = document.createElement('div');
       div.className = 'wg-node' + (n.id === selId ? ' sel' : '');
+      div.setAttribute('data-id', n.id);
       var subs = '';
       if (n.type === 'choose') {
         subs = '<div class="nsubs">' + n.data.options.map(function (o) {
@@ -518,7 +522,25 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     });
   }
 
-  function refreshListOnly() { /* 只刷新摘要，保持选中态 */ renderList(); }
+  function refreshListOnly() {
+    /* 局部更新选中节点摘要，避免整表重建导致滚动跳动 */
+    if (!selId) { renderList(); return; }
+    var n = nodes.find(function (x) { return x.id === selId; });
+    if (!n) { renderList(); return; }
+    var div = document.querySelector('#nodeList .wg-node[data-id="' + n.id + '"]');
+    if (!div) { renderList(); return; }
+    var s = nodeSummary(n);
+    var sum = div.querySelector('.nsum');
+    if (sum) sum.innerHTML = s.html;
+    var meta = div.querySelector('.nmeta');
+    if (meta) meta.textContent = '#' + (nodes.indexOf(n) + 1) + ' · ' + n.type;
+    if (n.type === 'choose') {
+      var subs = div.querySelector('.nsubs');
+      if (subs) subs.innerHTML = n.data.options.map(function (o) {
+        return '<div class="nsub"><span>🔘 ' + esc(o.text || '（未命名选项）') + (o.cond ? ' <b style="color:#ffb74d">[if ' + esc(o.cond) + ']</b>' : '') + '</span><span class="ar">→</span><span>' + esc(o.target || '？') + '</span></div>';
+      }).join('');
+    }
+  }
   /* ===== 内置弹窗系统 ===== */
   function openModal(title, bodyHTML, after) {
     $('wgModalTitle').textContent = title;

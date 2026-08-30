@@ -29,6 +29,7 @@
         .opts-row label { opacity: 0.75; min-width: 72px; }
         .opts-row .val { opacity: 0.55; font-size: 0.78rem; font-family: 'Courier New', monospace; }
         input[type="range"] { width: 170px; accent-color: #66bb6a; }
+        .select-input { padding: 0.45rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; font-size: 0.85rem; outline: none; }
         .seg { display: inline-flex; gap: 0.35rem; flex-wrap: wrap; }
         .seg-btn { padding: 0.3rem 0.85rem; border-radius: 2rem; cursor: pointer; font-size: 0.8rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; transition: all 0.2s; }
         .seg-btn.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
@@ -71,18 +72,30 @@
             <div class="opts" id="optsBox" style="display:none;">
                 <div class="opts-row">
                     <label>像素分辨率</label>
-                    <input type="range" id="pixelRange" min="8" max="160" step="4" value="64">
+                    <input type="range" id="pixelRange" min="8" max="512" step="4" value="64">
                     <span class="val" id="pixelVal">64 × 64</span>
+                    <div class="seg" id="quickSeg">
+                        <button class="seg-btn" data-q="32">32</button>
+                        <button class="seg-btn" data-q="64">64</button>
+                        <button class="seg-btn" data-q="128">128</button>
+                        <button class="seg-btn" data-q="256">256</button>
+                        <button class="seg-btn" data-q="512">512</button>
+                        <button class="seg-btn" data-q="orig">原图尺寸</button>
+                    </div>
                 </div>
                 <div class="opts-row">
-                    <label>复古色深</label>
-                    <div class="seg" id="depthSeg">
-                        <button class="seg-btn active" data-d="true">真彩</button>
-                        <button class="seg-btn" data-d="2x2x2">8 色</button>
-                        <button class="seg-btn" data-d="2x4x2">16 色</button>
-                        <button class="seg-btn" data-d="2x4x4">32 色</button>
-                        <button class="seg-btn" data-d="4x4x4">64 色</button>
-                    </div>
+                    <label>色深</label>
+                    <select class="select-input" id="depthSel">
+                        <option value="true">真彩（24bit）</option>
+                        <option value="2x2x2">8 色（复古）</option>
+                        <option value="2x4x2">16 色</option>
+                        <option value="2x4x4">32 色</option>
+                        <option value="4x4x4">64 色</option>
+                        <option value="4x8x4">128 色</option>
+                        <option value="8x8x4">256 色（8bit）</option>
+                        <option value="8x8x8">512 色</option>
+                        <option value="16x16x16">4096 色</option>
+                    </select>
                 </div>
                 <div class="opts-row">
                     <label>网格线</label>
@@ -134,7 +147,7 @@
 
         function segVal(id) {
             var a = document.querySelector('#' + id + ' .seg-btn.active');
-            return a ? a.getAttribute('data-' + (id === 'depthSeg' ? 'd' : id === 'gridSeg' ? 'g' : 's')) : '';
+            return a ? a.getAttribute('data-' + (id === 'gridSeg' ? 'g' : 's')) : '';
         }
         function bindSeg(id, onChange) {
             var box = document.getElementById(id);
@@ -146,9 +159,20 @@
                 if (img) onChange();
             });
         }
-        bindSeg('depthSeg', render);
         bindSeg('gridSeg', render);
         bindSeg('scaleSeg', render);
+        document.getElementById('depthSel').addEventListener('change', function () { if (img) render(); });
+        /* 快捷分辨率 */
+        document.getElementById('quickSeg').addEventListener('click', function (e) {
+            var b = e.target.closest('.seg-btn');
+            if (!b || !img) return;
+            var q = b.getAttribute('data-q');
+            var range = document.getElementById('pixelRange');
+            var v = q === 'orig' ? img.naturalWidth : +q;
+            range.value = Math.min(512, Math.max(8, v));
+            document.getElementById('pixelVal').textContent = range.value + ' × ' + Math.max(1, Math.round(range.value * img.height / img.width));
+            render();
+        });
 
         function quantize(v, levels) {
             if (levels <= 1) return 0;
@@ -159,7 +183,7 @@
         function render() {
             if (!img) return;
             var N = +document.getElementById('pixelRange').value;
-            var depth = segVal('depthSeg');
+            var depth = document.getElementById('depthSel').value;
             var grid = segVal('gridSeg') === '1';
             var scale = +segVal('scaleSeg');
             var W = N, H = Math.max(1, Math.round(N * img.height / img.width));

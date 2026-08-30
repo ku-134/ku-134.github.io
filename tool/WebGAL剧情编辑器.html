@@ -99,6 +99,44 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
 .wg-pv-foot .pv-ctrl { cursor: pointer; font-size: 0.85rem; opacity: 0.7; background: none; border: none; color: inherit; font-family: inherit; }
 .wg-pv-foot .pv-ctrl:hover { opacity: 1; }
 .wg-pv-foot .pv-prog { flex: 1; text-align: center; font-size: 0.75rem; opacity: 0.5; }
+/* ===== 舞台式预览（真实素材渲染） ===== */
+.wg-pv-stage { position: relative; width: 100%; max-width: 780px; aspect-ratio: 16/9; background: #000; border-radius: 0.6rem; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.pv-layer { position: absolute; inset: 0; }
+#pvBgLayer { background-size: cover; background-position: center; transition: background-image 0.4s; }
+.pv-miss { position: absolute; top: 0.6rem; left: 0.8rem; font-size: 0.72rem; color: #ffb74d; background: rgba(0,0,0,0.5); padding: 0.25rem 0.6rem; border-radius: 2rem; }
+#pvCharLayer img { position: absolute; bottom: 0; height: 76%; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.45)); }
+#pvCharLayer img.left { left: 5%; }
+#pvCharLayer img.center { left: 50%; transform: translateX(-50%); }
+#pvCharLayer img.right { right: 5%; }
+.pv-hud { position: absolute; top: 0.6rem; right: 0.8rem; display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-end; z-index: 3; }
+.pv-hud span { font-size: 0.74rem; color: #a5d6a7; background: rgba(0,0,0,0.55); padding: 0.25rem 0.7rem; border-radius: 2rem; font-family: 'Courier New', monospace; }
+.pv-dialog { position: absolute; left: 1rem; right: 1rem; bottom: 1rem; z-index: 4; background: rgba(10,14,22,0.84); border: 1px solid rgba(255,255,255,0.12); border-radius: 0.8rem; padding: 0.9rem 1.1rem; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); min-height: 118px; display: flex; flex-direction: column; gap: 0.5rem; }
+.wg-pv-name { color: #66bb6a; font-weight: 600; font-size: 1rem; min-height: 1.3em; }
+.wg-pv-text { font-size: 1.02rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word; min-height: 2.6em; }
+.pv-music-tip { position: absolute; top: 0.6rem; left: 0.8rem; font-size: 0.72rem; color: #90caf9; background: rgba(0,0,0,0.5); padding: 0.25rem 0.6rem; border-radius: 2rem; z-index: 3; display: none; }
+/* ===== 内置弹窗 ===== */
+.wg-modal { position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; }
+.wg-modal.show { display: flex; }
+.wg-modal-panel { width: 440px; max-width: 92vw; max-height: 82vh; display: flex; flex-direction: column; border-radius: 1rem; background: rgba(15,20,32,0.97); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; animation: wgPop 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes wgPop { 0% { transform: scale(0.92) translateY(14px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+.wg-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.wg-modal-head .wg-modal-x { background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 1rem; }
+.wg-modal-head .wg-modal-x:hover { opacity: 1; }
+.wg-modal-body { padding: 1rem; overflow-y: auto; }
+.ap-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+.ap-item { display: flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0.55rem; border-radius: 0.65rem; border: 1px solid rgba(128,128,128,0.16); background: rgba(128,128,128,0.05); cursor: pointer; transition: all 0.15s; }
+.ap-item:hover { border-color: #66bb6a; background: rgba(102,187,106,0.08); }
+.ap-item .ap-thumb { width: 42px; height: 42px; border-radius: 0.4rem; object-fit: cover; flex-shrink: 0; background: rgba(128,128,128,0.15); display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; }
+.ap-item .ap-name { flex: 1; font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-item .ap-play { background: rgba(102,187,106,0.12); border: 1px solid rgba(102,187,106,0.35); color: #66bb6a; border-radius: 2rem; padding: 0.2rem 0.6rem; font-size: 0.72rem; cursor: pointer; flex-shrink: 0; }
+.ap-item .ap-play:hover { background: rgba(102,187,106,0.25); }
+.ap-custom { display: flex; gap: 0.45rem; margin-top: 0.8rem; padding-top: 0.7rem; border-top: 1px dashed rgba(128,128,128,0.2); }
+.ap-custom input { flex: 1; padding: 0.45rem 0.6rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.07); color: inherit; font-size: 0.8rem; font-family: inherit; outline: none; }
+.ap-custom input:focus { border-color: #66bb6a; }
+.ap-custom .tb { flex-shrink: 0; }
+.ap-empty { text-align: center; font-size: 0.78rem; opacity: 0.5; padding: 1.5rem 0; line-height: 1.8; }
+.ap-confirm { text-align: center; padding: 0.8rem 0 1.1rem; font-size: 0.85rem; line-height: 1.7; }
+.ap-confirm-actions { display: flex; justify-content: center; gap: 0.6rem; }
 /* 移动端适配 */
 .wg-drawer-toggle { display: none; }
 @media (max-width: 900px) {
@@ -163,18 +201,33 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
   </div>
 </div>
 <div class="wg-mask" id="wgMask"></div>
+<div id="settingsToggle" style="display:none;"></div>
 
-<!-- 预览遮罩 -->
+<!-- 内置弹窗 -->
+<div class="wg-modal" id="wgModal">
+  <div class="wg-modal-panel">
+    <div class="wg-modal-head"><span id="wgModalTitle">选择</span><button class="wg-modal-x" id="wgModalX">✕</button></div>
+    <div class="wg-modal-body" id="wgModalBody"></div>
+  </div>
+</div>
+
+<!-- 预览遮罩（舞台式） -->
 <div class="wg-preview" id="pvBox">
   <div class="wg-pv-top">
     <span style="font-weight:600;">👁 剧情预览</span>
     <button class="tb" id="pvClose">✕ 关闭</button>
   </div>
   <div class="wg-pv-body">
-    <div class="wg-pv-stage">
-      <div class="wg-pv-name" id="pvName"></div>
-      <div class="wg-pv-text" id="pvText"></div>
-      <div class="wg-pv-choose" id="pvChoose"></div>
+    <div class="wg-pv-stage" id="pvStage">
+      <div class="pv-layer" id="pvBgLayer"></div>
+      <div class="pv-layer" id="pvCharLayer"></div>
+      <div class="pv-music-tip" id="pvMusicTip"></div>
+      <div class="pv-hud" id="pvAffHud"></div>
+      <div class="pv-dialog">
+        <div class="wg-pv-name" id="pvName"></div>
+        <div class="wg-pv-text" id="pvText"></div>
+        <div class="wg-pv-choose" id="pvChoose"></div>
+      </div>
     </div>
   </div>
   <div class="wg-pv-foot">
@@ -366,13 +419,13 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     on('pValue', function (e) { d.value = Math.max(0, +e.target.value || 0); save(); refreshListOnly(); renderAff(); });
     on('pName', function (e) { d.name = e.target.value; save(); refreshListOnly(); });
     on('pTarget', function (e) { d.target = e.target.value; save(); refreshListOnly(); });
-    var pk = $('pPick'); if (pk) pk.addEventListener('click', function () { pickAsset(pk.getAttribute('data-pick'), function (name) { d.file = name; save(); renderProp(); renderList(); }); });
-    var lpk = $('pLabelPick'); if (lpk) lpk.addEventListener('click', function () { pickLabel(function (name) { d.target = name; save(); renderProp(); renderList(); }); });
+    var pk = $('pPick'); if (pk) pk.addEventListener('click', function () { openAssetPicker(pk.getAttribute('data-pick'), function (name) { d.file = name; save(); renderProp(); renderList(); }); });
+    var lpk = $('pLabelPick'); if (lpk) lpk.addEventListener('click', function () { openLabelPicker(function (name) { d.target = name; save(); renderProp(); renderList(); }); });
     if (n.type === 'choose') {
       d.options.forEach(function (o, i) {
         var t = $('pOptT' + i); if (t) t.addEventListener('input', function (e) { o.text = e.target.value; save(); refreshListOnly(); });
         var g = $('pOptG' + i); if (g) g.addEventListener('input', function (e) { o.target = e.target.value; save(); refreshListOnly(); });
-        var lp = document.querySelector('[data-labelpick="' + i + '"]'); if (lp) lp.addEventListener('click', function () { pickLabel(function (name) { o.target = name; save(); renderProp(); renderList(); }); });
+        var lp = document.querySelector('[data-labelpick="' + i + '"]'); if (lp) lp.addEventListener('click', function () { openLabelPicker(function (name) { o.target = name; save(); renderProp(); renderList(); }); });
       });
       var add = $('pAddOpt'); if (add) add.addEventListener('click', function () { d.options.push({ text: '', target: '' }); renderProp(); });
       var del = $('pDelOpt'); if (del) del.addEventListener('click', function () { if (d.options.length > 1) { d.options.pop(); renderProp(); } });
@@ -380,19 +433,93 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
   }
 
   function refreshListOnly() { /* 只刷新摘要，保持选中态 */ renderList(); }
-  function pickAsset(cat, cb) {
-    if (!assets[cat] || !assets[cat].length) { toast('素材库「' + CATS.find(function (c) { return c.key === cat; }).name + '」还没有素材，先在左侧上传～', 2500); return; }
-    var names = assets[cat].map(function (a) { return a.name; });
-    var name = prompt('输入或选择素材文件名：\n' + names.join('、'));
-    if (name) cb(name.trim());
+  /* ===== 内置弹窗系统 ===== */
+  function openModal(title, bodyHTML, after) {
+    $('wgModalTitle').textContent = title;
+    $('wgModalBody').innerHTML = bodyHTML;
+    $('wgModal').classList.add('show');
+    if (after) after();
   }
-  function pickLabel(cb) {
+  function closeModal() { $('wgModal').classList.remove('show'); }
+  function openAssetPicker(cat, cb) {
+    var list = assets[cat] || [];
+    var catInfo = CATS.find(function (c) { return c.key === cat; });
+    var isImg = cat === 'bg' || cat === 'char';
+    var isAud = cat === 'music' || cat === 'effect' || cat === 'voice';
+    var items = list.map(function (a) {
+      var thumb = isImg ? '<img class="ap-thumb" src="' + a.url + '" alt="">' : '<span class="ap-thumb">' + catInfo.icon + '</span>';
+      var play = isAud ? '<button class="ap-play" data-url="' + a.url + '" data-name="' + esc(a.name) + '">▶ 试听</button>' : '';
+      return '<div class="ap-item" data-name="' + esc(a.name) + '">' + thumb + '<span class="ap-name">' + esc(a.name) + '</span>' + play + '</div>';
+    }).join('') || '<div class="ap-empty">「' + catInfo.name + '」还没有素材～<br>先去左侧素材库上传，或直接用下方自定义引用</div>';
+    var html = '<div class="ap-grid">' + items + '</div>' +
+      '<div class="ap-custom"><input type="text" id="apCustom" placeholder="或输入自定义文件名引用（如 ' + (isImg ? 'bg1.png' : 'bgm1.mp3') + '）"><button class="tb primary" id="apCustomOk">引用</button></div>';
+    openModal('选择「' + catInfo.name + '」素材', html, function () {
+      $('wgModalBody').querySelectorAll('.ap-item').forEach(function (it) {
+        it.addEventListener('click', function (e) {
+          if (e.target.closest('.ap-play')) return;
+          closeModal(); cb(it.getAttribute('data-name'));
+        });
+      });
+      $('wgModalBody').querySelectorAll('.ap-play').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var au = new Audio(b.getAttribute('data-url'));
+          au.play();
+          var old = $('wgModalBody').querySelector('.ap-play.playing');
+          if (old) { old.classList.remove('playing'); old.textContent = '▶ 试听'; }
+          b.classList.add('playing'); b.textContent = '⏹ 停止';
+          au.onended = function () { b.classList.remove('playing'); b.textContent = '▶ 试听'; };
+        });
+      });
+      $('apCustomOk').addEventListener('click', function () {
+        var v = $('apCustom').value.trim();
+        if (!v) { toast('请输入文件名', 1800); return; }
+        closeModal(); cb(v);
+      });
+      $('apCustom').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('apCustomOk').click(); });
+    });
+  }
+  function openLabelPicker(cb) {
     var labels = nodes.filter(function (x) { return x.type === 'label' && x.data.name; }).map(function (x) { return x.data.name; });
-    if (!labels.length) { toast('还没有 🏷 标签节点，先建一个吧', 2500); return; }
-    var name = prompt('选择跳转目标标签：\n' + labels.join('、'));
-    if (name) cb(name.trim());
+    var items = labels.map(function (l) {
+      return '<div class="ap-item" data-name="' + esc(l) + '"><span class="ap-thumb">🏷</span><span class="ap-name">' + esc(l) + '</span></div>';
+    }).join('') || '<div class="ap-empty">还没有 🏷 标签节点～<br>先在时间线建一个标签节点，或用下方自定义输入</div>';
+    var html = '<div class="ap-grid">' + items + '</div>' +
+      '<div class="ap-custom"><input type="text" id="apCustom" placeholder="或输入自定义标签名（如 good_end）"><button class="tb primary" id="apCustomOk">引用</button></div>';
+    openModal('选择跳转目标标签', html, function () {
+      $('wgModalBody').querySelectorAll('.ap-item').forEach(function (it) {
+        it.addEventListener('click', function () { closeModal(); cb(it.getAttribute('data-name')); });
+      });
+      $('apCustomOk').addEventListener('click', function () {
+        var v = $('apCustom').value.trim();
+        if (!v) { toast('请输入标签名', 1800); return; }
+        closeModal(); cb(v);
+      });
+      $('apCustom').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('apCustomOk').click(); });
+    });
   }
-  function toast(msg, ms) { if (window.showVoidToast) window.showVoidToast(msg, ms || 2000); else alert(msg); }
+  function openConfirm(msg, onYes) {
+    var html = '<div class="ap-confirm">' + msg + '</div>' +
+      '<div class="ap-confirm-actions"><button class="tb" id="apNo">取消</button><button class="tb primary" id="apYes">确定</button></div>';
+    openModal('确认操作', html, function () {
+      $('apNo').addEventListener('click', closeModal);
+      $('apYes').addEventListener('click', function () { closeModal(); onYes(); });
+    });
+  }
+  function toast(msg, ms) {
+    if (window.showVoidToast) { window.showVoidToast(msg, ms || 2000); return; }
+    var t = document.getElementById('wgToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'wgToast';
+      t.style.cssText = 'position:fixed;left:50%;bottom:2.2rem;transform:translateX(-50%);background:rgba(12,22,12,.92);color:#e8e6e3;padding:.5rem 1.1rem;border-radius:2rem;font-size:.82rem;z-index:200;border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 24px rgba(0,0,0,.4);transition:opacity .3s;pointer-events:none;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._tm);
+    t._tm = setTimeout(function () { t.style.opacity = '0'; }, ms || 2000);
+  }
 
   /* ===== 素材库渲染 ===== */
   function renderAssets() {
@@ -581,11 +708,19 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     toast('导入完成：' + nodes.length + ' 个节点', 2200);
   }
 
-  /* ===== 预览 ===== */
-  var pvIdx = 0, pvStack = [];
+  /* ===== 预览（舞台式：真实素材渲染） ===== */
+  var pvIdx = 0;
+  var pvState = { bg: null, chars: [], music: null, musicName: '', audio: null, affs: {} };
+  function findAsset(cat, name) {
+    var list = assets[cat] || [];
+    for (var i = 0; i < list.length; i++) if (list[i].name === name) return list[i];
+    return null;
+  }
+  function stopMusic() { if (pvState.audio) { try { pvState.audio.pause(); } catch (e) { } pvState.audio = null; } }
   function startPreview() {
     if (!nodes.length) { toast('台本是空的，先写点剧情吧', 2000); return; }
-    pvIdx = 0; pvStack = [];
+    pvIdx = 0;
+    pvState = { bg: null, chars: [], music: null, musicName: '', audio: null, affs: {} };
     $('pvBox').classList.add('show');
     renderPreview();
   }
@@ -593,30 +728,95 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     var n = nodes[pvIdx];
     $('pvName').textContent = ''; $('pvText').textContent = ''; $('pvChoose').innerHTML = '';
     $('pvProg').textContent = (pvIdx + 1) + ' / ' + nodes.length;
-    if (!n) { $('pvText').textContent = '—— 剧情结束 ——'; return; }
+    if (!n) { $('pvText').textContent = '—— 剧情结束 ——'; $('pvName').textContent = '🎬'; return; }
     var d = n.data;
     if (n.type === 'dialogue') { $('pvName').textContent = d.speaker || '？？'; $('pvText').textContent = d.text; }
-    else if (n.type === 'narrate') { $('pvText').textContent = d.text; }
-    else if (n.type === 'bg') { $('pvText').textContent = '🖼 背景切换：' + d.file; }
-    else if (n.type === 'char') { $('pvText').textContent = d.action === 'clear' ? '🧍 立绘隐藏' : '🧍 立绘出现：' + d.file; }
-    else if (n.type === 'music') { $('pvText').textContent = d.action === 'clear' ? '🎵 音乐停止' : '🎵 音乐播放：' + d.file; }
-    else if (n.type === 'effect') { $('pvText').textContent = '🔊 音效：' + d.file; }
-    else if (n.type === 'voice') { $('pvText').textContent = '🗣 语音：' + d.file; }
-    else if (n.type === 'affection') { $('pvText').textContent = '💗 ' + d.var + ' ' + fmtAff(d.op, d.value); }
+    else if (n.type === 'narrate') { $('pvName').textContent = '📖 旁白'; $('pvText').textContent = d.text; }
+    else if (n.type === 'bg') {
+      var a = findAsset('bg', d.file);
+      var layer = $('pvBgLayer');
+      if (a) { layer.style.backgroundImage = 'url(' + a.url + ')'; layer.innerHTML = ''; pvState.bg = a.url; }
+      else { layer.style.backgroundImage = ''; layer.innerHTML = '<div class="pv-miss">🖼 未上传：' + esc(d.file) + '</div>'; pvState.bg = null; }
+      $('pvText').textContent = '🖼 背景切换：' + d.file;
+    }
+    else if (n.type === 'char') {
+      var cl = $('pvCharLayer');
+      if (d.action === 'clear') { pvState.chars = []; cl.innerHTML = ''; $('pvText').textContent = '🧍 立绘隐藏'; }
+      else {
+        var ca = findAsset('char', d.file);
+        var pos = d.pos || 'center';
+        if (ca) {
+          pvState.chars = pvState.chars.filter(function (c) { return c.name !== d.file; });
+          pvState.chars.push({ name: d.file, url: ca.url, pos: pos });
+          cl.innerHTML = pvState.chars.map(function (c) {
+            return '<img src="' + c.url + '" class="' + c.pos + '" alt="">';
+          }).join('');
+          $('pvText').textContent = '🧍 立绘出现：' + d.file;
+        } else {
+          cl.innerHTML = '';
+          $('pvText').textContent = '🧍 立绘：' + d.file + '（素材未上传，预览从略）';
+        }
+      }
+    }
+    else if (n.type === 'music') {
+      if (d.action === 'clear') { stopMusic(); pvState.music = null; pvState.musicName = ''; $('pvMusicTip').style.display = 'none'; $('pvText').textContent = '🎵 音乐停止'; }
+      else {
+        var ma = findAsset('music', d.file);
+        if (ma) {
+          stopMusic();
+          var au = new Audio(ma.url);
+          au.loop = true;
+          au.play().catch(function () { });
+          pvState.audio = au; pvState.music = ma.url; pvState.musicName = d.file;
+          $('pvMusicTip').textContent = '🎵 ' + d.file;
+          $('pvMusicTip').style.display = 'block';
+          $('pvText').textContent = '🎵 音乐播放：' + d.file;
+        } else {
+          $('pvText').textContent = '🎵 音乐：' + d.file + '（素材未上传，静音预览）';
+        }
+      }
+    }
+    else if (n.type === 'effect') {
+      var ea = findAsset('effect', d.file);
+      if (ea) { var eau = new Audio(ea.url); eau.play().catch(function () { }); }
+      $('pvText').textContent = '🔊 音效：' + d.file + (ea ? '' : '（素材未上传，静音预览）');
+    }
+    else if (n.type === 'voice') {
+      var va = findAsset('voice', d.file);
+      if (va) { var vau = new Audio(va.url); vau.play().catch(function () { }); }
+      $('pvText').textContent = '🗣 语音：' + d.file + (va ? '' : '（素材未上传，静音预览）');
+    }
+    else if (n.type === 'affection') {
+      var key = d.var || '好感度';
+      if (!(key in pvState.affs)) pvState.affs[key] = 0;
+      if (d.op === '=') pvState.affs[key] = d.value;
+      else pvState.affs[key] += (d.op === '-' ? -1 : 1) * d.value;
+      renderAffHud();
+      $('pvText').textContent = '💗 ' + key + ' ' + fmtAff(d.op, d.value) + '　→ 当前 ' + pvState.affs[key];
+    }
     else if (n.type === 'label') { $('pvText').textContent = '🏷 标签：' + d.name; }
     else if (n.type === 'jump') { jumpToLabel(d.target); return; }
     else if (n.type === 'choose') {
-      $('pvText').textContent = '选择你的行动：';
+      $('pvName').textContent = '🔀 选择你的行动';
+      $('pvText').textContent = '';
       d.options.forEach(function (o) {
         var b = document.createElement('button');
         b.textContent = '🔘 ' + (o.text || '（选项）');
         b.addEventListener('click', function () {
-          if (o.target) { pvStack.push(pvIdx); jumpToLabel(o.target); }
+          if (o.target) { jumpToLabel(o.target); }
           else { pvIdx++; renderPreview(); }
         });
         $('pvChoose').appendChild(b);
       });
     }
+  }
+  function renderAffHud() {
+    var keys = Object.keys(pvState.affs);
+    var hud = $('pvAffHud');
+    hud.innerHTML = keys.map(function (k) {
+      var v = pvState.affs[k];
+      return '<span>💗 ' + esc(k) + ' ' + (v >= 0 ? '+' : '') + v + '</span>';
+    }).join('');
   }
   function jumpToLabel(name) {
     var idx = nodes.findIndex(function (x) { return x.type === 'label' && x.data.name === name; });
@@ -640,7 +840,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     b.addEventListener('click', function () { insertAtSel(newNode(b.getAttribute('data-add'))); });
   });
   $('btnClear').addEventListener('click', function () {
-    if (nodes.length && confirm('清空全部节点？')) { nodes = []; selId = null; save(); renderList(); renderProp(); renderAff(); }
+    if (nodes.length) openConfirm('确定清空全部节点吗？此操作不可撤销。', function () { nodes = []; selId = null; save(); renderList(); renderProp(); renderAff(); });
   });
   $('btnExport').addEventListener('click', function () {
     var txt = exportText();
@@ -663,7 +863,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
     this.value = '';
   });
   $('btnPreview').addEventListener('click', startPreview);
-  $('pvClose').addEventListener('click', function () { $('pvBox').classList.remove('show'); });
+  $('pvClose').addEventListener('click', function () { $('pvBox').classList.remove('show'); stopMusic(); });
   $('pvNext').addEventListener('click', function () { if (pvIdx < nodes.length - 1) { pvIdx++; renderPreview(); } });
   $('pvBack').addEventListener('click', function () { if (pvIdx > 0) { pvIdx--; renderPreview(); } });
   document.querySelectorAll('.wg-tab').forEach(function (t) {
@@ -681,6 +881,10 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-colo
   $('btnAssets').addEventListener('click', function (e) { e.stopPropagation(); if (drawerOpen === 'a') { closeDrawers(); return; } closeDrawers(); $('assetPanel').classList.add('open'); $('wgMask').classList.add('show'); drawerOpen = 'a'; });
   document.querySelector('.tool-title').addEventListener('click', function () { if (drawerOpen === 'r') { closeDrawers(); return; } closeDrawers(); $('rightPanel').classList.add('open'); $('wgMask').classList.add('show'); drawerOpen = 'r'; });
   $('wgMask').addEventListener('click', closeDrawers);
+  /* 内置弹窗关闭 */
+  $('wgModalX').addEventListener('click', closeModal);
+  $('wgModal').addEventListener('click', function (e) { if (e.target === $('wgModal')) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); } });
 
   /* ===== 启动 ===== */
   load();

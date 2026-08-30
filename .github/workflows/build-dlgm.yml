@@ -54,18 +54,35 @@ jobs:
           SRC="Gamecurrently/DLGM/game/background/DLGM-start.webp"
           [ -f "$SRC" ] || SRC="Gamecurrently/DLGM/DLGM-start.webp"
           if [ -f "$SRC" ]; then
-            convert "$SRC" -resize 48x48^ -gravity center -extent 48x48 /tmp/i48.png
-            convert "$SRC" -resize 32x32^ -gravity center -extent 32x32 /tmp/i32.png
-            convert "$SRC" -resize 16x16^ -gravity center -extent 16x16 /tmp/i16.png
-            convert /tmp/i16.png /tmp/i32.png /tmp/i48.png Gamecurrently/DLGM/icons/favicon.ico
-            convert "$SRC" -resize 180x180^ -gravity center -extent 180x180 Gamecurrently/DLGM/icons/apple-touch-icon.png
-            for size in 192 512; do
-              convert "$SRC" -resize ${size}x${size}^ -gravity center -extent ${size}x${size} Gamecurrently/DLGM/icons/icon-${size}.png
-              convert "$SRC" -resize ${size}x${size}^ -gravity center -extent ${size}x${size} /tmp/mb.png
-              convert "$SRC" -resize $((size*60/100))x$((size*60/100))^ -gravity center -extent $((size*60/100))x$((size*60/100)) /tmp/mf.png
-              convert /tmp/mb.png /tmp/mf.png -gravity center -composite Gamecurrently/DLGM/icons/icon-${size}-maskable.png
-            done
-            echo "icons generated from $SRC"
+            python3 -m venv /tmp/venv
+            /tmp/venv/bin/pip install -q pillow
+            SRC="$SRC" /tmp/venv/bin/python3 << 'PYEOF'
+import os
+from PIL import Image
+import statistics
+
+src = os.environ['SRC']
+im = Image.open(src).convert('RGB')
+w, h = im.size
+s = min(w, h)
+im = im.crop(((w-s)//2, (h-s)//2, (w-s)//2+s, (h-s)//2+s))
+
+# favicon.ico 多尺寸 (16/32/48)
+im.resize((48,48), Image.LANCZOS).save('Gamecurrently/DLGM/icons/favicon.ico', sizes=[(16,16),(32,32),(48,48)])
+# 常规图标
+for size in (180, 192, 512):
+    im.resize((size,size), Image.LANCZOS).save(f'Gamecurrently/DLGM/icons/icon-{size}.png')
+im.resize((180,180), Image.LANCZOS).save('Gamecurrently/DLGM/icons/apple-touch-icon.png')
+# maskable 图标（内容 60% 居中，背景取角落平均色）
+corners = [im.getpixel((2,2)), im.getpixel((s-3,2)), im.getpixel((2,s-3)), im.getpixel((s-3,s-3))]
+bg = tuple(int(statistics.mean(c[i] for c in corners)) for i in range(3))
+for size in (192, 512):
+    canvas = Image.new('RGBA', (size,size), bg+(255,))
+    inner = im.resize((int(size*0.6), int(size*0.6)), Image.LANCZOS)
+    canvas.paste(inner, ((size-inner.width)//2, (size-inner.height)//2))
+    canvas.convert('RGB').save(f'Gamecurrently/DLGM/icons/icon-{size}-maskable.png')
+print('icons generated from', src)
+PYEOF
           fi
           # 全站根目录统一 favicon（若无自定义则沿用游戏图标）
           if [ -f Gamecurrently/DLGM/icons/favicon.ico ] && [ ! -f favicon.ico ]; then

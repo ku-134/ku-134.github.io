@@ -32,9 +32,7 @@ jobs:
 
       - name: Assemble game content
         run: |
-          # 复制用户维护的游戏内容
           cp -r Gamecurrently/DLGM/game/* /tmp/webgal/game/
-          # 兼容旧目录：把平铺在 DLGM 根目录的图片整理进 background（首次构建后建议直接放 game/background/）
           cp -n Gamecurrently/DLGM/*.webp /tmp/webgal/game/background/ 2>/dev/null || true
           cp -n Gamecurrently/DLGM/*.jpg /tmp/webgal/game/background/ 2>/dev/null || true
           cp -n Gamecurrently/DLGM/*.png /tmp/webgal/game/background/ 2>/dev/null || true
@@ -52,7 +50,6 @@ jobs:
 
       - name: Generate icons from source image
         run: |
-          # 源图优先级：custom-icons/icon-source.png > 根目录 retouch 图 > DLGM-start.webp
           SRC=""
           [ -f Gamecurrently/DLGM/custom-icons/icon-source.png ] && SRC="Gamecurrently/DLGM/custom-icons/icon-source.png"
           [ -z "$SRC" ] && [ -f retouch_2026083011232567.png ] && SRC="retouch_2026083011232567.png"
@@ -62,29 +59,25 @@ jobs:
             python3 -m venv /tmp/venv
             /tmp/venv/bin/pip install -q pillow
             SRC="$SRC" /tmp/venv/bin/python3 << 'PYEOF'
-import os
-from PIL import Image
-
-src = os.environ['SRC']
-im = Image.open(src).convert('RGBA')
-w, h = im.size
-s = min(w, h)
-im = im.crop(((w-s)//2, (h-s)//2, (w-s)//2+s, (h-s)//2+s))
-
-im.resize((48,48), Image.LANCZOS).save('Gamecurrently/DLGM/icons/favicon.ico', sizes=[(16,16),(32,32),(48,48)])
-for size in (180, 192, 512):
-    im.resize((size,size), Image.LANCZOS).save(f'Gamecurrently/DLGM/icons/icon-{size}.png')
-im.resize((180,180), Image.LANCZOS).save('Gamecurrently/DLGM/icons/apple-touch-icon.png')
-# maskable：内容 80% 居中，透明安全区
-for size in (192, 512):
-    inner = im.resize((int(size*0.8), int(size*0.8)), Image.LANCZOS)
-    canvas = Image.new('RGBA', (size,size), (255,255,255,0))
-    canvas.paste(inner, ((size-inner.width)//2, (size-inner.height)//2))
-    canvas.save(f'Gamecurrently/DLGM/icons/icon-{size}-maskable.png')
-print('icons generated from', src)
-PYEOF
+          import os
+          from PIL import Image
+          src = os.environ['SRC']
+          im = Image.open(src).convert('RGBA')
+          w, h = im.size
+          s = min(w, h)
+          im = im.crop(((w-s)//2, (h-s)//2, (w-s)//2+s, (h-s)//2+s))
+          im.resize((48,48), Image.LANCZOS).save('Gamecurrently/DLGM/icons/favicon.ico', sizes=[(16,16),(32,32),(48,48)])
+          for size in (180, 192, 512):
+              im.resize((size,size), Image.LANCZOS).save(f'Gamecurrently/DLGM/icons/icon-{size}.png')
+          im.resize((180,180), Image.LANCZOS).save('Gamecurrently/DLGM/icons/apple-touch-icon.png')
+          for size in (192, 512):
+              inner = im.resize((int(size*0.8), int(size*0.8)), Image.LANCZOS)
+              canvas = Image.new('RGBA', (size,size), (255,255,255,0))
+              canvas.paste(inner, ((size-inner.width)//2, (size-inner.height)//2))
+              canvas.save(f'Gamecurrently/DLGM/icons/icon-{size}-maskable.png')
+          print('icons generated from', src)
+          PYEOF
           fi
-          # 全站根目录统一 favicon（若无自定义则沿用游戏图标）
           if [ -f Gamecurrently/DLGM/icons/favicon.ico ] && [ ! -f favicon.ico ]; then
             cp Gamecurrently/DLGM/icons/favicon.ico favicon.ico
             echo "root favicon set"
@@ -92,7 +85,6 @@ PYEOF
 
       - name: Apply custom icons (override)
         run: |
-          # 若存在 custom-icons 目录，则用其中的文件覆盖同名图标
           if [ -d Gamecurrently/DLGM/custom-icons ]; then
             cp -f Gamecurrently/DLGM/custom-icons/* Gamecurrently/DLGM/icons/ 2>/dev/null || true
             echo "custom-icons applied"

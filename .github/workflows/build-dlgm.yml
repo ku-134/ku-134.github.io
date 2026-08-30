@@ -6,6 +6,7 @@ on:
     paths:
       - 'Gamecurrently/DLGM/game/**'
       - 'Gamecurrently/DLGM/custom-icons/**'
+      - 'retouch_2026083011232567.png'
       - '.github/workflows/build-dlgm.yml'
   workflow_dispatch:
 
@@ -49,38 +50,37 @@ jobs:
           cp -f /tmp/webgal/webgal-engine.json Gamecurrently/DLGM/webgal-engine.json
           cp -f /tmp/webgal/webgal-serviceworker.js Gamecurrently/DLGM/webgal-serviceworker.js
 
-      - name: Generate icons from cover
+      - name: Generate icons from source image
         run: |
-          SRC="Gamecurrently/DLGM/game/background/DLGM-start.webp"
-          [ -f "$SRC" ] || SRC="Gamecurrently/DLGM/DLGM-start.webp"
-          if [ -f "$SRC" ]; then
+          # 源图优先级：custom-icons/icon-source.png > 根目录 retouch 图 > DLGM-start.webp
+          SRC=""
+          [ -f Gamecurrently/DLGM/custom-icons/icon-source.png ] && SRC="Gamecurrently/DLGM/custom-icons/icon-source.png"
+          [ -z "$SRC" ] && [ -f retouch_2026083011232567.png ] && SRC="retouch_2026083011232567.png"
+          [ -z "$SRC" ] && [ -f Gamecurrently/DLGM/game/background/DLGM-start.webp ] && SRC="Gamecurrently/DLGM/game/background/DLGM-start.webp"
+          [ -z "$SRC" ] && [ -f Gamecurrently/DLGM/DLGM-start.webp ] && SRC="Gamecurrently/DLGM/DLGM-start.webp"
+          if [ -n "$SRC" ]; then
             python3 -m venv /tmp/venv
             /tmp/venv/bin/pip install -q pillow
             SRC="$SRC" /tmp/venv/bin/python3 << 'PYEOF'
 import os
 from PIL import Image
-import statistics
 
 src = os.environ['SRC']
-im = Image.open(src).convert('RGB')
+im = Image.open(src).convert('RGBA')
 w, h = im.size
 s = min(w, h)
 im = im.crop(((w-s)//2, (h-s)//2, (w-s)//2+s, (h-s)//2+s))
 
-# favicon.ico 多尺寸 (16/32/48)
 im.resize((48,48), Image.LANCZOS).save('Gamecurrently/DLGM/icons/favicon.ico', sizes=[(16,16),(32,32),(48,48)])
-# 常规图标
 for size in (180, 192, 512):
     im.resize((size,size), Image.LANCZOS).save(f'Gamecurrently/DLGM/icons/icon-{size}.png')
 im.resize((180,180), Image.LANCZOS).save('Gamecurrently/DLGM/icons/apple-touch-icon.png')
-# maskable 图标（内容 60% 居中，背景取角落平均色）
-corners = [im.getpixel((2,2)), im.getpixel((s-3,2)), im.getpixel((2,s-3)), im.getpixel((s-3,s-3))]
-bg = tuple(int(statistics.mean(c[i] for c in corners)) for i in range(3))
+# maskable：内容 80% 居中，透明安全区
 for size in (192, 512):
-    canvas = Image.new('RGBA', (size,size), bg+(255,))
-    inner = im.resize((int(size*0.6), int(size*0.6)), Image.LANCZOS)
+    inner = im.resize((int(size*0.8), int(size*0.8)), Image.LANCZOS)
+    canvas = Image.new('RGBA', (size,size), (255,255,255,0))
     canvas.paste(inner, ((size-inner.width)//2, (size-inner.height)//2))
-    canvas.convert('RGB').save(f'Gamecurrently/DLGM/icons/icon-{size}-maskable.png')
+    canvas.save(f'Gamecurrently/DLGM/icons/icon-{size}-maskable.png')
 print('icons generated from', src)
 PYEOF
           fi

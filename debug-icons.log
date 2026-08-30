@@ -1,0 +1,23 @@
+=== generate icons debug ===
+SRC=[retouch_2026083011232567.png]
+venv exit: 0
+pillow exit: 0
+opening retouch_2026083011232567.png
+icons generated from retouch_2026083011232567.png
+python exit: 0
+total 372
+drwxr-xr-x 2 runner runner   4096 Aug 30 03:38 .
+drwxr-xr-x 6 runner runner   4096 Aug 30 03:38 ..
+-rw-r--r-- 1 runner runner  29119 Aug 30 03:38 apple-touch-icon.png
+-rw-r--r-- 1 runner runner   7316 Aug 30 03:38 favicon.ico
+-rw-r--r-- 1 runner runner  29119 Aug 30 03:38 icon-180.png
+-rw-r--r-- 1 runner runner  23830 Aug 30 03:38 icon-192-maskable.png
+-rw-r--r-- 1 runner runner  32095 Aug 30 03:38 icon-192.png
+-rw-r--r-- 1 runner runner 100554 Aug 30 03:38 icon-512-maskable.png
+-rw-r--r-- 1 runner runner 135275 Aug 30 03:38 icon-512.png
+=== apply custom ===
+total 16
+drwxr-xr-x 2 runner runner 4096 Aug 30 03:38 .
+drwxr-xr-x 6 runner runner 4096 Aug 30 03:38 ..
+-rw-r--r-- 1 runner runner 7316 Aug 30 03:38 favicon.ico
+custom-icons applied

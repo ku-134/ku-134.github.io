@@ -1,0 +1,59 @@
+name: Build DLGM with WebGAL
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Gamecurrently/DLGM/game/**'
+      - '.github/workflows/build-dlgm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-dlgm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download WebGAL engine
+        run: |
+          curl -sL -o /tmp/webgal.zip https://github.com/OpenWebGAL/WebGAL/releases/download/4.6.4/WebGAL-4.6.4-web.zip
+          unzip -q /tmp/webgal.zip -d /tmp/webgal
+
+      - name: Clean demo assets
+        run: |
+          cd /tmp/webgal
+          rm -rf game/vocal/* game/bgm/* game/figure/* game/background/* game/scene/* game/animation/*
+
+      - name: Assemble game content
+        run: |
+          # 复制用户维护的游戏内容
+          cp -r Gamecurrently/DLGM/game/* /tmp/webgal/game/
+          # 兼容旧目录：把平铺在 DLGM 根目录的图片整理进 background（首次构建后建议直接放 game/background/）
+          cp -n Gamecurrently/DLGM/*.webp /tmp/webgal/game/background/ 2>/dev/null || true
+          cp -n Gamecurrently/DLGM/*.jpg /tmp/webgal/game/background/ 2>/dev/null || true
+          cp -n Gamecurrently/DLGM/*.png /tmp/webgal/game/background/ 2>/dev/null || true
+
+      - name: Deploy engine to repo
+        run: |
+          rm -rf Gamecurrently/DLGM/assets Gamecurrently/DLGM/icons Gamecurrently/DLGM/game
+          cp -r /tmp/webgal/assets Gamecurrently/DLGM/assets
+          cp -r /tmp/webgal/icons Gamecurrently/DLGM/icons
+          cp -r /tmp/webgal/game Gamecurrently/DLGM/game
+          cp -f /tmp/webgal/index.html Gamecurrently/DLGM/index.html
+          cp -f /tmp/webgal/manifest.json Gamecurrently/DLGM/manifest.json
+          cp -f /tmp/webgal/webgal-engine.json Gamecurrently/DLGM/webgal-engine.json
+          cp -f /tmp/webgal/webgal-serviceworker.js Gamecurrently/DLGM/webgal-serviceworker.js
+          # 保留旧的 DLGM.html 兼容入口
+          ls Gamecurrently/DLGM/
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "[skip ci] build DLGM with WebGAL 4.6.4" || echo "nothing to commit"
+          git push

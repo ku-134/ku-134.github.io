@@ -78,9 +78,10 @@ jobs:
           print('icons generated from', src)
           PYEOF
           fi
-          if [ -f Gamecurrently/DLGM/icons/favicon.ico ] && [ ! -f favicon.ico ]; then
-            cp Gamecurrently/DLGM/icons/favicon.ico favicon.ico
-            echo "root favicon set"
+          # 全站根目录统一 favicon（总是同步最新版）
+          if [ -f Gamecurrently/DLGM/icons/favicon.ico ]; then
+            cp -f Gamecurrently/DLGM/icons/favicon.ico favicon.ico
+            echo "root favicon synced"
           fi
 
       - name: Apply custom icons (override)

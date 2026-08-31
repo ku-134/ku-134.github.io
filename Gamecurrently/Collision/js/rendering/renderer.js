@@ -190,6 +190,67 @@ export function drawBallDeco(g, x, y, r, skillId, swordAngle) {
     g.restore();
     return;
   }
+  // 水星：灰褐球 + 陨石坑（浅色椭圆斑）
+  if (skillId === 'mercury') {
+    g.save();
+    g.fillStyle = 'rgba(180,150,120,0.55)';
+    const craters = [[0.2, -0.25, 0.2], [-0.3, 0.1, 0.16], [0.28, 0.3, 0.14], [-0.1, 0.32, 0.11], [0.05, -0.05, 0.09]];
+    for (const [dx, dy, sz] of craters) {
+      g.beginPath();
+      g.ellipse(x + dx * r, y + dy * r, sz * r, sz * r * 0.8, 0.4, 0, Math.PI * 2);
+      g.fill();
+    }
+    g.restore();
+    return;
+  }
+  // 金星：金黄球 + 云带条纹（两条横向浅金带）
+  if (skillId === 'venus') {
+    g.save();
+    g.fillStyle = 'rgba(255,236,170,0.5)';
+    g.beginPath(); g.ellipse(x, y - r * 0.28, r * 0.95, r * 0.16, 0, 0, Math.PI * 2); g.fill();
+    g.beginPath(); g.ellipse(x, y + r * 0.22, r * 0.9, r * 0.13, 0, 0, Math.PI * 2); g.fill();
+    g.restore();
+    return;
+  }
+  // 木星：橙黄条纹 + 右下大红斑
+  if (skillId === 'jupiter') {
+    g.save();
+    g.fillStyle = 'rgba(230,190,120,0.5)';
+    for (let i = 0; i < 4; i++) {
+      const dy = -r * 0.45 + i * r * 0.3;
+      g.beginPath(); g.ellipse(x, y + dy, r * 0.98, r * 0.12, 0, 0, Math.PI * 2); g.fill();
+    }
+    g.fillStyle = '#C0392B';
+    g.beginPath(); g.ellipse(x + r * 0.32, y + r * 0.36, r * 0.26, r * 0.16, 0.5, 0, Math.PI * 2); g.fill();
+    g.restore();
+    return;
+  }
+  // 天王星：蓝绿球 + 白色极光斑（垂直光环由 drawBall 绘制）
+  if (skillId === 'uranus') {
+    g.save();
+    g.fillStyle = 'rgba(255,255,255,0.35)';
+    g.beginPath(); g.ellipse(x - r * 0.15, y - r * 0.3, r * 0.3, r * 0.14, 0.6, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(220,255,255,0.3)';
+    g.beginPath(); g.ellipse(x + r * 0.25, y + r * 0.2, r * 0.22, r * 0.1, -0.4, 0, Math.PI * 2); g.fill();
+    g.restore();
+    return;
+  }
+  // 海王星：深蓝球 + 右侧大暗斑 + 白色气流纹
+  if (skillId === 'neptune') {
+    g.save();
+    g.fillStyle = 'rgba(8,30,70,0.65)';
+    g.beginPath(); g.ellipse(x + r * 0.3, y + r * 0.05, r * 0.24, r * 0.15, 0.3, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(200,230,255,0.5)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(x - r * 0.7, y - r * 0.1);
+    g.quadraticCurveTo(x - r * 0.2, y - r * 0.42, x + r * 0.1, y - r * 0.18);
+    g.moveTo(x - r * 0.55, y + r * 0.3);
+    g.quadraticCurveTo(x - r * 0.1, y + r * 0.05, x + r * 0.35, y + r * 0.3);
+    g.stroke();
+    g.restore();
+    return;
+  }
   // 死灵术士：球内深红色尸斑（大小不一、固定位置、不超出球体）
   if (skillId === 'necromancer') {
     g.save();
@@ -249,6 +310,20 @@ export class Renderer {
     bus.on('fx:meteorBounce', ({ x, y }) => this.particles.spawn(x, y, { color: '#9a9a9a', count: 8, speed: 100, size: 3 }));
     // 火星沙尘伤害：橘红沙粒
     bus.on('fx:dustTick', ({ x, y }) => this.particles.spawn(x, y, { color: '#f5a35c', count: 6, speed: 50, size: 2 }));
+    // 水星：公转碰撞 / 轨道跃迁
+    bus.on('fx:mercuryHit', ({ x, y }) => this.particles.spawn(x, y, { color: '#C98A6B', count: 8, speed: 120, size: 3 }));
+    bus.on('fx:mercuryOrbit', ({ ball }) => this.particles.spawn(ball.x, ball.y, { color: '#FFB366', count: 14, speed: 130 }));
+    // 金星：红温全场跳伤
+    bus.on('fx:venusRed', ({ x, y }) => this.particles.spawn(x, y, { color: '#FF3D2E', count: 16, speed: 170, size: 3 }));
+    // 木星：卫星刮伤 / 弹射命中
+    bus.on('fx:satScratch', ({ x, y }) => this.particles.spawn(x, y, { color: '#D4A574', count: 5, speed: 70, size: 2 }));
+    bus.on('fx:satHit', ({ x, y }) => this.particles.spawn(x, y, { color: '#E8C9A0', count: 14, speed: 150, size: 3 }));
+    // 天王星：冻结瞬间冰花
+    bus.on('fx:uranusFreeze', ({ x, y }) => this.particles.spawn(x, y, { color: '#D6F5FF', count: 12, speed: 120, size: 3 }));
+    // 海王星：弹球发射 / 反弹 / 命中
+    bus.on('fx:neptuneLaunch', ({ x, y }) => this.particles.spawn(x, y, { color: '#7FB3E8', count: 14, speed: 140, size: 3 }));
+    bus.on('fx:neptuneBounce', ({ x, y }) => this.particles.spawn(x, y, { color: '#A8D0F5', count: 6, speed: 90, size: 2 }));
+    bus.on('fx:neptuneHit', ({ x, y }) => this.particles.spawn(x, y, { color: '#4A8FD0', count: 12, speed: 150, size: 3 }));
     // 土星冰晶：敌球被冰晶块砸中 / 自己拾取冰晶块
     bus.on('fx:iceShardHit', ({ x, y }) => this.particles.spawn(x, y, { color: '#b8e0ff', count: 12, speed: 140, size: 3 }));
     bus.on('fx:icePick', ({ x, y }) => this.particles.spawn(x, y, { color: '#e0f4ff', count: 8, speed: 70, size: 2 }));
@@ -364,6 +439,18 @@ export class Renderer {
       else this.drawPhantom(g, ph);
     }
     for (const fx of this.slashFx) this.drawSlashFx(g, fx);
+    // 水星轨道可视化：淡虚线椭圆（公转轨道）
+    for (const b of balls) {
+      if (b.skill?.def?.id === 'mercury') {
+        const rOrb = b.mercuryInner ? CONFIG.MERCURY.innerRadius : CONFIG.MERCURY.outerRadius;
+        g.save();
+        g.setLineDash([6, 8]);
+        g.strokeStyle = b.mercuryInner ? 'rgba(255,120,60,0.35)' : 'rgba(140,200,255,0.35)';
+        g.lineWidth = 2;
+        g.beginPath(); g.ellipse(CONFIG.FIELD.w / 2, CONFIG.FIELD.h / 2, rOrb, rOrb * 0.6, 0, 0, Math.PI * 2); g.stroke();
+        g.restore();
+      }
+    }
     for (const b of balls) this.drawBall(g, b);
     for (const d of this.dmgNums) this.drawNum(g, d, DMG, '');
     for (const d of this.healNums) this.drawNum(g, d, HEAL, '+');
@@ -529,6 +616,40 @@ export class Renderer {
       g.beginPath(); g.moveTo(ph.x, ph.y); g.lineTo(ph.tx, ph.ty); g.stroke();
       g.fillStyle = ph.positive ? '#FFD93D' : '#FF6D00';
       g.beginPath(); g.arc(ph.tx, ph.ty, 8, 0, Math.PI * 2); g.fill();
+      g.restore();
+      return;
+    }
+    // 卫星（木星·伽利略卫星）：浅棕小圆 + 轨道点（环绕状态旋转，弹射状态直线拖影）
+    if (ph.isSatellite) {
+      const r2 = ph.radius || 8;
+      g.save();
+      g.fillStyle = '#B08968';
+      g.beginPath(); g.arc(ph.x, ph.y, r2, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = INK;
+      g.lineWidth = 1.5;
+      g.beginPath(); g.arc(ph.x, ph.y, r2, 0, Math.PI * 2); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,0.6)';
+      g.beginPath(); g.arc(ph.x - r2 * 0.25, ph.y - r2 * 0.25, r2 * 0.3, 0, Math.PI * 2); g.fill();
+      g.restore();
+      return;
+    }
+    // 风暴弹球（海王星）：深蓝漩涡小球 + 拖尾（弹球物理：满场反弹）
+    if (ph.isStormBall) {
+      const r2 = ph.radius || 12;
+      g.save();
+      g.globalAlpha = 0.35;
+      g.fillStyle = '#1B4F8A';
+      g.beginPath(); g.arc(ph.x - Math.cos(ph.angle) * r2 * 1.6, ph.y - Math.sin(ph.angle) * r2 * 1.6, r2 * 0.8, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 1;
+      g.fillStyle = '#0E3A6E';
+      g.beginPath(); g.arc(ph.x, ph.y, r2, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#7FB3E8';
+      g.lineWidth = 2;
+      g.beginPath(); g.arc(ph.x, ph.y, r2, 0, Math.PI * 2); g.stroke();
+      // 漩涡纹
+      g.strokeStyle = 'rgba(160,210,255,0.8)';
+      g.lineWidth = 1.5;
+      g.beginPath(); g.arc(ph.x, ph.y, r2 * 0.6, (ph.t || 0) * 3, (ph.t || 0) * 3 + 2.4); g.stroke();
       g.restore();
       return;
     }
@@ -795,6 +916,57 @@ export class Renderer {
       for (let i = 1; i <= 3; i++) {
         const s = r * (1 - i * 0.22);
         g.fillRect(b.x - Math.cos(b.angle) * r * i * 0.9 - s / 2, b.y - Math.sin(b.angle) * r * i * 0.9 - s / 2, s, s);
+      }
+      g.restore();
+    }
+    // 天王星：垂直椭圆光环（竖环，与土星横环区分）+ 冻结冰晶壳
+    if (b.skill?.def?.id === 'uranus') {
+      g.save();
+      g.strokeStyle = 'rgba(190,240,240,0.9)';
+      g.lineWidth = 4;
+      g.beginPath(); g.ellipse(b.x, b.y, r * 0.5, r * 1.35, 0, 0, Math.PI * 2); g.stroke();
+      g.strokeStyle = 'rgba(230,255,255,0.4)';
+      g.lineWidth = 2;
+      g.beginPath(); g.ellipse(b.x, b.y, r * 0.62, r * 1.48, 0, 0, Math.PI * 2); g.stroke();
+      g.restore();
+    }
+    // 金星红温：红热光晕（气体越满越红）
+    if (b.skill?.def?.id === 'venus') {
+      const ratio = Math.min(1, (b.gas || 0) / CONFIG.VENUS.gasMax);
+      if (ratio > 0.2) {
+        g.save();
+        g.globalAlpha = 0.15 + ratio * 0.35;
+        g.fillStyle = b.redHot ? '#FF3D2E' : '#FF8C42';
+        g.beginPath(); g.arc(b.x, b.y, r * (1.25 + ratio * 0.5), 0, Math.PI * 2); g.fill();
+        g.restore();
+      }
+    }
+    // 冰寒减速（天王星）：蓝白霜点环绕
+    if (b.effects.has('uranus_slow')) {
+      g.save();
+      g.fillStyle = 'rgba(170,230,255,0.8)';
+      for (let i = 0; i < 5; i++) {
+        const a0 = i / 5 * Math.PI * 2 + performance.now() / 700;
+        g.beginPath();
+        g.arc(b.x + Math.cos(a0) * (r + 4), b.y + Math.sin(a0) * (r + 4), 3, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.restore();
+    }
+    // 冻结（天王星）：冰晶壳包裹（定身视觉）
+    if (b.effects.has('uranus_frozen')) {
+      g.save();
+      g.globalAlpha = 0.5;
+      g.fillStyle = 'rgba(190,235,255,0.65)';
+      g.beginPath(); g.arc(b.x, b.y, r + 3, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = '#E8FBFF';
+      g.lineWidth = 2;
+      for (let i = 0; i < 8; i++) {
+        const a0 = i / 8 * Math.PI * 2 + performance.now() / 900;
+        g.beginPath();
+        g.moveTo(b.x + Math.cos(a0) * (r + 1), b.y + Math.sin(a0) * (r + 1));
+        g.lineTo(b.x + Math.cos(a0 + 0.25) * (r + 8), b.y + Math.sin(a0 + 0.25) * (r + 8));
+        g.stroke();
       }
       g.restore();
     }

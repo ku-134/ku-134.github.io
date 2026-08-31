@@ -22,6 +22,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 // ★ 生命火种（纳西妲）：isSeed phantom 高速飞行，命中敌球施加缠绕效果（定身+持续伤害）
 // ★ 魔王：召唤魔族；法师：奥术飞弹飞行；骑士：斩击扇形（isSlashFx 实体随 phantoms 同步）
 // ★ 狂暴降临瞬间发 berserk 音效（sfx:play 事件 → 全局管理器）
+// ★ 星球系机制：水星轨道公转 / 金星红温 / 木星卫星 / 天王星碰撞冰封 / 海王星弹球
 export class MatchSim {
   constructor(ctx, balls, wilds = [], necros = []) {
     this.ctx = ctx;
@@ -96,8 +97,15 @@ export class MatchSim {
         if (b.rage <= 0) { b.rage = 0; b.speed = b.baseSpeed; }
       }
       b.flash = Math.max(0, b.flash - dt * 3);
+      // ★ 海王星【超音速】：释放弹球后 3s 速度 ×1.5（覆盖 speed）
+      if (b._sonicT > 0) {
+        b._sonicT -= dt;
+        b.speed = b.baseSpeed * CONFIG.NEPTUNE.sonicMul;
+        if (b._sonicT <= 0) b.speed = b.baseSpeed;
+      }
       // 傀儡术冲刺期间：位移交给 _updateWildDash（避免与自主移动叠加）
-      if (!b.dash) move(b, dt);
+      // ★ 水星【公转】：不自主游走——位置由 _updateMercury 轨道驱动
+      if (!b.dash && b.skill?.def?.id !== 'mercury') move(b, dt);
       const wallHit = collideWalls(b, this.ctx, this.time);
       // ★ 有限太空：激光边界——每次触碰边界 5 伤（0.5s 防抖；战场球不受伤）
       if (wallHit && this.ctx.battleMap?.id === 'finiteSpace' && !this.wilds.includes(b)
@@ -131,6 +139,35 @@ export class MatchSim {
             this.ctx.events.emit('fx:phantomHit', { x: a.x, y: a.y, color: '#B89FEA' });
           }
         }
+        // ★ 水星【公转碰撞】：轨道碾压——碰撞10伤（内轨18伤），无大气不打断（0.4s 防抖）
+        if (hit) {
+          const a = all[i], b = all[j];
+          for (const [att, def] of [[a, b], [b, a]]) {
+            if (att.skill?.def?.id === 'mercury' && !def.dead && this.time - (att._merHitT ?? -Infinity) >= CONFIG.COLLIDE_COOLDOWN) {
+              att._merHitT = this.time;
+              def.takeDamage(att.mercuryInner ? CONFIG.MERCURY.innerDmg : CONFIG.MERCURY.collideDmg, this.ctx, att);
+              this.ctx.events.emit('fx:mercuryHit', { x: def.x, y: def.y });
+            }
+          }
+        }
+        // ★ 天王星【横躺冰封】：碰撞10伤+冰寒减速1.5s；每8s额外冻结1.5s+12伤（金星免疫减速）
+        if (hit) {
+          const a = all[i], b = all[j];
+          for (const [att, def] of [[a, b], [b, a]]) {
+            if (att.skill?.def?.id === 'uranus' && !def.dead && def.skill?.def?.id !== 'uranus'
+                && this.time - (att._uraHitT ?? -Infinity) >= CONFIG.COLLIDE_COOLDOWN) {
+              att._uraHitT = this.time;
+              def.takeDamage(CONFIG.URANUS.collideDmg, this.ctx, att);
+              if (def.skill?.def?.id !== 'venus') this.ctx.effects.apply(def, 'uranus_slow', {});   // 金星免疫减速
+              if (this.time - (att._uraFreezeT ?? -Infinity) >= CONFIG.URANUS.freezeCd) {
+                att._uraFreezeT = this.time;
+                this.ctx.effects.apply(def, 'uranus_frozen', {});
+                def.takeDamage(CONFIG.URANUS.freezeDmg, this.ctx, att);
+                this.ctx.events.emit('fx:uranusFreeze', { x: def.x, y: def.y });
+              }
+            }
+          }
+        }
       }
     }
     this._updateWildDash(dt);
@@ -140,6 +177,10 @@ export class MatchSim {
     this._updateProbe(dt, all);
     this._updateSun(dt, all);
     this._updateSpace(dt, all);
+    this._updateMercury(dt, all);
+    this._updateVenus(dt, all);
+    this._updateJupiter(dt, all);
+    this._updateNeptune(dt, all);
     this._updateMars(dt, all);
     this._updateSaturn(dt, all);
     this._updateFx(dt);
@@ -531,6 +572,170 @@ export class MatchSim {
           if (this.time - (b._meteorBounceT ?? -Infinity) >= 0.3) {
             b._meteorBounceT = this.time;
             this.ctx.events.emit('fx:meteorBounce', { x: b.x, y: b.y });
+          }
+        }
+      }
+    }
+  }
+  // ★ 水星【公转】：绕场地中心椭圆轨道公转（替代自主游走）；内轨自伤/外轨回血（每秒 tick）
+  _updateMercury(dt, all) {
+    const cx = CONFIG.FIELD.w / 2, cy = CONFIG.FIELD.h / 2;
+    for (const b of all) {
+      if (b.skill?.def?.id !== 'mercury' || b.dead) continue;
+      const r = b.mercuryInner ? CONFIG.MERCURY.innerRadius : CONFIG.MERCURY.outerRadius;
+      b._orbitA = (b._orbitA ?? 0) + dt * (CONFIG.BALL.speed * CONFIG.MERCURY.orbitSpeed) / r;
+      b.x = cx + Math.cos(b._orbitA) * r;
+      b.y = cy + Math.sin(b._orbitA) * r * 0.6;   // 椭圆轨道
+      b._orbTickT = (b._orbTickT ?? 0) + dt;
+      if (b._orbTickT >= 1) {
+        b._orbTickT -= 1;
+        if (b.mercuryInner) b.takeDamage(CONFIG.MERCURY.innerSelfDmg, this.ctx, null, true);
+        else b.heal(CONFIG.MERCURY.outerHeal, this.ctx);
+      }
+    }
+  }
+  // ★ 金星【温室红温】：满25气体自动启动红温——每1s扣2气体对全场（除自己）5伤；耗尽结束
+  _updateVenus(dt, all) {
+    for (const b of all) {
+      if (b.skill?.def?.id !== 'venus' || b.dead) continue;
+      if (!b.redHot && (b.gas || 0) >= CONFIG.VENUS.gasMax) b.redHot = true;
+      if (b.redHot) {
+        b._redTickT = (b._redTickT ?? 0) + dt;
+        if (b._redTickT >= CONFIG.VENUS.redTick) {
+          b._redTickT -= CONFIG.VENUS.redTick;
+          b.gas = Math.max(0, (b.gas || 0) - CONFIG.VENUS.redDrain);
+          for (const t of all) {
+            if (t === b || t.dead || this.wilds.includes(t)) continue;
+            t.takeDamage(CONFIG.VENUS.redDmg, this.ctx, b, true);
+          }
+          this.ctx.events.emit('fx:venusRed', { x: b.x, y: b.y });
+        }
+        if ((b.gas || 0) <= 0) b.redHot = false;
+      }
+    }
+  }
+  // ★ 木星【伽利略卫星】：3颗卫星 phantom 环绕（碰8伤）/ 弹射（20伤）/ 4s 重生
+  _updateJupiter(dt, all) {
+    const ph = this.ctx.phantoms = this.ctx.phantoms || [];
+    for (const b of all) {
+      if (b.skill?.def?.id !== 'jupiter' || b.dead) continue;
+      // 初始化卫星实体（phantom 广播，两端渲染一致）
+      if (!b._sats) {
+        b._sats = [];
+        for (let i = 0; i < CONFIG.JUPITER.satCount; i++) {
+          const sat = {
+            isPhantom: true, isSatellite: true, owner: b,
+            angle: i / CONFIG.JUPITER.satCount * Math.PI * 2 + Math.random(),
+            orbit: CONFIG.JUPITER.satOrbits[i % CONFIG.JUPITER.satOrbits.length],
+            state: 'orbit', flyDir: 0, t: 0, cdT: 0,
+            radius: CONFIG.JUPITER.satRadius, x: b.x, y: b.y,
+          };
+          ph.push(sat); b._sats.push(sat);
+        }
+      }
+      // 弹射请求：找离瞄准方向最近的环绕卫星
+      if (b._launchSat !== undefined) {
+        const dir = b._launchSat; b._launchSat = undefined;
+        let best = null, bestDot = -Infinity;
+        for (const s of b._sats) {
+          if (s.state !== 'orbit') continue;
+          const dot = Math.cos(s.angle - dir);
+          if (dot > bestDot) { bestDot = dot; best = s; }
+        }
+        if (best) { best.state = 'fly'; best.flyDir = dir; best.t = 0; best.x = b.x; best.y = b.y; }   // 从本体发射
+      }
+      for (const s of b._sats) {
+        if (s.state === 'orbit') {
+          s.angle += dt * (1.6 + s.orbit / 105 * 2.4);
+          s.x = b.x + Math.cos(s.angle) * s.orbit;
+          s.y = b.y + Math.sin(s.angle) * s.orbit;
+          // 环绕刮伤
+          if (this.time - (s._hitT ?? -Infinity) >= CONFIG.JUPITER.satCd) {
+            for (const t of all) {
+              if (t === b || t.dead || this.wilds.includes(t)) continue;
+              if (Math.hypot(t.x - s.x, t.y - s.y) <= t.radiusScaled + s.radius) {
+                s._hitT = this.time;
+                t.takeDamage(CONFIG.JUPITER.satDmg, this.ctx, b);
+                this.ctx.events.emit('fx:satScratch', { x: t.x, y: t.y });
+                break;
+              }
+            }
+          }
+        } else if (s.state === 'fly') {
+          s.t += dt;
+          s.x += Math.cos(s.flyDir) * CONFIG.JUPITER.launchSpeed * dt;
+          s.y += Math.sin(s.flyDir) * CONFIG.JUPITER.launchSpeed * dt;
+          // 撞边界消失（回冷却）
+          const map = this.ctx.battleMap;
+          const FW = map?.id === 'finiteSpace' ? map.size.w : CONFIG.FIELD.w;
+          const FH = map?.id === 'finiteSpace' ? map.size.h : CONFIG.FIELD.h;
+          if (s.x < s.radius || s.x > FW - s.radius || s.y < s.radius || s.y > FH - s.radius) {
+            s.state = 'cooldown'; s.cdT = 0; continue;
+          }
+          // 命中敌球 20 伤
+          let hitB = null;
+          for (const t of all) {
+            if (t === b || t.dead || this.wilds.includes(t)) continue;
+            if (Math.hypot(t.x - s.x, t.y - s.y) <= t.radiusScaled + s.radius) { hitB = t; break; }
+          }
+          if (hitB) {
+            hitB.takeDamage(CONFIG.JUPITER.launchDmg, this.ctx, b);
+            this.ctx.events.emit('fx:satHit', { x: s.x, y: s.y });
+            s.state = 'cooldown'; s.cdT = 0;
+          }
+        } else {   // cooldown：4s 后重生环绕
+          s.cdT += dt;
+          if (s.cdT >= CONFIG.JUPITER.respawn) {
+            s.state = 'orbit';
+            s.angle = Math.atan2(b.y - s.y, b.x - s.x) + (Math.random() - 0.5) * 0.5;
+          }
+        }
+      }
+    }
+  }
+  // ★ 海王星【风暴弹球】：边界反弹弹球（6s 寿命、碰12伤 0.3s 防抖、不可击碎）
+  _updateNeptune(dt, all) {
+    const ph = this.ctx.phantoms = this.ctx.phantoms || [];
+    for (let i = ph.length - 1; i >= 0; i--) {
+      const m = ph[i];
+      if (!m.isStormBall) continue;
+      m.t += dt;
+      m.x += Math.cos(m.angle) * m.speed * dt;
+      m.y += Math.sin(m.angle) * m.speed * dt;
+      // 边界反弹（矩形 / ringHole 外圆 / 有限太空）
+      const map = this.ctx.battleMap;
+      if (map?.id === 'ringHole') {
+        const cx = CONFIG.FIELD.w / 2, cy = CONFIG.FIELD.h / 2;
+        const d0 = Math.hypot(m.x - cx, m.y - cy);
+        const rMax = map.radius - m.radius;
+        if (d0 > rMax) {
+          m.x = cx + (m.x - cx) / d0 * rMax;
+          m.y = cy + (m.y - cy) / d0 * rMax;
+          const nx = (m.x - cx) / rMax, ny = (m.y - cy) / rMax;
+          const vx = Math.cos(m.angle), vy = Math.sin(m.angle);
+          const dot = vx * nx + vy * ny;
+          m.angle = Math.atan2(vy - 2 * dot * ny, vx - 2 * dot * nx);
+          this.ctx.events.emit('fx:neptuneBounce', { x: m.x, y: m.y });
+        }
+      } else {
+        const FW = map?.id === 'finiteSpace' ? map.size.w : CONFIG.FIELD.w;
+        const FH = map?.id === 'finiteSpace' ? map.size.h : CONFIG.FIELD.h;
+        if (m.x < m.radius) { m.x = m.radius; m.angle = Math.PI - m.angle; this.ctx.events.emit('fx:neptuneBounce', { x: m.x, y: m.y }); }
+        else if (m.x > FW - m.radius) { m.x = FW - m.radius; m.angle = Math.PI - m.angle; this.ctx.events.emit('fx:neptuneBounce', { x: m.x, y: m.y }); }
+        if (m.y < m.radius) { m.y = m.radius; m.angle = -m.angle; this.ctx.events.emit('fx:neptuneBounce', { x: m.x, y: m.y }); }
+        else if (m.y > FH - m.radius) { m.y = FH - m.radius; m.angle = -m.angle; this.ctx.events.emit('fx:neptuneBounce', { x: m.x, y: m.y }); }
+      }
+      // 寿命结束消失
+      if (m.t >= m.life) { ph.splice(i, 1); continue; }
+      // 碰敌球（0.3s 防抖，可多次命中；发射者自身不伤）
+      if (this.time - (m._hitT ?? -Infinity) >= CONFIG.NEPTUNE.ballCd) {
+        for (const b of all) {
+          if (b === m.owner || b.dead || this.wilds.includes(b)) continue;
+          if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
+            m._hitT = this.time;
+            b.takeDamage(CONFIG.NEPTUNE.ballDmg, this.ctx, m.owner);
+            this.ctx.events.emit('fx:neptuneHit', { x: m.x, y: m.y });
+            break;
           }
         }
       }

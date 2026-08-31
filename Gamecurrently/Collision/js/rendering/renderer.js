@@ -439,15 +439,22 @@ export class Renderer {
       else this.drawPhantom(g, ph);
     }
     for (const fx of this.slashFx) this.drawSlashFx(g, fx);
-    // 水星轨道可视化：淡虚线椭圆（公转轨道）
+    // 水星轨道可视化：淡虚线椭圆（公转轨道；半径随场地自适应，中心=战场中心）
     for (const b of balls) {
       if (b.skill?.def?.id === 'mercury') {
-        const rOrb = b.mercuryInner ? CONFIG.MERCURY.innerRadius : CONFIG.MERCURY.outerRadius;
+        const map = battleMap;
+        const FW = map?.id === 'finiteSpace' ? map.size.w : CONFIG.FIELD.w;
+        const FH = map?.id === 'finiteSpace' ? map.size.h : CONFIG.FIELD.h;
+        const isBig = map?.id === 'finiteSpace';
+        const maxRY = FH / 2 - 40;
+        const outerR = isBig ? Math.min(760, maxRY * 0.6) : Math.min(CONFIG.MERCURY.outerRadius, maxRY / 0.6);
+        const innerR = isBig ? 220 : Math.min(CONFIG.MERCURY.innerRadius, outerR * 0.45);
+        const rOrb = b.mercuryInner ? innerR : outerR;
         g.save();
         g.setLineDash([6, 8]);
         g.strokeStyle = b.mercuryInner ? 'rgba(255,120,60,0.35)' : 'rgba(140,200,255,0.35)';
         g.lineWidth = 2;
-        g.beginPath(); g.ellipse(CONFIG.FIELD.w / 2, CONFIG.FIELD.h / 2, rOrb, rOrb * 0.6, 0, 0, Math.PI * 2); g.stroke();
+        g.beginPath(); g.ellipse(FW / 2, FH / 2, rOrb, rOrb * 0.6, 0, 0, Math.PI * 2); g.stroke();
         g.restore();
       }
     }

@@ -26,8 +26,19 @@ const CONFIG = {
   // 土星【冰晶光环】：特性凝固（每0.1s +1冰晶，自主积累≤50停，吃冰晶块可超50）；
   //   每5点冰晶抵挡1点伤害（保留余数、减伤不超过受伤量）；触发减伤时飞出一块冰晶块
   //   （菱形弹幕：飞行一小段后停住不消失；敌球碰10伤 / 自己碰+10冰晶且50%回1~10血）；光环厚度随冰晶增厚
-  // 土星【冰晶光环】：减伤触发 CD 0.5s（shieldCd）——防高频伤害瞬间耗光冰晶；冰晶块飞行中不判定、边界反弹
+  //   减伤触发 CD 0.5s（shieldCd）——防高频伤害瞬间耗光冰晶；冰晶块飞行中不判定、边界反弹
   SATURN: { gainRate: 0.1, autoCap: 50, shieldPer: 5, shieldCd: 0.5, shardDamage: 10, shardReturn: 10, shardHealChance: 0.5, shardHealMin: 1, shardHealMax: 10, shardSpeed: 260, shardFly: 0.5 },
+  // 水星【公转双轨】：绕场地中心椭圆轨道公转（不自主游走）——碰撞10伤（无大气不打断）；
+  //   轨道跃迁（主动5s冷却）：内轨（碰撞18伤但每秒自伤3）/ 外轨（每秒回血2）
+  MERCURY: { orbitSpeed: 1.7, collideDmg: 10, innerDmg: 18, innerSelfDmg: 3, outerHeal: 2, switchCd: 5, innerRadius: 140, outerRadius: 320 },
+  // 金星【温室红温】：每受1伤积1点气体（上限25，未满无效果）；满25启动红温——每1s扣2气体对全场（除自己）5伤；免减速
+  VENUS: { gasMax: 25, redTick: 1, redDrain: 2, redDmg: 5 },
+  // 木星【伽利略卫星】：3颗卫星环绕（碰敌球8伤，0.5s防抖）；卫星弹射（主动6s冷却，20伤，4s重生）
+  JUPITER: { satCount: 3, satOrbits: [55, 80, 105], satRadius: 8, satDmg: 8, satCd: 0.5, launchSpeed: 500, launchDmg: 20, respawn: 4, cooldown: 6 },
+  // 天王星【横躺冰封】：碰撞10伤+减速1.5s(×0.65)；每8s碰撞额外冻结1.5s（定身）+12伤
+  URANUS: { collideDmg: 10, slowDur: 1.5, slowMul: 0.65, freezeCd: 8, freezeDur: 1.5, freezeDmg: 12 },
+  // 海王星【风暴弹球】：发射反弹弹球（420速6s，碰12伤0.3s防抖，不可击碎）；本体3s超音速×1.5；冷却8s
+  NEPTUNE: { ballSpeed: 420, ballLife: 6, ballDmg: 12, ballCd: 0.3, sonicDur: 3, sonicMul: 1.5, cooldown: 8 },
   // 基础冲刺：全职业通用主动机动（瞄准冲刺；兵团职业带30伤）
   BASE_DASH: { cooldown: 5, dashMul: 2, maxDuration: 3 },
   // 巨人【暴怒】：战场干扰球（第三方，不可选择），只保留愤怒机制

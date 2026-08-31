@@ -7,7 +7,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 // 负责：球更新、碰撞、技能、狂暴倒计时与全场伤害、胜负判定
 // ★ 必须同时更新 skill（职业技能）与 dashSkill（基础冲刺）：
 //   否则冲刺冷却永不递减（用完卡死）、瞄准帧追踪失效
-// ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类，第三方）：
+// ★ wilds：战场干扰球数组（巨人=基础分类 / 魔王=剑与魔法分类 / 太阳与水星=星球分类，第三方）：
 //   参与物理/碰撞，但不在 balls 内（不影响 getEnemy 与胜负判定），hp 极高不会死
 // ★ necros（死灵术士）：双侧阵营多球（0=balls[0]侧 / 1=balls[1]侧，可同时存在）：
 //   - 按 _necroSide 分组 necrosA/necrosB；每侧 necros[0] = 该侧当前意识球
@@ -22,7 +22,7 @@ import { createSkill, getSkillDef } from '../skills/skillRegistry.js';
 // ★ 生命火种（纳西妲）：isSeed phantom 高速飞行，命中敌球施加缠绕效果（定身+持续伤害）
 // ★ 魔王：召唤魔族；法师：奥术飞弹飞行；骑士：斩击扇形（isSlashFx 实体随 phantoms 同步）
 // ★ 狂暴降临瞬间发 berserk 音效（sfx:play 事件 → 全局管理器）
-// ★ 星球系机制：水星轨道公转 / 金星红温 / 木星卫星 / 天王星碰撞冰封 / 海王星弹球
+// ★ 星球系机制：水星轨道公转（战场球）/ 金星红温 / 木星卫星 / 天王星碰撞冰封 / 海王星弹球（感染扩散）
 export class MatchSim {
   constructor(ctx, balls, wilds = [], necros = []) {
     this.ctx = ctx;
@@ -577,15 +577,40 @@ export class MatchSim {
       }
     }
   }
-  // ★ 水星【公转】：绕场地中心椭圆轨道公转（替代自主游走）；内轨自伤/外轨回血（每秒 tick）
+  // ★ 水星【公转】：绕战场中心椭圆轨道公转（替代自主游走）；内轨自伤/外轨回血（每秒 tick）
+  //   - 战场中心/轨道半径随场地自适应（有限太空 3200×1600 不再锁定左上角；安全刷新不出边界）
+  //   - 冲刺期间轨道暂停（冲刺自由位移），冲刺结束后自动刷新回轨道位置
+  //   - 作为战场干扰球时：每 3~6s 随机执行一次普通冲刺（随机方向）/ 轨道跃迁（活跃）
   _updateMercury(dt, all) {
-    const cx = CONFIG.FIELD.w / 2, cy = CONFIG.FIELD.h / 2;
+    const map = this.ctx.battleMap;
+    const FW = map?.id === 'finiteSpace' ? map.size.w : CONFIG.FIELD.w;
+    const FH = map?.id === 'finiteSpace' ? map.size.h : CONFIG.FIELD.h;
+    const cx = FW / 2, cy = FH / 2;
+    const isBig = map?.id === 'finiteSpace';
+    const maxRY = FH / 2 - 40;   // 安全刷新范围（椭圆 y 向不越界）
+    const outerR = isBig ? Math.min(760, maxRY * 0.6) : Math.min(CONFIG.MERCURY.outerRadius, maxRY / 0.6);
+    const innerR = isBig ? 220 : Math.min(CONFIG.MERCURY.innerRadius, outerR * 0.45);
     for (const b of all) {
       if (b.skill?.def?.id !== 'mercury' || b.dead) continue;
-      const r = b.mercuryInner ? CONFIG.MERCURY.innerRadius : CONFIG.MERCURY.outerRadius;
+      // ★ 冲刺期间轨道暂停：冲刺自由位移，结束后下一帧自动刷新回轨道
+      if (b.dashing) { b._orbTickT = 0; continue; }
+      const r = b.mercuryInner ? innerR : outerR;
       b._orbitA = (b._orbitA ?? 0) + dt * (CONFIG.BALL.speed * CONFIG.MERCURY.orbitSpeed) / r;
       b.x = cx + Math.cos(b._orbitA) * r;
       b.y = cy + Math.sin(b._orbitA) * r * 0.6;   // 椭圆轨道
+      // ★ 战场干扰球自动行为：每 3~6s 随机 普通冲刺（随机方向）或 轨道跃迁
+      if (this.wilds.includes(b)) {
+        b._autoT = (b._autoT ?? 0) + dt;
+        if (b._autoT >= 3 + Math.random() * 3) {
+          b._autoT = 0;
+          if (Math.random() < 0.5 && b.dashSkill?.canUse?.()) {
+            b.dashSkill.forceUse(Math.random() * Math.PI * 2);
+          } else {
+            b.mercuryInner = !b.mercuryInner;
+            this.ctx.events.emit('fx:mercuryOrbit', { ball: b });
+          }
+        }
+      }
       b._orbTickT = (b._orbTickT ?? 0) + dt;
       if (b._orbTickT >= 1) {
         b._orbTickT -= 1;
@@ -693,7 +718,7 @@ export class MatchSim {
       }
     }
   }
-  // ★ 海王星【风暴弹球】：边界反弹弹球（6s 寿命、碰12伤 0.3s 防抖、不可击碎）
+  // ★ 海王星【风暴弹球】：边界反弹弹球（6s 寿命、碰12伤 0.3s 防抖、不可击碎）+ 感染扩散
   _updateNeptune(dt, all) {
     const ph = this.ctx.phantoms = this.ctx.phantoms || [];
     for (let i = ph.length - 1; i >= 0; i--) {
@@ -734,6 +759,8 @@ export class MatchSim {
           if (Math.hypot(b.x - m.x, b.y - m.y) <= b.radiusScaled + m.radius) {
             m._hitT = this.time;
             b.takeDamage(CONFIG.NEPTUNE.ballDmg, this.ctx, m.owner);
+            // ★ 感染扩散：弹球携带本体持续状态，命中传染（时长×2/3）
+            for (const inf of m.infections || []) this.ctx.effects.apply(b, inf.id, { duration: inf.dur });
             this.ctx.events.emit('fx:neptuneHit', { x: m.x, y: m.y });
             break;
           }

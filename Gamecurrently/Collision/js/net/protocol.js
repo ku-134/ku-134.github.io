@@ -79,6 +79,8 @@ export function encodeState(sim, balls, phantoms) {
       isSmallMeteor: !!p.isSmallMeteor, isBigMeteor: !!p.isBigMeteor, noise: +(p.noise ?? 0),
       isDustStorm: !!p.isDustStorm, hiding: !!p.hiding, hideT: +(p.hideT ?? 0).toFixed(2),
       isIceShard: !!p.isIceShard,
+      isSatellite: !!p.isSatellite,
+      isStormBall: !!p.isStormBall,
       isSlashFx: !!p.isSlashFx, dir: +(p.dir ?? 0).toFixed(3), r: +(p.r ?? 90).toFixed(1), hit: !!p.hit, t: +(p.t ?? 0).toFixed(2),
     })),
   };

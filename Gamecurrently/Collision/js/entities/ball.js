@@ -25,6 +25,10 @@ export class Ball {
     this.dead = false;
     this.isPlayer = false;
     this.crystal = 0;   // 土星【凝固】冰晶积累（自主积累≤50，吃冰晶块可超）
+    this.gas = 0;       // 金星【温室】气体积累（满25红温）
+    this.redHot = false; // 金星红温状态
+    this.mercuryInner = false;  // 水星轨道（false=外轨冰寒 / true=内轨灼热）
+    this._sonicT = 0;   // 海王星超音速剩余时长
   }
   get vx() { return Math.cos(this.angle) * this.speed; }
   get vy() { return Math.sin(this.angle) * this.speed; }
@@ -70,6 +74,11 @@ export class Ball {
       }
     }
     this.hp = Math.max(0, this.hp - final);
+    // ★ 金星【温室】：每受 1 点实际伤害积累 1 点气体（上限 gasMax；未满无效果）；满 25 立即启动红温
+    if (this.skill?.def?.id === 'venus' && final > 0 && !this.dead) {
+      this.gas = Math.min(CONFIG.VENUS.gasMax, (this.gas || 0) + Math.round(final));
+      if (this.gas >= CONFIG.VENUS.gasMax) this.redHot = true;
+    }
     this.flash = 1;
     // 受伤数字（受击球头顶弹出，持续0.5s）
     if (final > 0) {
@@ -100,7 +109,7 @@ export class Ball {
     if (this.dashing) return;
     this.scale += (this.scaleTarget - this.scale) * Math.min(1, dt * 4);
     this.healFlash = Math.max(0, (this.healFlash || 0) - dt * 2.5);
-    if (this.effects.has('stun')) return;
+    if (this.effects.has('stun') || this.effects.has('uranus_frozen')) return;   // 天王星冻结：完全定身（不移动不转向）
     this.turnTimer -= dt;
     if (this.turnTimer <= 0) {
       this.turnTimer = rand(...CONFIG.TURN_INTERVAL);

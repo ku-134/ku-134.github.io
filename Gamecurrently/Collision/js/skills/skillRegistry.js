@@ -46,7 +46,7 @@ const defs = [
   berserker,  // 剑与魔法：狂战士
   { ...necromancer, experimental: true },  // 剑与魔法：死灵术士（测试角色）
   sun,      // 星球：太阳（战场球，不可选择）
-  mercury,  // 星球：水星
+  mercury,  // 星球：水星（战场球，不可选择）
   venus,    // 星球：金星
   earth,    // 星球：地球
   mars,     // 星球：火星
@@ -55,8 +55,8 @@ const defs = [
   uranus,   // 星球：天王星
   neptune,  // 星球：海王星
 ];
-// 可选职业（选球/联机选球用）：战场球（巨人/魔王）剔除；死灵保留（单机手动可玩，联机/随机由 excludeExperimental 过滤）
-const selectableDefs = defs.filter(d => d.id !== 'giant' && d.id !== 'demon' && d.id !== 'sun');
+// 可选职业（选球/联机选球用）：战场球（巨人/魔王/太阳/水星）剔除；死灵保留（单机手动可玩，联机/随机由 excludeExperimental 过滤）
+const selectableDefs = defs.filter(d => d.id !== 'giant' && d.id !== 'demon' && d.id !== 'sun' && d.id !== 'mercury');   // 水星=战场干扰球（不可选择）
 // 全部定义（含基础冲刺：可创建但不展示在列表）
 const byId = Object.fromEntries(defs.map(d => [d.id, d]));
 byId[baseDash.id] = baseDash;

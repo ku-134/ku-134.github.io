@@ -6,7 +6,7 @@
 
 **个人数字项目（迫真）** ｜ 资源归档 × 网页应用 × 同人创作
 
-[![GitHub Pages](https://img.shields.io/badge/Hosting-GitHub%20Pages-2ea44f?style=flat-square)](https://ku-134.github.io)
+[![点击访问](https://img.shields.io/badge/Hosting-GitHub%20Pages-2ea44f?style=flat-square)](https://ku-134.github.io)
 [![Powered by AI](https://img.shields.io/badge/Powered%20By-AI%20Coding-8b5cf6?style=flat-square)](#-功能与技术实现)
 [![License](https://img.shields.io/badge/License-保留所有权利-1f6feb?style=flat-square)](#-版权与免责)
 

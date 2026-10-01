@@ -62,13 +62,20 @@
         /* ===== 模式 2：时间线 ===== */
         .mt-timeline { display: flex; flex-direction: column; gap: 0.55rem; }
         .mt-line { display: flex; align-items: stretch; gap: 0.7rem; min-width: 0; }
+        .mt-side {
+            flex-shrink: 0; width: 2.6rem; display: flex; flex-direction: column;
+            align-items: center; gap: 0.2rem; padding-top: 0.85rem;
+        }
         .mt-rank {
-            flex-shrink: 0; width: 1.9rem; display: flex; align-items: center; justify-content: center;
-            font-size: 0.8rem; font-weight: 700; font-family: 'Courier New', monospace;
-            opacity: 0.45;
+            font-size: 0.82rem; font-weight: 700; font-family: 'Courier New', monospace;
+            opacity: 0.45; line-height: 1;
         }
         .mt-line:nth-child(1) .mt-rank, .mt-line:nth-child(2) .mt-rank, .mt-line:nth-child(3) .mt-rank {
             color: #66bb6a; opacity: 1;
+        }
+        .mt-heat {
+            font-size: 0.68rem; font-family: 'Courier New', monospace; line-height: 1;
+            color: #66bb6a; opacity: 0.85; white-space: nowrap;
         }
         .mt-node { position: relative; flex-shrink: 0; width: 0.9rem; }
         .mt-node::before {
@@ -82,11 +89,6 @@
         }
         .mt-line:last-child .mt-node::before { bottom: 50%; }
         .mt-line .tool-item { flex: 1; min-width: 0; }
-        .mt-heat {
-            flex-shrink: 0; font-size: 0.75rem; font-family: 'Courier New', monospace;
-            color: #66bb6a; background: rgba(102,187,106,0.1);
-            border: 1px solid rgba(102,187,106,0.25); border-radius: 2rem; padding: 0.12rem 0.55rem;
-        }
         /* ===== 内置弹窗（分类过滤） ===== */
         .mt-modal { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
         .mt-modal.show { display: flex; }
@@ -110,6 +112,27 @@
         }
         .ap-item:hover { border-color: #66bb6a; background: rgba(102,187,106,0.08); }
         .ap-item.on { border-color: #66bb6a; background: rgba(102,187,106,0.14); }
+        .ap-check {
+            flex-shrink: 0; width: 1.15rem; height: 1.15rem; border-radius: 0.32rem;
+            border: 1px solid rgba(128,128,128,0.4); display: flex; align-items: center; justify-content: center;
+            font-size: 0.72rem; color: transparent; transition: all 0.15s;
+        }
+        .ap-item.on .ap-check { border-color: #66bb6a; background: #66bb6a; color: #fff; }
+        .mt-modal-foot {
+            display: flex; gap: 0.6rem; justify-content: flex-end;
+            padding: 0.75rem 1.05rem; border-top: 1px solid rgba(128,128,128,0.18);
+        }
+        .mt-modal-foot button {
+            cursor: pointer; font-family: inherit; font-size: 0.86rem;
+            padding: 0.45rem 1.2rem; border-radius: 2rem; transition: all 0.2s;
+            border: 1px solid rgba(128,128,128,0.26); background: rgba(128,128,128,0.06); color: inherit;
+        }
+        .mt-modal-foot button:hover { border-color: rgba(128,128,128,0.5); }
+        .mt-modal-foot button.primary {
+            border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.12); font-weight: 600;
+        }
+        .mt-modal-foot button.primary:hover { background: rgba(102,187,106,0.22); }
+        .ap-tip { font-size: 0.75rem; opacity: 0.5; padding: 0 0.2rem 0.6rem; line-height: 1.5; }
         .ap-thumb { flex-shrink: 0; width: 1.6rem; text-align: center; }
         .ap-name { flex: 1; min-width: 0; font-size: 0.86rem; }
         .sec-num { flex-shrink: 0; font-size: 0.76rem; opacity: 0.6; background: rgba(128,128,128,0.14); border-radius: 2rem; padding: 0.1rem 0.55rem; }
@@ -129,7 +152,7 @@
             <div class="tool-toolbar">
                 <input type="text" id="searchInput" placeholder="🔍 搜索工具..." />
                 <button class="tb-btn" id="modeBtn" title="切换展示方式">🌊 瀑布式</button>
-                <button class="tb-btn" id="filterBtn" title="选择只看某个分类">🗂️ 打开分类</button>
+                <button class="tb-btn" id="filterBtn" title="选择要看哪些分类">🗂️ 看分类</button>
                 <span class="tool-count" id="toolCount"></span>
             </div>
 
@@ -153,6 +176,10 @@
         <div class="mt-modal-panel">
             <div class="mt-modal-head"><span id="mtModalTitle">分类</span><button id="mtModalX">✕</button></div>
             <div class="mt-modal-body" id="mtModalBody"></div>
+            <div class="mt-modal-foot" id="mtModalFoot" style="display:none;">
+                <button id="mtModalCancel">取消</button>
+                <button class="primary" id="mtModalOk">确定</button>
+            </div>
         </div>
     </div>
 

@@ -27,7 +27,7 @@
         tools: [],       // 全部工具（扁平）
         favSet: new Set(),
         mode: 0,
-        filterCat: '',
+        filterCats: [],  // 多选分类（空数组 = 全部）
         keyword: ''
     };
 
@@ -97,7 +97,7 @@
 
     /* ---------- 匹配（搜索 + 分类过滤） ---------- */
     function match(t) {
-        if (state.filterCat && t.cat !== state.filterCat) return false;
+        if (state.filterCats.length && state.filterCats.indexOf(t.cat) < 0) return false;
         if (!state.keyword) return true;
         return (t.name + ' ' + t.file + ' ' + t.brief + ' ' + t.cat).toLowerCase().indexOf(state.keyword) >= 0;
     }
@@ -132,13 +132,15 @@
                 var isFav = state.favSet.has(t.file);
                 var fl = esc(t.file);
                 return '<div class="mt-line">' +
-                    '<div class="mt-rank">' + (i + 1) + '</div>' +
+                    '<div class="mt-side">' +
+                        '<div class="mt-rank">' + (i + 1) + '</div>' +
+                        '<div class="mt-heat">🔥' + t.heat + '</div>' +
+                    '</div>' +
                     '<div class="mt-node"></div>' +
                     '<div class="tool-item" data-file="' + fl + '">' +
                         '<div class="t-head">' +
                             '<div class="t-icon">' + t.icon + '</div>' +
                             '<div class="t-name">' + esc(t.name) + '</div>' +
-                            '<span class="mt-heat">🔥 ' + t.heat + '</span>' +
                         '</div>' +
                         '<div class="t-desc">' + esc(t.brief) + '</div>' +
                         '<div class="t-foot">' +
@@ -171,7 +173,7 @@
 
         /* 计数 */
         var info = '共 ' + list.length + ' 个工具';
-        if (state.filterCat) info += ' · 已筛选「' + state.filterCat + '」';
+        if (state.filterCats.length) info += ' · 已筛选 ' + state.filterCats.length + ' 个分类';
         else info += ' · ' + state.cats.length + ' 个分类';
         $('toolCount').textContent = info;
 
@@ -193,42 +195,74 @@
         render();
     }
 
-    /* ---------- 分类过滤 ---------- */
+    /* ---------- 分类过滤（多选 + 确定） ---------- */
     function syncFilterBtn() {
         var b = $('filterBtn');
-        if (state.filterCat) {
-            b.textContent = '🚫 已过滤';
+        if (state.filterCats.length) {
+            b.textContent = '🚫 已过滤(' + state.filterCats.length + ')';
             b.classList.add('filtering');
-            b.title = '正在只看「' + state.filterCat + '」，点击取消过滤';
+            b.title = '正在只看 ' + state.filterCats.length + ' 个分类，点击取消过滤';
         } else {
-            b.textContent = '🗂️ 打开分类';
+            b.textContent = '🗂️ 看分类';
             b.classList.remove('filtering');
-            b.title = '选择只看某个分类';
+            b.title = '选择要看哪些分类';
         }
     }
     function openFilterModal() {
-        if (state.filterCat) { state.filterCat = ''; lsSet(LSK.filter, ''); render(); return; }
-        var cur = state.filterCat;
-        var html = '<div class="ap-grid">' +
-            '<div class="ap-item' + (!cur ? ' on' : '') + '" data-cat=""><span class="ap-thumb">🌐</span><span class="ap-name">全部工具</span><span class="sec-num">' + state.tools.length + '</span></div>' +
-            state.cats.map(function (c) {
-                if (!c.tools.length) return '';
-                return '<div class="ap-item' + (cur === c.name ? ' on' : '') + '" data-cat="' + esc(c.name) + '">' +
-                    '<span class="ap-thumb">🗂️</span>' +
-                    '<span class="ap-name">' + esc(c.name) + (c.desc ? ' <span style="opacity:.5;font-size:.78rem;">· ' + esc(c.desc) + '</span>' : '') + '</span>' +
-                    '<span class="sec-num">' + c.tools.length + '</span></div>';
-            }).join('') +
-            '</div>';
-        mtModal('只看哪个分类？', html, function () {
-            $('mtModalBody').querySelectorAll('.ap-item').forEach(function (it) {
-                it.addEventListener('click', function () {
-                    state.filterCat = it.getAttribute('data-cat') || '';
-                    lsSet(LSK.filter, state.filterCat);
-                    mtCloseModal();
-                    render();
+        /* 已过滤状态：再点直接取消过滤，不弹窗 */
+        if (state.filterCats.length) {
+            state.filterCats = [];
+            lsSet(LSK.filter, '[]');
+            render();
+            return;
+        }
+        var picked = [];    // 本次弹窗内的勾选（不立即生效）
+        var allChecked = true;
+        var html = '<div class="ap-tip">可多选。「全部工具」与其他分类互斥：勾选全部会自动清空其他，勾选任一分类会自动取消全部。</div>' +
+            '<div class="ap-grid" id="mtCatGrid"></div>';
+        mtModal('要看哪些分类？', html, function () {
+            $('mtModalFoot').style.display = '';
+            function paint() {
+                var grid = $('mtCatGrid');
+                var items = '<div class="ap-item' + (allChecked ? ' on' : '') + '" data-cat="">' +
+                    '<span class="ap-check">✓</span><span class="ap-thumb">🌐</span>' +
+                    '<span class="ap-name">全部工具</span><span class="sec-num">' + state.tools.length + '</span></div>';
+                items += state.cats.map(function (c) {
+                    if (!c.tools.length) return '';
+                    var on = !allChecked && picked.indexOf(c.name) >= 0;
+                    return '<div class="ap-item' + (on ? ' on' : '') + '" data-cat="' + esc(c.name) + '">' +
+                        '<span class="ap-check">✓</span><span class="ap-thumb">🗂️</span>' +
+                        '<span class="ap-name">' + esc(c.name) +
+                        (c.desc ? ' <span style="opacity:.5;font-size:.78rem;">· ' + esc(c.desc) + '</span>' : '') +
+                        '</span><span class="sec-num">' + c.tools.length + '</span></div>';
+                }).join('');
+                grid.innerHTML = items;
+                grid.querySelectorAll('.ap-item').forEach(function (it) {
+                    it.addEventListener('click', function () {
+                        var cat = it.getAttribute('data-cat') || '';
+                        if (cat === '') { allChecked = true; picked = []; }
+                        else {
+                            allChecked = false;
+                            var i = picked.indexOf(cat);
+                            if (i >= 0) picked.splice(i, 1); else picked.push(cat);
+                        }
+                        paint();
+                    });
                 });
-            });
+            }
+            paint();
         });
+    }
+    function confirmFilter() {
+        var picked = [];
+        $('mtModalBody').querySelectorAll('.ap-item.on').forEach(function (it) {
+            var c = it.getAttribute('data-cat');
+            if (c) picked.push(c);
+        });
+        state.filterCats = picked;   /* 全选则 picked 为空 = 不过滤 */
+        lsSet(LSK.filter, JSON.stringify(picked));
+        mtCloseModal();
+        render();
     }
 
     /* ---------- 内置弹窗 ---------- */
@@ -238,7 +272,10 @@
         $('mtModal').classList.add('show');
         if (after) after();
     }
-    function mtCloseModal() { $('mtModal').classList.remove('show'); }
+    function mtCloseModal() {
+        $('mtModal').classList.remove('show');
+        $('mtModalFoot').style.display = 'none';   /* 非选择类弹窗不显示底部栏 */
+    }
 
     /* ---------- 收藏 ---------- */
     function toggleFav(file) {
@@ -277,6 +314,8 @@
         });
         $('modeBtn').addEventListener('click', cycleMode);
         $('filterBtn').addEventListener('click', openFilterModal);
+        $('mtModalOk').addEventListener('click', confirmFilter);
+        $('mtModalCancel').addEventListener('click', mtCloseModal);
         $('mtModalX').addEventListener('click', mtCloseModal);
         $('mtModal').addEventListener('click', function (e) { if (e.target === $('mtModal')) mtCloseModal(); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') mtCloseModal(); });
@@ -286,7 +325,9 @@
     function init() {
         state.favSet = new Set(JSON.parse(lsGet(LSK.favs, '[]') || '[]'));
         state.mode = Math.max(0, Math.min(MODES.length - 1, parseInt(lsGet(LSK.mode, '0'), 10) || 0));
-        state.filterCat = lsGet(LSK.filter, '') || '';
+        state.filterCats = [];
+        try { state.filterCats = JSON.parse(lsGet(LSK.filter, '[]')) || []; } catch (e) { state.filterCats = []; }
+        if (!Array.isArray(state.filterCats)) state.filterCats = [];
         bind();
         fetch(API_INDEX + '?t=' + Date.now(), { cache: 'no-cache' })
             .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })

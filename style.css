@@ -402,6 +402,188 @@ body {
     pointer-events: none;
 }
 
+/* ---------- 工具页 / 工具内页：统一导航（补全全站缺失样式） ---------- */
+.tool-pagehead,
+.tool-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.1));
+    min-width: 0;
+}
+.tool-pagehead .brand,
+.tool-header .brand {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    min-width: 0;
+}
+.tool-pagehead .nav-menu,
+.tool-header .nav-menu {
+    margin: 0;
+    justify-content: flex-end;
+    gap: 1.2rem;
+}
+/* 工具内页：返回列表导航（复用 nav-link 视觉） */
+.tool-back,
+.tool-header a.tool-back,
+.nav-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: inherit;
+    padding: 0.3rem 0.2rem;
+    border-bottom: 2px solid transparent;
+    transition: all 0.25s ease;
+    opacity: 0.75;
+    cursor: pointer;
+}
+.tool-back:hover,
+.nav-links a:hover {
+    opacity: 1;
+    border-bottom-color: currentColor;
+    transform: translateY(-1px);
+}
+.tool-back.active,
+.nav-links a.active {
+    opacity: 1;
+    border-bottom-color: currentColor;
+    font-weight: 600;
+    cursor: default;
+}
+/* 工具页：标题区与工具栏，避免 px 撑破容器 */
+.tool-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+    min-width: 0;
+}
+.tool-toolbar input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.55rem 1rem;
+    border-radius: 2rem;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.2));
+    background: rgba(128, 128, 128, 0.06);
+    color: inherit;
+    font-family: inherit;
+    outline: none;
+}
+.tool-toolbar input:focus { border-color: #66bb6a; }
+.tool-count { font-size: 0.85rem; opacity: 0.5; white-space: nowrap; }
+/* 工具卡片网格：minmax(0) 防 px 溢出 */
+.tool-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    min-width: 0;
+}
+@media (max-width: 640px) {
+    .tool-grid { grid-template-columns: minmax(0, 1fr); }
+    .tool-pagehead,
+    .tool-header { flex-direction: column; align-items: flex-start; }
+    .tool-pagehead .nav-menu,
+    .tool-header .nav-menu { justify-content: flex-start; }
+    .tool-pagehead .brand,
+    .tool-header .brand { font-size: 1.6rem; }
+}
+.tool-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    padding: 1.1rem 1.2rem 0.95rem;
+    border-radius: 1.2rem;
+    border: 1px solid var(--border-color, rgba(128, 128, 128, 0.12));
+    background: rgba(128, 128, 128, 0.04);
+    cursor: pointer;
+    transition: all 0.25s;
+    min-width: 0;
+    overflow: hidden;
+}
+.tool-item:hover {
+    transform: translateY(-3px);
+    border-color: rgba(102, 187, 106, 0.45);
+    background: rgba(102, 187, 106, 0.07);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.t-head { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
+.t-icon {
+    font-size: 1.4rem;
+    width: 2.8rem;
+    height: 2.8rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.9rem;
+    background: rgba(102, 187, 106, 0.12);
+    border: 1px solid rgba(102, 187, 106, 0.2);
+}
+.t-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.t-desc {
+    font-size: 0.85rem;
+    opacity: 0.65;
+    line-height: 1.55;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+.t-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.15rem;
+    gap: 0.5rem;
+    min-width: 0;
+}
+.t-fav {
+    background: rgba(128, 128, 128, 0.06);
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    color: inherit;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: 2rem;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.t-fav:hover { border-color: #f5a623; opacity: 0.9; }
+.t-fav.on { border-color: #f5a623; color: #f5a623; background: rgba(245, 166, 35, 0.1); }
+.t-go {
+    background: rgba(102, 187, 106, 0.1);
+    border: 1px solid #66bb6a;
+    color: #66bb6a;
+    border-radius: 2rem;
+    padding: 0.3rem 1rem;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.tool-item:hover .t-go { background: rgba(102, 187, 106, 0.2); }
+.tool-empty { grid-column: 1 / -1; text-align: center; opacity: 0.6; padding: 2.5rem 0; }
+
 /* ---------- 按钮组 ---------- */
 .button-group {
     display: flex;

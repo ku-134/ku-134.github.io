@@ -11,8 +11,8 @@
     <link rel="preload" as="image" href="background4.webp">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ===== 工具页：公开工具合集 ===== */
-        .tool-container { max-width: 920px; width: 100%; margin: 0 auto; min-width: 0; }
+        /* ===== 工具页专属：容器 ===== */
+        .tool-container { max-width: 980px; width: 100%; margin: 0 auto; min-width: 0; }
         .tool-card {
             background: var(--card-bg);
             color: var(--text-color);
@@ -22,107 +22,97 @@
             backdrop-filter: blur(14px) saturate(180%);
             -webkit-backdrop-filter: blur(14px) saturate(180%);
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden; min-width: 0;
-        }
-        /* 页头：复用全站导航样式，仅补布局 */
-        .tool-pagehead {
-            display: flex; align-items: center; justify-content: space-between;
-            flex-wrap: wrap; gap: 1rem; margin-bottom: 1.2rem;
-            padding-bottom: 0.6rem; border-bottom: 1px solid rgba(128,128,128,0.1);
+            overflow: hidden;
             min-width: 0;
         }
-        .tool-pagehead .brand { font-size: 2rem; font-weight: 700; letter-spacing: 0.02em; min-width: 0; }
-        /* 复用 .nav-menu / .nav-link 全站样式，这里只覆盖边距 */
-        .tool-pagehead .nav-menu { margin: 0; justify-content: flex-end; gap: 1.2rem; }
-        /* ===== 工具栏：搜索 + 计数 ===== */
-        .tool-toolbar { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; min-width: 0; }
+        /* ===== 工具栏：搜索 + 模式切换 + 分类过滤 ===== */
+        .tool-toolbar { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 1.3rem; min-width: 0; flex-wrap: wrap; }
         .tool-toolbar input {
-            flex: 1; min-width: 0; padding: 0.55rem 1rem; border-radius: 2rem;
+            flex: 1 1 200px; min-width: 0; padding: 0.55rem 1rem; border-radius: 2rem;
             border: 1px solid rgba(128,128,128,0.2); background: rgba(128,128,128,0.06);
-            color: inherit; font-family: inherit; outline: none;
+            color: inherit; font-family: inherit; outline: none; font-size: 0.9rem;
         }
         .tool-toolbar input:focus { border-color: #66bb6a; }
-        .tool-count { font-size: 0.85rem; opacity: 0.5; white-space: nowrap; }
+        .tb-btn {
+            flex-shrink: 0; cursor: pointer; font-family: inherit; font-size: 0.85rem;
+            padding: 0.5rem 1rem; border-radius: 2rem; white-space: nowrap;
+            border: 1px solid rgba(128,128,128,0.24); background: rgba(128,128,128,0.06);
+            color: inherit; transition: all 0.2s;
+        }
+        .tb-btn:hover { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+        .tb-btn.filtering {
+            border-color: #ef5350; color: #fff; background: rgba(239,83,80,0.85); font-weight: 600;
+        }
+        .tb-btn.filtering:hover { background: rgba(239,83,80,1); color: #fff; border-color: #ef5350; }
+        .tool-count { font-size: 0.83rem; opacity: 0.5; white-space: nowrap; flex-basis: 100%; }
         /* ===== 收藏区 ===== */
-        .tool-fav-sec { margin-bottom: 1.6rem; }
-        .tool-sec-title {
-            display: flex; align-items: center; gap: 0.5rem; cursor: pointer;
-            font-size: 0.95rem; font-weight: 600; padding: 0.55rem 0.85rem;
-            border-radius: 0.9rem; border: 1px solid rgba(128,128,128,0.16);
-            background: rgba(128,128,128,0.05); user-select: none; transition: all 0.2s;
-        }
-        .tool-sec-title:hover { border-color: rgba(102,187,106,0.45); background: rgba(102,187,106,0.07); }
-        .tool-sec-title .arrow { transition: transform 0.22s; font-size: 0.75rem; opacity: 0.7; }
-        .tool-fav-sec.closed .arrow { transform: rotate(-90deg); }
-        .tool-sec-title .sec-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .tool-sec-title .sec-num {
-            font-size: 0.78rem; opacity: 0.6; font-weight: 400;
-            background: rgba(128,128,128,0.12); border-radius: 2rem; padding: 0.1rem 0.6rem; flex-shrink: 0;
-        }
+        .tool-fav-sec { margin-bottom: 1.3rem; }
         .tool-fav-sec .tool-grid { margin-top: 0.75rem; }
         .tool-fav-sec.closed .tool-grid { display: none; }
-        /* ===== 分类分组 ===== */
-        .tool-cat { margin-bottom: 0.7rem; }
-        .tool-cat .tool-grid { margin-top: 0.75rem; }
-        .tool-cat.closed .tool-grid { display: none; }
-        .tool-cat.closed .arrow { transform: rotate(-90deg); }
-        /* ===== 工具卡片网格 ===== */
-        .tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; min-width: 0; }
-        @media (max-width: 640px) {
-            .tool-grid { grid-template-columns: minmax(0, 1fr); }
-            .tool-pagehead { flex-direction: column; align-items: flex-start; }
-            .tool-pagehead .nav-menu { justify-content: flex-start; }
+        .tool-fav-sec.closed .arrow { transform: rotate(-90deg); }
+        /* ===== 分类分组（模式 3） ===== */
+        .mt-catbox { margin-bottom: 0.7rem; }
+        .mt-catbox .tool-grid { margin-top: 0.75rem; }
+        .mt-catbox.closed .tool-grid { display: none; }
+        .mt-catbox.closed .arrow { transform: rotate(-90deg); }
+        /* ===== 模式 1：瀑布式 ===== */
+        .mt-waterfall { columns: 2; column-gap: 1rem; }
+        .mt-waterfall .tool-item { break-inside: avoid; margin-bottom: 1rem; width: 100%; }
+        @media (max-width: 640px) { .mt-waterfall { columns: 1; } }
+        /* ===== 模式 2：时间线 ===== */
+        .mt-timeline { display: flex; flex-direction: column; gap: 0.55rem; }
+        .mt-line { display: flex; align-items: stretch; gap: 0.7rem; min-width: 0; }
+        .mt-rank {
+            flex-shrink: 0; width: 1.9rem; display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 700; font-family: 'Courier New', monospace;
+            opacity: 0.45;
         }
-        .tool-item {
-            display: flex; flex-direction: column; gap: 0.7rem;
-            padding: 1.1rem 1.2rem 0.95rem;
-            border-radius: 1.2rem; border: 1px solid rgba(128,128,128,0.12);
-            background: rgba(128,128,128,0.04); cursor: pointer;
-            transition: all 0.25s; min-width: 0; overflow: hidden;
+        .mt-line:nth-child(1) .mt-rank, .mt-line:nth-child(2) .mt-rank, .mt-line:nth-child(3) .mt-rank {
+            color: #66bb6a; opacity: 1;
         }
-        .tool-item:hover {
-            transform: translateY(-3px);
-            border-color: rgba(102,187,106,0.45);
-            background: rgba(102,187,106,0.07);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        .mt-node { position: relative; flex-shrink: 0; width: 0.9rem; }
+        .mt-node::before {
+            content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
+            background: rgba(128,128,128,0.18); transform: translateX(-50%);
         }
-        /* 顶行：图标 + 标题 */
-        .t-head { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
-        .t-icon {
-            font-size: 1.4rem; width: 2.8rem; height: 2.8rem; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 0.9rem; background: rgba(102,187,106,0.12);
-            border: 1px solid rgba(102,187,106,0.2);
+        .mt-node::after {
+            content: ''; position: absolute; left: 50%; top: 1.4rem; width: 0.55rem; height: 0.55rem;
+            border-radius: 50%; background: #66bb6a; transform: translate(-50%, -50%);
+            box-shadow: 0 0 0 3px rgba(102,187,106,0.16);
         }
-        .t-name {
-            font-size: 1.05rem; font-weight: 700; flex: 1; min-width: 0;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        .mt-line:last-child .mt-node::before { bottom: 50%; }
+        .mt-line .tool-item { flex: 1; min-width: 0; }
+        .mt-heat {
+            flex-shrink: 0; font-size: 0.75rem; font-family: 'Courier New', monospace;
+            color: #66bb6a; background: rgba(102,187,106,0.1);
+            border: 1px solid rgba(102,187,106,0.25); border-radius: 2rem; padding: 0.12rem 0.55rem;
         }
-        /* 中间：简介（随长度撑高） */
-        .t-desc {
-            font-size: 0.85rem; opacity: 0.65; line-height: 1.55;
-            overflow-wrap: break-word; word-break: break-word;
-            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+        /* ===== 内置弹窗（分类过滤） ===== */
+        .mt-modal { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+        .mt-modal.show { display: flex; }
+        .mt-modal-panel {
+            width: 420px; max-width: 92vw; max-height: 80vh; display: flex; flex-direction: column;
+            border-radius: 1.1rem; background: var(--card-bg, rgba(15,20,32,0.97)); color: var(--text-color);
+            border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden;
+            animation: mtPop 0.24s cubic-bezier(0.34,1.56,0.64,1);
         }
-        /* 底行：收藏（左下） + 使用（右下） */
-        .t-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 0.15rem; gap: 0.5rem; min-width: 0; }
-        .t-fav {
-            background: rgba(128,128,128,0.06); border: 1px solid rgba(128,128,128,0.2);
-            color: inherit; cursor: pointer; font-family: inherit;
-            border-radius: 2rem; padding: 0.3rem 0.9rem; font-size: 0.8rem;
-            display: inline-flex; align-items: center; gap: 0.35rem;
-            transition: all 0.2s; flex-shrink: 0;
+        @keyframes mtPop { 0% { transform: scale(0.93) translateY(12px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        .mt-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1.05rem; border-bottom: 1px solid rgba(128,128,128,0.18); font-weight: 600; }
+        .mt-modal-head button { background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 1rem; }
+        .mt-modal-head button:hover { opacity: 1; }
+        .mt-modal-body { padding: 1rem; overflow-y: auto; }
+        .ap-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+        .ap-item {
+            display: flex; align-items: center; gap: 0.55rem; padding: 0.5rem 0.6rem;
+            border-radius: 0.7rem; border: 1px solid rgba(128,128,128,0.18);
+            background: rgba(128,128,128,0.05); cursor: pointer; transition: all 0.15s;
         }
-        .t-fav:hover { border-color: #f5a623; opacity: 0.9; }
-        .t-fav.on { border-color: #f5a623; color: #f5a623; background: rgba(245,166,35,0.1); }
-        .t-go {
-            background: rgba(102,187,106,0.1); border: 1px solid #66bb6a; color: #66bb6a;
-            border-radius: 2rem; padding: 0.3rem 1rem; font-size: 0.8rem;
-            display: inline-flex; align-items: center; gap: 0.35rem;
-            transition: all 0.2s; flex-shrink: 0;
-        }
-        .tool-item:hover .t-go { background: rgba(102,187,106,0.2); }
-        .tool-empty { grid-column: 1 / -1; text-align: center; opacity: 0.6; padding: 2.5rem 0; }
+        .ap-item:hover { border-color: #66bb6a; background: rgba(102,187,106,0.08); }
+        .ap-item.on { border-color: #66bb6a; background: rgba(102,187,106,0.14); }
+        .ap-thumb { flex-shrink: 0; width: 1.6rem; text-align: center; }
+        .ap-name { flex: 1; min-width: 0; font-size: 0.86rem; }
+        .sec-num { flex-shrink: 0; font-size: 0.76rem; opacity: 0.6; background: rgba(128,128,128,0.14); border-radius: 2rem; padding: 0.1rem 0.55rem; }
     </style>
 </head>
 <body>
@@ -132,15 +122,17 @@
                 <div class="brand"><span class="typing-title">🛠️ 工具</span></div>
                 <nav class="nav-menu">
                     <a class="nav-link" href="index.html">🏠 首页</a>
-                    <a class="nav-link" href="VOID.html">📝 文章</a>
                     <a class="nav-link active" href="MT.html">🛠️ 工具</a>
-                    <a class="nav-link" href="about.html">📖 关于</a>
                 </nav>
             </header>
+
             <div class="tool-toolbar">
                 <input type="text" id="searchInput" placeholder="🔍 搜索工具..." />
+                <button class="tb-btn" id="modeBtn" title="切换展示方式">🌊 瀑布式</button>
+                <button class="tb-btn" id="filterBtn" title="选择只看某个分类">🗂️ 打开分类</button>
                 <span class="tool-count" id="toolCount"></span>
             </div>
+
             <div class="tool-fav-sec" id="favSec" style="display:none;">
                 <div class="tool-sec-title" data-sec="fav">
                     <span class="arrow">▾</span>
@@ -149,191 +141,22 @@
                 </div>
                 <div class="tool-grid" id="favGrid"></div>
             </div>
-            <div id="catList"></div>
+
+            <div id="mtBody" class="mt-view mt-waterfall">
+                <div class="tool-empty">⏳ 加载中...</div>
+            </div>
         </div>
     </div>
 
-    <script>
-    (function () {
-        'use strict';
-        var catList = document.getElementById('catList');
-        var favSec = document.getElementById('favSec');
-        var favGrid = document.getElementById('favGrid');
-        var favNum = document.getElementById('favNum');
-        var countEl = document.getElementById('toolCount');
+    <!-- 分类过滤弹窗 -->
+    <div class="mt-modal" id="mtModal">
+        <div class="mt-modal-panel">
+            <div class="mt-modal-head"><span id="mtModalTitle">分类</span><button id="mtModalX">✕</button></div>
+            <div class="mt-modal-body" id="mtModalBody"></div>
+        </div>
+    </div>
 
-        /* ===== 工具分类规则（按文件名关键词匹配，顺序即展示顺序） ===== */
-        var CATEGORIES = [
-            { key: 'device', name: '📱 设备与隐私', desc: '设备信息、权限、隐私痕迹',
-              match: ['设备信息', '权限请求', '追踪', 'IP侦探', '泄露检测', '用户名侦探'] },
-            { key: 'encode', name: '🔐 编码与安全', desc: '编码转换、密码与识别',
-              match: ['编码工具', '密码强度', '二维码', '文字识别'] },
-            { key: 'media', name: '🖼️ 图像与创作', desc: '图片处理与创意生成',
-              match: ['图片压缩', '字符画生成', '调色板工具', '像素化工坊', '弹幕发射器'] },
-            { key: 'text', name: '📝 文本与写作', desc: '写作、统计与剧情编排',
-              match: ['Markdown编辑器', '文本统计', 'WebGAL剧情编辑器'] },
-            { key: 'net', name: '🌐 网络与服务', desc: '传输、换算与在线服务',
-              match: ['P2P传输', '汇率换算', '在线翻译', '短链工坊'] },
-            { key: 'other', name: '📦 其他工具', desc: '', match: [] }
-        ];
-        function catOf(file) {
-            for (var i = 0; i < CATEGORIES.length; i++) {
-                var c = CATEGORIES[i];
-                for (var j = 0; j < c.match.length; j++) {
-                    if (file.indexOf(c.match[j]) >= 0) return c.key;
-                }
-            }
-            return 'other';
-        }
-
-        var ICONS = { 'mt.html': '🛠️', '设备信息.html': '📊', '权限请求.html': '🔐' };
-        var tools = [];
-        var closedCats = {};
-        try { closedCats = JSON.parse(localStorage.getItem('toolCatClosed') || '{}'); } catch (e) { }
-        var favSecClosed = localStorage.getItem('toolFavClosed') === '1';
-
-        function getToolFavSet() {
-            try { return new Set(JSON.parse(localStorage.getItem('toolFavs') || '[]')); }
-            catch (e) { return new Set(); }
-        }
-        var favSet = getToolFavSet();
-
-        function parseIndex(text) {
-            tools = [];
-            text.split('\n').forEach(function (line) {
-                line = line.trim();
-                if (!line) return;
-                // 格式：[emoji ]文件名 -工具名 | 工具简介
-                var m = line.match(/^(.*?)\s*-\s*(.*?)\s*\|\s*(.*)$/);
-                if (!m) return;
-                var filePart = m[1].trim();
-                var icon = '';
-                try {
-                    var em = filePart.match(/^(\p{Extended_Pictographic}(?:\uFE0F)?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F)?)*)\s+/u);
-                    if (em) { icon = em[1]; filePart = filePart.slice(em[0].length).trim(); }
-                } catch (e) { /* 老内核不支持 Unicode 属性转义时跳过 */ }
-                tools.push({ file: filePart, name: m[2].trim(), brief: (m[3] || '').trim(), icon: icon });
-            });
-        }
-
-        function iconOf(t) {
-            return t.icon || ICONS[t.file.toLowerCase()] || ICONS[t.file] || '📦';
-        }
-
-        function cardHTML(t) {
-            var isFav = favSet.has(t.file);
-            var fl = t.file.replace(/"/g, '"');
-            return '<div class="tool-item" data-file="' + fl + '">' +
-                '<div class="t-head">' +
-                    '<div class="t-icon">' + iconOf(t) + '</div>' +
-                    '<div class="t-name">' + t.name + '</div>' +
-                '</div>' +
-                (t.brief ? '<div class="t-desc">' + t.brief + '</div>' : '<div class="t-desc"></div>') +
-                '<div class="t-foot">' +
-                    '<button class="t-fav' + (isFav ? ' on' : '') + '" data-fav="' + fl + '" title="' + (isFav ? '取消收藏' : '收藏工具') + '">' + (isFav ? '⭐ 已收藏' : '☆ 收藏') + '</button>' +
-                    '<span class="t-go">使用 →</span>' +
-                '</div>' +
-            '</div>';
-        }
-
-        function render() {
-            var kw = (document.getElementById('searchInput').value || '').trim().toLowerCase();
-            var matched = tools.filter(function (t) {
-                if (!kw) return true;
-                return (t.name + t.file + t.brief).toLowerCase().indexOf(kw) >= 0;
-            });
-
-            /* 收藏区（仅收藏中有命中项时显示） */
-            var favHits = matched.filter(function (t) { return favSet.has(t.file); });
-            if (favHits.length) {
-                favSec.style.display = '';
-                favNum.textContent = favHits.length;
-                favSec.classList.toggle('closed', favSecClosed && !kw);
-                favGrid.innerHTML = favHits.map(cardHTML).join('');
-            } else {
-                favSec.style.display = 'none';
-            }
-
-            /* 分类分组：搜索时全部展开，平时按记忆状态收起 */
-            var byCat = {};
-            matched.forEach(function (t) {
-                var k = catOf(t.file);
-                (byCat[k] = byCat[k] || []).push(t);
-            });
-            var html = CATEGORIES.map(function (c) {
-                var list = byCat[c.key];
-                if (!list || !list.length) return '';
-                var closed = !!closedCats[c.key] && !kw;
-                return '<div class="tool-cat' + (closed ? ' closed' : '') + '" data-cat="' + c.key + '">' +
-                    '<div class="tool-sec-title" data-sec="cat" data-key="' + c.key + '">' +
-                        '<span class="arrow">▾</span>' +
-                        '<span class="sec-name">' + c.name + (c.desc ? ' <span style="font-weight:400;opacity:.5;font-size:.82rem;">· ' + c.desc + '</span>' : '') + '</span>' +
-                        '<span class="sec-num">' + list.length + '</span>' +
-                    '</div>' +
-                    '<div class="tool-grid">' + list.map(cardHTML).join('') + '</div>' +
-                '</div>';
-            }).join('');
-
-            /* 未匹配分类的工具（兜底，理论上归入"其他"） */
-            var otherHtml = '';
-            if (!matched.length) {
-                otherHtml = '<div class="tool-empty">🌫️ 没有找到相关工具</div>';
-            }
-
-            catList.innerHTML = html + otherHtml;
-            countEl.textContent = matched.length ? '共 ' + matched.length + ' 个工具 · ' + CATEGORIES.filter(function (c) { return byCat[c.key]; }).length + ' 个分类' : '';
-        }
-
-        function toggleToolFav(file) {
-            var favs = [];
-            try { favs = JSON.parse(localStorage.getItem('toolFavs') || '[]'); } catch (e) { }
-            var i = favs.indexOf(file);
-            if (i >= 0) favs.splice(i, 1);
-            else favs.push(file);
-            try { localStorage.setItem('toolFavs', JSON.stringify(favs)); } catch (e) { }
-            favSet = getToolFavSet();
-            render();
-        }
-
-        /* 卡片点击（收藏 / 打开工具） */
-        document.addEventListener('click', function (e) {
-            var fav = e.target.closest('.t-fav');
-            if (fav) {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleToolFav(fav.getAttribute('data-fav'));
-                return;
-            }
-            /* 分区标题：展开/收起 */
-            var title = e.target.closest('.tool-sec-title');
-            if (title) {
-                if (title.getAttribute('data-sec') === 'fav') {
-                    favSecClosed = !favSecClosed;
-                    favSec.classList.toggle('closed', favSecClosed);
-                    try { localStorage.setItem('toolFavClosed', favSecClosed ? '1' : '0'); } catch (er) { }
-                } else {
-                    var key = title.getAttribute('data-key');
-                    var box = title.parentElement;
-                    box.classList.toggle('closed');
-                    closedCats[key] = box.classList.contains('closed');
-                    try { localStorage.setItem('toolCatClosed', JSON.stringify(closedCats)); } catch (er) { }
-                }
-                return;
-            }
-            var item = e.target.closest('.tool-item');
-            if (item && item.dataset.file) {
-                location.href = 'tool/' + encodeURIComponent(item.dataset.file);
-            }
-        });
-
-        document.getElementById('searchInput').addEventListener('input', render);
-
-        fetch('tool/index.txt?t=' + Date.now(), { cache: 'no-cache' })
-            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-            .then(function (text) { parseIndex(text); render(); })
-            .catch(function () { catList.innerHTML = '<div class="tool-empty">⚠️ 索引加载失败</div>'; });
-    })();
-    </script>
+    <script src="MTbox.js"></script>
     <script src="global-ui.js"></script>
 </body>
 </html>

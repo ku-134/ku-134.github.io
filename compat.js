@@ -353,10 +353,10 @@
             '<div class="cn-title">🧩 兼容性提示</div>',
             '<div class="cn-desc">检测到您的浏览器内核（<b>' + ver + '</b>）处于中间区间，部分特效（毛玻璃 / 动效）可能影响浏览流畅度。<br>是否改用<b>兼容浏览</b>？（降低特效，内容与功能完整保留）</div>',
             '<div class="cn-actions">',
-            '<button type="button" class="primary" id="compatNoticeOn" disabled>开启兼容浏览（3）</button>',
-            '<button type="button" id="compatNoticeOff" disabled>继续正常浏览（3）</button>',
+            '<button type="button" class="primary" id="compatNoticeOn" disabled>开启兼容浏览</button>',
+            '<button type="button" id="compatNoticeOff" disabled>继续正常浏览</button>',
             '</div>',
-            '<div class="cn-foot">3 秒后可选择 · 之后可随时在右下角 ⚙️ 样式设置中更改</div>',
+            '<div class="cn-foot" id="compatNoticeFoot">⏳ 请阅读，3 秒后可选择…</div>',
             '</div>'
         ].join('');
         doc.body.appendChild(ov);
@@ -365,16 +365,15 @@
         var left = 3;
         var btnOn = doc.getElementById('compatNoticeOn');
         var btnOff = doc.getElementById('compatNoticeOff');
+        var foot = doc.getElementById('compatNoticeFoot');
         function tick() {
             left--;
             if (left > 0) {
-                btnOn.innerHTML = '开启兼容浏览（' + left + '）';
-                btnOff.innerHTML = '继续正常浏览（' + left + '）';
+                foot.innerHTML = '⏳ 请阅读，' + left + ' 秒后可选择…';
                 setTimeout(tick, 1000);
             } else {
                 btnOn.disabled = false; btnOff.disabled = false;
-                btnOn.innerHTML = '开启兼容浏览';
-                btnOff.innerHTML = '继续正常浏览';
+                foot.innerHTML = '之后可随时在右下角 ⚙️ 样式设置中更改';
             }
         }
         setTimeout(tick, 1000);

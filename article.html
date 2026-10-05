@@ -11,7 +11,51 @@
     <link rel="preload" as="image" href="background4.webp">
     <link rel="stylesheet" href="style.css">
     <script src="compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="vendor/marked.min.js"></script>
+        <script>
+    /* Markdown 渲染兜底：即使 marked 组件缺失/加载失败/老内核解析异常，
+       文章也能以简化排版正常阅读（先转义，再套基础标记） */
+    window.renderMarkdown = (function () {
+        function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+        function inline(t) {
+            return t
+                .replace(/`([^`]+)`/g, function (m, c) { return '<code>' + c + '</code>'; })
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+                .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+                .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, t2, u) {
+                    return /^(https?:|#|\/|\.|mailto:)/i.test(u) ? '<a href="' + u + '" target="_blank" rel="noopener">' + t2 + '</a>' : t2;
+                });
+        }
+        return function (md) {
+            md = String(md == null ? '' : md);
+            if (window.marked && typeof window.marked.parse === 'function') {
+                try { return window.marked.parse(md); } catch (e) { /* 交由降级渲染 */ }
+            }
+            var lines = md.split(/\r?\n/), out = [], code = null;
+            for (var i = 0; i < lines.length; i++) {
+                var l = lines[i];
+                if (/^\s*```/.test(l)) {
+                    if (code === null) { code = []; }
+                    else { out.push('<pre><code>' + esc(code.join('\n')) + '</code></pre>'); code = null; }
+                    continue;
+                }
+                if (code !== null) { code.push(l); continue; }
+                if (/^\s*$/.test(l)) continue;
+                var m = l.match(/^(#{1,6})\s+(.*)$/);
+                if (m) { out.push('<h' + m[1].length + '>' + inline(esc(m[2])) + '</h' + m[1].length + '>'); continue; }
+                m = l.match(/^>\s?(.*)$/);
+                if (m) { out.push('<blockquote>' + inline(esc(m[1])) + '</blockquote>'); continue; }
+                m = l.match(/^\s*[-*+]\s+(.*)$/) || l.match(/^\s*\d+\.\s+(.*)$/);
+                if (m) { out.push('<li>' + inline(esc(m[1])) + '</li>'); continue; }
+                out.push('<p>' + inline(esc(l)) + '</p>');
+            }
+            if (code !== null) out.push('<pre><code>' + esc(code.join('\n')) + '</code></pre>');
+            return out.join('\n');
+        };
+    })();
+    </script>
+
     <style>
         /* ===== 文章阅读页专属样式 ===== */
         .article-container {
@@ -1118,7 +1162,7 @@
                     if (window.showVoidToast) showVoidToast('📭 暂无内容', 2000);
                     return;
                 }
-                articleBody.innerHTML = marked.parse(tmp);
+                articleBody.innerHTML = window.renderMarkdown(tmp);
                 if (window.ArtSettings) window.ArtSettings.refresh();
                 const kKids = articleBody.children;
                 for (let i = 0; i < kKids.length; i++) {
@@ -1169,7 +1213,7 @@
 
             loadArticleText(file)
                 .then(function(text) {
-                    articleBody.innerHTML = marked.parse(text);
+                    articleBody.innerHTML = window.renderMarkdown(text);
                     // 阅读次数 +1
                     try {
                         var rc = parseInt(localStorage.getItem('voidReadCount') || '0', 10);

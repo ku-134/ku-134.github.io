@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebGAL 剧情编辑器 · 虚空终端</title>
+<link rel="stylesheet" href="../style.css">
+    <script src="../compat.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { height: 100%; }
+html, body { overflow: hidden; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg-color, #0f1420); color: var(--text-color, #e8e6e3); display: block !important; justify-content: initial !important; align-items: initial !important; padding: 0 !important; min-height: 0 !important; height: 100%; }
+.wg-app { height: 100dvh; width: 100%; display: flex; flex-direction: column; }
+.tool-header { display: flex; align-items: center; gap: 0.8rem; padding: 0.55rem 1rem; background: var(--card-bg, rgba(255,255,255,0.06)); backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.09)); z-index: 20; }
+.tool-back { color: var(--text-color); text-decoration: none; font-size: 0.85rem; opacity: 0.75; white-space: nowrap; }
+.tool-back:hover { opacity: 1; }
+.tool-title { font-weight: 600; font-size: 0.95rem; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb { padding: 0.35rem 0.8rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-size: 0.8rem; cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.2s; }
+.tb:hover { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.1); }
+.tb.primary { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+.wg-main { flex: 1; display: flex; min-height: 0; }
+/* ===== 左栏：素材库 ===== */
+.wg-assets { width: 210px; border-right: 1px solid var(--border-color, rgba(255,255,255,0.09)); background: var(--card-bg, rgba(255,255,255,0.04)); display: flex; flex-direction: column; min-height: 0; }
+.wg-panel-title { padding: 0.7rem 0.9rem 0.4rem; font-size: 0.8rem; font-weight: 600; opacity: 0.75; display: flex; justify-content: space-between; align-items: center; }
+.wg-asset-cats { flex: 1; overflow-y: auto; padding: 0 0.6rem 0.8rem; }
+.wg-cat { margin-bottom: 0.55rem; }
+.wg-cat-head { display: flex; align-items: center; justify-content: space-between; padding: 0.3rem 0.4rem; font-size: 0.75rem; opacity: 0.8; }
+.wg-cat-head label { cursor: pointer; color: #66bb6a; font-size: 0.75rem; }
+.wg-cat-head label:hover { text-decoration: underline; }
+.wg-cat-list { display: flex; flex-direction: column; gap: 0.3rem; }
+.wg-asset-item { display: flex; align-items: center; gap: 0.45rem; padding: 0.3rem 0.45rem; border-radius: 0.6rem; border: 1px solid rgba(128,128,128,0.14); background: rgba(128,128,128,0.05); cursor: pointer; transition: all 0.15s; font-size: 0.75rem; }
+.wg-asset-item:hover { border-color: rgba(102,187,106,0.5); }
+.wg-asset-item .thumb { width: 26px; height: 26px; border-radius: 0.35rem; object-fit: cover; flex-shrink: 0; background: rgba(128,128,128,0.15); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; overflow: hidden; }
+.wg-asset-item .aname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wg-asset-item .ains { font-size: 0.7rem; color: #66bb6a; opacity: 0; flex-shrink: 0; }
+.wg-asset-item:hover .ains { opacity: 1; }
+.wg-empty { padding: 0.5rem; font-size: 0.72rem; opacity: 0.4; text-align: center; }
+/* ===== 中栏：节点时间线 ===== */
+.wg-stage { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.wg-toolbar { display: flex; flex-direction: column; gap: 0.45rem; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.09)); }
+.wg-toolbar .tb-row { display: flex; align-items: center; gap: 0.5rem; }
+.wg-toolbar .sp { flex: 1; }
+.nb { padding: 0.28rem 0.6rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.22); background: rgba(128,128,128,0.06); color: inherit; font-size: 0.74rem; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.nb:hover { border-color: #66bb6a; color: #66bb6a; }
+.wg-list { flex: 1; overflow-y: auto; padding: 0.7rem; }
+.wg-node { display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.45rem 0.6rem; border-radius: 0.7rem; border: 1px solid rgba(128,128,128,0.12); background: rgba(128,128,128,0.045); margin-bottom: 0.35rem; cursor: pointer; transition: all 0.15s; }
+.wg-node:hover { border-color: rgba(128,128,128,0.35); }
+.wg-node.sel { border-color: #66bb6a; background: rgba(102,187,106,0.08); box-shadow: 0 0 0 1px rgba(102,187,106,0.35); }
+.wg-node .nicon { font-size: 1rem; line-height: 1.4; flex-shrink: 0; }
+.wg-node .nbody { flex: 1; min-width: 0; }
+.wg-node .nsum { font-size: 0.82rem; line-height: 1.5; word-break: break-all; white-space: pre-wrap; }
+.wg-node .nsum .spk { color: #66bb6a; font-weight: 600; margin-right: 0.35rem; }
+.wg-node .nmeta { font-size: 0.7rem; opacity: 0.45; margin-top: 0.15rem; }
+.wg-node .nsubs { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.wg-node .nsub { display: flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; padding: 0.28rem 0.5rem; border-radius: 0.5rem; background: rgba(102,187,106,0.07); border: 1px dashed rgba(102,187,106,0.3); }
+.wg-node .nsub .ar { color: #66bb6a; }
+/* ===== 右栏：属性 / 变量 ===== */
+.wg-right { width: 300px; border-left: 1px solid var(--border-color, rgba(255,255,255,0.09)); background: var(--card-bg, rgba(255,255,255,0.04)); display: flex; flex-direction: column; min-height: 0; }
+.wg-tabs { display: flex; border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.09)); }
+.wg-tab { flex: 1; text-align: center; padding: 0.55rem 0; font-size: 0.8rem; cursor: pointer; opacity: 0.6; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.wg-tab.active { opacity: 1; color: #66bb6a; border-bottom-color: #66bb6a; }
+.wg-right-body { flex: 1; overflow-y: auto; padding: 0.8rem; }
+.wg-prop { margin-bottom: 0.7rem; }
+.wg-prop label { display: block; font-size: 0.72rem; opacity: 0.65; margin-bottom: 0.25rem; }
+.wg-prop input[type="text"], .wg-prop input[type="number"], .wg-prop select, .wg-prop textarea { width: 100%; padding: 0.45rem 0.6rem; border-radius: 0.55rem; border: 1px solid rgba(128,128,128,0.22); background: rgba(128,128,128,0.07); color: inherit; font-size: 0.82rem; font-family: inherit; outline: none; }
+.wg-prop textarea { min-height: 72px; resize: vertical; line-height: 1.5; }
+.wg-prop input:focus, .wg-prop select:focus, .wg-prop textarea:focus { border-color: #66bb6a; }
+.wg-hint { font-size: 0.72rem; opacity: 0.5; line-height: 1.5; margin-top: 0.8rem; padding-top: 0.6rem; border-top: 1px dashed rgba(128,128,128,0.15); }
+/* 变量面板 */
+.wg-aff-hero { text-align: center; padding: 1rem 0.5rem; }
+.wg-aff-num { font-size: 2.2rem; font-weight: 700; color: #66bb6a; font-family: 'Courier New', monospace; }
+.wg-aff-bar { height: 10px; border-radius: 5px; background: rgba(128,128,128,0.15); margin: 0.6rem 0; overflow: hidden; }
+.wg-aff-fill { height: 100%; border-radius: 5px; background: linear-gradient(90deg, #66bb6a, #a5d6a7); width: 0; transition: width 0.4s; }
+.wg-aff-steps { margin-top: 0.6rem; }
+.wg-aff-step { display: flex; align-items: center; gap: 0.45rem; font-size: 0.78rem; padding: 0.3rem 0.4rem; border-radius: 0.5rem; }
+.wg-aff-step .idx { opacity: 0.4; font-size: 0.7rem; width: 2em; flex-shrink: 0; text-align: right; }
+.wg-aff-step .bar { height: 8px; border-radius: 4px; flex: 1; min-width: 30px; background: rgba(128,128,128,0.12); overflow: hidden; }
+.wg-aff-step .bar i { display: block; height: 100%; border-radius: 4px; }
+.wg-aff-step .val { width: 3.5em; font-family: 'Courier New', monospace; text-align: right; flex-shrink: 0; }
+.wg-aff-step.pos .val { color: #66bb6a; }
+.wg-aff-step.neg .val { color: #ef5350; }
+.wg-aff-empty { font-size: 0.75rem; opacity: 0.45; text-align: center; padding: 1.5rem 0.5rem; line-height: 1.6; }
+/* 预览遮罩 */
+.wg-preview { position: fixed; inset: 0; z-index: 99; background: #0b0e16; display: none; flex-direction: column; }
+.wg-preview.show { display: flex; }
+.wg-pv-top { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.wg-pv-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; position: relative; }
+.wg-pv-stage { width: 100%; max-width: 640px; min-height: 200px; display: flex; flex-direction: column; justify-content: flex-end; gap: 0.8rem; }
+.wg-pv-name { color: #66bb6a; font-weight: 600; font-size: 1rem; min-height: 1.4em; }
+.wg-pv-text { font-size: 1.05rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word; min-height: 4em; }
+.wg-pv-choose { display: flex; flex-direction: column; gap: 0.5rem; }
+.wg-pv-choose button { padding: 0.55rem 1rem; border-radius: 0.6rem; border: 1px solid rgba(102,187,106,0.4); background: rgba(102,187,106,0.08); color: inherit; cursor: pointer; font-size: 0.9rem; font-family: inherit; text-align: left; }
+.wg-pv-choose button:hover { background: rgba(102,187,106,0.18); }
+.wg-pv-foot { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 1rem; border-top: 1px solid rgba(255,255,255,0.08); }
+.wg-pv-foot .pv-ctrl { cursor: pointer; font-size: 0.85rem; opacity: 0.7; background: none; border: none; color: inherit; font-family: inherit; }
+.wg-pv-foot .pv-ctrl:hover { opacity: 1; }
+.wg-pv-foot .pv-prog { flex: 1; text-align: center; font-size: 0.75rem; opacity: 0.5; }
+/* ===== 舞台式预览（真实素材渲染） ===== */
+.wg-pv-stage { position: relative; width: 100%; max-width: 780px; aspect-ratio: 16/9; background: #000; border-radius: 0.6rem; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+.pv-layer { position: absolute; inset: 0; }
+#pvBgLayer { background-size: cover; background-position: center; transition: background-image 0.4s; }
+.pv-miss { position: absolute; top: 0.6rem; left: 0.8rem; font-size: 0.72rem; color: #ffb74d; background: rgba(0,0,0,0.5); padding: 0.25rem 0.6rem; border-radius: 2rem; }
+#pvCharLayer img { position: absolute; bottom: 0; height: 76%; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.45)); }
+#pvCharLayer img.left { left: 5%; }
+#pvCharLayer img.center { left: 50%; transform: translateX(-50%); }
+#pvCharLayer img.right { right: 5%; }
+.pv-hud { position: absolute; top: 0.6rem; right: 0.8rem; display: flex; flex-direction: column; gap: 0.25rem; align-items: flex-end; z-index: 3; }
+.pv-hud span { font-size: 0.74rem; color: #a5d6a7; background: rgba(0,0,0,0.55); padding: 0.25rem 0.7rem; border-radius: 2rem; font-family: 'Courier New', monospace; }
+.pv-dialog { position: absolute; left: 1rem; right: 1rem; bottom: 1rem; z-index: 4; background: rgba(10,14,22,0.84); border: 1px solid rgba(255,255,255,0.12); border-radius: 0.8rem; padding: 0.9rem 1.1rem; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); min-height: 118px; display: flex; flex-direction: column; gap: 0.5rem; }
+.wg-pv-name { color: #66bb6a; font-weight: 600; font-size: 1rem; min-height: 1.3em; }
+.wg-pv-text { font-size: 1.02rem; line-height: 1.7; white-space: pre-wrap; word-break: break-word; min-height: 2.6em; }
+.pv-music-tip { position: absolute; top: 0.6rem; left: 0.8rem; font-size: 0.72rem; color: #90caf9; background: rgba(0,0,0,0.5); padding: 0.25rem 0.6rem; border-radius: 2rem; z-index: 3; display: none; }
+/* ===== 预览测试控制台 ===== */
+.wg-pv-console { border-top: 1px solid rgba(255,255,255,0.08); background: rgba(12,16,26,0.9); }
+.wg-pv-console.open { border-top-color: rgba(102,187,106,0.3); }
+.pv-console-head { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1rem; cursor: pointer; font-size: 0.8rem; opacity: 0.75; user-select: none; }
+.pv-console-head:hover { opacity: 1; }
+.pv-console-head .arrow { transition: transform 0.2s; font-size: 0.7rem; }
+.wg-pv-console.open .pv-console-head .arrow { transform: rotate(180deg); }
+.pv-console-body { display: none; padding: 0.6rem 1rem 0.8rem; flex-direction: column; gap: 0.5rem; }
+.wg-pv-console.open .pv-console-body { display: flex; }
+.pv-con-row { font-size: 0.78rem; opacity: 0.85; line-height: 1.6; word-break: break-all; }
+.pv-con-row b { color: #66bb6a; font-family: 'Courier New', monospace; }
+.pv-con-actions { display: flex; gap: 0.5rem; }
+.pv-con-actions .pv-ctrl { padding: 0.3rem 0.9rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.28); background: rgba(128,128,128,0.07); color: inherit; cursor: pointer; font-size: 0.78rem; font-family: inherit; }
+.pv-con-actions .pv-ctrl:hover { border-color: #66bb6a; color: #66bb6a; }
+.pv-con-vars { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.pv-con-vars span { font-size: 0.72rem; font-family: 'Courier New', monospace; background: rgba(102,187,106,0.1); border: 1px solid rgba(102,187,106,0.25); color: #a5d6a7; padding: 0.18rem 0.55rem; border-radius: 2rem; }
+/* ===== 节点操作栏（选中后） ===== */
+.wg-node-ops { display: flex; gap: 0.4rem; flex-wrap: wrap; padding-bottom: 0.7rem; margin-bottom: 0.7rem; border-bottom: 1px dashed rgba(128,128,128,0.2); }
+.wg-node-ops .nb.del:hover { border-color: #ef5350; color: #ef5350; }
+/* ===== 内置弹窗 ===== */
+.wg-modal { position: fixed; inset: 0; z-index: 120; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; }
+.wg-modal.show { display: flex; }
+.wg-modal-panel { width: 440px; max-width: 92vw; max-height: 82vh; display: flex; flex-direction: column; border-radius: 1rem; background: rgba(15,20,32,0.97); border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; animation: wgPop 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes wgPop { 0% { transform: scale(0.92) translateY(14px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+.wg-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.wg-modal-head .wg-modal-x { background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; font-size: 1rem; }
+.wg-modal-head .wg-modal-x:hover { opacity: 1; }
+.wg-modal-body { padding: 1rem; overflow-y: auto; }
+.ap-grid { display: flex; flex-direction: column; gap: 0.4rem; }
+.ap-item { display: flex; align-items: center; gap: 0.55rem; padding: 0.4rem 0.55rem; border-radius: 0.65rem; border: 1px solid rgba(128,128,128,0.16); background: rgba(128,128,128,0.05); cursor: pointer; transition: all 0.15s; }
+.ap-item:hover { border-color: #66bb6a; background: rgba(102,187,106,0.08); }
+.ap-item .ap-thumb { width: 42px; height: 42px; border-radius: 0.4rem; object-fit: cover; flex-shrink: 0; background: rgba(128,128,128,0.15); display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; }
+.ap-item .ap-name { flex: 1; font-size: 0.82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ap-item .ap-play { background: rgba(102,187,106,0.12); border: 1px solid rgba(102,187,106,0.35); color: #66bb6a; border-radius: 2rem; padding: 0.2rem 0.6rem; font-size: 0.72rem; cursor: pointer; flex-shrink: 0; }
+.ap-item .ap-play:hover { background: rgba(102,187,106,0.25); }
+.ap-custom { display: flex; gap: 0.45rem; margin-top: 0.8rem; padding-top: 0.7rem; border-top: 1px dashed rgba(128,128,128,0.2); }
+.ap-custom input { flex: 1; padding: 0.45rem 0.6rem; border-radius: 2rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.07); color: inherit; font-size: 0.8rem; font-family: inherit; outline: none; }
+.ap-custom input:focus { border-color: #66bb6a; }
+.ap-custom .tb { flex-shrink: 0; }
+.ap-empty { text-align: center; font-size: 0.78rem; opacity: 0.5; padding: 1.5rem 0; line-height: 1.8; }
+.ap-confirm { text-align: center; padding: 0.8rem 0 1.1rem; font-size: 0.85rem; line-height: 1.7; }
+.ap-confirm-actions { display: flex; justify-content: center; gap: 0.6rem; }
+/* ===== 插入分类（上下两区） ===== */
+.wg-cat-pills { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.cat-pill { padding: 0.28rem 0.75rem; border-radius: 2rem; cursor: pointer; font-size: 0.74rem; border: 1px solid rgba(128,128,128,0.22); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; transition: all 0.15s; }
+.cat-pill:hover { border-color: rgba(102,187,106,0.5); }
+.cat-pill.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+.wg-cat-nodes { display: flex; gap: 0.3rem; flex-wrap: wrap; min-height: 1.6rem; align-items: center; }
+.wg-cat-nodes .cat-hint { font-size: 0.72rem; opacity: 0.4; }
+/* ===== 按钮组（替代原生下拉） ===== */
+.seg { display: inline-flex; gap: 0.35rem; flex-wrap: wrap; }
+.seg-btn { padding: 0.32rem 0.85rem; border-radius: 2rem; cursor: pointer; font-size: 0.78rem; border: 1px solid rgba(128,128,128,0.25); background: rgba(128,128,128,0.06); color: inherit; font-family: inherit; transition: all 0.15s; }
+.seg-btn:hover { border-color: rgba(102,187,106,0.5); }
+.seg-btn.active { border-color: #66bb6a; color: #66bb6a; background: rgba(102,187,106,0.14); font-weight: 600; }
+/* 移动端适配 */
+.wg-drawer-toggle { display: none; }
+@media (max-width: 900px) {
+  .wg-assets, .wg-right { position: fixed; top: 0; bottom: 0; z-index: 50; width: 78vw; max-width: 300px; transition: transform 0.25s; box-shadow: 0 0 30px rgba(0,0,0,0.4); }
+  .wg-assets { left: 0; transform: translateX(-105%); }
+  .wg-right { right: 0; transform: translateX(105%); }
+  .wg-assets.open, .wg-right.open { transform: translateX(0); }
+  .wg-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 45; display: none; }
+  .wg-mask.show { display: block; }
+  .wg-drawer-toggle { display: inline-block; }
+}
+</style>
+</head>
+<body>
+<div class="wg-app">
+  <div class="tool-header">
+    <a href="../MT.html" class="tool-back">← 返回列表</a>
+    <div class="tool-title">🎬 WebGAL 剧情编辑器</div>
+    <button class="tb wg-drawer-toggle" id="btnAssets">📦 素材</button>
+    <button class="tb" id="btnImport">📥 导入</button>
+    <button class="tb" id="btnExport">📤 导出</button>
+    <button class="tb" id="btnCopy">📋 复制</button>
+    <button class="tb primary" id="btnPreview">👁 预览</button>
+  </div>
+  <div class="wg-main">
+    <!-- 素材库 -->
+    <div class="wg-assets" id="assetPanel">
+      <div class="wg-panel-title">素材库 <span style="font-weight:400;font-size:0.7rem;" id="assetCount">0</span></div>
+      <div class="wg-asset-cats" id="assetCats"></div>
+    </div>
+    <!-- 节点时间线 -->
+    <div class="wg-stage">
+      <div class="wg-toolbar">
+        <div class="tb-row">
+          <span style="font-size:0.75rem;opacity:0.6;">插入节点</span>
+          <span class="sp"></span>
+          <button class="nb" id="btnClear" style="color:#ef5350;">🗑 清空</button>
+        </div>
+        <div class="wg-cat-pills" id="catPills"></div>
+        <div class="wg-cat-nodes" id="catNodes"><span class="cat-hint">点击上方分类，选择要插入的节点类型</span></div>
+      </div>
+      <div class="wg-list" id="nodeList"></div>
+    </div>
+    <!-- 右侧面板 -->
+    <div class="wg-right" id="rightPanel">
+      <div class="wg-tabs">
+        <div class="wg-tab active" data-tab="prop">属性</div>
+        <div class="wg-tab" data-tab="aff">📊 变量</div>
+      </div>
+      <div class="wg-right-body" id="propBody"></div>
+      <div class="wg-right-body" id="affBody" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+<div class="wg-mask" id="wgMask"></div>
+<div id="settingsToggle" style="display:none;"></div>
+
+<!-- 内置弹窗 -->
+<div class="wg-modal" id="wgModal">
+  <div class="wg-modal-panel">
+    <div class="wg-modal-head"><span id="wgModalTitle">选择</span><button class="wg-modal-x" id="wgModalX">✕</button></div>
+    <div class="wg-modal-body" id="wgModalBody"></div>
+  </div>
+</div>
+
+<!-- 预览遮罩（舞台式） -->
+<div class="wg-preview" id="pvBox">
+  <div class="wg-pv-top">
+    <span style="font-weight:600;">👁 剧情预览</span>
+    <button class="tb" id="pvClose">✕ 关闭</button>
+  </div>
+  <div class="wg-pv-body">
+    <div class="wg-pv-stage" id="pvStage">
+      <div class="pv-layer" id="pvBgLayer"></div>
+      <div class="pv-layer" id="pvCharLayer"></div>
+      <div class="pv-music-tip" id="pvMusicTip"></div>
+      <div class="pv-hud" id="pvAffHud"></div>
+      <div class="pv-dialog">
+        <div class="wg-pv-name" id="pvName"></div>
+        <div class="wg-pv-text" id="pvText"></div>
+        <div class="wg-pv-choose" id="pvChoose"></div>
+      </div>
+    </div>
+  </div>
+  <div class="wg-pv-foot">
+    <button class="pv-ctrl" id="pvBack">⏪ 上一步</button>
+    <button class="pv-ctrl" id="pvNext">下一步 ⏩</button>
+    <span class="pv-prog" id="pvProg"></span>
+  </div>
+  <!-- 测试控制台 -->
+  <div class="wg-pv-console" id="pvConsole">
+    <div class="pv-console-head" id="pvConsoleToggle"><span class="arrow">▾</span>🛠 测试控制台</div>
+    <div class="pv-console-body">
+      <div class="pv-con-row">当前位置：#<b id="pvConPos">-</b> · <span id="pvConNode">-</span></div>
+      <div class="pv-con-actions">
+        <button class="pv-ctrl" id="pvConBack">⏮ 强制上一步</button>
+        <button class="pv-ctrl" id="pvConNext">强制下一步 ⏭</button>
+      </div>
+      <div class="pv-con-row">变量：</div>
+      <div class="pv-con-vars" id="pvConVars"><span style="opacity:.5;">（暂无变量）</span></div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileImport" accept=".txt,text/plain" style="display:none;">
+<script>
+(function () {
+  var CATS = [
+    { key: 'bg', icon: '🖼', name: '背景图', accept: 'image/*' },
+    { key: 'char', icon: '🧍', name: '立绘', accept: 'image/*' },
+    { key: 'music', icon: '🎵', name: '音乐 BGM', accept: 'audio/*' },
+    { key: 'effect', icon: '🔊', name: '音效', accept: 'audio/*' },
+    { key: 'voice', icon: '🗣', name: '语音', accept: 'audio/*' }
+  ];
+  var nodes = [];
+  var assets = { bg: [], char: [], music: [], effect: [], voice: [] };
+  var selId = null;
+  var affVars = [];
+
+  /* ===== 工具函数 ===== */
+  function uid() { return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function fmtAff(op, v) { return op === '=' ? v : (op === '+' ? '+' + v : '-' + v); }
+
+  /* ===== 节点摘要 ===== */
+  function nodeSummary(n) {
+    var d = n.data;
+    switch (n.type) {
+      case 'dialogue': return { icon: '💬', html: '<span class="spk">' + esc(d.speaker || '？？') + '</span>' + esc(d.text || '（空白台词）') };
+      case 'narrate': return { icon: '📖', html: esc(d.text || '（空白旁白）') };
+      case 'bg': return { icon: '🖼', html: '背景：' + esc(d.file || '未选择') + (d.transition ? '　<span style="opacity:.5">过渡 ' + esc(d.transition) + '</span>' : '') };
+      case 'char': return { icon: '🧍', html: d.action === 'clear' ? '隐藏立绘' : '立绘：' + esc(d.file || '未选择') + (d.pos ? '　<span style="opacity:.5">' + esc(d.pos) + '</span>' : '') };
+      case 'music': return { icon: '🎵', html: d.action === 'clear' ? '停止音乐' : '音乐：' + esc(d.file || '未选择') };
+      case 'effect': return { icon: '🔊', html: '音效：' + esc(d.file || '未选择') };
+      case 'voice': return { icon: '🗣', html: '语音：' + esc(d.file || '未选择') };
+      case 'affection': return { icon: '📊', html: (d.var || '变量') + ' <b style="color:' + (d.op === '-' ? '#ef5350' : '#66bb6a') + '">' + fmtAff(d.op, d.value) + '</b>　<span style="opacity:.5">' + esc(d.var) + '</span>' };
+      case 'choose': return { icon: '🔀', html: '分支选择（' + d.options.length + ' 个选项）' };
+      case 'label': return { icon: '🏷', html: '标签：<b>' + esc(d.name) + '</b>' };
+      case 'jump': return { icon: '➡️', html: '跳转 → ' + esc(d.target) };
+    }
+    return { icon: '❔', html: '' };
+  }
+
+  function newNode(type) {
+    var base = { id: uid(), type: type, data: {} };
+    switch (type) {
+      case 'dialogue': base.data = { speaker: '', text: '' }; break;
+      case 'narrate': base.data = { text: '' }; break;
+      case 'bg': base.data = { file: '', transition: '' }; break;
+      case 'char': base.data = { file: '', action: 'show', pos: '' }; break;
+      case 'music': base.data = { file: '', action: 'play' }; break;
+      case 'effect': base.data = { file: '' }; break;
+      case 'voice': base.data = { file: '' }; break;
+      case 'affection': base.data = { var: '', op: '+', value: 1 }; break;
+      case 'choose': base.data = { options: [{ text: '', target: '', cond: '' }, { text: '', target: '', cond: '' }] }; break;
+      case 'label': base.data = { name: '' }; break;
+      case 'jump': base.data = { target: '' }; break;
+    }
+    return base;
+  }
+
+  /* ===== 渲染节点列表 ===== */
+  function renderList() {
+    var box = $('nodeList');
+    box.innerHTML = '';
+    nodes.forEach(function (n, i) {
+      var s = nodeSummary(n);
+      var div = document.createElement('div');
+      div.className = 'wg-node' + (n.id === selId ? ' sel' : '');
+      div.setAttribute('data-id', n.id);
+      var subs = '';
+      if (n.type === 'choose') {
+        subs = '<div class="nsubs">' + n.data.options.map(function (o) {
+          return '<div class="nsub"><span>🔘 ' + esc(o.text || '（未命名选项）') + (o.cond ? ' <b style="color:#ffb74d">[if ' + esc(o.cond) + ']</b>' : '') + '</span><span class="ar">→</span><span>' + esc(o.target || '？') + '</span></div>';
+        }).join('') + '</div>';
+      }
+      div.innerHTML = '<div class="nicon">' + s.icon + '</div>' +
+        '<div class="nbody"><div class="nsum">' + s.html + '</div>' + subs +
+        '<div class="nmeta">#' + (i + 1) + ' · ' + n.type + '</div></div>';
+      div.addEventListener('click', function () {
+        selId = n.id; renderList(); renderProp();
+      });
+      box.appendChild(div);
+    });
+    if (!nodes.length) box.innerHTML = '<div style="text-align:center;padding:3rem 1rem;opacity:.4;font-size:.85rem;line-height:2;">空台本～<br>点击上方按钮插入节点，<br>或 📥 导入现有 WebGAL 台本</div>';
+  }
+  function swap(a, b) { var t = nodes[a]; nodes[a] = nodes[b]; nodes[b] = t; save(); renderList(); }
+
+  /* ===== 属性面板 ===== */
+  function renderProp() {
+    var box = $('propBody');
+    var n = nodes.find(function (x) { return x.id === selId; });
+    if (!n) {
+      box.innerHTML = '<div style="text-align:center;padding:2.5rem 1rem;opacity:.4;font-size:.82rem;line-height:2;">未选中节点<br>点击左侧时间线的节点<br>在这里编辑属性</div>';
+      return;
+    }
+    var d = n.data;
+    var h = '';
+    /* 节点操作栏（选中后显示） */
+    var idx = nodes.indexOf(n);
+    h += '<div class="wg-node-ops">' +
+      '<button class="nb" data-nop="up"' + (idx <= 0 ? ' disabled style="opacity:.35;"' : '') + '>↑ 上移</button>' +
+      '<button class="nb" data-nop="down"' + (idx >= nodes.length - 1 ? ' disabled style="opacity:.35;"' : '') + '>↓ 下移</button>' +
+      '<button class="nb" data-nop="copy">⧉ 复制</button>' +
+      '<button class="nb del" data-nop="del">🗑 删除</button>' +
+      '</div>';
+    function field(label, inner) { return '<div class="wg-prop"><label>' + label + '</label>' + inner + '</div>'; }
+    function input(id, val, ph) { return '<input type="text" id="' + id + '" value="' + esc(val) + '" placeholder="' + (ph || '') + '">'; }
+    switch (n.type) {
+      case 'dialogue':
+        h += field('说话人（留空则显示"？？"）', input('pSpeaker', d.speaker, '例如：纳西妲'));
+        h += field('台词', '<textarea id="pText" placeholder="角色要说的话…">' + esc(d.text) + '</textarea>');
+        break;
+      case 'narrate':
+        h += field('旁白内容', '<textarea id="pText" placeholder="叙述性文字…">' + esc(d.text) + '</textarea>');
+        break;
+      case 'bg':
+        h += field('背景素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="bg">选</button></div>');
+        h += field('过渡效果', '<div class="seg" data-bind="transition" id="pTransSeg">' +
+          '<button class="seg-btn' + (!d.transition ? ' active' : '') + '" data-v="">无</button>' +
+          '<button class="seg-btn' + (d.transition === 'fade' ? ' active' : '') + '" data-v="fade">淡入 fade</button>' +
+          '<button class="seg-btn' + (d.transition === 'none' ? ' active' : '') + '" data-v="none">直接 none</button></div>');
+        break;
+      case 'char':
+        h += field('操作', '<div class="seg" data-bind="action" id="pActionSeg">' +
+          '<button class="seg-btn' + (d.action !== 'clear' ? ' active' : '') + '" data-v="show">显示立绘</button>' +
+          '<button class="seg-btn' + (d.action === 'clear' ? ' active' : '') + '" data-v="clear">隐藏立绘</button></div>');
+        if (d.action !== 'clear') {
+          h += field('立绘素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="char">选</button></div>');
+          h += field('位置', '<div class="seg" data-bind="pos" id="pPosSeg">' +
+            '<button class="seg-btn' + (!d.pos ? ' active' : '') + '" data-v="">居中</button>' +
+            '<button class="seg-btn' + (d.pos === 'left' ? ' active' : '') + '" data-v="left">左侧 left</button>' +
+            '<button class="seg-btn' + (d.pos === 'right' ? ' active' : '') + '" data-v="right">右侧 right</button></div>');
+        }
+        break;
+      case 'music':
+        h += field('操作', '<div class="seg" data-bind="action" id="pActionSeg">' +
+          '<button class="seg-btn' + (d.action !== 'clear' ? ' active' : '') + '" data-v="play">播放</button>' +
+          '<button class="seg-btn' + (d.action === 'clear' ? ' active' : '') + '" data-v="clear">停止</button></div>');
+        if (d.action !== 'clear') h += field('音乐素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="music">选</button></div>');
+        break;
+        break;
+      case 'effect':
+        h += field('音效素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="effect">选</button></div>');
+        break;
+      case 'voice':
+        h += field('语音素材', '<div style="display:flex;gap:.4rem;">' + input('pFile', d.file, '文件名或素材') + '<button class="nb" id="pPick" data-pick="voice">选</button></div>');
+        break;
+      case 'affection':
+        h += field('变量名', input('pVar', d.var, '变量名（如：好感度）'));
+        h += field('操作', '<div class="seg" data-bind="op" id="pOpSeg">' +
+          '<button class="seg-btn' + (d.op === '+' ? ' active' : '') + '" data-v="+">增加 +</button>' +
+          '<button class="seg-btn' + (d.op === '-' ? ' active' : '') + '" data-v="-">减少 -</button>' +
+          '<button class="seg-btn' + (d.op === '=' ? ' active' : '') + '" data-v="=">设为 =</button></div>');
+        h += field('数值', '<input type="number" id="pValue" value="' + d.value + '" min="0" style="width:100%;padding:.45rem .6rem;border-radius:.55rem;border:1px solid rgba(128,128,128,.22);background:rgba(128,128,128,.07);color:inherit;font-size:.82rem;outline:none;">');
+        break;
+      case 'choose':
+        h += '<div style="font-size:.75rem;opacity:.6;margin-bottom:.5rem;">选项会渲染为分支按钮，点击后跳转到对应标签。<b>显示条件</b>（可选）：满足条件的选项才会出现，如 <code style="opacity:.8;">好感度&gt;=3</code>。</div>';
+        d.options.forEach(function (o, i) {
+          h += '<div style="border:1px dashed rgba(102,187,106,.3);border-radius:.6rem;padding:.5rem;margin-bottom:.5rem;">' +
+            field('选项 ' + (i + 1) + ' 文本', input('pOptT' + i, o.text, '选项文字')) +
+            field('跳转目标（标签名）', '<div style="display:flex;gap:.4rem;">' + input('pOptG' + i, o.target, 'label 名') + '<button class="nb" data-labelpick="' + i + '">选</button></div>') +
+            field('显示条件（可选）', '<div style="display:flex;gap:.4rem;">' + input('pOptC' + i, o.cond, '如：好感度>=3') + '<button class="nb" data-varpick="' + i + '">变量</button></div>') +
+            '</div>';
+        });
+        h += '<button class="nb" id="pAddOpt">+ 添加选项</button> <button class="nb" id="pDelOpt" style="color:#ef5350;">− 删除末项</button>';
+        break;
+      case 'label':
+        h += field('标签名（分支跳转目标）', input('pName', d.name, '例如：good_end'));
+        break;
+      case 'jump':
+        h += field('跳转目标（标签名或章节）', '<div style="display:flex;gap:.4rem;">' + input('pTarget', d.target, 'label 名') + '<button class="nb" id="pLabelPick">选</button></div>');
+        break;
+    }
+    box.innerHTML = h;
+    bindPropEvents(n);
+  }
+
+  function bindPropEvents(n) {
+    var d = n.data;
+    /* 节点操作栏：上移/下移/复制/删除（保持选中，复制后选中新节点） */
+    document.querySelectorAll('#propBody [data-nop]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var op = b.getAttribute('data-nop');
+        var i = nodes.indexOf(n);
+        if (op === 'up' && i > 0) { var t = nodes[i]; nodes[i] = nodes[i - 1]; nodes[i - 1] = t; }
+        else if (op === 'down' && i < nodes.length - 1) { var t2 = nodes[i]; nodes[i] = nodes[i + 1]; nodes[i + 1] = t2; }
+        else if (op === 'copy') {
+          var cp = JSON.parse(JSON.stringify(n)); cp.id = uid();
+          nodes.splice(i + 1, 0, cp); selId = cp.id;
+        } else if (op === 'del') {
+          nodes.splice(i, 1); selId = null;
+        }
+        save(); renderList(); renderProp(); renderAff();
+      });
+    });
+    function on(id, fn) { var el = $(id); if (el) el.addEventListener('input', fn); }
+    on('pSpeaker', function (e) { d.speaker = e.target.value; save(); refreshListOnly(); });
+    on('pText', function (e) { d.text = e.target.value; save(); refreshListOnly(); });
+    on('pFile', function (e) { d.file = e.target.value; save(); refreshListOnly(); });
+    on('pVar', function (e) { d.var = e.target.value; if (affVars.indexOf(d.var) < 0) affVars.push(d.var); save(); renderAff(); refreshListOnly(); });
+    on('pValue', function (e) { d.value = Math.max(0, +e.target.value || 0); save(); refreshListOnly(); renderAff(); });
+    on('pName', function (e) { d.name = e.target.value; save(); refreshListOnly(); });
+    on('pTarget', function (e) { d.target = e.target.value; save(); refreshListOnly(); });
+    /* 按钮组（seg）统一绑定 */
+    document.querySelectorAll('#propBody .seg[data-bind]').forEach(function (seg) {
+      seg.addEventListener('click', function (e) {
+        var b = e.target.closest('.seg-btn');
+        if (!b) return;
+        seg.querySelectorAll('.seg-btn').forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        d[seg.getAttribute('data-bind')] = b.getAttribute('data-v');
+        save(); renderList(); renderAff();
+        /* action 变化需要重建面板（隐藏/显示字段联动） */
+        if (seg.getAttribute('data-bind') === 'action') renderProp();
+      });
+    });
+    var pk = $('pPick'); if (pk) pk.addEventListener('click', function () { openAssetPicker(pk.getAttribute('data-pick'), function (name) { d.file = name; save(); renderProp(); renderList(); }); });
+    var lpk = $('pLabelPick'); if (lpk) lpk.addEventListener('click', function () { openLabelPicker(function (name) { d.target = name; save(); renderProp(); renderList(); }); });
+    if (n.type === 'choose') {
+      d.options.forEach(function (o, i) {
+        var t = $('pOptT' + i); if (t) t.addEventListener('input', function (e) { o.text = e.target.value; save(); refreshListOnly(); });
+        var g = $('pOptG' + i); if (g) g.addEventListener('input', function (e) { o.target = e.target.value; save(); refreshListOnly(); });
+        var c = $('pOptC' + i); if (c) c.addEventListener('input', function (e) { o.cond = e.target.value.trim(); save(); refreshListOnly(); });
+        var lp = document.querySelector('[data-labelpick="' + i + '"]'); if (lp) lp.addEventListener('click', function () { openLabelPicker(function (name) { o.target = name; save(); renderProp(); renderList(); }); });
+        var vp = document.querySelector('[data-varpick="' + i + '"]'); if (vp) vp.addEventListener('click', function () { openVarPicker(function (vname) { o.cond = (o.cond ? o.cond + ' ' : '') + vname + '>='; save(); renderProp(); }); });
+      });
+      var add = $('pAddOpt'); if (add) add.addEventListener('click', function () { d.options.push({ text: '', target: '', cond: '' }); renderProp(); });
+      var del = $('pDelOpt'); if (del) del.addEventListener('click', function () { if (d.options.length > 1) { d.options.pop(); renderProp(); } });
+    }
+  }
+  /* 变量选择弹窗（条件用） */
+  function openVarPicker(cb) {
+    var vars = affVars.slice();
+    nodes.forEach(function (n) { if (n.type === 'affection' && vars.indexOf(n.data.var) < 0) vars.push(n.data.var); });
+    var items = vars.map(function (v) {
+      return '<div class="ap-item" data-name="' + esc(v) + '"><span class="ap-thumb">📊</span><span class="ap-name">' + esc(v) + '</span></div>';
+    }).join('') || '<div class="ap-empty">还没有定义过变量～<br>先插入一个 📊 变量节点，或用下方自定义输入</div>';
+    var html = '<div class="ap-grid">' + items + '</div>' +
+      '<div class="ap-custom"><input type="text" id="apCustom" placeholder="自定义变量名（如 勇气值）"><button class="tb primary" id="apCustomOk">选用</button></div>';
+    openModal('选择条件变量', html, function () {
+      $('wgModalBody').querySelectorAll('.ap-item').forEach(function (it) {
+        it.addEventListener('click', function () { closeModal(); cb(it.getAttribute('data-name')); });
+      });
+      $('apCustomOk').addEventListener('click', function () {
+        var v = $('apCustom').value.trim();
+        if (!v) { toast('请输入变量名', 1800); return; }
+        closeModal(); cb(v);
+      });
+      $('apCustom').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('apCustomOk').click(); });
+    });
+  }
+
+  function refreshListOnly() {
+    /* 局部更新选中节点摘要，避免整表重建导致滚动跳动 */
+    if (!selId) { renderList(); return; }
+    var n = nodes.find(function (x) { return x.id === selId; });
+    if (!n) { renderList(); return; }
+    var div = document.querySelector('#nodeList .wg-node[data-id="' + n.id + '"]');
+    if (!div) { renderList(); return; }
+    var s = nodeSummary(n);
+    var sum = div.querySelector('.nsum');
+    if (sum) sum.innerHTML = s.html;
+    var meta = div.querySelector('.nmeta');
+    if (meta) meta.textContent = '#' + (nodes.indexOf(n) + 1) + ' · ' + n.type;
+    if (n.type === 'choose') {
+      var subs = div.querySelector('.nsubs');
+      if (subs) subs.innerHTML = n.data.options.map(function (o) {
+        return '<div class="nsub"><span>🔘 ' + esc(o.text || '（未命名选项）') + (o.cond ? ' <b style="color:#ffb74d">[if ' + esc(o.cond) + ']</b>' : '') + '</span><span class="ar">→</span><span>' + esc(o.target || '？') + '</span></div>';
+      }).join('');
+    }
+  }
+  /* ===== 内置弹窗系统 ===== */
+  function openModal(title, bodyHTML, after) {
+    $('wgModalTitle').textContent = title;
+    $('wgModalBody').innerHTML = bodyHTML;
+    $('wgModal').classList.add('show');
+    if (after) after();
+  }
+  function closeModal() { $('wgModal').classList.remove('show'); }
+  function openAssetPicker(cat, cb) {
+    var list = assets[cat] || [];
+    var catInfo = CATS.find(function (c) { return c.key === cat; });
+    var isImg = cat === 'bg' || cat === 'char';
+    var isAud = cat === 'music' || cat === 'effect' || cat === 'voice';
+    var items = list.map(function (a) {
+      var thumb = isImg ? '<img class="ap-thumb" src="' + a.url + '" alt="">' : '<span class="ap-thumb">' + catInfo.icon + '</span>';
+      var play = isAud ? '<button class="ap-play" data-url="' + a.url + '" data-name="' + esc(a.name) + '">▶ 试听</button>' : '';
+      return '<div class="ap-item" data-name="' + esc(a.name) + '">' + thumb + '<span class="ap-name">' + esc(a.name) + '</span>' + play + '</div>';
+    }).join('') || '<div class="ap-empty">「' + catInfo.name + '」还没有素材～<br>先去左侧素材库上传，或直接用下方自定义引用</div>';
+    var html = '<div class="ap-grid">' + items + '</div>' +
+      '<div class="ap-custom"><input type="text" id="apCustom" placeholder="或输入自定义文件名引用（如 ' + (isImg ? 'bg1.png' : 'bgm1.mp3') + '）"><button class="tb primary" id="apCustomOk">引用</button></div>';
+    openModal('选择「' + catInfo.name + '」素材', html, function () {
+      $('wgModalBody').querySelectorAll('.ap-item').forEach(function (it) {
+        it.addEventListener('click', function (e) {
+          if (e.target.closest('.ap-play')) return;
+          closeModal(); cb(it.getAttribute('data-name'));
+        });
+      });
+      $('wgModalBody').querySelectorAll('.ap-play').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var au = new Audio(b.getAttribute('data-url'));
+          au.play();
+          var old = $('wgModalBody').querySelector('.ap-play.playing');
+          if (old) { old.classList.remove('playing'); old.textContent = '▶ 试听'; }
+          b.classList.add('playing'); b.textContent = '⏹ 停止';
+          au.onended = function () { b.classList.remove('playing'); b.textContent = '▶ 试听'; };
+        });
+      });
+      $('apCustomOk').addEventListener('click', function () {
+        var v = $('apCustom').value.trim();
+        if (!v) { toast('请输入文件名', 1800); return; }
+        closeModal(); cb(v);
+      });
+      $('apCustom').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('apCustomOk').click(); });
+    });
+  }
+  function openLabelPicker(cb) {
+    var labels = nodes.filter(function (x) { return x.type === 'label' && x.data.name; }).map(function (x) { return x.data.name; });
+    var items = labels.map(function (l) {
+      return '<div class="ap-item" data-name="' + esc(l) + '"><span class="ap-thumb">🏷</span><span class="ap-name">' + esc(l) + '</span></div>';
+    }).join('') || '<div class="ap-empty">还没有 🏷 标签节点～<br>先在时间线建一个标签节点，或用下方自定义输入</div>';
+    var html = '<div class="ap-grid">' + items + '</div>' +
+      '<div class="ap-custom"><input type="text" id="apCustom" placeholder="或输入自定义标签名（如 good_end）"><button class="tb primary" id="apCustomOk">引用</button></div>';
+    openModal('选择跳转目标标签', html, function () {
+      $('wgModalBody').querySelectorAll('.ap-item').forEach(function (it) {
+        it.addEventListener('click', function () { closeModal(); cb(it.getAttribute('data-name')); });
+      });
+      $('apCustomOk').addEventListener('click', function () {
+        var v = $('apCustom').value.trim();
+        if (!v) { toast('请输入标签名', 1800); return; }
+        closeModal(); cb(v);
+      });
+      $('apCustom').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('apCustomOk').click(); });
+    });
+  }
+  function openConfirm(msg, onYes) {
+    var html = '<div class="ap-confirm">' + msg + '</div>' +
+      '<div class="ap-confirm-actions"><button class="tb" id="apNo">取消</button><button class="tb primary" id="apYes">确定</button></div>';
+    openModal('确认操作', html, function () {
+      $('apNo').addEventListener('click', closeModal);
+      $('apYes').addEventListener('click', function () { closeModal(); onYes(); });
+    });
+  }
+  function toast(msg, ms) {
+    if (window.showVoidToast) { window.showVoidToast(msg, ms || 2000); return; }
+    var t = document.getElementById('wgToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'wgToast';
+      t.style.cssText = 'position:fixed;left:50%;bottom:2.2rem;transform:translateX(-50%);background:rgba(12,22,12,.92);color:#e8e6e3;padding:.5rem 1.1rem;border-radius:2rem;font-size:.82rem;z-index:200;border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 24px rgba(0,0,0,.4);transition:opacity .3s;pointer-events:none;';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    clearTimeout(t._tm);
+    t._tm = setTimeout(function () { t.style.opacity = '0'; }, ms || 2000);
+  }
+
+  /* ===== 素材库渲染 ===== */
+  function renderAssets() {
+    var box = $('assetCats');
+    var total = 0;
+    box.innerHTML = '';
+    CATS.forEach(function (cat) {
+      var list = assets[cat.key];
+      total += list.length;
+      var wrap = document.createElement('div');
+      wrap.className = 'wg-cat';
+      var items = list.map(function (a, i) {
+        var thumb = '';
+        if (cat.key === 'bg' || cat.key === 'char') thumb = '<img class="thumb" src="' + a.url + '" alt="">';
+        else thumb = '<div class="thumb">' + cat.icon + '</div>';
+        return '<div class="wg-asset-item" data-cat="' + cat.key + '" data-i="' + i + '">' + thumb + '<span class="aname">' + esc(a.name) + '</span><span class="ains">＋插入</span></div>';
+      }).join('') || '<div class="wg-empty">暂无素材</div>';
+      wrap.innerHTML = '<div class="wg-cat-head"><span>' + cat.icon + ' ' + cat.name + '</span><label data-upload="' + cat.key + '">＋ 上传</label></div><div class="wg-cat-list">' + items + '</div>';
+      box.appendChild(wrap);
+    });
+    $('assetCount').textContent = total + ' 个';
+    box.querySelectorAll('[data-upload]').forEach(function (l) {
+      l.addEventListener('click', function () { uploadAsset(l.getAttribute('data-upload')); });
+    });
+    box.querySelectorAll('.wg-asset-item').forEach(function (it) {
+      it.addEventListener('click', function () {
+        var cat = it.getAttribute('data-cat'), i = +it.getAttribute('data-i');
+        var a = assets[cat][i];
+        insertAssetNode(cat, a.name);
+      });
+    });
+  }
+  function uploadAsset(cat) {
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = CATS.find(function (c) { return c.key === cat; }).accept;
+    inp.onchange = function () {
+      var f = inp.files[0]; if (!f) return;
+      assets[cat].push({ name: f.name, url: URL.createObjectURL(f) });
+      renderAssets();
+      toast('素材已收录：' + f.name, 1800);
+    };
+    inp.click();
+  }
+  function insertAssetNode(cat, name) {
+    var n = newNode(cat === 'char' ? 'char' : cat);
+    if (n.type === 'char') n.data.file = name;
+    else if (n.type === 'bg') n.data.file = name;
+    else if (n.type === 'music') n.data.file = name;
+    else if (n.type === 'effect') n.data.file = name;
+    else if (n.type === 'voice') n.data.file = name;
+    insertAtSel(n);
+  }
+  function insertAtSel(n) {
+    var idx = selId ? nodes.findIndex(function (x) { return x.id === selId; }) : -1;
+    nodes.splice(idx + 1, 0, n);
+    selId = n.id;
+    save(); renderList(); renderProp();
+  }
+
+  /* ===== 变量可视化 ===== */
+  function renderAff() {
+    var box = $('affBody');
+    var steps = [];
+    nodes.forEach(function (n) { if (n.type === 'affection') steps.push(n.data); });
+    var totals = {};
+    steps.forEach(function (s) {
+      var k = s.var || '变量';
+      if (!(k in totals)) totals[k] = 0;
+      if (s.op === '=') totals[k] = s.value;
+      else totals[k] += (s.op === '-' ? -1 : 1) * s.value;
+    });
+    if (!steps.length) {
+      box.innerHTML = '<div class="wg-aff-empty">还没有 📊 变量节点～<br>在时间线里插入「📊 变量」节点，<br>这里会实时绘制变量变化曲线与当前总值。</div>';
+      return;
+    }
+    var vars = affVars.filter(function (v) { return steps.some(function (s) { return (s.var || '变量') === v; }); });
+    var h = '';
+    vars.forEach(function (v) {
+      var cur = totals[v] || 0;
+      var arr = [];
+      var acc = 0;
+      steps.forEach(function (s, i) {
+        if ((s.var || '变量') !== v) return;
+        if (s.op === '=') acc = s.value; else acc += (s.op === '-' ? -1 : 1) * s.value;
+        arr.push({ i: i, v: acc, op: s.op, val: s.value });
+      });
+      var maxAbs = Math.max.apply(null, arr.map(function (a) { return Math.abs(a.v); }).concat([1]));
+      h += '<div class="wg-aff-hero"><div style="font-size:.75rem;opacity:.6;margin-bottom:.3rem;">📊 ' + esc(v) + ' · 当前值</div><div class="wg-aff-num">' + (cur >= 0 ? '+' : '') + cur + '</div>' +
+        '<div class="wg-aff-bar"><div class="wg-aff-fill" style="width:' + Math.min(100, Math.abs(cur) / maxAbs * 100) + '%;"></div></div>' +
+        '<div style="font-size:.7rem;opacity:.5;">共 ' + arr.length + ' 次变化 · 区间 -' + maxAbs + ' ~ +' + maxAbs + '</div></div>';
+      h += '<div class="wg-aff-steps">' + arr.map(function (a, j) {
+        var w = Math.max(4, Math.abs(a.v) / maxAbs * 100);
+        var color = a.v >= 0 ? '#66bb6a' : '#ef5350';
+        return '<div class="wg-aff-step ' + (a.v >= 0 ? 'pos' : 'neg') + '"><span class="idx">' + (j + 1) + '</span><span class="bar"><i style="width:' + w + '%;background:' + color + ';"></i></span><span class="val">' + (a.v >= 0 ? '+' : '') + a.v + '</span></div>';
+      }).join('') + '</div>';
+    });
+    box.innerHTML = h;
+  }
+
+  /* ===== 导出 ===== */
+  function exportText() {
+    var lines = [];
+    nodes.forEach(function (n) {
+      var d = n.data;
+      switch (n.type) {
+        case 'dialogue': lines.push(d.speaker ? d.speaker + ':' + d.text : d.text); break;
+        case 'narrate': lines.push(d.text); break;
+        case 'bg': lines.push('[bg:' + d.file + (d.transition ? '|' + d.transition : '') + ']'); break;
+        case 'char': lines.push(d.action === 'clear' ? '[character:clear]' : '[character:' + d.file + (d.pos ? '|' + d.pos : '') + ']'); break;
+        case 'music': lines.push(d.action === 'clear' ? '[music:clear]' : '[music:' + d.file + ']'); break;
+        case 'effect': lines.push('[playEffect:' + d.file + ']'); break;
+        case 'voice': lines.push('[voice:' + d.file + ']'); break;
+        case 'affection': lines.push('[set:' + (d.var || '变量') + fmtAff(d.op, d.value) + ']'); break;
+        case 'choose': lines.push('[choose]' + d.options.map(function (o) { return (o.text || '（选项）') + '->' + (o.target || '') + (o.cond ? '?' + o.cond : ''); }).join('|') + '[/choose]'); break;
+        case 'label': lines.push('[label:' + d.name + ']'); break;
+        case 'jump': lines.push('[jump:' + d.target + ']'); break;
+      }
+    });
+    return lines.join('\n');
+  }
+
+  /* ===== 导入解析 ===== */
+  function importText(txt) {
+    nodes = [];
+    var lines = txt.split(/\r?\n/);
+    var i = 0;
+    while (i < lines.length) {
+      var line = lines[i].trim();
+      if (!line) { i++; continue; }
+      if (line === '[choose]' || line.startsWith('[choose]')) {
+        var opts = [];
+        var inline = line.match(/^\[choose\](.*)\[\/choose\]$/);
+        if (inline) {
+          inline[1].split('|').forEach(function (ol) {
+            var parts = ol.split('->');
+            var tgt = (parts[1] || '').trim();
+            var cond = '';
+            var qi = tgt.indexOf('?');
+            if (qi >= 0) { cond = tgt.slice(qi + 1).trim(); tgt = tgt.slice(0, qi).trim(); }
+            opts.push({ text: (parts[0] || '').trim(), target: tgt, cond: cond });
+          });
+          i++;
+        } else {
+          i++;
+          while (i < lines.length && lines[i].trim() !== '[/choose]' && !lines[i].trim().startsWith('[/choose]')) {
+            var ol = lines[i].trim();
+            if (ol) {
+              var parts = ol.split('->');
+              var tgt = (parts[1] || '').trim();
+              var cond = '';
+              var qi = tgt.indexOf('?');
+              if (qi >= 0) { cond = tgt.slice(qi + 1).trim(); tgt = tgt.slice(0, qi).trim(); }
+              opts.push({ text: (parts[0] || '').trim(), target: tgt, cond: cond });
+            }
+            i++;
+          }
+          if (i < lines.length && lines[i].trim().startsWith('[/choose]')) i++;
+        }
+        var cn = newNode('choose'); cn.data.options = opts.length ? opts : [{ text: '', target: '', cond: '' }];
+        nodes.push(cn); continue;
+      }
+      var m;
+      if ((m = line.match(/^\[bg:([^\]]+)\]/))) { var b = newNode('bg'); var parts = m[1].split('|'); b.data.file = parts[0].trim(); b.data.transition = (parts[1] || '').trim(); nodes.push(b); i++; continue; }
+      if ((m = line.match(/^\[character:([^\]]+)\]/))) {
+        var c = newNode('char');
+        if (m[1].trim() === 'clear') c.data.action = 'clear';
+        else { var cp = m[1].split('|'); c.data.file = cp[0].trim(); c.data.pos = (cp[1] || '').trim(); }
+        nodes.push(c); i++; continue;
+      }
+      if ((m = line.match(/^\[music:([^\]]+)\]/))) { var mu = newNode('music'); if (m[1].trim() === 'clear') mu.data.action = 'clear'; else mu.data.file = m[1].trim(); nodes.push(mu); i++; continue; }
+      if ((m = line.match(/^\[(?:playEffect|sound):([^\]]+)\]/))) { var ef = newNode('effect'); ef.data.file = m[1].trim(); nodes.push(ef); i++; continue; }
+      if ((m = line.match(/^\[voice:([^\]]+)\]/))) { var vo = newNode('voice'); vo.data.file = m[1].trim(); nodes.push(vo); i++; continue; }
+      if ((m = line.match(/^\[set:([^\]]+)\]/))) {
+        var expr = m[1].trim();
+        var a = newNode('affection');
+        var mm = expr.match(/^(.+?)([+\-=])(\d+)$/);
+        if (mm) { a.data.var = mm[1].trim(); a.data.op = mm[2]; a.data.value = +mm[3]; }
+        else { a.data.var = expr; a.data.op = '='; a.data.value = 1; }
+        if (affVars.indexOf(a.data.var) < 0) affVars.push(a.data.var);
+        nodes.push(a); i++; continue;
+      }
+      if ((m = line.match(/^\[label:([^\]]+)\]/))) { var l = newNode('label'); l.data.name = m[1].trim(); nodes.push(l); i++; continue; }
+      if ((m = line.match(/^\[jump:([^\]]+)\]/))) { var j = newNode('jump'); j.data.target = m[1].trim(); nodes.push(j); i++; continue; }
+      var cm = line.match(/^(.*?):(.*)$/);
+      if (cm && cm[1].trim() && !cm[1].trim().startsWith('[')) {
+        var dl = newNode('dialogue'); dl.data.speaker = cm[1].trim(); dl.data.text = cm[2].trim();
+        nodes.push(dl); i++; continue;
+      }
+      var nr = newNode('narrate'); nr.data.text = line; nodes.push(nr); i++;
+    }
+    selId = null;
+    save(); renderList(); renderProp(); renderAff();
+    toast('导入完成：' + nodes.length + ' 个节点', 2200);
+  }
+
+  /* ===== 预览（舞台式：真实素材渲染 + 状态回退） ===== */
+  var pvIdx = 0, pvHist = [];
+  var pvState = { bg: null, chars: [], music: null, musicName: '', audio: null, affs: {} };
+  function findAsset(cat, name) {
+    var list = assets[cat] || [];
+    for (var i = 0; i < list.length; i++) if (list[i].name === name) return list[i];
+    return null;
+  }
+  function stopMusic() { if (pvState.audio) { try { pvState.audio.pause(); } catch (e) { } pvState.audio = null; } }
+  function snapState() {
+    return {
+      bg: pvState.bg,
+      chars: pvState.chars.map(function (c) { return { name: c.name, url: c.url, pos: c.pos }; }),
+      music: pvState.music, musicName: pvState.musicName,
+      affs: Object.assign({}, pvState.affs)
+    };
+  }
+  function applySnap(s) {
+    pvState.bg = s.bg;
+    pvState.chars = s.chars.slice();
+    pvState.music = s.music; pvState.musicName = s.musicName;
+    pvState.affs = Object.assign({}, s.affs);
+    var bl = $('pvBgLayer');
+    if (pvState.bg) { bl.style.backgroundImage = 'url(' + pvState.bg + ')'; bl.innerHTML = ''; }
+    else { bl.style.backgroundImage = ''; bl.innerHTML = ''; }
+    $('pvCharLayer').innerHTML = pvState.chars.map(function (c) {
+      return '<img src="' + c.url + '" class="' + c.pos + '" alt="">';
+    }).join('');
+    if (pvState.music) {
+      stopMusic();
+      var au = new Audio(pvState.music);
+      au.loop = true; au.play().catch(function () { });
+      pvState.audio = au;
+      $('pvMusicTip').textContent = '🎵 ' + pvState.musicName;
+      $('pvMusicTip').style.display = 'block';
+    } else { stopMusic(); $('pvMusicTip').style.display = 'none'; }
+    renderAffHud();
+  }
+  function clearStage() {
+    stopMusic();
+    pvState = { bg: null, chars: [], music: null, musicName: '', audio: null, affs: {} };
+    pvHist = [];
+    $('pvBgLayer').style.backgroundImage = '';
+    $('pvBgLayer').innerHTML = '';
+    $('pvCharLayer').innerHTML = '';
+    $('pvAffHud').innerHTML = '';
+    $('pvMusicTip').style.display = 'none';
+  }
+  function evalCond(expr, affs) {
+    if (!expr) return true;
+    var m = expr.match(/^(.+?)\s*(>=|<=|==|!=|>|<|=)\s*(-?\d+)$/);
+    if (!m) return true;
+    var v = affs[m[1].trim()] || 0;
+    var x = +m[3];
+    switch (m[2]) {
+      case '>=': return v >= x;
+      case '<=': return v <= x;
+      case '==': case '=': return v === x;
+      case '!=': return v !== x;
+      case '>': return v > x;
+      case '<': return v < x;
+    }
+    return true;
+  }
+  function startPreview() {
+    if (!nodes.length) { toast('台本是空的，先写点剧情吧', 2000); return; }
+    clearStage();
+    pvIdx = 0;
+    $('pvBox').classList.add('show');
+    renderPreview();
+  }
+  /* 推进：先存快照再前进（保证回退一致） */
+  function pvNext() {
+    if (pvIdx >= nodes.length - 1) return;
+    pvHist.push(snapState());
+    pvIdx++;
+    renderPreview();
+  }
+  /* 回退：回退一步并恢复该步之前的舞台状态 */
+  function pvBack() {
+    if (pvIdx <= 0) return;
+    pvIdx--;
+    if (pvHist.length) applySnap(pvHist.pop());
+    renderPreview();
+  }
+  /* 测试控制台 */
+  function updateConsole() {
+    var n = nodes[pvIdx];
+    $('pvConPos').textContent = (pvIdx + 1) + ' / ' + nodes.length;
+    if (n) {
+      var s = nodeSummary(n);
+      $('pvConNode').innerHTML = s.icon + ' ' + s.html;
+    } else { $('pvConNode').textContent = '—— 剧情结束 ——'; }
+    var keys = Object.keys(pvState.affs);
+    $('pvConVars').innerHTML = keys.length
+      ? keys.map(function (k) { return '<span>📊 ' + esc(k) + ' = ' + pvState.affs[k] + '</span>'; }).join('')
+      : '<span style="opacity:.5;">（暂无变量）</span>';
+  }
+  function renderPreview() {
+    var n = nodes[pvIdx];
+    $('pvName').textContent = ''; $('pvText').textContent = ''; $('pvChoose').innerHTML = '';
+    $('pvProg').textContent = (pvIdx + 1) + ' / ' + nodes.length;
+    if (!n) { $('pvText').textContent = '—— 剧情结束 ——'; $('pvName').textContent = '🎬'; return; }
+    var d = n.data;
+    if (n.type === 'dialogue') { $('pvName').textContent = d.speaker || '？？'; $('pvText').textContent = d.text; }
+    else if (n.type === 'narrate') { $('pvName').textContent = '📖 旁白'; $('pvText').textContent = d.text; }
+    else if (n.type === 'bg') {
+      var a = findAsset('bg', d.file);
+      var layer = $('pvBgLayer');
+      if (a) { layer.style.backgroundImage = 'url(' + a.url + ')'; layer.innerHTML = ''; pvState.bg = a.url; }
+      else { layer.style.backgroundImage = ''; layer.innerHTML = '<div class="pv-miss">🖼 未上传：' + esc(d.file) + '</div>'; pvState.bg = null; }
+      $('pvText').textContent = '🖼 背景切换：' + d.file;
+    }
+    else if (n.type === 'char') {
+      var cl = $('pvCharLayer');
+      if (d.action === 'clear') { pvState.chars = []; cl.innerHTML = ''; $('pvText').textContent = '🧍 立绘隐藏'; }
+      else {
+        var ca = findAsset('char', d.file);
+        var pos = d.pos || 'center';
+        if (ca) {
+          pvState.chars = pvState.chars.filter(function (c) { return c.name !== d.file; });
+          pvState.chars.push({ name: d.file, url: ca.url, pos: pos });
+          cl.innerHTML = pvState.chars.map(function (c) {
+            return '<img src="' + c.url + '" class="' + c.pos + '" alt="">';
+          }).join('');
+          $('pvText').textContent = '🧍 立绘出现：' + d.file;
+        } else {
+          cl.innerHTML = '';
+          $('pvText').textContent = '🧍 立绘：' + d.file + '（素材未上传，预览从略）';
+        }
+      }
+    }
+    else if (n.type === 'music') {
+      if (d.action === 'clear') { stopMusic(); pvState.music = null; pvState.musicName = ''; $('pvMusicTip').style.display = 'none'; $('pvText').textContent = '🎵 音乐停止'; }
+      else {
+        var ma = findAsset('music', d.file);
+        if (ma) {
+          stopMusic();
+          var au = new Audio(ma.url);
+          au.loop = true;
+          au.play().catch(function () { });
+          pvState.audio = au; pvState.music = ma.url; pvState.musicName = d.file;
+          $('pvMusicTip').textContent = '🎵 ' + d.file;
+          $('pvMusicTip').style.display = 'block';
+          $('pvText').textContent = '🎵 音乐播放：' + d.file;
+        } else {
+          $('pvText').textContent = '🎵 音乐：' + d.file + '（素材未上传，静音预览）';
+        }
+      }
+    }
+    else if (n.type === 'effect') {
+      var ea = findAsset('effect', d.file);
+      if (ea) { var eau = new Audio(ea.url); eau.play().catch(function () { }); }
+      $('pvText').textContent = '🔊 音效：' + d.file + (ea ? '' : '（素材未上传，静音预览）');
+    }
+    else if (n.type === 'voice') {
+      var va = findAsset('voice', d.file);
+      if (va) { var vau = new Audio(va.url); vau.play().catch(function () { }); }
+      $('pvText').textContent = '🗣 语音：' + d.file + (va ? '' : '（素材未上传，静音预览）');
+    }
+    else if (n.type === 'affection') {
+      var key = d.var || '变量';
+      if (!(key in pvState.affs)) pvState.affs[key] = 0;
+      if (d.op === '=') pvState.affs[key] = d.value;
+      else pvState.affs[key] += (d.op === '-' ? -1 : 1) * d.value;
+      renderAffHud();
+      $('pvText').textContent = '📊 ' + key + ' ' + fmtAff(d.op, d.value) + '　→ 当前 ' + pvState.affs[key];
+    }
+    else if (n.type === 'label') { $('pvText').textContent = '🏷 标签：' + d.name; }
+    else if (n.type === 'jump') { jumpToLabel(d.target, false); return; }
+    else if (n.type === 'choose') {
+      var shown = d.options.filter(function (o) { return evalCond(o.cond, pvState.affs); });
+      $('pvName').textContent = '🔀 选择你的行动';
+      $('pvText').textContent = shown.length < d.options.length ? '（' + (d.options.length - shown.length) + ' 个选项因条件未满足而隐藏）' : '';
+      shown.forEach(function (o) {
+        var b = document.createElement('button');
+        b.textContent = '🔘 ' + (o.text || '（选项）');
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          if (o.target) { jumpToLabel(o.target, true); }
+          else { pvNext(); }
+        });
+        $('pvChoose').appendChild(b);
+      });
+    }
+    updateConsole();
+  }
+  function renderAffHud() {
+    var keys = Object.keys(pvState.affs);
+    var hud = $('pvAffHud');
+    hud.innerHTML = keys.map(function (k) {
+      var v = pvState.affs[k];
+      return '<span>📊 ' + esc(k) + ' ' + (v >= 0 ? '+' : '') + v + '</span>';
+    }).join('');
+  }
+  function jumpToLabel(name, pushSnap) {
+    var idx = nodes.findIndex(function (x) { return x.type === 'label' && x.data.name === name; });
+    if (idx < 0) { $('pvText').textContent = '➡️ 跳转目标「' + name + '」不存在…（预览结束）'; updateConsole(); return; }
+    if (pushSnap) pvHist.push(snapState());
+    pvIdx = idx; renderPreview();
+  }
+
+  /* ===== 存取 ===== */
+  function save() {
+    try { localStorage.setItem('webgalEditorDraft', JSON.stringify({ nodes: nodes, affVars: affVars })); } catch (e) { }
+  }
+  function load() {
+    try {
+      var d = JSON.parse(localStorage.getItem('webgalEditorDraft'));
+      if (d && d.nodes) { nodes = d.nodes; affVars = d.affVars || []; }
+    } catch (e) { }
+  }
+
+  /* ===== 事件绑定 ===== */
+  /* 节点插入按钮由 renderCatNodes 动态绑定 */
+
+  /* 变量配置弹窗 */
+  function openAffectionDialog(cb) {
+    var existing = affVars.slice();
+    nodes.forEach(function (n) { if (n.type === 'affection' && existing.indexOf(n.data.var) < 0) existing.push(n.data.var); });
+    var html =
+      '<div class="wg-prop"><label>变量名（现有：' + esc(existing.join('、') || '无') + '）</label><input type="text" id="afVar" value="" placeholder="变量名（如：好感度）"></div>' +
+      '<div class="wg-prop"><label>操作</label><div class="seg" id="afOpSeg">' +
+      '<button class="seg-btn active" data-v="+">增加 +</button>' +
+      '<button class="seg-btn" data-v="-">减少 -</button>' +
+      '<button class="seg-btn" data-v="=">设为 =</button></div></div>' +
+      '<div class="wg-prop"><label>数值</label><input type="number" id="afVal" value="1" min="0" style="width:100%;padding:.45rem .6rem;border-radius:.55rem;border:1px solid rgba(128,128,128,.22);background:rgba(128,128,128,.07);color:inherit;font-size:.82rem;outline:none;"></div>' +
+      '<div class="ap-confirm-actions"><button class="tb" id="afCancel">取消</button><button class="tb primary" id="afOk">插入</button></div>';
+    openModal('📊 变量变化', html, function () {
+      var op = '+';
+      $('afOpSeg').addEventListener('click', function (e) {
+        var b = e.target.closest('.seg-btn'); if (!b) return;
+        $('afOpSeg').querySelectorAll('.seg-btn').forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active'); op = b.getAttribute('data-v');
+      });
+      $('afCancel').addEventListener('click', closeModal);
+      $('afOk').addEventListener('click', function () {
+        var vname = $('afVar').value.trim() || '变量';
+        var val = Math.max(0, +$('afVal').value || 0);
+        if (affVars.indexOf(vname) < 0) affVars.push(vname);
+        closeModal();
+        cb({ var: vname, op: op, value: val });
+      });
+      $('afVar').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('afOk').click(); });
+    });
+  }
+  $('btnClear').addEventListener('click', function () {
+    if (nodes.length) openConfirm('确定清空全部节点吗？此操作不可撤销。', function () { nodes = []; selId = null; save(); renderList(); renderProp(); renderAff(); });
+  });
+  $('btnExport').addEventListener('click', function () {
+    var txt = exportText();
+    var blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'webgal_script.txt';
+    a.click();
+    toast('已导出 webgal_script.txt（' + txt.split('\n').length + ' 行）', 2200);
+  });
+  $('btnCopy').addEventListener('click', function () {
+    navigator.clipboard.writeText(exportText()).then(function () { toast('台本已复制到剪贴板 📋', 1800); }, function () { toast('复制失败，试试导出', 2000); });
+  });
+  $('btnImport').addEventListener('click', function () { $('fileImport').click(); });
+  $('fileImport').addEventListener('change', function () {
+    var f = this.files[0]; if (!f) return;
+    var r = new FileReader();
+    r.onload = function () { importText(String(r.result)); };
+    r.readAsText(f);
+    this.value = '';
+  });
+  $('btnPreview').addEventListener('click', startPreview);
+  $('pvClose').addEventListener('click', function () { $('pvBox').classList.remove('show'); clearStage(); });
+  $('pvNext').addEventListener('click', pvNext);
+  $('pvBack').addEventListener('click', pvBack);
+  /* 游戏式点击继续：点击舞台/对话框区域推进（选项按钮已 stopPropagation） */
+  $('pvStage').addEventListener('click', function () { if (!$('pvChoose').children.length) pvNext(); });
+  $('pvStage').addEventListener('contextmenu', function (e) { e.preventDefault(); pvBack(); });
+  /* 测试控制台 */
+  $('pvConBack').addEventListener('click', pvBack);
+  $('pvConNext').addEventListener('click', pvNext);
+  $('pvConsoleToggle').addEventListener('click', function () { $('pvConsole').classList.toggle('open'); });
+  $('pvConsole').addEventListener('click', function (e) { e.stopPropagation(); });
+  document.querySelectorAll('.wg-tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.wg-tab').forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      var tab = t.getAttribute('data-tab');
+      $('propBody').style.display = tab === 'prop' ? '' : 'none';
+      $('affBody').style.display = tab === 'aff' ? '' : 'none';
+    });
+  });
+  /* 移动端抽屉 */
+  var drawerOpen = null;
+  function closeDrawers() { $('assetPanel').classList.remove('open'); $('rightPanel').classList.remove('open'); $('wgMask').classList.remove('show'); drawerOpen = null; }
+  $('btnAssets').addEventListener('click', function (e) { e.stopPropagation(); if (drawerOpen === 'a') { closeDrawers(); return; } closeDrawers(); $('assetPanel').classList.add('open'); $('wgMask').classList.add('show'); drawerOpen = 'a'; });
+  document.querySelector('.tool-title').addEventListener('click', function () { if (drawerOpen === 'r') { closeDrawers(); return; } closeDrawers(); $('rightPanel').classList.add('open'); $('wgMask').classList.add('show'); drawerOpen = 'r'; });
+  $('wgMask').addEventListener('click', closeDrawers);
+  /* ===== 插入分类：上下两区（分类 pill + 当前分类节点） ===== */
+  var CAT_GROUPS = {
+    script: { name: '💬 剧本', nodes: [['dialogue', '💬 对话'], ['narrate', '📖 旁白']] },
+    stage: { name: '🎭 布景', nodes: [['bg', '🖼 背景'], ['char', '🧍 立绘']] },
+    audio: { name: '🎵 声音', nodes: [['music', '🎵 音乐'], ['effect', '🔊 音效'], ['voice', '🗣 语音']] },
+    variable: { name: '📊 变量', nodes: [['affection', '📊 设置变量']] },
+    flow: { name: '🔀 流程', nodes: [['choose', '🔀 分支'], ['label', '🏷 标签'], ['jump', '➡️ 跳转']] }
+  };
+  var activeCat = 'script';
+  function renderCatPills() {
+    var pills = $('catPills');
+    pills.innerHTML = Object.keys(CAT_GROUPS).map(function (k) {
+      return '<button class="cat-pill' + (k === activeCat ? ' active' : '') + '" data-cat="' + k + '">' + CAT_GROUPS[k].name + '</button>';
+    }).join('');
+    pills.querySelectorAll('.cat-pill').forEach(function (p) {
+      p.addEventListener('click', function () {
+        var k = p.getAttribute('data-cat');
+        /* 再次点击已选分类 → 取消选择 */
+        if (k === activeCat) { activeCat = null; }
+        else { activeCat = k; }
+        renderCatPills();
+        renderCatNodes();
+      });
+    });
+    renderCatNodes();
+  }
+  function renderCatNodes() {
+    var box = $('catNodes');
+    if (!activeCat) {
+      box.innerHTML = '<span class="cat-hint">点击上方分类，选择要插入的节点类型</span>';
+      return;
+    }
+    var group = CAT_GROUPS[activeCat];
+    box.innerHTML = '<span class="cat-hint" style="opacity:.35;">' + group.name + '：</span>' +
+      group.nodes.map(function (nd) {
+        return '<button class="nb" data-add="' + nd[0] + '">' + nd[1] + '</button>';
+      }).join('');
+    box.querySelectorAll('[data-add]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var type = b.getAttribute('data-add');
+        if (type === 'affection') { openAffectionDialog(function (cfg) { var n = newNode('affection'); n.data = cfg; insertAtSel(n); }); return; }
+        insertAtSel(newNode(type));
+      });
+    });
+  }
+  renderCatPills();
+  /* 内置弹窗关闭 */
+  $('wgModalX').addEventListener('click', closeModal);
+  $('wgModal').addEventListener('click', function (e) { if (e.target === $('wgModal')) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); } });
+
+  /* ===== 启动 ===== */
+  load();
+  renderAssets();
+  renderList();
+  renderProp();
+  renderAff();
+})();
+</script>
+<script src="../global-ui.js"></script>
+</body>
+</html>

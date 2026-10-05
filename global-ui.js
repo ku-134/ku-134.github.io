@@ -47,8 +47,8 @@
     function loadSettings() {
         try {
             var s = JSON.parse(localStorage.getItem('siteSettings') || '{}');
-            return { theme: s.theme || 'default', bg: s.bg || 'default' };
-        } catch (e) { return { theme: 'default', bg: 'default' }; }
+            return { theme: s.theme || 'default', bg: s.bg || 'default', compat: s.compat || 'auto' };
+        } catch (e) { return { theme: 'default', bg: 'default', compat: 'auto' }; }
     }
     function saveSettings(s) {
         try { localStorage.setItem('siteSettings', JSON.stringify(s)); } catch (e) {}
@@ -74,6 +74,8 @@
         var nav = localStorage.getItem('gui_navHidden') === '1';
         body.classList.toggle('gui-nav-hidden', nav);
         setOpts('guiNav', nav ? 'nav' : '');
+        setOpts('guiCompat', s.compat);
+        if (window.Compat) { window.Compat.apply(); }
     }
     window.GlobalUI = {
         loadSettings: loadSettings,
@@ -109,6 +111,8 @@
         '<button data-v="0.9">小</button><button data-v="1">中</button><button data-v="1.1">大</button></div></div>',
         '<div class="gui-group"><div class="gui-label">👁️ 界面元素</div><div class="gui-opts" id="guiNav">',
         '<button data-v="nav">隐藏导航</button></div></div>',
+        '<div class="gui-group"><div class="gui-label">🧩 兼容模式</div><div class="gui-opts" id="guiCompat">',
+        '<button data-v="auto">自动</button><button data-v="on">开启</button><button data-v="off">关闭</button></div></div>',
         '<div class="gui-actions"><button id="guiReset">重置</button><button id="guiClose">关闭</button></div>'
     ].join('');
     overlay.appendChild(panel);
@@ -161,6 +165,16 @@
         localStorage.setItem('gui_navHidden', body.classList.contains('gui-nav-hidden') ? '0' : '1');
         applyAll();
     });
+    document.getElementById('guiCompat').addEventListener('click', function (e) {
+        var b = e.target.closest('button');
+        if (!b) return;
+        var v = b.getAttribute('data-v');
+        if (window.Compat) { window.Compat.setMode(v); }
+        else {
+            var s = loadSettings(); s.compat = v; saveSettings(s);
+        }
+        applyAll();
+    });
 
     /* ---------- 隐藏按钮（👁️ 隐藏所有 UI 只留背景） ---------- */
     hideBtn.addEventListener('click', function () {
@@ -175,10 +189,12 @@
         localStorage.removeItem('siteSettings');
         localStorage.removeItem('gui_fontSize');
         localStorage.removeItem('gui_navHidden');
+        localStorage.removeItem('gui_compatNotice');
         body.classList.remove('gui-nav-hidden', 'ui-hidden');
         hideBtn.classList.remove('active');
         hideBtn.title = '隐藏界面';
         hideBtn.textContent = '👁️';
+        if (window.Compat) { window.Compat.reset(); }
         applyAll();
     });
 

@@ -10,6 +10,7 @@
     <link rel="preload" as="image" href="background3.webp">
     <link rel="preload" as="image" href="background4.webp">
     <link rel="stylesheet" href="style.css">
+    <script src="compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         /* ===== 文章阅读页专属样式 ===== */
@@ -546,6 +547,14 @@
                         <button class="opt-btn" data-v="nav">隐藏导航</button>
                     </div>
                 </div>
+                <div class="settings-group">
+                    <label>🧩 兼容模式</label>
+                    <div class="options" id="siteCompat">
+                        <button class="opt-btn" data-v="auto">自动</button>
+                        <button class="opt-btn" data-v="on">开启</button>
+                        <button class="opt-btn" data-v="off">关闭</button>
+                    </div>
+                </div>
             </div>
 
             <!-- 文章样式视图（专属设置） -->
@@ -700,6 +709,7 @@
                 setGroup('siteBg', s.bg, 'default');
                 setGroup('siteFont', localStorage.getItem('gui_fontSize') || '1', '1');
                 setGroup('siteNav', localStorage.getItem('gui_navHidden') === '1' ? 'nav' : '', '');
+                setGroup('siteCompat', s.compat || 'auto', 'auto');
             }
             document.getElementById('siteTheme').addEventListener('click', function (ev) {
                 if (!GU) return;
@@ -736,6 +746,12 @@
                 var nav = document.body.classList.contains('gui-nav-hidden');
                 localStorage.setItem('gui_navHidden', nav ? '0' : '1');
                 GU.applyAll();
+                syncSiteView();
+            });
+            document.getElementById('siteCompat').addEventListener('click', function (ev) {
+                var b = ev.target.closest('.opt-btn');
+                if (!b) return;
+                if (window.Compat) { window.Compat.setMode(b.getAttribute('data-v')); }
                 syncSiteView();
             });
 
@@ -1052,6 +1068,8 @@
                 Object.keys(ART_KEYS).forEach(function (k) {
                     try { localStorage.removeItem(ART_KEYS[k]); } catch (e) {}
                 });
+                try { localStorage.removeItem('gui_compatNotice'); } catch (e) {}
+                if (window.Compat) { window.Compat.reset(); }
                 if (GU) { GU.applyAll(); }
                 applyArticle();
                 syncArticleView();
